@@ -1,7 +1,10 @@
 package com.transpuntano.app
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
+import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -12,6 +15,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var splashLayout: RelativeLayout
+    private var isSplashHidden = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +34,13 @@ class MainActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
 
+        webView.webChromeClient = WebChromeClient()
+
+        // Temporizador de seguridad: Desvanecer splash en 3 segundos como máximo
+        Handler(Looper.getMainLooper()).postDelayed({
+            hideSplash()
+        }, 3000)
+
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 if (url != null) {
@@ -40,6 +51,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                hideSplash()
 
                 val dashboardCyberJs = """
                     (function() {
@@ -57,7 +69,6 @@ class MainActivity : AppCompatActivity() {
                                     opacity: 0 !important;
                                 }
 
-                                /* Grid de accesos principales en Inicio */
                                 .cyber-dashboard-grid {
                                     display: grid !important;
                                     grid-template-columns: repeat(2, 1fr) !important;
@@ -125,13 +136,11 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         function buildCyberDashboard() {
-                            // 1. Borrar marca Base 44
                             var baseElems = document.querySelectorAll('a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"]');
                             baseElems.forEach(function(el) {
                                 el.style.setProperty('display', 'none', 'important');
                             });
 
-                            // 2. Corregir subtítulo superior a mayúsculas
                             var subheaders = document.querySelectorAll('div, p, span, small');
                             subheaders.forEach(function(el) {
                                 if (el.children.length === 0 && el.textContent) {
@@ -148,13 +157,11 @@ class MainActivity : AppCompatActivity() {
                                 }
                             });
 
-                            // 3. Crear Dashboard en Pantalla de Inicio
                             var isInicioPage = Array.from(document.querySelectorAll('div, h1, span')).some(function(el) {
                                 return (el.textContent || '').trim().toUpperCase() === 'TRANSPUNTANO';
                             });
 
                             if (isInicioPage) {
-                                // Ocultar lista duplicada inferior en Inicio
                                 var sectionHeaders = document.querySelectorAll('div, section, h2, h3, h4');
                                 sectionHeaders.forEach(function(sec) {
                                     var sTxt = (sec.innerText || sec.textContent || '').trim();
@@ -170,7 +177,6 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 });
 
-                                // Buscar la barra de búsqueda para insertar la cuadrícula justo abajo
                                 var searchBar = document.querySelector('input, [class*="search"], [placeholder*="Buscar"]');
                                 if (searchBar) {
                                     var searchContainer = searchBar.closest('div');
@@ -196,7 +202,6 @@ class MainActivity : AppCompatActivity() {
                                             card.innerHTML = '<span class="cyber-dash-icon">' + item.icon + '</span><span class="cyber-dash-title">' + item.title + '</span>';
                                             
                                             card.onclick = function() {
-                                                // Simular clic en el menú inferior para cambiar de sección
                                                 var navItems = document.querySelectorAll('nav *, footer *, [class*="bottom"] *');
                                                 navItems.forEach(function(navEl) {
                                                     var txt = (navEl.innerText || navEl.textContent || '').trim();
@@ -214,7 +219,6 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
 
-                            // 4. Anillos Neón en paradas
                             var all = document.querySelectorAll('*');
                             all.forEach(function(el) {
                                 var txt = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
@@ -300,20 +304,23 @@ class MainActivity : AppCompatActivity() {
                     })();
                 """.trimIndent()
                 view?.evaluateJavascript(dashboardCyberJs, null)
-
-                if (splashLayout.visibility == View.VISIBLE) {
-                    splashLayout.animate()
-                        .alpha(0f)
-                        .setDuration(400)
-                        .withEndAction {
-                            splashLayout.visibility = View.GONE
-                            webView.visibility = View.VISIBLE
-                        }
-                }
             }
         }
 
         webView.loadUrl("https://trans-puntano-go.base44.app/")
+    }
+
+    private fun hideSplash() {
+        if (!isSplashHidden && ::splashLayout.isInitialized && ::webView.isInitialized) {
+            isSplashHidden = true
+            webView.visibility = View.VISIBLE
+            splashLayout.animate()
+                .alpha(0f)
+                .setDuration(400)
+                .withEndAction {
+                    splashLayout.visibility = View.GONE
+                }
+        }
     }
 
     @Suppress("DEPRECATION")
