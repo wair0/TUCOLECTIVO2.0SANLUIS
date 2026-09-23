@@ -41,81 +41,86 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
 
-                // Inyección de CSS y JS para convertir contadores en Anillos Neón Cyberpunk
                 val cyberpunkJs = """
                     (function() {
-                        // 1. Estilos CSS del Círculo Neón Animado
-                        var style = document.createElement('style');
-                        style.innerHTML = `
-                            /* Ocultar insignia Base44 */
-                            a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"] {
-                                display: none !important;
-                                visibility: hidden !important;
-                                opacity: 0 !important;
-                            }
+                        // 1. Inyectar CSS Cyberpunk Neón
+                        if (!document.getElementById('cyber-style')) {
+                            var style = document.createElement('style');
+                            style.id = 'cyber-style';
+                            style.innerHTML = `
+                                /* Ocultar marca Base44 */
+                                a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"] {
+                                    display: none !important;
+                                    visibility: hidden !important;
+                                    opacity: 0 !important;
+                                }
 
-                            /* Estructura del Círculo Neón */
-                            .cyber-timer-box {
-                                position: relative;
-                                width: 64px;
-                                height: 64px;
-                                display: inline-flex;
-                                align-items: center;
-                                justify-content: center;
-                                flex-shrink: 0;
-                            }
-                            .cyber-timer-svg {
-                                width: 64px;
-                                height: 64px;
-                                transform: rotate(-90deg);
-                            }
-                            .cyber-ring-bg {
-                                fill: none;
-                                stroke: rgba(0, 240, 255, 0.12);
-                                stroke-width: 4;
-                            }
-                            .cyber-ring-progress {
-                                fill: none;
-                                stroke: #00F0FF;
-                                stroke-width: 4;
-                                stroke-linecap: round;
-                                stroke-dasharray: 157;
-                                stroke-dashoffset: 157;
-                                filter: drop-shadow(0 0 6px #00F0FF);
-                                animation: cyberRingFill 60s linear infinite;
-                            }
-                            @keyframes cyberRingFill {
-                                0% { stroke-dashoffset: 157; }
-                                100% { stroke-dashoffset: 0; }
-                            }
-                            .cyber-timer-text {
-                                position: absolute;
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                justify-content: center;
-                                color: #00F0FF;
-                                text-shadow: 0 0 8px rgba(0, 240, 255, 0.9);
-                            }
-                            .cyber-timer-num {
-                                font-size: 20px;
-                                font-weight: 900;
-                                line-height: 1;
-                                font-family: 'Courier New', monospace, sans-serif;
-                            }
-                            .cyber-timer-unit {
-                                font-size: 8px;
-                                font-weight: bold;
-                                letter-spacing: 1px;
-                                margin-top: 2px;
-                                color: #80f8ff;
-                            }
-                        `;
-                        (document.head || document.documentElement).appendChild(style);
+                                /* Contenedor del Anillo Neón */
+                                .cyber-timer-box {
+                                    position: relative;
+                                    width: 68px;
+                                    height: 68px;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    margin: 0 auto;
+                                }
+                                .cyber-timer-svg {
+                                    width: 68px;
+                                    height: 68px;
+                                    transform: rotate(-90deg);
+                                    overflow: visible;
+                                }
+                                .cyber-ring-bg {
+                                    fill: none;
+                                    stroke: rgba(0, 240, 255, 0.15);
+                                    stroke-width: 4;
+                                }
+                                .cyber-ring-progress {
+                                    fill: none;
+                                    stroke: #00F0FF;
+                                    stroke-width: 4;
+                                    stroke-linecap: round;
+                                    stroke-dasharray: 170;
+                                    stroke-dashoffset: 170;
+                                    filter: drop-shadow(0 0 8px #00F0FF);
+                                    animation: cyberRingFill 60s linear infinite;
+                                }
+                                @keyframes cyberRingFill {
+                                    0% { stroke-dashoffset: 170; }
+                                    100% { stroke-dashoffset: 0; }
+                                }
+                                .cyber-timer-text {
+                                    position: absolute;
+                                    top: 0; left: 0; right: 0; bottom: 0;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    justify-content: center;
+                                    color: #00F0FF;
+                                    text-shadow: 0 0 10px rgba(0, 240, 255, 0.9);
+                                    pointer-events: none;
+                                }
+                                .cyber-timer-num {
+                                    font-size: 22px;
+                                    font-weight: 900;
+                                    line-height: 1;
+                                    font-family: monospace, sans-serif;
+                                }
+                                .cyber-timer-unit {
+                                    font-size: 9px;
+                                    font-weight: bold;
+                                    letter-spacing: 1px;
+                                    margin-top: 2px;
+                                    color: #80f8ff;
+                                }
+                            `;
+                            (document.head || document.documentElement).appendChild(style);
+                        }
 
-                        // 2. Función para rastrear y convertir números de minutos a Círculos Neón
-                        function transformMinuteCounters() {
-                            // Borrado de marca Base 44
+                        // 2. Escanear y transformar bloques de tiempo (ej. "6 MIN", "25 MIN")
+                        function transformArrivalTimes() {
+                            // Borrar aviso Base44 si reaparece
                             var baseElems = document.querySelectorAll('div, a, span, p, button');
                             baseElems.forEach(function(el) {
                                 if (el.textContent && el.textContent.includes('Edit with Base 44')) {
@@ -129,41 +134,46 @@ class MainActivity : AppCompatActivity() {
                                 }
                             });
 
-                            // Transformar bloques con la palabra MIN
-                            var allNodes = document.querySelectorAll('*');
-                            allNodes.forEach(function(node) {
-                                if (node.children.length === 0 && node.textContent.trim() === 'MIN') {
-                                    var parent = node.parentElement;
-                                    if (parent && !parent.classList.contains('cyber-converted')) {
-                                        parent.classList.add('cyber-converted');
+                            // Transformación directa
+                            var allNodes = document.querySelectorAll('div, span, p');
+                            allNodes.forEach(function(el) {
+                                if (el.dataset.cyberTransformed) return;
 
-                                        var fullText = parent.innerText || parent.textContent;
-                                        var matches = fullText.match(/\d+/);
-                                        var numText = matches ? matches[0] : '0';
+                                var text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
 
-                                        var widget = document.createElement('div');
-                                        widget.className = 'cyber-timer-box';
-                                        widget.innerHTML = 
-                                            '<svg class="cyber-timer-svg" viewBox="0 0 60 60">' +
-                                                '<circle class="cyber-ring-bg" cx="30" cy="30" r="25"/>' +
-                                                '<circle class="cyber-ring-progress" cx="30" cy="30" r="25"/>' +
-                                            '</svg>' +
-                                            '<div class="cyber-timer-text">' +
-                                                '<span class="cyber-timer-num">' + numText + '</span>' +
-                                                '<span class="cyber-timer-unit">MIN</span>' +
-                                            '</div>';
+                                // Coincide con texto que contenga solo números y la palabra MIN (ej: "6 MIN", "25 MIN")
+                                if (/^\d+\s*MIN$/i.test(text)) {
+                                    var match = text.match(/\d+/);
+                                    if (match) {
+                                        var num = match[0];
+                                        el.dataset.cyberTransformed = "true";
+                                        el.style.background = "transparent";
+                                        el.style.border = "none";
+                                        el.style.display = "inline-flex";
+                                        el.style.justifyContent = "center";
+                                        el.style.alignItems = "center";
 
-                                        parent.innerHTML = '';
-                                        parent.appendChild(widget);
+                                        el.innerHTML = `
+                                            <div class="cyber-timer-box">
+                                                <svg class="cyber-timer-svg" viewBox="0 0 70 70">
+                                                    <circle class="cyber-ring-bg" cx="35" cy="35" r="27"/>
+                                                    <circle class="cyber-ring-progress" cx="35" cy="35" r="27"/>
+                                                </svg>
+                                                <div class="cyber-timer-text">
+                                                    <span class="cyber-timer-num">\${num}</span>
+                                                    <span class="cyber-timer-unit">MIN</span>
+                                                </div>
+                                            </div>
+                                        `;
                                     }
                                 }
                             });
                         }
 
-                        transformMinuteCounters();
-                        setInterval(transformMinuteCounters, 400);
+                        transformArrivalTimes();
+                        setInterval(transformArrivalTimes, 300);
 
-                        var observer = new MutationObserver(transformMinuteCounters);
+                        var observer = new MutationObserver(transformArrivalTimes);
                         if (document.body) {
                             observer.observe(document.body, { childList: true, subtree: true });
                         }
@@ -171,7 +181,6 @@ class MainActivity : AppCompatActivity() {
                 """.trimIndent()
                 view?.evaluateJavascript(cyberpunkJs, null)
 
-                // Transición de ocultado de Splash Screen
                 if (splashLayout.visibility == View.VISIBLE) {
                     splashLayout.animate()
                         .alpha(0f)
