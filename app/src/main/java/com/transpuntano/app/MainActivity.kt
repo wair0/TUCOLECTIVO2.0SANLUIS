@@ -33,6 +33,29 @@ class MainActivity : AppCompatActivity() {
                 }
                 return true
             }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                // JavaScript para ocultar automáticamente el cartel flotante de Base 44
+                val hideBadgeJs = """
+                    (function() {
+                        function removeBadge() {
+                            var elems = document.querySelectorAll('*');
+                            for (var i = 0; i < elems.length; i++) {
+                                var el = elems[i];
+                                if (el.innerText && el.innerText.includes('Edit with Base 44')) {
+                                    el.style.setProperty('display', 'none', 'important');
+                                }
+                            }
+                        }
+                        removeBadge();
+                        setTimeout(removeBadge, 500);
+                        setTimeout(removeBadge, 1500);
+                        setTimeout(removeBadge, 3000);
+                    })();
+                """.trimIndent()
+                view?.evaluateJavascript(hideBadgeJs, null)
+            }
         }
 
         webView.loadUrl("https://trans-puntano-go.base44.app/")
