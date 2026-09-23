@@ -43,19 +43,16 @@ class MainActivity : AppCompatActivity() {
 
                 val cyberpunkJs = """
                     (function() {
-                        // 1. Inyectar CSS Cyberpunk Neón
                         if (!document.getElementById('cyber-style')) {
                             var style = document.createElement('style');
                             style.id = 'cyber-style';
                             style.innerHTML = `
-                                /* Ocultar marca Base44 */
                                 a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"] {
                                     display: none !important;
                                     visibility: hidden !important;
                                     opacity: 0 !important;
                                 }
 
-                                /* Contenedor del Anillo Neón */
                                 .cyber-timer-box {
                                     position: relative;
                                     width: 68px;
@@ -118,9 +115,7 @@ class MainActivity : AppCompatActivity() {
                             (document.head || document.documentElement).appendChild(style);
                         }
 
-                        // 2. Escanear y transformar bloques de tiempo (ej. "6 MIN", "25 MIN")
                         function transformArrivalTimes() {
-                            // Borrar aviso Base44 si reaparece
                             var baseElems = document.querySelectorAll('div, a, span, p, button');
                             baseElems.forEach(function(el) {
                                 if (el.textContent && el.textContent.includes('Edit with Base 44')) {
@@ -134,14 +129,12 @@ class MainActivity : AppCompatActivity() {
                                 }
                             });
 
-                            // Transformación directa
                             var allNodes = document.querySelectorAll('div, span, p');
                             allNodes.forEach(function(el) {
                                 if (el.dataset.cyberTransformed) return;
 
                                 var text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
 
-                                // Coincide con texto que contenga solo números y la palabra MIN (ej: "6 MIN", "25 MIN")
                                 if (/^\d+\s*MIN$/i.test(text)) {
                                     var match = text.match(/\d+/);
                                     if (match) {
@@ -153,18 +146,16 @@ class MainActivity : AppCompatActivity() {
                                         el.style.justifyContent = "center";
                                         el.style.alignItems = "center";
 
-                                        el.innerHTML = `
-                                            <div class="cyber-timer-box">
-                                                <svg class="cyber-timer-svg" viewBox="0 0 70 70">
-                                                    <circle class="cyber-ring-bg" cx="35" cy="35" r="27"/>
-                                                    <circle class="cyber-ring-progress" cx="35" cy="35" r="27"/>
-                                                </svg>
-                                                <div class="cyber-timer-text">
-                                                    <span class="cyber-timer-num">\${num}</span>
-                                                    <span class="cyber-timer-unit">MIN</span>
-                                                </div>
-                                            </div>
-                                        `;
+                                        el.innerHTML = '<div class="cyber-timer-box">' +
+                                            '<svg class="cyber-timer-svg" viewBox="0 0 70 70">' +
+                                                '<circle class="cyber-ring-bg" cx="35" cy="35" r="27"/>' +
+                                                '<circle class="cyber-ring-progress" cx="35" cy="35" r="27"/>' +
+                                            '</svg>' +
+                                            '<div class="cyber-timer-text">' +
+                                                '<span class="cyber-timer-num">' + num + '</span>' +
+                                                '<span class="cyber-timer-unit">MIN</span>' +
+                                            '</div>' +
+                                        '</div>';
                                     }
                                 }
                             });
