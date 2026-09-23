@@ -43,12 +43,12 @@ class MainActivity : AppCompatActivity() {
 
                 val cyberpunkJs = """
                     (function() {
-                        if (!document.getElementById('cyber-ring-keyframes')) {
+                        if (!document.getElementById('cyber-ring-style')) {
                             var style = document.createElement('style');
-                            style.id = 'cyber-ring-keyframes';
+                            style.id = 'cyber-ring-style';
                             style.innerHTML = `
                                 @keyframes cyberFill {
-                                    0% { stroke-dashoffset: 195; }
+                                    0% { stroke-dashoffset: 201; }
                                     100% { stroke-dashoffset: 0; }
                                 }
                                 a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"] {
@@ -56,26 +56,33 @@ class MainActivity : AppCompatActivity() {
                                     visibility: hidden !important;
                                     opacity: 0 !important;
                                 }
+                                .cyber-ring-container {
+                                    position: relative !important;
+                                    display: inline-flex !important;
+                                    flex-direction: column !important;
+                                    align-items: center !important;
+                                    justify-content: center !important;
+                                    width: 72px !important;
+                                    height: 72px !important;
+                                    min-width: 72px !important;
+                                    min-height: 72px !important;
+                                    border-radius: 50% !important;
+                                    background: rgba(13, 14, 21, 0.85) !important;
+                                    box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+                                    margin: 0 0 0 auto !important;
+                                    box-sizing: border-box !important;
+                                    padding: 2px !important;
+                                }
                             `;
                             (document.head || document.documentElement).appendChild(style);
                         }
 
-                        function applyCyberRings() {
-                            // 1. Ocultar insignia flotante de Base 44
-                            var baseElems = document.querySelectorAll('div, a, span, p, button');
+                        function adjustAndApplyRings() {
+                            var baseElems = document.querySelectorAll('a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"]');
                             baseElems.forEach(function(el) {
-                                if (el.textContent && el.textContent.includes('Edit with Base 44')) {
-                                    var target = el;
-                                    while (target.parentElement && target.parentElement !== document.body) {
-                                        var stylePos = window.getComputedStyle(target).position;
-                                        if (stylePos === 'fixed' || stylePos === 'absolute') break;
-                                        target = target.parentElement;
-                                    }
-                                    target.style.setProperty('display', 'none', 'important');
-                                }
+                                el.style.setProperty('display', 'none', 'important');
                             });
 
-                            // 2. Buscar únicamente contenedores específicos con el formato "XX MIN"
                             var all = document.querySelectorAll('*');
                             all.forEach(function(el) {
                                 var txt = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
@@ -89,25 +96,31 @@ class MainActivity : AppCompatActivity() {
                                             el.parentElement.style.overflow = 'visible';
                                         }
 
-                                        el.style.position = 'relative';
-                                        el.style.display = 'inline-flex';
-                                        el.style.flexDirection = 'column';
-                                        el.style.alignItems = 'center';
-                                        el.style.justifyContent = 'center';
-                                        el.style.width = '68px';
-                                        el.style.height = '68px';
-                                        el.style.minWidth = '68px';
-                                        el.style.minHeight = '68px';
-                                        el.style.borderRadius = '50%';
-                                        el.style.background = 'rgba(13, 14, 21, 0.85)';
-                                        el.style.boxShadow = '0 0 12px rgba(0, 240, 255, 0.3)';
-                                        el.style.margin = '0 0 0 auto';
+                                        if (!el.classList.contains('cyber-ring-container')) {
+                                            el.classList.add('cyber-ring-container');
+                                        }
+
+                                        // Redimensionar tipografía interna para que no sobresalga del anillo
+                                        var innerElems = el.querySelectorAll('*');
+                                        innerElems.forEach(function(child) {
+                                            var cTxt = (child.innerText || child.textContent || '').trim();
+                                            if (/^\d+$/.test(cTxt)) {
+                                                child.style.setProperty('font-size', '18px', 'important');
+                                                child.style.setProperty('line-height', '1', 'important');
+                                                child.style.setProperty('font-weight', 'bold', 'important');
+                                            } else if (cTxt.toUpperCase() === 'MIN') {
+                                                child.style.setProperty('font-size', '9px', 'important');
+                                                child.style.setProperty('line-height', '1', 'important');
+                                                child.style.setProperty('margin-top', '2px', 'important');
+                                                child.style.setProperty('opacity', '0.85', 'important');
+                                            }
+                                        });
 
                                         if (!el.querySelector('.cyber-svg-ring')) {
                                             var svgNS = "http://www.w3.org/2000/svg";
                                             var svg = document.createElementNS(svgNS, "svg");
                                             svg.setAttribute("class", "cyber-svg-ring");
-                                            svg.setAttribute("viewBox", "0 0 70 70");
+                                            svg.setAttribute("viewBox", "0 0 76 76");
                                             svg.style.position = "absolute";
                                             svg.style.top = "0";
                                             svg.style.left = "0";
@@ -117,23 +130,23 @@ class MainActivity : AppCompatActivity() {
                                             svg.style.transform = "rotate(-90deg)";
 
                                             var bgCircle = document.createElementNS(svgNS, "circle");
-                                            bgCircle.setAttribute("cx", "35");
-                                            bgCircle.setAttribute("cy", "35");
-                                            bgCircle.setAttribute("r", "31");
+                                            bgCircle.setAttribute("cx", "38");
+                                            bgCircle.setAttribute("cy", "38");
+                                            bgCircle.setAttribute("r", "32");
                                             bgCircle.setAttribute("fill", "none");
-                                            bgCircle.setAttribute("stroke", "rgba(0, 240, 255, 0.2)");
+                                            bgCircle.setAttribute("stroke", "rgba(0, 240, 255, 0.18)");
                                             bgCircle.setAttribute("stroke-width", "3.5");
 
                                             var fgCircle = document.createElementNS(svgNS, "circle");
-                                            fgCircle.setAttribute("cx", "35");
-                                            fgCircle.setAttribute("cy", "35");
-                                            fgCircle.setAttribute("r", "31");
+                                            fgCircle.setAttribute("cx", "38");
+                                            fgCircle.setAttribute("cy", "38");
+                                            fgCircle.setAttribute("r", "32");
                                             fgCircle.setAttribute("fill", "none");
                                             fgCircle.setAttribute("stroke", "#00F0FF");
                                             fgCircle.setAttribute("stroke-width", "3.5");
                                             fgCircle.setAttribute("stroke-linecap", "round");
-                                            fgCircle.setAttribute("stroke-dasharray", "195");
-                                            fgCircle.setAttribute("stroke-dashoffset", "195");
+                                            fgCircle.setAttribute("stroke-dasharray", "201");
+                                            fgCircle.setAttribute("stroke-dashoffset", "201");
                                             fgCircle.style.filter = "drop-shadow(0 0 6px #00F0FF)";
                                             fgCircle.style.animation = "cyberFill 60s linear infinite";
 
@@ -146,10 +159,10 @@ class MainActivity : AppCompatActivity() {
                             });
                         }
 
-                        applyCyberRings();
-                        setInterval(applyCyberRings, 300);
+                        adjustAndApplyRings();
+                        setInterval(adjustAndApplyRings, 300);
 
-                        var observer = new MutationObserver(applyCyberRings);
+                        var observer = new MutationObserver(adjustAndApplyRings);
                         if (document.body) {
                             observer.observe(document.body, { childList: true, subtree: true });
                         }
