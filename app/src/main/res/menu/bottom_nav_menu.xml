@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_inicio"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:title="@string/nav_inicio" />
+    <item
+        android:id="@+id/nav_lineas"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:title="@string/nav_lineas" />
+    <item
+        android:id="@+id/nav_paradas"
+        android:icon="@android:drawable/ic_menu_mylocation"
+        android:title="@string/nav_paradas" />
+    <item
+        android:id="@+id/nav_favoritos"
+        android:icon="@android:drawable/btn_star_big_on"
+        android:title="@string/nav_favoritos" />
+    <item
+        android:id="@+id/nav_cercanas"
+        android:icon="@android:drawable/ic_menu_mylocation"
+        android:title="Cercanas" />
+</menu>

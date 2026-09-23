@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">TRANSPUNTANO 2.0</string>
+    <string name="nav_inicio">Inicio</string>
+    <string name="nav_mapa">Mapa</string>
+    <string name="nav_lineas">Líneas</string>
+    <string name="nav_paradas">Paradas</string>
+    <string name="nav_favoritos">Favoritos</string>
+    <string name="offline_title">Sin conexión</string>
+    <string name="offline_msg">No hay conexión a internet.\nRevisa tu red e intenta de nuevo.</string>
+    <string name="retry">Reintentar</string>
+    <string name="loading">Cargando…</string>
+    <string name="error_title">Error de conexión</string>
+    <string name="error_msg">No se pudo cargar la información.\nIntenta nuevamente.</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Transpuntano20" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/cyber_cyan</item>
+        <item name="colorOnPrimary">@color/cyber_bg</item>
+        <item name="colorSecondary">@color/cyber_magenta</item>
+        <item name="colorOnSecondary">@color/cyber_bg</item>
+        <item name="colorSurface">@color/cyber_surface</item>
+        <item name="colorOnSurface">@color/cyber_text</item>
+        <item name="android:statusBarColor">@color/cyber_bg</item>
+        <item name="android:navigationBarColor">@color/cyber_bg</item>
+        <item name="android:windowBackground">@color/cyber_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>
