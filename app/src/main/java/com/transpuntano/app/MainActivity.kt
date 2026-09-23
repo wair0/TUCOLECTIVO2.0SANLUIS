@@ -41,11 +41,11 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
 
-                val cyberpunkJs = """
+                val dashboardCyberJs = """
                     (function() {
-                        if (!document.getElementById('cyber-clean-style')) {
+                        if (!document.getElementById('cyber-dashboard-style')) {
                             var style = document.createElement('style');
-                            style.id = 'cyber-clean-style';
+                            style.id = 'cyber-dashboard-style';
                             style.innerHTML = `
                                 @keyframes cyberFill {
                                     0% { stroke-dashoffset: 201; }
@@ -56,6 +56,53 @@ class MainActivity : AppCompatActivity() {
                                     visibility: hidden !important;
                                     opacity: 0 !important;
                                 }
+
+                                /* Grid de accesos principales en Inicio */
+                                .cyber-dashboard-grid {
+                                    display: grid !important;
+                                    grid-template-columns: repeat(2, 1fr) !important;
+                                    gap: 16px !important;
+                                    padding: 20px 12px !important;
+                                    margin-top: 10px !important;
+                                    width: 100% !important;
+                                    box-sizing: border-box !important;
+                                }
+
+                                .cyber-dash-card {
+                                    background: rgba(13, 14, 21, 0.95) !important;
+                                    border: 1.5px solid #00F0FF !important;
+                                    border-radius: 16px !important;
+                                    padding: 20px 10px !important;
+                                    display: flex !important;
+                                    flex-direction: column !important;
+                                    align-items: center !important;
+                                    justify-content: center !important;
+                                    box-shadow: 0 0 12px rgba(0, 240, 255, 0.25), inset 0 0 10px rgba(0, 240, 255, 0.1) !important;
+                                    cursor: pointer !important;
+                                    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+                                }
+
+                                .cyber-dash-card:active {
+                                    transform: scale(0.96) !important;
+                                    border-color: #FF007F !important;
+                                    box-shadow: 0 0 18px rgba(255, 0, 127, 0.5) !important;
+                                }
+
+                                .cyber-dash-icon {
+                                    font-size: 28px !important;
+                                    margin-bottom: 8px !important;
+                                    filter: drop-shadow(0 0 8px #00F0FF) !important;
+                                }
+
+                                .cyber-dash-title {
+                                    color: #00F0FF !important;
+                                    font-size: 13px !important;
+                                    font-weight: 800 !important;
+                                    letter-spacing: 1.5px !important;
+                                    text-transform: uppercase !important;
+                                    text-shadow: 0 0 8px rgba(0, 240, 255, 0.6) !important;
+                                }
+
                                 .cyber-ring-container {
                                     position: relative !important;
                                     display: inline-flex !important;
@@ -77,8 +124,8 @@ class MainActivity : AppCompatActivity() {
                             (document.head || document.documentElement).appendChild(style);
                         }
 
-                        function cleanAndOptimizeUI() {
-                            // 1. Ocultar insignia flotante Base44
+                        function buildCyberDashboard() {
+                            // 1. Borrar marca Base 44
                             var baseElems = document.querySelectorAll('a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"]');
                             baseElems.forEach(function(el) {
                                 el.style.setProperty('display', 'none', 'important');
@@ -101,30 +148,13 @@ class MainActivity : AppCompatActivity() {
                                 }
                             });
 
-                            // 3. Limpieza exclusiva de la pantalla de Inicio
+                            // 3. Crear Dashboard en Pantalla de Inicio
                             var isInicioPage = Array.from(document.querySelectorAll('div, h1, span')).some(function(el) {
                                 return (el.textContent || '').trim().toUpperCase() === 'TRANSPUNTANO';
                             });
 
                             if (isInicioPage) {
-                                // 3a. Ocultar la barra horizontal de botones duplicados debajo del buscador
-                                var quickBtns = document.querySelectorAll('button, a, div[role="button"]');
-                                quickBtns.forEach(function(btn) {
-                                    var bTxt = (btn.innerText || btn.textContent || '').trim();
-                                    if (['Líneas', 'Paradas', 'Mapa', 'Cercanas', 'Favoritos'].includes(bTxt)) {
-                                        var isBottomBar = btn.closest('nav, footer, [class*="bottom"]');
-                                        if (!isBottomBar) {
-                                            var parentRow = btn.parentElement;
-                                            if (parentRow && parentRow.children.length >= 2) {
-                                                parentRow.style.setProperty('display', 'none', 'important');
-                                            } else {
-                                                btn.style.setProperty('display', 'none', 'important');
-                                            }
-                                        }
-                                    }
-                                });
-
-                                // 3b. Ocultar la sección duplicada de "LÍNEAS / Ver todo >" en Inicio
+                                // Ocultar lista duplicada inferior en Inicio
                                 var sectionHeaders = document.querySelectorAll('div, section, h2, h3, h4');
                                 sectionHeaders.forEach(function(sec) {
                                     var sTxt = (sec.innerText || sec.textContent || '').trim();
@@ -139,9 +169,52 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
                                 });
+
+                                // Buscar la barra de búsqueda para insertar la cuadrícula justo abajo
+                                var searchBar = document.querySelector('input, [class*="search"], [placeholder*="Buscar"]');
+                                if (searchBar) {
+                                    var searchContainer = searchBar.closest('div');
+                                    while (searchContainer && searchContainer.parentElement && searchContainer.parentElement.children.length === 1) {
+                                        searchContainer = searchContainer.parentElement;
+                                    }
+
+                                    if (searchContainer && !document.getElementById('cyber-dashboard-grid')) {
+                                        var grid = document.createElement('div');
+                                        grid.id = 'cyber-dashboard-grid';
+                                        grid.className = 'cyber-dashboard-grid';
+
+                                        var cardsData = [
+                                            { title: 'LÍNEAS', icon: '🚌', target: 'Líneas' },
+                                            { title: 'PARADAS', icon: '🚏', target: 'Paradas' },
+                                            { title: 'MAPA', icon: '🗺️', target: 'Mapa' },
+                                            { title: 'FAVORITOS', icon: '⭐', target: 'Favoritos' }
+                                        ];
+
+                                        cardsData.forEach(function(item) {
+                                            var card = document.createElement('div');
+                                            card.className = 'cyber-dash-card';
+                                            card.innerHTML = '<span class="cyber-dash-icon">' + item.icon + '</span><span class="cyber-dash-title">' + item.title + '</span>';
+                                            
+                                            card.onclick = function() {
+                                                // Simular clic en el menú inferior para cambiar de sección
+                                                var navItems = document.querySelectorAll('nav *, footer *, [class*="bottom"] *');
+                                                navItems.forEach(function(navEl) {
+                                                    var txt = (navEl.innerText || navEl.textContent || '').trim();
+                                                    if (txt.toLowerCase() === item.target.toLowerCase()) {
+                                                        navEl.click();
+                                                    }
+                                                });
+                                            };
+
+                                            grid.appendChild(card);
+                                        });
+
+                                        searchContainer.parentElement.insertBefore(grid, searchContainer.nextSibling);
+                                    }
+                                }
                             }
 
-                            // 4. Anillos Neón en contadores de paradas
+                            // 4. Anillos Neón en paradas
                             var all = document.querySelectorAll('*');
                             all.forEach(function(el) {
                                 var txt = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
@@ -217,16 +290,16 @@ class MainActivity : AppCompatActivity() {
                             });
                         }
 
-                        cleanAndOptimizeUI();
-                        setInterval(cleanAndOptimizeUI, 300);
+                        buildCyberDashboard();
+                        setInterval(buildCyberDashboard, 300);
 
-                        var observer = new MutationObserver(cleanAndOptimizeUI);
+                        var observer = new MutationObserver(buildCyberDashboard);
                         if (document.body) {
                             observer.observe(document.body, { childList: true, subtree: true });
                         }
                     })();
                 """.trimIndent()
-                view?.evaluateJavascript(cyberpunkJs, null)
+                view?.evaluateJavascript(dashboardCyberJs, null)
 
                 if (splashLayout.visibility == View.VISIBLE) {
                     splashLayout.animate()
