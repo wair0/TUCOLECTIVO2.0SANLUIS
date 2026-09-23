@@ -43,9 +43,9 @@ class MainActivity : AppCompatActivity() {
 
                 val cyberpunkJs = """
                     (function() {
-                        if (!document.getElementById('cyber-ring-style')) {
+                        if (!document.getElementById('cyber-clean-style')) {
                             var style = document.createElement('style');
-                            style.id = 'cyber-ring-style';
+                            style.id = 'cyber-clean-style';
                             style.innerHTML = `
                                 @keyframes cyberFill {
                                     0% { stroke-dashoffset: 201; }
@@ -77,12 +77,71 @@ class MainActivity : AppCompatActivity() {
                             (document.head || document.documentElement).appendChild(style);
                         }
 
-                        function adjustAndApplyRings() {
+                        function cleanAndOptimizeUI() {
+                            // 1. Ocultar insignia flotante Base44
                             var baseElems = document.querySelectorAll('a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"]');
                             baseElems.forEach(function(el) {
                                 el.style.setProperty('display', 'none', 'important');
                             });
 
+                            // 2. Corregir subtítulo superior a mayúsculas
+                            var subheaders = document.querySelectorAll('div, p, span, small');
+                            subheaders.forEach(function(el) {
+                                if (el.children.length === 0 && el.textContent) {
+                                    var txt = el.textContent.trim().toLowerCase();
+                                    if (txt.includes('transporte urbano') && txt.includes('tiempo real')) {
+                                        if (el.textContent !== 'TRANSPORTE URBANO DE SAN LUIS EN TIEMPO REAL') {
+                                            el.textContent = 'TRANSPORTE URBANO DE SAN LUIS EN TIEMPO REAL';
+                                            el.style.textTransform = 'uppercase';
+                                            el.style.letterSpacing = '1px';
+                                            el.style.fontSize = '11px';
+                                            el.style.opacity = '0.85';
+                                        }
+                                    }
+                                }
+                            });
+
+                            // 3. Limpieza exclusiva de la pantalla de Inicio
+                            var isInicioPage = Array.from(document.querySelectorAll('div, h1, span')).some(function(el) {
+                                return (el.textContent || '').trim().toUpperCase() === 'TRANSPUNTANO';
+                            });
+
+                            if (isInicioPage) {
+                                // 3a. Ocultar la barra horizontal de botones duplicados debajo del buscador
+                                var quickBtns = document.querySelectorAll('button, a, div[role="button"]');
+                                quickBtns.forEach(function(btn) {
+                                    var bTxt = (btn.innerText || btn.textContent || '').trim();
+                                    if (['Líneas', 'Paradas', 'Mapa', 'Cercanas', 'Favoritos'].includes(bTxt)) {
+                                        var isBottomBar = btn.closest('nav, footer, [class*="bottom"]');
+                                        if (!isBottomBar) {
+                                            var parentRow = btn.parentElement;
+                                            if (parentRow && parentRow.children.length >= 2) {
+                                                parentRow.style.setProperty('display', 'none', 'important');
+                                            } else {
+                                                btn.style.setProperty('display', 'none', 'important');
+                                            }
+                                        }
+                                    }
+                                });
+
+                                // 3b. Ocultar la sección duplicada de "LÍNEAS / Ver todo >" en Inicio
+                                var sectionHeaders = document.querySelectorAll('div, section, h2, h3, h4');
+                                sectionHeaders.forEach(function(sec) {
+                                    var sTxt = (sec.innerText || sec.textContent || '').trim();
+                                    if (sTxt.includes('LÍNEAS') && sTxt.includes('Ver todo')) {
+                                        var isBottomNav = sec.closest('nav, footer, [class*="bottom"]');
+                                        if (!isBottomNav) {
+                                            sec.style.setProperty('display', 'none', 'important');
+                                            var mainContainer = sec.parentElement;
+                                            if (mainContainer && mainContainer !== document.body) {
+                                                mainContainer.style.setProperty('display', 'none', 'important');
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
+                            // 4. Anillos Neón en contadores de paradas
                             var all = document.querySelectorAll('*');
                             all.forEach(function(el) {
                                 var txt = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
@@ -100,7 +159,6 @@ class MainActivity : AppCompatActivity() {
                                             el.classList.add('cyber-ring-container');
                                         }
 
-                                        // Redimensionar tipografía interna para que no sobresalga del anillo
                                         var innerElems = el.querySelectorAll('*');
                                         innerElems.forEach(function(child) {
                                             var cTxt = (child.innerText || child.textContent || '').trim();
@@ -159,10 +217,10 @@ class MainActivity : AppCompatActivity() {
                             });
                         }
 
-                        adjustAndApplyRings();
-                        setInterval(adjustAndApplyRings, 300);
+                        cleanAndOptimizeUI();
+                        setInterval(cleanAndOptimizeUI, 300);
 
-                        var observer = new MutationObserver(adjustAndApplyRings);
+                        var observer = new MutationObserver(cleanAndOptimizeUI);
                         if (document.body) {
                             observer.observe(document.body, { childList: true, subtree: true });
                         }
