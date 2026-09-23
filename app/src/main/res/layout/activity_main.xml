@@ -4,9 +4,66 @@
     android:layout_height="match_parent"
     android:background="#0D0E15">
 
+    <!-- WebView oculto inicialmente mientras carga -->
     <WebView
         android:id="@+id/webView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Pantalla de carga Cyberpunk Overlay -->
+    <RelativeLayout
+        android:id="@+id/splashLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#0D0E15"
+        android:gravity="center">
+
+        <!-- Círculo animado de carga neón -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:layout_centerInParent="true"
+            android:indeterminateTint="#00F0FF" />
+
+        <!-- Título estilo Cyberpunk Neón -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TRANSPUNTANO"
+                android:textColor="#00F0FF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:shadowColor="#00F0FF"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="10" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2.0"
+                android:textColor="#FFFFFF"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.2"
+                android:shadowColor="#00F0FF"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="14" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
 
 </RelativeLayout>

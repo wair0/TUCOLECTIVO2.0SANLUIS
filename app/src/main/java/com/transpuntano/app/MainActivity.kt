@@ -1,20 +1,24 @@
 package com.transpuntano.app
 
 import android.os.Bundle
+import android.view.View
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var splashLayout: RelativeLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
+        splashLayout = findViewById(R.id.splashLayout)
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -36,11 +40,10 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                
-                // Inyección agresiva y continua para eliminar la insignia de Base 44
+
+                // 1. Eliminar insignia flotante de Base 44
                 val hideBadgeJs = """
                     (function() {
-                        // 1. Regla CSS global para ocultar contenedores flotantes sospechosos
                         var style = document.createElement('style');
                         style.innerHTML = `
                             a[href*="base44"],
@@ -54,13 +57,11 @@ class MainActivity : AppCompatActivity() {
                         `;
                         (document.head || document.documentElement).appendChild(style);
 
-                        // 2. Función para rastrear y ocultar el elemento exacto por texto
                         function removeBase44Badge() {
                             var elements = document.querySelectorAll('div, a, span, p, button');
                             elements.forEach(function(el) {
                                 if (el.textContent && el.textContent.includes('Edit with Base 44')) {
                                     var target = el;
-                                    // Buscar el contenedor flotante principal
                                     while (target.parentElement && target.parentElement !== document.body) {
                                         var stylePos = window.getComputedStyle(target).position;
                                         if (stylePos === 'fixed' || stylePos === 'absolute') {
@@ -74,7 +75,6 @@ class MainActivity : AppCompatActivity() {
                             });
                         }
 
-                        // 3. Ejecución inicial, continua y mediante observador
                         removeBase44Badge();
                         setInterval(removeBase44Badge, 300);
 
@@ -85,6 +85,17 @@ class MainActivity : AppCompatActivity() {
                     })();
                 """.trimIndent()
                 view?.evaluateJavascript(hideBadgeJs, null)
+
+                // 2. Ocultar pantalla de carga con transición de desvanecido
+                if (splashLayout.visibility == View.VISIBLE) {
+                    splashLayout.animate()
+                        .alpha(0f)
+                        .setDuration(400)
+                        .withEndAction {
+                            splashLayout.visibility = View.GONE
+                            webView.visibility = View.VISIBLE
+                        }
+                }
             }
         }
 
