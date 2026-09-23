@@ -36,7 +36,6 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                // Remueve automáticamente la insignia de Base 44 al cargar
                 val hideBadgeJs = """
                     (function() {
                         function removeBadge() {
