@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                // JavaScript para ocultar automáticamente el cartel flotante de Base 44
+                // Remueve automáticamente la insignia de Base 44 al cargar
                 val hideBadgeJs = """
                     (function() {
                         function removeBadge() {
@@ -61,9 +61,9 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("https://trans-puntano-go.base44.app/")
     }
 
-    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
     override fun onBackPressed() {
-        if (webView.canGoBack()) {
+        if (::webView.isInitialized && webView.canGoBack()) {
             webView.goBack()
         } else {
             super.onBackPressed()
