@@ -36,21 +36,52 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                
+                // Inyección agresiva y continua para eliminar la insignia de Base 44
                 val hideBadgeJs = """
                     (function() {
-                        function removeBadge() {
-                            var elems = document.querySelectorAll('*');
-                            for (var i = 0; i < elems.length; i++) {
-                                var el = elems[i];
-                                if (el.innerText && el.innerText.includes('Edit with Base 44')) {
-                                    el.style.setProperty('display', 'none', 'important');
-                                }
+                        // 1. Regla CSS global para ocultar contenedores flotantes sospechosos
+                        var style = document.createElement('style');
+                        style.innerHTML = `
+                            a[href*="base44"],
+                            [class*="base44"],
+                            div[style*="fixed"][style*="bottom"] {
+                                display: none !important;
+                                visibility: hidden !important;
+                                opacity: 0 !important;
+                                pointer-events: none !important;
                             }
+                        `;
+                        (document.head || document.documentElement).appendChild(style);
+
+                        // 2. Función para rastrear y ocultar el elemento exacto por texto
+                        function removeBase44Badge() {
+                            var elements = document.querySelectorAll('div, a, span, p, button');
+                            elements.forEach(function(el) {
+                                if (el.textContent && el.textContent.includes('Edit with Base 44')) {
+                                    var target = el;
+                                    // Buscar el contenedor flotante principal
+                                    while (target.parentElement && target.parentElement !== document.body) {
+                                        var stylePos = window.getComputedStyle(target).position;
+                                        if (stylePos === 'fixed' || stylePos === 'absolute') {
+                                            break;
+                                        }
+                                        target = target.parentElement;
+                                    }
+                                    target.style.setProperty('display', 'none', 'important');
+                                    target.style.setProperty('visibility', 'hidden', 'important');
+                                }
+                            });
                         }
-                        removeBadge();
-                        setTimeout(removeBadge, 500);
-                        setTimeout(removeBadge, 1500);
-                        setTimeout(removeBadge, 3000);
+
+                        // 3. Ejecución inicial, continua y mediante observador
+                        removeBase44Badge();
+                        setInterval(removeBase44Badge, 300);
+
+                        var observer = new MutationObserver(removeBase44Badge);
+                        if (document.body) {
+                            observer.observe(document.body, { childList: true, subtree: true });
+                        }
                     })();
                 """.trimIndent()
                 view?.evaluateJavascript(hideBadgeJs, null)
