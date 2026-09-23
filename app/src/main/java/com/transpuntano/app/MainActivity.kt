@@ -41,136 +41,82 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
 
-                val cyberpunkJs = """
+                // Inyección segura: CSS puro para el anillo Neón sin destruir el DOM
+                val safeCyberJs = """
                     (function() {
-                        if (!document.getElementById('cyber-style')) {
-                            var style = document.createElement('style');
-                            style.id = 'cyber-style';
-                            style.innerHTML = `
-                                a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"] {
-                                    display: none !important;
-                                    visibility: hidden !important;
-                                    opacity: 0 !important;
-                                }
+                        if (document.getElementById('cyber-safe-style')) return;
 
-                                .cyber-timer-box {
-                                    position: relative;
-                                    width: 68px;
-                                    height: 68px;
-                                    display: inline-flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    margin: 0 auto;
-                                }
-                                .cyber-timer-svg {
-                                    width: 68px;
-                                    height: 68px;
-                                    transform: rotate(-90deg);
-                                    overflow: visible;
-                                }
-                                .cyber-ring-bg {
-                                    fill: none;
-                                    stroke: rgba(0, 240, 255, 0.15);
-                                    stroke-width: 4;
-                                }
-                                .cyber-ring-progress {
-                                    fill: none;
-                                    stroke: #00F0FF;
-                                    stroke-width: 4;
-                                    stroke-linecap: round;
-                                    stroke-dasharray: 170;
-                                    stroke-dashoffset: 170;
-                                    filter: drop-shadow(0 0 8px #00F0FF);
-                                    animation: cyberRingFill 60s linear infinite;
-                                }
-                                @keyframes cyberRingFill {
-                                    0% { stroke-dashoffset: 170; }
-                                    100% { stroke-dashoffset: 0; }
-                                }
-                                .cyber-timer-text {
-                                    position: absolute;
-                                    top: 0; left: 0; right: 0; bottom: 0;
-                                    display: flex;
-                                    flex-direction: column;
-                                    align-items: center;
-                                    justify-content: center;
-                                    color: #00F0FF;
-                                    text-shadow: 0 0 10px rgba(0, 240, 255, 0.9);
-                                    pointer-events: none;
-                                }
-                                .cyber-timer-num {
-                                    font-size: 22px;
-                                    font-weight: 900;
-                                    line-height: 1;
-                                    font-family: monospace, sans-serif;
-                                }
-                                .cyber-timer-unit {
-                                    font-size: 9px;
-                                    font-weight: bold;
-                                    letter-spacing: 1px;
-                                    margin-top: 2px;
-                                    color: #80f8ff;
-                                }
-                            `;
-                            (document.head || document.documentElement).appendChild(style);
-                        }
+                        var style = document.createElement('style');
+                        style.id = 'cyber-safe-style';
+                        style.innerHTML = `
+                            /* Ocultar insignia Base44 */
+                            a[href*="base44"], [class*="base44"], div[style*="fixed"][style*="bottom"] {
+                                display: none !important;
+                                visibility: hidden !important;
+                                opacity: 0 !important;
+                                pointer-events: none !important;
+                            }
 
-                        function transformArrivalTimes() {
-                            var baseElems = document.querySelectorAll('div, a, span, p, button');
-                            baseElems.forEach(function(el) {
-                                if (el.textContent && el.textContent.includes('Edit with Base 44')) {
-                                    var target = el;
-                                    while (target.parentElement && target.parentElement !== document.body) {
-                                        var stylePos = window.getComputedStyle(target).position;
-                                        if (stylePos === 'fixed' || stylePos === 'absolute') break;
-                                        target = target.parentElement;
-                                    }
-                                    target.style.setProperty('display', 'none', 'important');
-                                }
-                            });
+                            /* Círculo Neón Cyberpunk sobre los contadores */
+                            .cyber-neon-ring {
+                                position: relative !important;
+                                display: inline-flex !important;
+                                flex-direction: column !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                width: 68px !important;
+                                height: 68px !important;
+                                min-width: 68px !important;
+                                min-height: 68px !important;
+                                border-radius: 50% !important;
+                                background: rgba(13, 14, 21, 0.85) !important;
+                                border: 2px solid rgba(0, 240, 255, 0.25) !important;
+                                box-shadow: 0 0 12px rgba(0, 240, 255, 0.35), inset 0 0 8px rgba(0, 240, 255, 0.15) !important;
+                                box-sizing: border-box !important;
+                                margin: 4px auto !important;
+                            }
 
-                            var allNodes = document.querySelectorAll('div, span, p');
-                            allNodes.forEach(function(el) {
-                                if (el.dataset.cyberTransformed) return;
+                            /* Anillo Neón giratorio resplandeciente */
+                            .cyber-neon-ring::before {
+                                content: '' !important;
+                                position: absolute !important;
+                                top: -4px !important;
+                                left: -4px !important;
+                                right: -4px !important;
+                                bottom: -4px !important;
+                                border-radius: 50% !important;
+                                border: 3px solid transparent !important;
+                                border-top-color: #00F0FF !important;
+                                border-right-color: #00F0FF !important;
+                                filter: drop-shadow(0 0 6px #00F0FF) !important;
+                                animation: cyberSpin 2s linear infinite !important;
+                            }
 
-                                var text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+                            @keyframes cyberSpin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        `;
+                        (document.head || document.documentElement).appendChild(style);
 
-                                if (/^\d+\s*MIN$/i.test(text)) {
-                                    var match = text.match(/\d+/);
-                                    if (match) {
-                                        var num = match[0];
-                                        el.dataset.cyberTransformed = "true";
-                                        el.style.background = "transparent";
-                                        el.style.border = "none";
-                                        el.style.display = "inline-flex";
-                                        el.style.justifyContent = "center";
-                                        el.style.alignItems = "center";
-
-                                        el.innerHTML = '<div class="cyber-timer-box">' +
-                                            '<svg class="cyber-timer-svg" viewBox="0 0 70 70">' +
-                                                '<circle class="cyber-ring-bg" cx="35" cy="35" r="27"/>' +
-                                                '<circle class="cyber-ring-progress" cx="35" cy="35" r="27"/>' +
-                                            '</svg>' +
-                                            '<div class="cyber-timer-text">' +
-                                                '<span class="cyber-timer-num">' + num + '</span>' +
-                                                '<span class="cyber-timer-unit">MIN</span>' +
-                                            '</div>' +
-                                        '</div>';
+                        // Asignación de clase sin modificar texto ni borrar componentes
+                        function styleCounters() {
+                            var elems = document.querySelectorAll('div, span, p');
+                            elems.forEach(function(el) {
+                                if (el.children.length === 0 && (el.textContent || '').trim() === 'MIN') {
+                                    var parent = el.parentElement;
+                                    if (parent && !parent.classList.contains('cyber-neon-ring')) {
+                                        parent.classList.add('cyber-neon-ring');
                                     }
                                 }
                             });
                         }
 
-                        transformArrivalTimes();
-                        setInterval(transformArrivalTimes, 300);
-
-                        var observer = new MutationObserver(transformArrivalTimes);
-                        if (document.body) {
-                            observer.observe(document.body, { childList: true, subtree: true });
-                        }
+                        styleCounters();
+                        setInterval(styleCounters, 400);
                     })();
                 """.trimIndent()
-                view?.evaluateJavascript(cyberpunkJs, null)
+                view?.evaluateJavascript(safeCyberJs, null)
 
                 if (splashLayout.visibility == View.VISIBLE) {
                     splashLayout.animate()
