@@ -120,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         box.addView(panel("NÚCLEO NATIVO", "Interfaz propia. Líneas, paradas, arribos, GPS, favoritos y recorridos."))
         box.addView(button("SINCRONIZAR LÍNEAS", cyan) { loadLines() })
         content.addView(ScrollView(this).apply { addView(box) })
+        loadLines()
     }
 
     private fun loadLines() {
