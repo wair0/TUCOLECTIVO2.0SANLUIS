@@ -55,27 +55,26 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 hideSplash()
 
-                val failproofCyberJs = """
+                val ultimateJs = """
                     (function() {
                         try {
-                            if (!document.getElementById('cyber-failproof-style')) {
+                            if (!document.getElementById('cyber-ultimate-style')) {
                                 var style = document.createElement('style');
-                                style.id = 'cyber-failproof-style';
+                                style.id = 'cyber-ultimate-style';
                                 style.innerHTML = `
                                     @keyframes cyberFill {
                                         0% { stroke-dashoffset: 201; }
                                         100% { stroke-dashoffset: 0; }
                                     }
 
-                                    /* Ocultar Base 44 via CSS puro */
-                                    a[href*="base44"], [class*="base44"], [id*="base44"], iframe[src*="base44"] {
+                                    /* Ocultar marca Base 44 */
+                                    a[href*="base44"], [class*="base44"], [id*="base44"] {
                                         display: none !important;
                                         visibility: hidden !important;
                                         opacity: 0 !important;
-                                        pointer-events: none !important;
                                     }
 
-                                    /* Estilos para anillo Neón en paradas */
+                                    /* Anillo Neón para contadores */
                                     .cyber-ring-container {
                                         position: relative !important;
                                         display: inline-flex !important;
@@ -93,26 +92,57 @@ class MainActivity : AppCompatActivity() {
                                         box-sizing: border-box !important;
                                         padding: 2px !important;
                                     }
+
+                                    /* Estilos de la Cuadrícula 2x2 en Inicio */
+                                    .cyber-grid-mode {
+                                        display: grid !important;
+                                        grid-template-columns: repeat(2, 1fr) !important;
+                                        gap: 14px !important;
+                                        padding: 16px 8px !important;
+                                        margin-top: 15px !important;
+                                        width: 100% !important;
+                                        box-sizing: border-box !important;
+                                    }
+
+                                    .cyber-grid-mode > * {
+                                        display: flex !important;
+                                        flex-direction: column !important;
+                                        align-items: center !important;
+                                        justify-content: center !important;
+                                        min-height: 75px !important;
+                                        background: rgba(13, 14, 21, 0.95) !important;
+                                        border: 1.5px solid #00F0FF !important;
+                                        border-radius: 14px !important;
+                                        color: #00F0FF !important;
+                                        font-weight: 800 !important;
+                                        font-size: 13px !important;
+                                        letter-spacing: 1px !important;
+                                        text-transform: uppercase !important;
+                                        box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+                                    }
+
+                                    /* Ocultar sección de líneas en inicio */
+                                    .cyber-hide-home-lines {
+                                        display: none !important;
+                                    }
                                 `;
                                 (document.head || document.documentElement).appendChild(style);
                             }
 
-                            function applyNonDestructiveCustomizations() {
+                            function applyCustomizations() {
                                 try {
-                                    // 1. Ocultar elemento flotante de Base 44 aisladamente
-                                    var baseBadges = document.querySelectorAll('a, button, div');
-                                    baseBadges.forEach(function(el) {
-                                        if (el.children.length === 0 && el.textContent && el.textContent.includes('Base 44')) {
+                                    // 1. Ocultar Base 44
+                                    var baseElems = document.querySelectorAll('a, button, div');
+                                    baseElems.forEach(function(el) {
+                                        if (el.children.length === 0 && el.textContent && el.textContent.includes('Edit with Base 44')) {
                                             var box = el.closest('div[style*="fixed"], div[style*="absolute"], a, button');
-                                            if (box && box !== document.body && box !== document.documentElement) {
+                                            if (box && box !== document.body) {
                                                 box.style.setProperty('display', 'none', 'important');
-                                            } else {
-                                                el.style.setProperty('display', 'none', 'important');
                                             }
                                         }
                                     });
 
-                                    // 2. Mayúsculas en subtítulo superior
+                                    // 2. Mayúsculas en el subtítulo superior
                                     var subheaders = document.querySelectorAll('p, span, small, div');
                                     subheaders.forEach(function(el) {
                                         if (el.children.length === 0 && el.textContent) {
@@ -129,47 +159,47 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     });
 
-                                    // 3. Reestructurar accesos de la barra del medio en Grid 2x2 Cyberpunk
-                                    var chips = document.querySelectorAll('button, a, div[role="button"]');
-                                    chips.forEach(function(btn) {
-                                        var t = (btn.innerText || btn.textContent || '').trim();
-                                        if (['Líneas', 'Paradas', 'Mapa', 'Cercanas', 'Favoritos'].indexOf(t) !== -1) {
-                                            if (!btn.closest('nav') && !btn.closest('footer')) {
-                                                var parent = btn.parentElement;
-                                                if (parent && parent.children.length >= 3) {
-                                                    parent.style.setProperty('display', 'grid', 'important');
-                                                    parent.style.setProperty('grid-template-columns', 'repeat(2, 1fr)', 'important');
-                                                    parent.style.setProperty('gap', '12px', 'important');
-                                                    parent.style.setProperty('padding', '12px 6px', 'important');
-                                                    parent.style.setProperty('overflow', 'visible', 'important');
-                                                }
-
-                                                btn.style.setProperty('display', 'flex', 'important');
-                                                btn.style.setProperty('flex-direction', 'column', 'important');
-                                                btn.style.setProperty('align-items', 'center', 'important');
-                                                btn.style.setProperty('justify-content', 'center', 'important');
-                                                btn.style.setProperty('min-height', '68px', 'important');
-                                                btn.style.setProperty('background', 'rgba(13, 14, 21, 0.95)', 'important');
-                                                btn.style.setProperty('border', '1.5px solid #00F0FF', 'important');
-                                                btn.style.setProperty('border-radius', '14px', 'important');
-                                                btn.style.setProperty('color', '#00F0FF', 'important');
-                                                btn.style.setProperty('font-weight', 'bold', 'important');
-                                                btn.style.setProperty('box-shadow', '0 0 10px rgba(0, 240, 255, 0.25)', 'important');
-                                                btn.style.setProperty('text-transform', 'uppercase', 'important');
-                                                btn.style.setProperty('letter-spacing', '1px', 'important');
-                                                btn.style.setProperty('font-size', '13px', 'important');
-                                            }
-                                        }
+                                    // 3. Transformación de pantalla de Inicio
+                                    var isInicio = Array.from(document.querySelectorAll('div, h1, span')).some(function(el) {
+                                        return (el.textContent || '').trim().toUpperCase() === 'TRANSPUNTANO';
                                     });
 
-                                    // 4. Anillos Neón en contadores de minutos
-                                    var minRegex = new RegExp('^\\\\d+\\\\s*MIN', 'i');
+                                    if (isInicio) {
+                                        // Ocultar bloque de lista de líneas en inicio sin destruir el DOM
+                                        var allDivs = document.querySelectorAll('div, section');
+                                        allDivs.forEach(function(d) {
+                                            if (!d.closest('nav') && !d.closest('footer')) {
+                                                var t = (d.innerText || d.textContent || '').trim();
+                                                if (t.startsWith('LÍNEAS') && t.includes('Ver todo') && t.includes('LINEA')) {
+                                                    d.classList.add('cyber-hide-home-lines');
+                                                }
+                                            }
+                                        });
+
+                                        // Convertir barra del medio en Cuadrícula 2x2
+                                        var chips = document.querySelectorAll('button, a, div[role="button"]');
+                                        chips.forEach(function(btn) {
+                                            var t = (btn.innerText || btn.textContent || '').trim();
+                                            if (['Líneas', 'Paradas', 'Mapa', 'Cercanas'].indexOf(t) !== -1) {
+                                                if (!btn.closest('nav') && !btn.closest('footer')) {
+                                                    var parent = btn.parentElement;
+                                                    if (parent && parent.children.length >= 3) {
+                                                        if (!parent.classList.contains('cyber-grid-mode')) {
+                                                            parent.classList.add('cyber-grid-mode');
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    }
+
+                                    // 4. Anillo Neón en contadores de tiempo
                                     var allNodes = document.querySelectorAll('div, span, p');
                                     allNodes.forEach(function(el) {
                                         var txt = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
-                                        if (minRegex.test(txt)) {
+                                        if (/^\d+\s*MIN$/i.test(txt)) {
                                             var hasMatchingChild = Array.from(el.children).some(function(child) {
-                                                return minRegex.test((child.innerText || child.textContent || '').trim().replace(/\s+/g, ' '));
+                                                return /^\d+\s*MIN$/i.test((child.innerText || child.textContent || '').trim().replace(/\s+/g, ' '));
                                             });
 
                                             if (!hasMatchingChild) {
@@ -238,20 +268,20 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     });
 
-                                } catch(err) {
-                                    console.error('Cyber err:', err);
+                                } catch(e) {
+                                    console.error('Customization error:', e);
                                 }
                             }
 
-                            applyNonDestructiveCustomizations();
-                            setInterval(applyNonDestructiveCustomizations, 400);
+                            applyCustomizations();
+                            setInterval(applyCustomizations, 300);
 
-                        } catch(e) {
-                            console.error('Cyber init err:', e);
+                        } catch(err) {
+                            console.error('Init error:', err);
                         }
                     })();
                 """.trimIndent()
-                view?.evaluateJavascript(failproofCyberJs, null)
+                view?.evaluateJavascript(ultimateJs, null)
             }
         }
 
