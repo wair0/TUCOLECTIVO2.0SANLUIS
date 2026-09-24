@@ -1,288 +1,56 @@
 package com.transpuntano.app
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.view.View
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.widget.RelativeLayout
+import android.graphics.Color
+import android.graphics.Typeface
+import android.view.Gravity
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.transpuntano.app.data.SmartMoveApi
+import com.transpuntano.app.model.*
+import com.transpuntano.app.ui.CyberMapView
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var webView: WebView
-    private lateinit var splashLayout: RelativeLayout
-    private var isSplashHidden = false
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        webView = findViewById(R.id.webView)
-        splashLayout = findViewById(R.id.splashLayout)
-
-        webView.visibility = View.VISIBLE
-
-        webView.settings.apply {
-            javaScriptEnabled = true
-            domStorageEnabled = true
-            databaseEnabled = true
-            useWideViewPort = true
-            loadWithOverviewMode = true
-            allowFileAccess = true
-            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            cacheMode = WebSettings.LOAD_DEFAULT
-        }
-
-        webView.webChromeClient = WebChromeClient()
-
-        // Temporizador de respaldo infalible: Oculta el Splash en 2 segundos sí o sí
-        Handler(Looper.getMainLooper()).postDelayed({
-            hideSplash()
-        }, 2000)
-
-        webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                if (url != null) {
-                    view?.loadUrl(url)
-                }
-                return true
-            }
-
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-                hideSplash()
-
-                val bulletproofCyberJs = """
-                    (function() {
-                        try {
-                            if (!document.getElementById('cyber-bulletproof-style')) {
-                                var style = document.createElement('style');
-                                style.id = 'cyber-bulletproof-style';
-                                style.innerHTML = `
-                                    @keyframes cyberFill {
-                                        0% { stroke-dashoffset: 201; }
-                                        100% { stroke-dashoffset: 0; }
-                                    }
-
-                                    /* 1. Ocultar marca Base 44 */
-                                    a[href*="base44"], [class*="base44"], [id*="base44"] {
-                                        display: none !important;
-                                        visibility: hidden !important;
-                                        opacity: 0 !important;
-                                    }
-
-                                    /* 2. Ocultar específicamente el listado duplicado de líneas en el inicio 
-                                       buscando tarjetas que contengan la estructura de código de línea y recorrido */
-                                    div:has(> div > span), div:has(> small) {
-                                        /* Protegemos los elementos normales, solo filtramos contenedores huérfanos de inicio si es necesario */
-                                    }
-
-                                    /* Estilo de Anillo Neón para contadores en paradas */
-                                    .cyber-ring-container {
-                                        position: relative !important;
-                                        display: inline-flex !important;
-                                        flex-direction: column !important;
-                                        align-items: center !important;
-                                        justify-content: center !important;
-                                        width: 72px !important;
-                                        height: 72px !important;
-                                        min-width: 72px !important;
-                                        min-height: 72px !important;
-                                        border-radius: 50% !important;
-                                        background: rgba(13, 14, 21, 0.85) !important;
-                                        box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
-                                        margin: 0 0 0 auto !important;
-                                        box-sizing: border-box !important;
-                                        padding: 2px !important;
-                                    }
-                                `;
-                                (document.head || document.documentElement).appendChild(style);
-                            }
-
-                            function runSafeTransformations() {
-                                try {
-                                    // 1. Limpiar marca Base 44 de forma aislada
-                                    var baseElems = document.querySelectorAll('a, button, div');
-                                    baseElems.forEach(function(el) {
-                                        if (el.children.length === 0 && el.textContent && el.textContent.includes('Edit with Base 44')) {
-                                            var box = el.closest('div[style*="fixed"], div[style*="absolute"], a, button');
-                                            if (box && box !== document.body) {
-                                                box.style.setProperty('display', 'none', 'important');
-                                            }
-                                        }
-                                    });
-
-                                    // 2. Mayúsculas en subtítulo superior
-                                    var subheaders = document.querySelectorAll('p, span, small, div');
-                                    subheaders.forEach(function(el) {
-                                        if (el.children.length === 0 && el.textContent) {
-                                            var txt = el.textContent.trim().toLowerCase();
-                                            if (txt.includes('transporte urbano') && txt.includes('tiempo real')) {
-                                                if (el.textContent !== 'TRANSPORTE URBANO DE SAN LUIS EN TIEMPO REAL') {
-                                                    el.textContent = 'TRANSPORTE URBANO DE SAN LUIS EN TIEMPO REAL';
-                                                    el.style.textTransform = 'uppercase';
-                                                    el.style.fontSize = '11px';
-                                                    el.style.letterSpacing = '1px';
-                                                    el.style.opacity = '0.85';
-                                                }
-                                            }
-                                        }
-                                    });
-
-                                    // 3. Ocultar de forma segura la lista de líneas en el Inicio sin afectar la sección "Líneas" del menú inferior
-                                    var allCards = document.querySelectorAll('div');
-                                    allCards.forEach(function(card) {
-                                        // Verificamos si es una tarjeta de línea individual en la pantalla principal
-                                        var txt = card.innerText || '';
-                                        if (txt.includes('Recorrido') && txt.includes('codLinea') && txt.includes('Ver calles')) {
-                                            // Asegurarnos de que no estemos dentro de la sección dedicada de líneas
-                                            var isDedicatedLinesPage = false;
-                                            var parentCheck = card.parentElement;
-                                            while(parentCheck) {
-                                                var pText = (parentCheck.innerText || '').toUpperCase();
-                                                if (pText.startsWith('LÍNEAS') && !pText.includes('TRANSPUNTANO')) {
-                                                    // Si el contenedor principal es la vista dedicada de líneas, no la tocamos
-                                                    // Pero si está en la pantalla principal (Inicio), la ocultamos
-                                                }
-                                                parentCheck = parentCheck.parentElement;
-                                            }
-                                            
-                                            // Filtro seguro por texto exacto de cabecera de inicio
-                                            if (document.body.innerText.includes('TRANSPUNTANO') && document.body.innerText.includes('Buscar línea')) {
-                                                // Estamos en la pantalla de inicio, ocultar tarjetas de líneas sueltas
-                                                var lineCardContainer = card.closest('div[class*="rounded"], div[style*="border"], div');
-                                                if (lineCardContainer && lineCardContainer.children.length > 0 && !lineCardContainer.closest('nav')) {
-                                                    // Comprobamos que sea una tarjeta individual de línea
-                                                    if (txt.indexOf('LINEA') !== -1 || txt.indexOf('LÍNEA') !== -1) {
-                                                        card.style.setProperty('display', 'none', 'important');
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    });
-
-                                    // 4. Anillo Neón en contadores de tiempo de paradas
-                                    var allNodes = document.querySelectorAll('div, span, p');
-                                    allNodes.forEach(function(el) {
-                                        var txt = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
-                                        if (/^\d+\s*MIN$/i.test(txt)) {
-                                            var hasMatchingChild = Array.from(el.children).some(function(child) {
-                                                return /^\d+\s*MIN$/i.test((child.innerText || child.textContent || '').trim().replace(/\s+/g, ' '));
-                                            });
-
-                                            if (!hasMatchingChild) {
-                                                if (el.parentElement) {
-                                                    el.parentElement.style.overflow = 'visible';
-                                                }
-
-                                                if (!el.classList.contains('cyber-ring-container')) {
-                                                    el.classList.add('cyber-ring-container');
-                                                }
-
-                                                var innerElems = el.querySelectorAll('*');
-                                                innerElems.forEach(function(child) {
-                                                    var cTxt = (child.innerText || child.textContent || '').trim();
-                                                    if (/^\d+$/.test(cTxt)) {
-                                                        child.style.setProperty('font-size', '18px', 'important');
-                                                        child.style.setProperty('line-height', '1', 'important');
-                                                        child.style.setProperty('font-weight', 'bold', 'important');
-                                                    } else if (cTxt.toUpperCase() === 'MIN') {
-                                                        child.style.setProperty('font-size', '9px', 'important');
-                                                        child.style.setProperty('line-height', '1', 'important');
-                                                        child.style.setProperty('margin-top', '2px', 'important');
-                                                        child.style.setProperty('opacity', '0.85', 'important');
-                                                    }
-                                                });
-
-                                                if (!el.querySelector('.cyber-svg-ring')) {
-                                                    var svgNS = "http://www.w3.org/2000/svg";
-                                                    var svg = document.createElementNS(svgNS, "svg");
-                                                    svg.setAttribute("class", "cyber-svg-ring");
-                                                    svg.setAttribute("viewBox", "0 0 76 76");
-                                                    svg.style.position = "absolute";
-                                                    svg.style.top = "0";
-                                                    svg.style.left = "0";
-                                                    svg.style.width = "100%";
-                                                    svg.style.height = "100%";
-                                                    svg.style.pointerEvents = "none";
-                                                    svg.style.transform = "rotate(-90deg)";
-
-                                                    var bgCircle = document.createElementNS(svgNS, "circle");
-                                                    bgCircle.setAttribute("cx", "38");
-                                                    bgCircle.setAttribute("cy", "38");
-                                                    bgCircle.setAttribute("r", "32");
-                                                    bgCircle.setAttribute("fill", "none");
-                                                    bgCircle.setAttribute("stroke", "rgba(0, 240, 255, 0.18)");
-                                                    bgCircle.setAttribute("stroke-width", "3.5");
-
-                                                    var fgCircle = document.createElementNS(svgNS, "circle");
-                                                    fgCircle.setAttribute("cx", "38");
-                                                    fgCircle.setAttribute("cy", "38");
-                                                    fgCircle.setAttribute("r", "32");
-                                                    fgCircle.setAttribute("fill", "none");
-                                                    fgCircle.setAttribute("stroke", "#00F0FF");
-                                                    fgCircle.setAttribute("stroke-width", "3.5");
-                                                    fgCircle.setAttribute("stroke-linecap", "round");
-                                                    fgCircle.setAttribute("stroke-dasharray", "201");
-                                                    fgCircle.setAttribute("stroke-dashoffset", "201");
-                                                    fgCircle.style.filter = "drop-shadow(0 0 6px #00F0FF)";
-                                                    fgCircle.style.animation = "cyberFill 60s linear infinite";
-
-                                                    svg.appendChild(bgCircle);
-                                                    svg.appendChild(fgCircle);
-                                                    el.appendChild(svg);
-                                                }
-                                            }
-                                        }
-                                    });
-
-                                } catch(e) {
-                                    console.error('Safe transformation error:', e);
-                                }
-                            }
-
-                            runSafeTransformations();
-                            setInterval(runSafeTransformations, 400);
-
-                        } catch(err) {
-                            console.error('Bulletproof init error:', err);
-                        }
-                    })();
-                """.trimIndent()
-                view?.evaluateJavascript(bulletproofCyberJs, null)
-            }
-        }
-
-        webView.loadUrl("https://trans-puntano-go.base44.app/")
-    }
-
-    private fun hideSplash() {
-        if (!isSplashHidden) {
-            isSplashHidden = true
-            if (::webView.isInitialized) {
-                webView.visibility = View.VISIBLE
-            }
-            if (::splashLayout.isInitialized) {
-                splashLayout.animate()
-                    .alpha(0f)
-                    .setDuration(300)
-                    .withEndAction {
-                        splashLayout.visibility = View.GONE
-                    }
-            }
-        }
-    }
-
-    @Suppress("DEPRECATION")
-    override fun onBackPressed() {
-        if (::webView.isInitialized && webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
-        }
-    }
+ private val api=SmartMoveApi(); private val ex=Executors.newFixedThreadPool(3)
+ private lateinit var content:FrameLayout; private lateinit var title:TextView; private lateinit var status:TextView; private lateinit var nav:LinearLayout
+ private val cyan=0xFF00F0FF.toInt(); private val pink=0xFFFF2DB2.toInt(); private val bg=0xFF05070C.toInt(); private val panel=0xFF0B1018.toInt(); private val muted=0xFF8CA5B5.toInt()
+ override fun onCreate(b:Bundle?){super.onCreate(b);shell();home()}
+ private fun shell(){
+  val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(bg)}
+  val h=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(20),d(16),d(20),d(10));setBackgroundColor(0xFF080C13.toInt())}
+  h.addView(TextView(this).apply{text="TU COLECTIVO 2.0";textSize=24f;typeface=Typeface.MONOSPACE;setTextColor(cyan)})
+  title=TextView(this).apply{text="CENTRO DE MOVILIDAD";textSize=11f;setTextColor(muted)};h.addView(title)
+  status=TextView(this).apply{text="● SISTEMA LISTO";textSize=10f;setTextColor(0xFF55FFB0.toInt())};h.addView(status);root.addView(h)
+  content=FrameLayout(this);root.addView(content,LinearLayout.LayoutParams(-1,0,1f))
+  nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setBackgroundColor(0xFF080C13.toInt())};root.addView(nav,LinearLayout.LayoutParams(-1,d(64)));setContentView(root);nav(0)
+ }
+ private fun nav(a:Int){nav.removeAllViews();listOf("⌂\nINICIO","▤\nLÍNEAS","★\nFAVORITOS","◎\nCERCA").forEachIndexed{i,s->nav.addView(TextView(this).apply{text=s;gravity=Gravity.CENTER;textSize=10f;setTextColor(if(i==a)cyan else muted);setOnClickListener{when(i){0->home();1->lines();2->favorites();3->nearby()}}},LinearLayout.LayoutParams(0,-1,1f))}}
+ private fun home(){title.text="CENTRO DE MOVILIDAD";nav(0);content.removeAllViews();val b=box();b.addView(TextView(this).apply{text="RED TRANSPUNTANO";textSize=12f;setTextColor(pink)});b.addView(TextView(this).apply{text="MOVETE\nSIN PERDER TIEMPO.";textSize=30f;typeface=Typeface.MONOSPACE;setTextColor(Color.WHITE);setPadding(0,d(8),0,d(18))});b.addView(panel("NÚCLEO NATIVO","Interfaz propia. Líneas, paradas, arribos, GPS, favoritos y recorridos."));b.addView(btn("SINCRONIZAR LÍNEAS",cyan){loadLines()});content.addView(ScrollView(this).apply{addView(b)})}
+ private fun loadLines(){status.text="● SINCRONIZANDO...";ex.execute{runCatching{api.getLines()}.onSuccess{x->runOnUiThread{status.text="● "+x.size+" LÍNEAS";lines(x)}}.onFailure{e->runOnUiThread{status.text="● SIN CONEXIÓN";toast(e.message?:"Error")}}}}
+ private fun lines(initial:List<TransitLine>?=null){title.text="LÍNEAS";nav(1);content.removeAllViews();val b=box();b.addView(panel("CATÁLOGO","Datos solicitados al servicio SmartMove."));val l=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};b.addView(l)
+  fun draw(xs:List<TransitLine>){l.removeAllViews();xs.forEach{x->l.addView(card(x.name.uppercase(),"LÍNEA "+x.code){line(x)},LinearLayout.LayoutParams(-1,d(72)).apply{bottomMargin=d(8)})};if(xs.isEmpty())l.addView(panel("SIN DATOS","No se encontraron líneas."))}
+  if(initial!=null)draw(initial)else ex.execute{runCatching{api.getLines()}.onSuccess{x->runOnUiThread{draw(x);status.text="● "+x.size+" LÍNEAS"}}.onFailure{e->runOnUiThread{l.addView(panel("ERROR",e.message?:"No se pudo consultar."))}}}
+  b.addView(btn("ACTUALIZAR",cyan){loadLines()});content.addView(ScrollView(this).apply{addView(b)})}
+ private fun line(x:TransitLine){title.text="LÍNEA "+x.code;content.removeAllViews();val b=box();b.addView(TextView(this).apply{text=x.name.uppercase();textSize=25f;typeface=Typeface.MONOSPACE;setTextColor(cyan)});b.addView(panel("CALLES","Seleccioná una calle para continuar."));val l=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};b.addView(l);ex.execute{runCatching{api.getStreets(x.code)}.onSuccess{xs->runOnUiThread{xs.forEach{s->l.addView(card(s.name,"VER INTERSECCIONES"){intersections(x,s)})}}.onFailure{e->runOnUiThread{l.addView(panel("ERROR",e.message?:"Sin datos"))}}};b.addView(btn("MAPA DEL RECORRIDO",pink){map(x)});content.addView(ScrollView(this).apply{addView(b)})}
+ private fun intersections(x:TransitLine,s:TransitStreet){content.removeAllViews();title.text=s.name;val b=box();b.addView(panel("INTERSECCIONES","LÍNEA "+x.code+" · "+s.name));val l=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};b.addView(l);ex.execute{runCatching{api.getIntersections(x.code,s.code)}.onSuccess{xs->runOnUiThread{xs.forEach{i->l.addView(card(i.name,"VER PARADAS"){stops(x,s,i)})}}}.onFailure{e->runOnUiThread{l.addView(panel("ERROR",e.message?:"Sin datos"))}}};content.addView(ScrollView(this).apply{addView(b)})}
+ private fun stops(x:TransitLine,s:TransitStreet,i:TransitIntersection){content.removeAllViews();title.text="PARADAS";val b=box();b.addView(panel("PARADAS","LÍNEA "+x.code+" · "+i.name));val l=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};b.addView(l);ex.execute{runCatching{api.getStops(x.code,s.code,i.code)}.onSuccess{xs->runOnUiThread{xs.forEach{p->l.addView(card("🚏 "+p.description,p.street+" "+p.intersection){arrivals(p,x)})}}}.onFailure{e->runOnUiThread{l.addView(panel("ERROR",e.message?:"Sin datos"))}}};content.addView(ScrollView(this).apply{addView(b)})}
+ private fun arrivals(p:TransitStop,x:TransitLine){content.removeAllViews();title.text="ARRIBOS";val b=box();b.addView(panel("🚏 "+p.description,"LÍNEA "+x.code+" · ID "+p.identifier));val l=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};b.addView(l);b.addView(btn("ACTUALIZAR ARRIBOS",cyan){arrive(p,x,l)});b.addView(btn("☆ GUARDAR PARADA",pink){save(p,x);toast("Parada guardada")});content.addView(ScrollView(this).apply{addView(b)});arrive(p,x,l)}
+ private fun arrive(p:TransitStop,x:TransitLine,l:LinearLayout){l.removeAllViews();l.addView(panel("LIVE","Consultando próximos arribos..."));ex.execute{runCatching{api.getArrivals(p.identifier,x.code)}.onSuccess{xs->runOnUiThread{l.removeAllViews();xs.forEach{a->l.addView(card((if(a.line.isBlank())"LÍNEA "+x.code else a.line)+" · "+(a.minutes?.toString()?:"--")+" MIN",a.destination))};if(xs.isEmpty())l.addView(panel("SIN ARRIBOS","El servicio no devolvió datos."))}}.onFailure{e->runOnUiThread{l.removeAllViews();l.addView(panel("ERROR",e.message?:"Sin conexión"))}}}}
+ private fun nearby(){title.text="PARADAS CERCANAS";nav(3);content.removeAllViews();val b=box();b.addView(panel("RADAR LOCAL","Buscá paradas próximas a tu ubicación."));val l=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};b.addView(l);b.addView(btn("BUSCAR PARADAS CERCANAS",cyan){nearbyLoad(l)});content.addView(ScrollView(this).apply{addView(b)})}
+ private fun nearbyLoad(l:LinearLayout){if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED){requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),42);return};val m=getSystemService(Context.LOCATION_SERVICE)as LocationManager;val p=m.getLastKnownLocation(LocationManager.GPS_PROVIDER)?:m.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)?:return toast("No hay ubicación");ex.execute{runCatching{api.getNearby(p.latitude,p.longitude)}.onSuccess{xs->runOnUiThread{l.removeAllViews();xs.take(30).forEach{s->l.addView(card("🚏 "+s.description,s.street+" "+s.intersection){})}}}.onFailure{e->runOnUiThread{toast(e.message?:"Error")}}}}
+ private fun favorites(){title.text="FAVORITOS";nav(2);content.removeAllViews();val b=box();val s=getSharedPreferences("favorites",0).getStringSet("stops",emptySet()).orEmpty();b.addView(panel("MIS PARADAS",if(s.isEmpty())"No hay favoritos." else "Guardados localmente."));s.forEach{x->b.addView(card(x,"GUARDADO"){})};content.addView(ScrollView(this).apply{addView(b)})}
+ private fun save(p:TransitStop,x:TransitLine){val q=getSharedPreferences("favorites",0);val s=q.getStringSet("stops",emptySet())?.toMutableSet()?:mutableSetOf();s.add("Línea "+x.code+" · "+p.description);q.edit().putStringSet("stops",s).apply()}
+ private fun map(x:TransitLine?){title.text="MAPA";content.removeAllViews();val f=FrameLayout(this);val v=CyberMapView(this);f.addView(v);content.addView(f);if(x!=null)ex.execute{runCatching{api.getRoute(x.code)}.onSuccess{r->runOnUiThread{v.setRoute(r)}}}}
+ private fun box()=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(18),d(16),d(18),d(24))}
+ private fun card(a:String,b:String,go:()->Unit)=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(16),d(12),d(16),d(12));setBackgroundColor(panel);setOnClickListener{go()};addView(TextView(this@MainActivity).apply{text=a;textSize=14f;typeface=Typeface.MONOSPACE;setTextColor(Color.WHITE)});addView(TextView(this@MainActivity).apply{text=b;textSize=10f;setTextColor(muted)})}
+ private fun panel(a:String,b:String)=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(16),d(14),d(16),d(14));setBackgroundColor(panel);addView(TextView(this@MainActivity).apply{text=a;textSize=11f;typeface=Typeface.MONOSPACE;setTextColor(cyan)});addView(TextView(this@MainActivity).apply{text=b;textSize=13f;setTextColor(muted)})}
+ private fun btn(t:String,c:Int,go:()->Unit)=TextView(this).apply{text=t;gravity=Gravity.CENTER;textSize=12f;typeface=Typeface.MONOSPACE;setTextColor(c);setBackgroundColor(panel);setPadding(0,d(14),0,d(14));setOnClickListener{go()}}
+ private fun d(v:Int)=(v*resources.displayMetrics.density).toInt()
+ private fun toast(s:String)=Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
+ override fun onDestroy(){ex.shutdownNow();super.onDestroy()}
 }
