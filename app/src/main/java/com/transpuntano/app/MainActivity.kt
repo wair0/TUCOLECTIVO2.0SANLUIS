@@ -63,7 +63,6 @@ class MainActivity : AppCompatActivity() {
                         ByteArrayInputStream("".toByteArray())
                     )
                 }
-
                 return super.shouldInterceptRequest(view, url)
             }
 
@@ -80,8 +79,8 @@ class MainActivity : AppCompatActivity() {
 
                 val cyberUiJs = """
                     (function() {
-                        if (window.__transpuntanoUiFixV6) return;
-                        window.__transpuntanoUiFixV6 = true;
+                        if (window.__transpuntanoUiFixV7) return;
+                        window.__transpuntanoUiFixV7 = true;
 
                         function isHome() {
                             try {
@@ -93,17 +92,12 @@ class MainActivity : AppCompatActivity() {
 
                         function removeBase44Badge() {
                             var badge = document.getElementById('base44-edit-badge');
-                            if (badge) {
-                                badge.remove();
-                            }
+                            if (badge) badge.remove();
 
-                            var base44Nodes = document.querySelectorAll(
-                                '[id*="base44"], [class*="base44"]'
-                            );
-
+                            var base44Nodes = document.querySelectorAll('[id*="base44"], [class*="base44"]');
                             for (var i = 0; i < base44Nodes.length; i++) {
                                 var node = base44Nodes[i];
-                                if (node.id === 'base44-edit-badge' || 
+                                if (node.id === 'base44-edit-badge' ||
                                     (node.textContent || '').toLowerCase().indexOf('edit with') !== -1) {
                                     node.remove();
                                 }
@@ -112,36 +106,69 @@ class MainActivity : AppCompatActivity() {
 
                         function hideHomeLineCards() {
                             if (!isHome()) return;
-
-                            var cards = document.querySelectorAll(
-                                'a[href^="/lineas/"]'
-                            );
-
+                            var cards = document.querySelectorAll('a[href^="/lineas/"]');
                             for (var i = 0; i < cards.length; i++) {
-                                cards[i].style.setProperty(
-                                    'display',
-                                    'none',
-                                    'important'
-                                );
+                                cards[i].style.setProperty('display', 'none', 'important');
                             }
                         }
 
                         function hideHomeTagline() {
                             if (!isHome()) return;
-
-                            var targetText = 'transporte urbano de san luis, en tiempo real';
-                            var nodes = document.querySelectorAll('body *');
-
+                            var nodes = document.querySelectorAll('p, span, small, div, h1, h2, h3, h4');
                             for (var i = 0; i < nodes.length; i++) {
                                 var node = nodes[i];
-                                var text = (node.textContent || '').trim().toLowerCase();
-
-                                if (text.indexOf(targetText) !== -1) {
+                                if (node.children.length > 3) continue;
+                                var text = (node.textContent || '').trim().toLowerCase()
+                                    .replace(/[·•,.\-–—]/g, ' ')
+                                    .replace(/\s+/g, ' ');
+                                if (text.indexOf('transporte urbano') !== -1 &&
+                                    text.indexOf('san luis') !== -1 &&
+                                    text.indexOf('tiempo real') !== -1) {
                                     node.style.setProperty('display', 'none', 'important');
-
                                     var parent = node.parentElement;
-                                    if (parent && (parent.textContent || '').trim().toLowerCase().indexOf(targetText) !== -1) {
-                                        parent.style.setProperty('display', 'none', 'important');
+                                    if (parent && parent !== document.body) {
+                                        var pText = (parent.textContent || '').trim().toLowerCase()
+                                            .replace(/[·•,.\-–—]/g, ' ')
+                                            .replace(/\s+/g, ' ');
+                                        if (pText.indexOf('transporte urbano') !== -1 &&
+                                            pText.indexOf('tiempo real') !== -1 &&
+                                            parent.children.length <= 4) {
+                                            parent.style.setProperty('display', 'none', 'important');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        function hideHomeLinesSection() {
+                            if (!isHome()) return;
+                            var all = document.querySelectorAll('div, section, header, h2, h3, span, a, button');
+                            for (var i = 0; i < all.length; i++) {
+                                var el = all[i];
+                                var t = (el.textContent || '').trim();
+
+                                if (/^ver todo\s*>?$/i.test(t) && el.children.length === 0) {
+                                    var container = el.closest('div') || el.parentElement;
+                                    if (container && !container.closest('nav')) {
+                                        container.style.setProperty('display', 'none', 'important');
+                                    } else {
+                                        el.style.setProperty('display', 'none', 'important');
+                                    }
+                                }
+
+                                if (/^líneas$/i.test(t) && el.children.length <= 1) {
+                                    if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) continue;
+                                    var parent = el.parentElement;
+                                    if (parent && !parent.closest('nav')) {
+                                        var section = parent.closest('section, div') || parent;
+                                        if (section && section !== document.body) {
+                                            var sText = (section.textContent || '').toLowerCase();
+                                            if (sText.indexOf('líneas') !== -1 && sText.length < 120) {
+                                                section.style.setProperty('display', 'none', 'important');
+                                            } else {
+                                                el.style.setProperty('display', 'none', 'important');
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -149,35 +176,19 @@ class MainActivity : AppCompatActivity() {
 
                         function hideHomeSearch() {
                             if (!isHome()) return;
-
-                            var inputs = document.querySelectorAll(
-                                'input, textarea, [contenteditable="true"]'
-                            );
-
+                            var inputs = document.querySelectorAll('input, textarea, [contenteditable="true"]');
                             for (var i = 0; i < inputs.length; i++) {
                                 var info = (
                                     (inputs[i].placeholder || '') + ' ' +
                                     (inputs[i].getAttribute('aria-label') || '') + ' ' +
                                     (inputs[i].getAttribute('name') || '')
                                 ).toLowerCase();
-
-                                if (
-                                    info.indexOf('buscar línea') !== -1 ||
-                                    info.indexOf('buscar linea') !== -1
-                                ) {
+                                if (info.indexOf('buscar línea') !== -1 || info.indexOf('buscar linea') !== -1) {
                                     var parent = inputs[i].parentElement;
                                     if (parent) {
-                                        parent.style.setProperty(
-                                            'display',
-                                            'none',
-                                            'important'
-                                        );
+                                        parent.style.setProperty('display', 'none', 'important');
                                     } else {
-                                        inputs[i].style.setProperty(
-                                            'display',
-                                            'none',
-                                            'important'
-                                        );
+                                        inputs[i].style.setProperty('display', 'none', 'important');
                                     }
                                 }
                             }
@@ -188,6 +199,7 @@ class MainActivity : AppCompatActivity() {
                                 removeBase44Badge();
                                 hideHomeLineCards();
                                 hideHomeTagline();
+                                hideHomeLinesSection();
                                 hideHomeSearch();
                             } catch (e) {
                                 console.error('Transpuntano UI fix:', e);
@@ -197,24 +209,17 @@ class MainActivity : AppCompatActivity() {
                         function startObserver() {
                             if (!document.documentElement) return;
                             if (window.__transpuntanoUiObserver) return;
-
-                            window.__transpuntanoUiObserver =
-                                new MutationObserver(function() {
-                                    applyUiFix();
-                                });
-
-                            window.__transpuntanoUiObserver.observe(
-                                document.documentElement,
-                                {
-                                    childList: true,
-                                    subtree: true
-                                }
-                            );
+                            window.__transpuntanoUiObserver = new MutationObserver(function() {
+                                applyUiFix();
+                            });
+                            window.__transpuntanoUiObserver.observe(document.documentElement, {
+                                childList: true,
+                                subtree: true
+                            });
                         }
 
                         applyUiFix();
                         startObserver();
-
                         setTimeout(applyUiFix, 100);
                         setTimeout(applyUiFix, 300);
                         setTimeout(applyUiFix, 700);
@@ -222,11 +227,9 @@ class MainActivity : AppCompatActivity() {
                         setTimeout(applyUiFix, 3000);
 
                         var lastUrl = location.href;
-
                         setInterval(function() {
                             if (location.href !== lastUrl) {
                                 lastUrl = location.href;
-
                                 setTimeout(applyUiFix, 100);
                                 setTimeout(applyUiFix, 500);
                                 setTimeout(applyUiFix, 1200);
@@ -244,14 +247,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startSplashAnimation() {
         val title = findViewById<android.widget.TextView>(R.id.splashTitle)
-
-        splashAnimator = ObjectAnimator.ofFloat(
-            title,
-            View.ALPHA,
-            1f,
-            0.2f,
-            1f
-        ).apply {
+        splashAnimator = ObjectAnimator.ofFloat(title, View.ALPHA, 1f, 0.2f, 1f).apply {
             duration = 900
             repeatCount = ObjectAnimator.INFINITE
             interpolator = LinearInterpolator()
@@ -262,21 +258,14 @@ class MainActivity : AppCompatActivity() {
     private fun hideSplash() {
         splashAnimator?.cancel()
         splashAnimator = null
-
         if (!isSplashHidden) {
             isSplashHidden = true
-
-            if (::webView.isInitialized) {
-                webView.visibility = View.VISIBLE
-            }
-
+            if (::webView.isInitialized) webView.visibility = View.VISIBLE
             if (::splashLayout.isInitialized) {
                 splashLayout.animate()
                     .alpha(0f)
                     .setDuration(300)
-                    .withEndAction {
-                        splashLayout.visibility = View.GONE
-                    }
+                    .withEndAction { splashLayout.visibility = View.GONE }
             }
         }
     }
