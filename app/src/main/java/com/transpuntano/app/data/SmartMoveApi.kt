@@ -153,10 +153,10 @@ class SmartMoveApi {
             doInput = true
             doOutput = true
             useCaches = false
-            setRequestProperty("Content-Type", "text/xml; charset=utf-8")
-            setRequestProperty("Accept", "text/xml, application/xml, */*")
+            setRequestProperty("Content-Type", "text/xml;charset=utf-8")
+            setRequestProperty("Accept", "text/xml")
             setRequestProperty("SOAPAction", "\"" + SOAP_NAMESPACE + operation + "\"")
-            setRequestProperty("User-Agent", "TU-COLECTIVO-2.0 Android")
+            setRequestProperty("User-Agent", "ksoap2-android/2.6.0")
         }
 
         return try {
@@ -186,10 +186,7 @@ class SmartMoveApi {
         append("""<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sm="$SOAP_NAMESPACE">""")
         append("<soapenv:Body><sm:" + operation + ">")
         params.forEach { param ->
-            append("<" + param.name)
-            append(""" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"""")
-            append(""" xmlns:xsd="http://www.w3.org/2001/XMLSchema"""")
-            append(""" xsi:type="xsd:""" + param.xsdType + """>""")
+            append("<" + param.name + ">")
             append(escapeXml(param.value))
             append("</" + param.name + ">")
         }
