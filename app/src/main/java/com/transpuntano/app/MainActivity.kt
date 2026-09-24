@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
 
         Handler(Looper.getMainLooper()).postDelayed({
             hideSplash()
-        }, 2500)
+        }, 2000)
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
@@ -55,76 +55,27 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 hideSplash()
 
-                val cyberpunkJs = """
+                val failproofCyberJs = """
                     (function() {
                         try {
-                            if (!document.getElementById('cyber-master-styles')) {
+                            if (!document.getElementById('cyber-failproof-style')) {
                                 var style = document.createElement('style');
-                                style.id = 'cyber-master-styles';
+                                style.id = 'cyber-failproof-style';
                                 style.innerHTML = `
                                     @keyframes cyberFill {
                                         0% { stroke-dashoffset: 201; }
                                         100% { stroke-dashoffset: 0; }
                                     }
 
-                                    /* Ocultar de forma absoluta el widget Base 44 */
-                                    a[href*="base44"], [class*="base44"], [id*="base44"],
-                                    iframe[src*="base44"],
-                                    div[style*="fixed"][style*="bottom"],
-                                    div[style*="position: fixed"] {
+                                    /* Ocultar Base 44 via CSS puro */
+                                    a[href*="base44"], [class*="base44"], [id*="base44"], iframe[src*="base44"] {
                                         display: none !important;
                                         visibility: hidden !important;
                                         opacity: 0 !important;
                                         pointer-events: none !important;
                                     }
 
-                                    /* Cuadrícula Dashboard para pantalla de Inicio */
-                                    .cyber-dashboard-grid {
-                                        display: grid !important;
-                                        grid-template-columns: repeat(2, 1fr) !important;
-                                        gap: 14px !important;
-                                        padding: 16px 10px !important;
-                                        margin-top: 10px !important;
-                                        width: 100% !important;
-                                        box-sizing: border-box !important;
-                                    }
-
-                                    .cyber-dash-card {
-                                        background: rgba(13, 14, 21, 0.95) !important;
-                                        border: 1.5px solid #00F0FF !important;
-                                        border-radius: 14px !important;
-                                        padding: 18px 8px !important;
-                                        display: flex !important;
-                                        flex-direction: column !important;
-                                        align-items: center !important;
-                                        justify-content: center !important;
-                                        box-shadow: 0 0 12px rgba(0, 240, 255, 0.25), inset 0 0 8px rgba(0, 240, 255, 0.1) !important;
-                                        cursor: pointer !important;
-                                        transition: transform 0.12s ease !important;
-                                    }
-
-                                    .cyber-dash-card:active {
-                                        transform: scale(0.95) !important;
-                                        border-color: #FF007F !important;
-                                        box-shadow: 0 0 16px rgba(255, 0, 127, 0.4) !important;
-                                    }
-
-                                    .cyber-dash-icon {
-                                        font-size: 26px !important;
-                                        margin-bottom: 6px !important;
-                                        filter: drop-shadow(0 0 6px #00F0FF) !important;
-                                    }
-
-                                    .cyber-dash-title {
-                                        color: #00F0FF !important;
-                                        font-size: 12px !important;
-                                        font-weight: 800 !important;
-                                        letter-spacing: 1px !important;
-                                        text-transform: uppercase !important;
-                                        text-shadow: 0 0 6px rgba(0, 240, 255, 0.6) !important;
-                                    }
-
-                                    /* Contenedor Anillo Neón para contadores */
+                                    /* Estilos para anillo Neón en paradas */
                                     .cyber-ring-container {
                                         position: relative !important;
                                         display: inline-flex !important;
@@ -146,25 +97,22 @@ class MainActivity : AppCompatActivity() {
                                 (document.head || document.documentElement).appendChild(style);
                             }
 
-                            function applyMasterTransformations() {
+                            function applyNonDestructiveCustomizations() {
                                 try {
-                                    // 1. Remoción de la marca Base 44 via JS dinámico
-                                    var allNodes = document.querySelectorAll('body *');
-                                    allNodes.forEach(function(el) {
-                                        if (el.children.length === 0 && el.textContent && el.textContent.includes('Edit with Base 44')) {
-                                            var target = el;
-                                            while (target && target !== document.body) {
-                                                var stylePos = window.getComputedStyle(target).position;
-                                                if (stylePos === 'fixed' || stylePos === 'absolute') {
-                                                    target.style.setProperty('display', 'none', 'important');
-                                                    break;
-                                                }
-                                                target = target.parentElement;
+                                    // 1. Ocultar elemento flotante de Base 44 aisladamente
+                                    var baseBadges = document.querySelectorAll('a, button, div');
+                                    baseBadges.forEach(function(el) {
+                                        if (el.children.length === 0 && el.textContent && el.textContent.includes('Base 44')) {
+                                            var box = el.closest('div[style*="fixed"], div[style*="absolute"], a, button');
+                                            if (box && box !== document.body && box !== document.documentElement) {
+                                                box.style.setProperty('display', 'none', 'important');
+                                            } else {
+                                                el.style.setProperty('display', 'none', 'important');
                                             }
                                         }
                                     });
 
-                                    // 2. Mayúsculas en el subtítulo superior
+                                    // 2. Mayúsculas en subtítulo superior
                                     var subheaders = document.querySelectorAll('p, span, small, div');
                                     subheaders.forEach(function(el) {
                                         if (el.children.length === 0 && el.textContent) {
@@ -181,86 +129,47 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     });
 
-                                    // 3. Reorganización de la Pantalla de Inicio
-                                    var isInicio = Array.from(document.querySelectorAll('div, h1, span')).some(function(el) {
-                                        return (el.textContent || '').trim().toUpperCase() === 'TRANSPUNTANO';
+                                    // 3. Reestructurar accesos de la barra del medio en Grid 2x2 Cyberpunk
+                                    var chips = document.querySelectorAll('button, a, div[role="button"]');
+                                    chips.forEach(function(btn) {
+                                        var t = (btn.innerText || btn.textContent || '').trim();
+                                        if (['Líneas', 'Paradas', 'Mapa', 'Cercanas', 'Favoritos'].indexOf(t) !== -1) {
+                                            if (!btn.closest('nav') && !btn.closest('footer')) {
+                                                var parent = btn.parentElement;
+                                                if (parent && parent.children.length >= 3) {
+                                                    parent.style.setProperty('display', 'grid', 'important');
+                                                    parent.style.setProperty('grid-template-columns', 'repeat(2, 1fr)', 'important');
+                                                    parent.style.setProperty('gap', '12px', 'important');
+                                                    parent.style.setProperty('padding', '12px 6px', 'important');
+                                                    parent.style.setProperty('overflow', 'visible', 'important');
+                                                }
+
+                                                btn.style.setProperty('display', 'flex', 'important');
+                                                btn.style.setProperty('flex-direction', 'column', 'important');
+                                                btn.style.setProperty('align-items', 'center', 'important');
+                                                btn.style.setProperty('justify-content', 'center', 'important');
+                                                btn.style.setProperty('min-height', '68px', 'important');
+                                                btn.style.setProperty('background', 'rgba(13, 14, 21, 0.95)', 'important');
+                                                btn.style.setProperty('border', '1.5px solid #00F0FF', 'important');
+                                                btn.style.setProperty('border-radius', '14px', 'important');
+                                                btn.style.setProperty('color', '#00F0FF', 'important');
+                                                btn.style.setProperty('font-weight', 'bold', 'important');
+                                                btn.style.setProperty('box-shadow', '0 0 10px rgba(0, 240, 255, 0.25)', 'important');
+                                                btn.style.setProperty('text-transform', 'uppercase', 'important');
+                                                btn.style.setProperty('letter-spacing', '1px', 'important');
+                                                btn.style.setProperty('font-size', '13px', 'important');
+                                            }
+                                        }
                                     });
 
-                                    if (isInicio) {
-                                        // 3a. Ocultar la barra horizontal de accesos pequeños duplicados bajo el buscador
-                                        var quickNavRow = Array.from(document.querySelectorAll('div')).find(function(d) {
-                                            if (d.children.length >= 3 && !d.closest('nav') && !d.closest('footer')) {
-                                                var t = (d.innerText || d.textContent || '');
-                                                return t.includes('Líneas') && t.includes('Paradas') && t.includes('Mapa');
-                                            }
-                                            return false;
-                                        });
-                                        if (quickNavRow) {
-                                            quickNavRow.style.setProperty('display', 'none', 'important');
-                                        }
-
-                                        // 3b. Ocultar la sección duplicada de líneas en Inicio
-                                        var linesSection = Array.from(document.querySelectorAll('div, section')).find(function(d) {
-                                            if (!d.closest('nav') && !d.closest('footer')) {
-                                                var t = (d.innerText || d.textContent || '').trim();
-                                                return t.startsWith('LÍNEAS') && t.includes('Ver todo') && t.includes('LINEA');
-                                            }
-                                            return false;
-                                        });
-                                        if (linesSection) {
-                                            linesSection.style.setProperty('display', 'none', 'important');
-                                        }
-
-                                        // 3c. Inyectar Grid de Accesos Grandes (Dashboard)
-                                        var searchInput = document.querySelector('input[placeholder*="Buscar"], input');
-                                        if (searchInput) {
-                                            var searchContainer = searchInput.closest('div');
-                                            while (searchContainer && searchContainer.parentElement && searchContainer.parentElement.children.length === 1) {
-                                                searchContainer = searchContainer.parentElement;
-                                            }
-
-                                            if (searchContainer && !document.getElementById('cyber-dashboard-grid')) {
-                                                var grid = document.createElement('div');
-                                                grid.id = 'cyber-dashboard-grid';
-                                                grid.className = 'cyber-dashboard-grid';
-
-                                                var cardsData = [
-                                                    { title: 'LÍNEAS', icon: '🚌', target: 'Líneas' },
-                                                    { title: 'PARADAS', icon: '🚏', target: 'Paradas' },
-                                                    { title: 'MAPA', icon: '🗺️', target: 'Mapa' },
-                                                    { title: 'FAVORITOS', icon: '⭐', target: 'Favoritos' }
-                                                ];
-
-                                                cardsData.forEach(function(item) {
-                                                    var card = document.createElement('div');
-                                                    card.className = 'cyber-dash-card';
-                                                    card.innerHTML = '<span class="cyber-dash-icon">' + item.icon + '</span><span class="cyber-dash-title">' + item.title + '</span>';
-                                                    
-                                                    card.onclick = function() {
-                                                        var navItems = document.querySelectorAll('nav *, footer *, [class*="bottom"] *');
-                                                        navItems.forEach(function(navEl) {
-                                                            var txt = (navEl.innerText || navEl.textContent || '').trim();
-                                                            if (txt.toLowerCase() === item.target.toLowerCase()) {
-                                                                navEl.click();
-                                                            }
-                                                        });
-                                                    };
-
-                                                    grid.appendChild(card);
-                                                });
-
-                                                searchContainer.parentElement.insertBefore(grid, searchContainer.nextSibling);
-                                            }
-                                        }
-                                    }
-
-                                    // 4. Anillos Neón en los contadores de minutos
-                                    var all = document.querySelectorAll('*');
-                                    all.forEach(function(el) {
+                                    // 4. Anillos Neón en contadores de minutos
+                                    var minRegex = new RegExp('^\\\\d+\\\\s*MIN', 'i');
+                                    var allNodes = document.querySelectorAll('div, span, p');
+                                    allNodes.forEach(function(el) {
                                         var txt = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
-                                        if (/^\d+\s*MIN$/i.test(txt)) {
+                                        if (minRegex.test(txt)) {
                                             var hasMatchingChild = Array.from(el.children).some(function(child) {
-                                                return /^\d+\s*MIN$/i.test((child.innerText || child.textContent || '').trim().replace(/\s+/g, ' '));
+                                                return minRegex.test((child.innerText || child.textContent || '').trim().replace(/\s+/g, ' '));
                                             });
 
                                             if (!hasMatchingChild) {
@@ -330,19 +239,19 @@ class MainActivity : AppCompatActivity() {
                                     });
 
                                 } catch(err) {
-                                    console.error('Cyber error:', err);
+                                    console.error('Cyber err:', err);
                                 }
                             }
 
-                            applyMasterTransformations();
-                            setInterval(applyMasterTransformations, 300);
+                            applyNonDestructiveCustomizations();
+                            setInterval(applyNonDestructiveCustomizations, 400);
 
                         } catch(e) {
-                            console.error('Init error:', e);
+                            console.error('Cyber init err:', e);
                         }
                     })();
                 """.trimIndent()
-                view?.evaluateJavascript(cyberpunkJs, null)
+                view?.evaluateJavascript(failproofCyberJs, null)
             }
         }
 
