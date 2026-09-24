@@ -54,7 +54,6 @@ class MainActivity : AppCompatActivity() {
             displayZoomControls = false
         }
 
-        // Solicitar ubicación (para Paradas Cercanas y mapa)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
@@ -82,13 +81,9 @@ class MainActivity : AppCompatActivity() {
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                if (url != null) {
-                    // Solo permitir dominios de la web oficial
-                    if (url.contains("cuandollega.smartmovepro.net") ||
-                        url.contains("smartmovepro.net")) {
-                        view?.loadUrl(url)
-                        return true
-                    }
+                if (url != null && (url.contains("cuandollega.smartmovepro.net") || url.contains("smartmovepro.net"))) {
+                    view?.loadUrl(url)
+                    return true
                 }
                 return false
             }
@@ -97,36 +92,116 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 hideSplash()
 
-                // CSS cyberpunk liviano (sin MutationObserver → no cuelga)
-                val cssJs = """
+                // Tema cyberpunk completo (estilo anterior) - solo CSS, sin MutationObserver
+                val cyberJs = """
                     (function() {
-                        if (window.__tucolectivoStyle) return;
-                        window.__tucolectivoStyle = true;
+                        if (window.__tucolectivoCyber) return;
+                        window.__tucolectivoCyber = true;
 
-                        var style = document.createElement('style');
-                        style.innerHTML = `
-                            body, html {
+                        var css = document.createElement('style');
+                        css.id = 'tucolectivo-cyber-theme';
+                        css.innerHTML = `
+                            /* ===== FONDO CYBERPUNK ===== */
+                            html, body {
                                 background-color: #0D0E15 !important;
+                                background-image:
+                                    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                                    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px) !important;
+                                background-size: 40px 40px !important;
+                                color: #E0F7FA !important;
                             }
-                            /* Header cyberpunk */
-                            header, .navbar, .top-bar, [class*="header"] {
-                                background: linear-gradient(90deg, #0D0E15, #0a1a2a) !important;
-                                border-bottom: 1px solid #00F0FF33 !important;
+
+                            /* Header */
+                            header, .navbar, .top-bar, nav, [class*="header"], [class*="navbar"] {
+                                background: linear-gradient(90deg, #0D0E15 0%, #0a1628 100%) !important;
+                                border-bottom: 1px solid rgba(0, 240, 255, 0.25) !important;
+                                box-shadow: 0 0 20px rgba(0, 240, 255, 0.1) !important;
                             }
-                            /* Botones y cards */
-                            a, button, .btn, [class*="card"], [class*="btn"] {
-                                transition: all 0.2s ease !important;
+
+                            /* Títulos */
+                            h1, h2, h3, h4, .title, [class*="title"] {
+                                color: #00F0FF !important;
+                                text-shadow: 0 0 8px rgba(0, 240, 255, 0.4) !important;
                             }
-                            /* Links activos */
-                            a:active, button:active {
-                                filter: brightness(1.2) !important;
+
+                            /* Cards / Botones principales */
+                            .card, [class*="card"], a.btn, button, .btn,
+                            [class*="button"], [class*="item"], [class*="list-group"] a,
+                            .list-group-item, [class*="rounded"] {
+                                background: rgba(13, 20, 35, 0.9) !important;
+                                border: 1px solid rgba(0, 240, 255, 0.2) !important;
+                                color: #E0F7FA !important;
+                                border-radius: 12px !important;
+                                box-shadow: 0 0 12px rgba(0, 240, 255, 0.08) !important;
+                            }
+
+                            a, button {
+                                color: #00F0FF !important;
+                            }
+
+                            a:hover, button:hover, a:active, button:active {
+                                background: rgba(0, 240, 255, 0.12) !important;
+                                border-color: #00F0FF !important;
+                                box-shadow: 0 0 16px rgba(0, 240, 255, 0.25) !important;
+                            }
+
+                            /* Inputs */
+                            input, select, textarea {
+                                background: #0D0E15 !important;
+                                border: 1px solid rgba(0, 240, 255, 0.35) !important;
+                                color: #E0F7FA !important;
+                                border-radius: 8px !important;
+                            }
+
+                            input::placeholder {
+                                color: rgba(0, 240, 255, 0.5) !important;
+                            }
+
+                            /* Links de líneas */
+                            a[href*="codLinea"], a[href*="lineas"], a[href*="calles"],
+                            a[href*="paradas"], a[href*="arribos"] {
+                                background: rgba(10, 22, 40, 0.95) !important;
+                                border: 1px solid rgba(0, 240, 255, 0.25) !important;
+                                color: #00F0FF !important;
+                                margin: 6px 0 !important;
+                                padding: 12px 16px !important;
+                                display: block !important;
+                                border-radius: 10px !important;
+                            }
+
+                            /* Footer / barras inferiores */
+                            footer, .footer, [class*="footer"] {
+                                background: #0D0E15 !important;
+                                border-top: 1px solid rgba(0, 240, 255, 0.2) !important;
+                            }
+
+                            /* Scrollbar */
+                            ::-webkit-scrollbar {
+                                width: 6px;
+                            }
+                            ::-webkit-scrollbar-track {
+                                background: #0D0E15;
+                            }
+                            ::-webkit-scrollbar-thumb {
+                                background: rgba(0, 240, 255, 0.4);
+                                border-radius: 3px;
+                            }
+
+                            /* Textos generales */
+                            p, span, label, li, td, th {
+                                color: #B0BEC5 !important;
+                            }
+
+                            /* Quitar fondos blancos residuales */
+                            .container, .content, main, section, .wrapper {
+                                background: transparent !important;
                             }
                         `;
-                        (document.head || document.documentElement).appendChild(style);
+                        (document.head || document.documentElement).appendChild(css);
                     })();
                 """.trimIndent()
 
-                view?.evaluateJavascript(cssJs, null)
+                view?.evaluateJavascript(cyberJs, null)
             }
         }
 
