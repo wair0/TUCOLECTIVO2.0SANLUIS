@@ -30,7 +30,6 @@ class MainActivity : AppCompatActivity() {
         splashLayout = findViewById(R.id.splashLayout)
 
         webView.visibility = View.VISIBLE
-
         startSplashAnimation()
 
         webView.settings.apply {
@@ -48,7 +47,7 @@ class MainActivity : AppCompatActivity() {
 
         Handler(Looper.getMainLooper()).postDelayed({
             hideSplash()
-        }, 2000)
+        }, 2200)
 
         webView.webViewClient = object : WebViewClient() {
 
@@ -79,8 +78,8 @@ class MainActivity : AppCompatActivity() {
 
                 val cyberUiJs = """
                     (function() {
-                        if (window.__transpuntanoUiFixV7) return;
-                        window.__transpuntanoUiFixV7 = true;
+                        if (window.__transpuntanoUiFixV8) return;
+                        window.__transpuntanoUiFixV8 = true;
 
                         function isHome() {
                             try {
@@ -91,150 +90,138 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         function removeBase44Badge() {
-                            var badge = document.getElementById('base44-edit-badge');
-                            if (badge) badge.remove();
-
-                            var base44Nodes = document.querySelectorAll('[id*="base44"], [class*="base44"]');
-                            for (var i = 0; i < base44Nodes.length; i++) {
-                                var node = base44Nodes[i];
-                                if (node.id === 'base44-edit-badge' ||
-                                    (node.textContent || '').toLowerCase().indexOf('edit with') !== -1) {
-                                    node.remove();
-                                }
-                            }
+                            try {
+                                var badge = document.getElementById('base44-edit-badge');
+                                if (badge) badge.remove();
+                            } catch (e) {}
                         }
 
                         function hideHomeLineCards() {
                             if (!isHome()) return;
-                            var cards = document.querySelectorAll('a[href^="/lineas/"]');
-                            for (var i = 0; i < cards.length; i++) {
-                                cards[i].style.setProperty('display', 'none', 'important');
-                            }
+                            try {
+                                var cards = document.querySelectorAll('a[href^="/lineas/"]');
+                                for (var i = 0; i < cards.length; i++) {
+                                    cards[i].style.setProperty('display', 'none', 'important');
+                                }
+                            } catch (e) {}
                         }
 
                         function hideHomeTagline() {
                             if (!isHome()) return;
-                            var nodes = document.querySelectorAll('p, span, small, div, h1, h2, h3, h4');
-                            for (var i = 0; i < nodes.length; i++) {
-                                var node = nodes[i];
-                                if (node.children.length > 3) continue;
-                                var text = (node.textContent || '').trim().toLowerCase()
-                                    .replace(/[·•,.\-–—]/g, ' ')
-                                    .replace(/\s+/g, ' ');
-                                if (text.indexOf('transporte urbano') !== -1 &&
-                                    text.indexOf('san luis') !== -1 &&
-                                    text.indexOf('tiempo real') !== -1) {
-                                    node.style.setProperty('display', 'none', 'important');
-                                    var parent = node.parentElement;
-                                    if (parent && parent !== document.body) {
-                                        var pText = (parent.textContent || '').trim().toLowerCase()
-                                            .replace(/[·•,.\-–—]/g, ' ')
-                                            .replace(/\s+/g, ' ');
-                                        if (pText.indexOf('transporte urbano') !== -1 &&
-                                            pText.indexOf('tiempo real') !== -1 &&
-                                            parent.children.length <= 4) {
-                                            parent.style.setProperty('display', 'none', 'important');
+                            try {
+                                var candidates = document.querySelectorAll('p, span, small, h1, h2, h3, h4');
+                                for (var i = 0; i < candidates.length; i++) {
+                                    var el = candidates[i];
+                                    if (el.children.length > 2) continue;
+                                    var t = (el.textContent || '').toLowerCase()
+                                        .replace(/[·•,.\-–—]/g, ' ')
+                                        .replace(/\s+/g, ' ')
+                                        .trim();
+                                    if (t.indexOf('transporte urbano') !== -1 &&
+                                        t.indexOf('san luis') !== -1 &&
+                                        t.indexOf('tiempo real') !== -1) {
+                                        el.style.setProperty('display', 'none', 'important');
+                                        var p = el.parentElement;
+                                        if (p && p !== document.body && p.children.length <= 3) {
+                                            p.style.setProperty('display', 'none', 'important');
                                         }
+                                        break;
                                     }
                                 }
-                            }
+                            } catch (e) {}
                         }
 
                         function hideHomeLinesSection() {
                             if (!isHome()) return;
-                            var all = document.querySelectorAll('div, section, header, h2, h3, span, a, button');
-                            for (var i = 0; i < all.length; i++) {
-                                var el = all[i];
-                                var t = (el.textContent || '').trim();
-
-                                if (/^ver todo\s*>?$/i.test(t) && el.children.length === 0) {
-                                    var container = el.closest('div') || el.parentElement;
-                                    if (container && !container.closest('nav')) {
-                                        container.style.setProperty('display', 'none', 'important');
-                                    } else {
-                                        el.style.setProperty('display', 'none', 'important');
+                            try {
+                                // Ocultar "Ver todo >"
+                                var links = document.querySelectorAll('a, span, button, div');
+                                for (var i = 0; i < links.length; i++) {
+                                    var el = links[i];
+                                    var txt = (el.textContent || '').trim();
+                                    if (/^ver todo\s*>?$/i.test(txt) && el.children.length === 0) {
+                                        var box = el.closest('div') || el;
+                                        if (box && !box.closest('nav')) {
+                                            box.style.setProperty('display', 'none', 'important');
+                                        }
                                     }
                                 }
 
-                                if (/^líneas$/i.test(t) && el.children.length <= 1) {
-                                    if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) continue;
-                                    var parent = el.parentElement;
-                                    if (parent && !parent.closest('nav')) {
-                                        var section = parent.closest('section, div') || parent;
+                                // Ocultar el título "LÍNEAS" de la sección del Inicio
+                                var titles = document.querySelectorAll('h1, h2, h3, h4, span, div');
+                                for (var j = 0; j < titles.length; j++) {
+                                    var t = titles[j];
+                                    var content = (t.textContent || '').trim();
+                                    if (/^líneas$/i.test(content) && t.children.length <= 1) {
+                                        if (t.closest('nav') || t.closest('[class*="nav"]') || t.closest('[class*="bottom"]')) continue;
+                                        var section = t.closest('section, div') || t.parentElement;
                                         if (section && section !== document.body) {
-                                            var sText = (section.textContent || '').toLowerCase();
-                                            if (sText.indexOf('líneas') !== -1 && sText.length < 120) {
+                                            var sTxt = (section.textContent || '').toLowerCase();
+                                            if (sTxt.length < 150) {
                                                 section.style.setProperty('display', 'none', 'important');
-                                            } else {
-                                                el.style.setProperty('display', 'none', 'important');
                                             }
                                         }
                                     }
                                 }
-                            }
+                            } catch (e) {}
                         }
 
                         function hideHomeSearch() {
                             if (!isHome()) return;
-                            var inputs = document.querySelectorAll('input, textarea, [contenteditable="true"]');
-                            for (var i = 0; i < inputs.length; i++) {
-                                var info = (
-                                    (inputs[i].placeholder || '') + ' ' +
-                                    (inputs[i].getAttribute('aria-label') || '') + ' ' +
-                                    (inputs[i].getAttribute('name') || '')
-                                ).toLowerCase();
-                                if (info.indexOf('buscar línea') !== -1 || info.indexOf('buscar linea') !== -1) {
-                                    var parent = inputs[i].parentElement;
-                                    if (parent) {
-                                        parent.style.setProperty('display', 'none', 'important');
-                                    } else {
-                                        inputs[i].style.setProperty('display', 'none', 'important');
+                            try {
+                                var inputs = document.querySelectorAll('input');
+                                for (var i = 0; i < inputs.length; i++) {
+                                    var ph = (inputs[i].placeholder || '').toLowerCase();
+                                    if (ph.indexOf('buscar') !== -1 && ph.indexOf('línea') !== -1) {
+                                        var parent = inputs[i].parentElement;
+                                        if (parent) parent.style.setProperty('display', 'none', 'important');
+                                        else inputs[i].style.setProperty('display', 'none', 'important');
                                     }
                                 }
-                            }
+                            } catch (e) {}
                         }
 
+                        var running = false;
                         function applyUiFix() {
+                            if (running) return;
+                            running = true;
                             try {
                                 removeBase44Badge();
                                 hideHomeLineCards();
                                 hideHomeTagline();
                                 hideHomeLinesSection();
                                 hideHomeSearch();
-                            } catch (e) {
-                                console.error('Transpuntano UI fix:', e);
-                            }
+                            } catch (e) {}
+                            running = false;
                         }
 
-                        function startObserver() {
-                            if (!document.documentElement) return;
-                            if (window.__transpuntanoUiObserver) return;
-                            window.__transpuntanoUiObserver = new MutationObserver(function() {
-                                applyUiFix();
-                            });
-                            window.__transpuntanoUiObserver.observe(document.documentElement, {
-                                childList: true,
-                                subtree: true
-                            });
-                        }
-
+                        // Primera pasada inmediata + pocas más
                         applyUiFix();
-                        startObserver();
-                        setTimeout(applyUiFix, 100);
-                        setTimeout(applyUiFix, 300);
-                        setTimeout(applyUiFix, 700);
-                        setTimeout(applyUiFix, 1500);
-                        setTimeout(applyUiFix, 3000);
+                        setTimeout(applyUiFix, 400);
+                        setTimeout(applyUiFix, 1200);
+                        setTimeout(applyUiFix, 2500);
+                        setTimeout(applyUiFix, 4500);
 
-                        var lastUrl = location.href;
+                        // Observer liviano con debounce
+                        var timer = null;
+                        var observer = new MutationObserver(function() {
+                            if (timer) clearTimeout(timer);
+                            timer = setTimeout(applyUiFix, 600);
+                        });
+                        observer.observe(document.documentElement, {
+                            childList: true,
+                            subtree: true
+                        });
+
+                        // Detectar cambio de ruta (SPA)
+                        var last = location.href;
                         setInterval(function() {
-                            if (location.href !== lastUrl) {
-                                lastUrl = location.href;
-                                setTimeout(applyUiFix, 100);
-                                setTimeout(applyUiFix, 500);
-                                setTimeout(applyUiFix, 1200);
+                            if (location.href !== last) {
+                                last = location.href;
+                                setTimeout(applyUiFix, 300);
+                                setTimeout(applyUiFix, 1000);
                             }
-                        }, 500);
+                        }, 800);
                     })();
                 """.trimIndent()
 
