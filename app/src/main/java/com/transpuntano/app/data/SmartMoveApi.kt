@@ -186,9 +186,9 @@ class SmartMoveApi {
         append("""<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sm="$SOAP_NAMESPACE">""")
         append("<soapenv:Body><sm:" + operation + ">")
         params.forEach { param ->
-            append("<" + param.name + ">")
+            append("<sm:" + param.name + ">")
             append(escapeXml(param.value))
-            append("</" + param.name + ">")
+            append("</sm:" + param.name + ">")
         }
         append("</sm:" + operation + "></soapenv:Body></soapenv:Envelope>")
     }
