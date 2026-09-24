@@ -37,11 +37,11 @@ class SmartMoveApi {
         val array = firstArray(root, "lineas", "Linea", "linea") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
-            val code = item.optStringAny("CodigoLineaParada", "codigoLineaParada", "CodigoLinea", "codigoLinea")
+            val code = item.optStringAny("codigoLinea", "CodigoLinea", "CodigoLineaParada", "codigoLineaParada")
                 ?.toIntOrNull() ?: return@mapNotNull null
             TransitLine(
                 code,
-                item.optStringAny("Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Línea " + code },
+                item.optStringAny("descripcionLinea", "DescripcionLinea", "Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Línea " + code },
                 item.optStringAny("CodigoEmpresa", "codigoEmpresa").orEmpty()
             )
         }.distinctBy { it.code }
@@ -56,11 +56,11 @@ class SmartMoveApi {
         val array = firstArray(root, "calles", "Calle", "calle") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
-            val code = item.optStringAny("Codigo", "codigo", "CodigoCalle", "codigoCalle")
+            val code = item.optStringAny("codigoCalle", "CodigoCalle", "Codigo", "codigo")
                 ?.toIntOrNull() ?: return@mapNotNull null
             TransitStreet(
                 code,
-                item.optStringAny("Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Calle " + code }
+                item.optStringAny("nombreCalle", "DescripcionCalle", "Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Calle " + code }
             )
         }.distinctBy { it.code }
     }
@@ -75,11 +75,11 @@ class SmartMoveApi {
         val array = firstArray(root, "interseccion", "intersecciones", "Interseccion") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
-            val code = item.optIntAny("Codigo", "codigo", "CodigoInterseccion", "codigoInterseccion")
+            val code = item.optIntAny("codigoInterseccion", "CodigoInterseccion", "Codigo", "codigo")
                 ?: return@mapNotNull null
             TransitIntersection(
                 code,
-                item.optStringAny("Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Intersección " + code }
+                item.optStringAny("descripcionInterseccion", "DescripcionInterseccion", "Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Intersección " + code }
             )
         }.distinctBy { it.code }
     }
@@ -225,15 +225,15 @@ class SmartMoveApi {
         if (array == null) return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
-            val code = item.optIntAny("Codigo", "codigo", "CodigoParada", "codigoParada") ?: return@mapNotNull null
+            val code = item.optIntAny("codigoParada", "CodigoParada", "Codigo", "codigo") ?: return@mapNotNull null
             TransitStop(
                 code = code,
-                description = item.optStringAny("Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Parada " + code },
+                description = item.optStringAny("descripcionParada", "DescripcionParada", "Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Parada " + code },
                 identifier = item.optStringAny("Identificador", "identificador", "IdentificadorParada", "identificadorParada").orEmpty().ifBlank { code.toString() },
                 latitude = item.optStringAny("Latitud", "latitud")?.replace(',', '.')?.toDoubleOrNull() ?: 0.0,
                 longitude = item.optStringAny("Longitud", "longitud")?.replace(',', '.')?.toDoubleOrNull() ?: 0.0,
-                street = item.optStringAny("CallePrincipal", "callePrincipal").orEmpty(),
-                intersection = item.optStringAny("CalleInterseccion", "calleInterseccion").orEmpty(),
+                street = item.optStringAny("nombreCalle", "CallePrincipal", "callePrincipal").orEmpty(),
+                intersection = item.optStringAny("inteserccionCalle", "interseccionCalle", "CalleInterseccion", "calleInterseccion").orEmpty(),
                 lineCode = line
             )
         }.distinctBy { it.code to it.identifier }
