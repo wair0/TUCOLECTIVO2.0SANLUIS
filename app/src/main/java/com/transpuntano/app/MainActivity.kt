@@ -55,26 +55,26 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 hideSplash()
 
-                val ultimateJs = """
+                val stableCyberJs = """
                     (function() {
                         try {
-                            if (!document.getElementById('cyber-ultimate-style')) {
+                            if (!document.getElementById('cyber-stable-style')) {
                                 var style = document.createElement('style');
-                                style.id = 'cyber-ultimate-style';
+                                style.id = 'cyber-stable-style';
                                 style.innerHTML = `
                                     @keyframes cyberFill {
                                         0% { stroke-dashoffset: 201; }
                                         100% { stroke-dashoffset: 0; }
                                     }
 
-                                    /* Ocultar marca Base 44 */
+                                    /* Ocultar marca Base 44 de manera segura */
                                     a[href*="base44"], [class*="base44"], [id*="base44"] {
                                         display: none !important;
                                         visibility: hidden !important;
                                         opacity: 0 !important;
                                     }
 
-                                    /* Anillo Neón para contadores */
+                                    /* Estilo de Anillo Neón para contadores en paradas */
                                     .cyber-ring-container {
                                         position: relative !important;
                                         display: inline-flex !important;
@@ -92,44 +92,11 @@ class MainActivity : AppCompatActivity() {
                                         box-sizing: border-box !important;
                                         padding: 2px !important;
                                     }
-
-                                    /* Estilos de la Cuadrícula 2x2 en Inicio */
-                                    .cyber-grid-mode {
-                                        display: grid !important;
-                                        grid-template-columns: repeat(2, 1fr) !important;
-                                        gap: 14px !important;
-                                        padding: 16px 8px !important;
-                                        margin-top: 15px !important;
-                                        width: 100% !important;
-                                        box-sizing: border-box !important;
-                                    }
-
-                                    .cyber-grid-mode > * {
-                                        display: flex !important;
-                                        flex-direction: column !important;
-                                        align-items: center !important;
-                                        justify-content: center !important;
-                                        min-height: 75px !important;
-                                        background: rgba(13, 14, 21, 0.95) !important;
-                                        border: 1.5px solid #00F0FF !important;
-                                        border-radius: 14px !important;
-                                        color: #00F0FF !important;
-                                        font-weight: 800 !important;
-                                        font-size: 13px !important;
-                                        letter-spacing: 1px !important;
-                                        text-transform: uppercase !important;
-                                        box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
-                                    }
-
-                                    /* Ocultar sección de líneas en inicio */
-                                    .cyber-hide-home-lines {
-                                        display: none !important;
-                                    }
                                 `;
                                 (document.head || document.documentElement).appendChild(style);
                             }
 
-                            function applyCustomizations() {
+                            function applyStableCustomizations() {
                                 try {
                                     // 1. Ocultar Base 44
                                     var baseElems = document.querySelectorAll('a, button, div');
@@ -142,7 +109,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     });
 
-                                    // 2. Mayúsculas en el subtítulo superior
+                                    // 2. Mayúsculas en subtítulo superior
                                     var subheaders = document.querySelectorAll('p, span, small, div');
                                     subheaders.forEach(function(el) {
                                         if (el.children.length === 0 && el.textContent) {
@@ -159,41 +126,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     });
 
-                                    // 3. Transformación de pantalla de Inicio
-                                    var isInicio = Array.from(document.querySelectorAll('div, h1, span')).some(function(el) {
-                                        return (el.textContent || '').trim().toUpperCase() === 'TRANSPUNTANO';
-                                    });
-
-                                    if (isInicio) {
-                                        // Ocultar bloque de lista de líneas en inicio sin destruir el DOM
-                                        var allDivs = document.querySelectorAll('div, section');
-                                        allDivs.forEach(function(d) {
-                                            if (!d.closest('nav') && !d.closest('footer')) {
-                                                var t = (d.innerText || d.textContent || '').trim();
-                                                if (t.startsWith('LÍNEAS') && t.includes('Ver todo') && t.includes('LINEA')) {
-                                                    d.classList.add('cyber-hide-home-lines');
-                                                }
-                                            }
-                                        });
-
-                                        // Convertir barra del medio en Cuadrícula 2x2
-                                        var chips = document.querySelectorAll('button, a, div[role="button"]');
-                                        chips.forEach(function(btn) {
-                                            var t = (btn.innerText || btn.textContent || '').trim();
-                                            if (['Líneas', 'Paradas', 'Mapa', 'Cercanas'].indexOf(t) !== -1) {
-                                                if (!btn.closest('nav') && !btn.closest('footer')) {
-                                                    var parent = btn.parentElement;
-                                                    if (parent && parent.children.length >= 3) {
-                                                        if (!parent.classList.contains('cyber-grid-mode')) {
-                                                            parent.classList.add('cyber-grid-mode');
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    }
-
-                                    // 4. Anillo Neón en contadores de tiempo
+                                    // 3. Anillo Neón en contadores de tiempo de paradas
                                     var allNodes = document.querySelectorAll('div, span, p');
                                     allNodes.forEach(function(el) {
                                         var txt = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
@@ -273,15 +206,15 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
 
-                            applyCustomizations();
-                            setInterval(applyCustomizations, 300);
+                            applyStableCustomizations();
+                            setInterval(applyStableCustomizations, 400);
 
                         } catch(err) {
                             console.error('Init error:', err);
                         }
                     })();
                 """.trimIndent()
-                view?.evaluateJavascript(ultimateJs, null)
+                view?.evaluateJavascript(stableCyberJs, null)
             }
         }
 
