@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.transpuntano.app"
+    namespace = "com.tucolectivo.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.transpuntano.transpuntano20"
+        applicationId = "com.tucolectivo.app"
         minSdk = 24
         targetSdk = 35
         versionCode = 2

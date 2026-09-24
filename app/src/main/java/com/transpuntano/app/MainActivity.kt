@@ -1,4 +1,4 @@
-package com.transpuntano.app
+package com.tucolectivo.app
 
 import android.os.Bundle
 import android.os.Handler
@@ -118,12 +118,10 @@ class MainActivity : AppCompatActivity() {
                         function cleanHome() {
                             if (!isHome()) return;
                             try {
-                                // Tarjetas de líneas
                                 document.querySelectorAll('a[href^="/lineas/"]').forEach(function(el) {
                                     el.style.setProperty('display', 'none', 'important');
                                 });
 
-                                // Ver todo
                                 document.querySelectorAll('a, span, button').forEach(function(el) {
                                     var txt = (el.textContent || '').trim();
                                     if (/^ver todo\s*>?$/i.test(txt) && !isNav(el)) {
@@ -131,7 +129,6 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 });
 
-                                // Botones rápidos
                                 var labels = ['líneas', 'lineas', 'paradas', 'mapa', 'cercanas', 'favoritos'];
                                 document.querySelectorAll('a, button, span, div').forEach(function(el) {
                                     var txt = (el.textContent || '').trim().toLowerCase();
@@ -142,7 +139,6 @@ class MainActivity : AppCompatActivity() {
                                     el.style.setProperty('display', 'none', 'important');
                                 });
 
-                                // Título LÍNEAS
                                 document.querySelectorAll('h1, h2, h3, span').forEach(function(el) {
                                     var txt = (el.textContent || '').trim();
                                     if (/^líneas$/i.test(txt) && !isNav(el) && el.children.length <= 1) {
@@ -150,7 +146,6 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 });
 
-                                // Tagline
                                 document.querySelectorAll('p, span, small').forEach(function(el) {
                                     if (el.children.length > 0) return;
                                     var t = (el.textContent || '').toLowerCase();
@@ -159,7 +154,6 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 });
 
-                                // Buscador
                                 document.querySelectorAll('input').forEach(function(inp) {
                                     var ph = (inp.placeholder || '').toLowerCase();
                                     if (ph.indexOf('buscar') !== -1) {
