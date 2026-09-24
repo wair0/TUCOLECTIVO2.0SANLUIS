@@ -78,8 +78,8 @@ class MainActivity : AppCompatActivity() {
 
                 val cyberUiJs = """
                     (function() {
-                        if (window.__transpuntanoUiFixV10) return;
-                        window.__transpuntanoUiFixV10 = true;
+                        if (window.__transpuntanoUiFixV11) return;
+                        window.__transpuntanoUiFixV11 = true;
 
                         function isHome() {
                             try {
@@ -100,28 +100,16 @@ class MainActivity : AppCompatActivity() {
                             if (!isHome()) return;
 
                             try {
-                                // 1. Ocultar tarjetas de líneas
+                                // 1. Tarjetas de líneas
                                 document.querySelectorAll('a[href^="/lineas/"]').forEach(function(el) {
                                     el.style.setProperty('display', 'none', 'important');
                                 });
 
-                                // 2. Ocultar "Ver todo >"
-                                document.querySelectorAll('a, span, button, div, p').forEach(function(el) {
+                                // 2. "Ver todo >" (más agresivo)
+                                document.querySelectorAll('*').forEach(function(el) {
                                     var txt = (el.textContent || '').trim();
-                                    if (/^ver todo\s*>?$/i.test(txt) && el.children.length === 0) {
-                                        el.style.setProperty('display', 'none', 'important');
-                                        var p = el.parentElement;
-                                        if (p && p.children.length <= 2) {
-                                            p.style.setProperty('display', 'none', 'important');
-                                        }
-                                    }
-                                });
-
-                                // 3. Ocultar el título de sección "LÍNEAS"
-                                document.querySelectorAll('h1, h2, h3, h4, span, div, p').forEach(function(el) {
-                                    var txt = (el.textContent || '').trim();
-                                    if (/^líneas$/i.test(txt) && el.children.length <= 1) {
-                                        // No tocar la barra de navegación inferior
+                                    if (/^ver todo\s*>?$/i.test(txt)) {
+                                        // No tocar si está en la barra inferior
                                         if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
                                         el.style.setProperty('display', 'none', 'important');
                                         var p = el.parentElement;
@@ -131,26 +119,34 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 });
 
-                                // 4. Ocultar los botones rápidos (Líneas, Paradas, Mapa, Cercanas)
-                                // Estos botones suelen estar en un contenedor horizontal debajo del logo
-                                document.querySelectorAll('a, button, div').forEach(function(el) {
+                                // 3. Botones rápidos del Inicio (Líneas, Paradas, Mapa, Cercanas, Favoritos)
+                                var quickLabels = ['líneas', 'lineas', 'paradas', 'mapa', 'cercanas', 'favoritos'];
+                                document.querySelectorAll('a, button, div, span').forEach(function(el) {
                                     var txt = (el.textContent || '').trim().toLowerCase();
-                                    // Solo textos cortos exactos de los botones
-                                    if (txt === 'líneas' || txt === 'lineas' ||
-                                        txt === 'paradas' ||
-                                        txt === 'mapa' ||
-                                        txt === 'cercanas') {
-                                        // No tocar la navegación inferior
+                                    if (quickLabels.indexOf(txt) !== -1) {
+                                        // No tocar la barra de navegación inferior
                                         if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
-                                        // Ocultar el botón o su contenedor inmediato
-                                        var target = el.closest('a, button, div') || el;
-                                        if (target && !target.textContent.toUpperCase().includes('TRANSPUNTANO')) {
-                                            target.style.setProperty('display', 'none', 'important');
+                                        // No tocar el logo
+                                        if ((el.textContent || '').toUpperCase().indexOf('TRANSPUNTANO') !== -1) return;
+
+                                        el.style.setProperty('display', 'none', 'important');
+                                        var p = el.parentElement;
+                                        if (p && p.children.length <= 4 && !(p.textContent || '').toUpperCase().includes('TRANSPUNTANO')) {
+                                            p.style.setProperty('display', 'none', 'important');
                                         }
                                     }
                                 });
 
-                                // 5. Ocultar tagline "Transporte urbano de San Luis..."
+                                // 4. Título de sección "LÍNEAS"
+                                document.querySelectorAll('h1, h2, h3, h4, span, div, p').forEach(function(el) {
+                                    var txt = (el.textContent || '').trim();
+                                    if (/^líneas$/i.test(txt) && el.children.length <= 1) {
+                                        if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
+                                        el.style.setProperty('display', 'none', 'important');
+                                    }
+                                });
+
+                                // 5. Tagline
                                 document.querySelectorAll('p, span, small').forEach(function(el) {
                                     if (el.children.length > 0) return;
                                     var t = (el.textContent || '').toLowerCase()
@@ -164,7 +160,7 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 });
 
-                                // 6. Ocultar cualquier input de búsqueda en Inicio
+                                // 6. Buscador
                                 document.querySelectorAll('input').forEach(function(inp) {
                                     var ph = (inp.placeholder || '').toLowerCase();
                                     if (ph.indexOf('buscar') !== -1) {
@@ -190,7 +186,6 @@ class MainActivity : AppCompatActivity() {
                             running = false;
                         }
 
-                        // Ejecuciones escalonadas
                         applyUiFix();
                         setTimeout(applyUiFix, 400);
                         setTimeout(applyUiFix, 1000);
@@ -198,7 +193,6 @@ class MainActivity : AppCompatActivity() {
                         setTimeout(applyUiFix, 3500);
                         setTimeout(applyUiFix, 5500);
 
-                        // Observer con debounce
                         var timer = null;
                         var observer = new MutationObserver(function() {
                             if (timer) clearTimeout(timer);
@@ -209,7 +203,6 @@ class MainActivity : AppCompatActivity() {
                             subtree: true
                         });
 
-                        // Detectar navegación SPA
                         var last = location.href;
                         setInterval(function() {
                             if (location.href !== last) {
