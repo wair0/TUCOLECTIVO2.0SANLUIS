@@ -78,8 +78,8 @@ class MainActivity : AppCompatActivity() {
 
                 val cyberUiJs = """
                     (function() {
-                        if (window.__transpuntanoUiFixV11) return;
-                        window.__transpuntanoUiFixV11 = true;
+                        if (window.__transpuntanoUiFixV12) return;
+                        window.__transpuntanoUiFixV12 = true;
 
                         function isHome() {
                             try {
@@ -96,20 +96,34 @@ class MainActivity : AppCompatActivity() {
                             } catch (e) {}
                         }
 
+                        function replaceHomeLogo() {
+                            if (!isHome()) return;
+                            try {
+                                var nodes = document.querySelectorAll('h1, h2, h3, span, div, p');
+                                for (var i = 0; i < nodes.length; i++) {
+                                    var el = nodes[i];
+                                    var t = (el.textContent || '').trim().toUpperCase();
+                                    if (t.indexOf('TRANSPUNTANO') !== -1 && el.children.length <= 4) {
+                                        // Reemplazar por TU COLECTIVO 2.0
+                                        if (t.indexOf('2.0') !== -1 || t === 'TRANSPUNTANO') {
+                                            el.innerHTML = '<div style="color:#00F0FF;font-weight:bold;letter-spacing:0.08em;font-size:1.1em;">TU COLECTIVO</div><div style="color:#FFFFFF;font-weight:bold;font-size:1.8em;line-height:1.1;">2.0</div>';
+                                            break;
+                                        }
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+
                         function cleanHome() {
                             if (!isHome()) return;
-
                             try {
-                                // 1. Tarjetas de líneas
                                 document.querySelectorAll('a[href^="/lineas/"]').forEach(function(el) {
                                     el.style.setProperty('display', 'none', 'important');
                                 });
 
-                                // 2. "Ver todo >" (más agresivo)
                                 document.querySelectorAll('*').forEach(function(el) {
                                     var txt = (el.textContent || '').trim();
                                     if (/^ver todo\s*>?$/i.test(txt)) {
-                                        // No tocar si está en la barra inferior
                                         if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
                                         el.style.setProperty('display', 'none', 'important');
                                         var p = el.parentElement;
@@ -119,25 +133,21 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 });
 
-                                // 3. Botones rápidos del Inicio (Líneas, Paradas, Mapa, Cercanas, Favoritos)
                                 var quickLabels = ['líneas', 'lineas', 'paradas', 'mapa', 'cercanas', 'favoritos'];
                                 document.querySelectorAll('a, button, div, span').forEach(function(el) {
                                     var txt = (el.textContent || '').trim().toLowerCase();
                                     if (quickLabels.indexOf(txt) !== -1) {
-                                        // No tocar la barra de navegación inferior
                                         if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
-                                        // No tocar el logo
                                         if ((el.textContent || '').toUpperCase().indexOf('TRANSPUNTANO') !== -1) return;
-
+                                        if ((el.textContent || '').toUpperCase().indexOf('TU COLECTIVO') !== -1) return;
                                         el.style.setProperty('display', 'none', 'important');
                                         var p = el.parentElement;
-                                        if (p && p.children.length <= 4 && !(p.textContent || '').toUpperCase().includes('TRANSPUNTANO')) {
+                                        if (p && p.children.length <= 4 && !(p.textContent || '').toUpperCase().includes('TRANSPUNTANO') && !(p.textContent || '').toUpperCase().includes('TU COLECTIVO')) {
                                             p.style.setProperty('display', 'none', 'important');
                                         }
                                     }
                                 });
 
-                                // 4. Título de sección "LÍNEAS"
                                 document.querySelectorAll('h1, h2, h3, h4, span, div, p').forEach(function(el) {
                                     var txt = (el.textContent || '').trim();
                                     if (/^líneas$/i.test(txt) && el.children.length <= 1) {
@@ -146,21 +156,17 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 });
 
-                                // 5. Tagline
                                 document.querySelectorAll('p, span, small').forEach(function(el) {
                                     if (el.children.length > 0) return;
                                     var t = (el.textContent || '').toLowerCase()
                                         .replace(/[·•,.\-–—]/g, ' ')
                                         .replace(/\s+/g, ' ')
                                         .trim();
-                                    if (t.indexOf('transporte urbano') !== -1 &&
-                                        t.indexOf('san luis') !== -1 &&
-                                        t.indexOf('tiempo real') !== -1) {
+                                    if (t.indexOf('transporte urbano') !== -1 && t.indexOf('san luis') !== -1 && t.indexOf('tiempo real') !== -1) {
                                         el.style.setProperty('display', 'none', 'important');
                                     }
                                 });
 
-                                // 6. Buscador
                                 document.querySelectorAll('input').forEach(function(inp) {
                                     var ph = (inp.placeholder || '').toLowerCase();
                                     if (ph.indexOf('buscar') !== -1) {
@@ -169,7 +175,6 @@ class MainActivity : AppCompatActivity() {
                                         else inp.style.setProperty('display', 'none', 'important');
                                     }
                                 });
-
                             } catch (e) {
                                 console.error('cleanHome error', e);
                             }
@@ -181,6 +186,7 @@ class MainActivity : AppCompatActivity() {
                             running = true;
                             try {
                                 removeBase44Badge();
+                                replaceHomeLogo();
                                 cleanHome();
                             } catch (e) {}
                             running = false;
