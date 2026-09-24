@@ -55,19 +55,19 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 hideSplash()
 
-                val stableCyberJs = """
+                val strictHomeCleanJs = """
                     (function() {
                         try {
-                            if (!document.getElementById('cyber-stable-style')) {
+                            if (!document.getElementById('cyber-strict-clean-style')) {
                                 var style = document.createElement('style');
-                                style.id = 'cyber-stable-style';
+                                style.id = 'cyber-strict-clean-style';
                                 style.innerHTML = `
                                     @keyframes cyberFill {
                                         0% { stroke-dashoffset: 201; }
                                         100% { stroke-dashoffset: 0; }
                                     }
 
-                                    /* Ocultar marca Base 44 de manera segura */
+                                    /* Ocultar marca Base 44 */
                                     a[href*="base44"], [class*="base44"], [id*="base44"] {
                                         display: none !important;
                                         visibility: hidden !important;
@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
                                 (document.head || document.documentElement).appendChild(style);
                             }
 
-                            function applyStableCustomizations() {
+                            function cleanHomeStrictly() {
                                 try {
                                     // 1. Ocultar Base 44
                                     var baseElems = document.querySelectorAll('a, button, div');
@@ -126,7 +126,19 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     });
 
-                                    // 3. Anillo Neón en contadores de tiempo de paradas
+                                    // 3. Ocultar TODO el bloque de líneas en la pantalla de Inicio
+                                    var allDivs = document.querySelectorAll('div, section');
+                                    allDivs.forEach(function(d) {
+                                        if (!d.closest('nav') && !d.closest('footer')) {
+                                            var t = (d.innerText || d.textContent || '');
+                                            // Detecta la sección que contiene "LÍNEAS" y "Ver todo" junto a elementos de recorrido
+                                            if (t.includes('LÍNEAS') && t.includes('Ver todo') && (t.includes('Recorrido') || t.includes('codLinea'))) {
+                                                d.style.setProperty('display', 'none', 'important');
+                                            }
+                                        }
+                                    });
+
+                                    // 4. Anillo Neón en contadores de tiempo de paradas
                                     var allNodes = document.querySelectorAll('div, span, p');
                                     allNodes.forEach(function(el) {
                                         var txt = (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ');
@@ -206,15 +218,15 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
 
-                            applyStableCustomizations();
-                            setInterval(applyStableCustomizations, 400);
+                            cleanHomeStrictly();
+                            setInterval(cleanHomeStrictly, 300);
 
                         } catch(err) {
                             console.error('Init error:', err);
                         }
                     })();
                 """.trimIndent()
-                view?.evaluateJavascript(stableCyberJs, null)
+                view?.evaluateJavascript(strictHomeCleanJs, null)
             }
         }
 
