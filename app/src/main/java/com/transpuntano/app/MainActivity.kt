@@ -136,8 +136,13 @@ class MainActivity : AppCompatActivity() {
                                 var node = nodes[i];
                                 var text = (node.textContent || '').trim().toLowerCase();
 
-                                if (text === targetText) {
+                                if (text.indexOf(targetText) !== -1) {
                                     node.style.setProperty('display', 'none', 'important');
+
+                                    var parent = node.parentElement;
+                                    if (parent && (parent.textContent || '').trim().toLowerCase().indexOf(targetText) !== -1) {
+                                        parent.style.setProperty('display', 'none', 'important');
+                                    }
                                 }
                             }
                         }
