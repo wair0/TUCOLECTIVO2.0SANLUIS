@@ -1,32 +1,25 @@
 name: Build Android APK
-
 on:
   push:
-    branches: [ "main" ]
-
+    branches: [ "main", "fix/estabilidad-produccion", "native/cyberpunk-ui" ]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
-
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Transpuntano20-debug-apk
+          name: Transpuntano20-native-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
