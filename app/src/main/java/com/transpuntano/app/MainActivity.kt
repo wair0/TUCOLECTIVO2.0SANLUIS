@@ -1,19 +1,22 @@
 package com.tucolectivo.app
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.animation.ObjectAnimator
 import android.view.animation.LinearInterpolator
 import android.view.View
+import android.webkit.GeolocationPermissions
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
-import java.io.ByteArrayInputStream
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,6 +24,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var splashLayout: RelativeLayout
     private var isSplashHidden = false
     private var splashAnimator: ObjectAnimator? = null
+
+    companion object {
+        private const val HOME_URL = "https://cuandollega.smartmovepro.net/transpuntano"
+        private const val LOCATION_PERMISSION_REQUEST = 1001
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,170 +49,88 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = true
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             cacheMode = WebSettings.LOAD_DEFAULT
+            setGeolocationEnabled(true)
+            builtInZoomControls = false
+            displayZoomControls = false
         }
 
-        webView.webChromeClient = WebChromeClient()
+        // Solicitar ubicación (para Paradas Cercanas y mapa)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                LOCATION_PERMISSION_REQUEST
+            )
+        }
+
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onGeolocationPermissionsShowPrompt(
+                origin: String?,
+                callback: GeolocationPermissions.Callback?
+            ) {
+                callback?.invoke(origin, true, false)
+            }
+        }
 
         Handler(Looper.getMainLooper()).postDelayed({
             hideSplash()
-        }, 2200)
+        }, 2000)
 
         webView.webViewClient = object : WebViewClient() {
-
-            override fun shouldInterceptRequest(
-                view: WebView?,
-                url: String?
-            ): WebResourceResponse? {
-                if (url != null && url.contains("/static/js/badge.js")) {
-                    return WebResourceResponse(
-                        "application/javascript",
-                        "UTF-8",
-                        ByteArrayInputStream("".toByteArray())
-                    )
-                }
-                return super.shouldInterceptRequest(view, url)
-            }
-
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 if (url != null) {
-                    view?.loadUrl(url)
+                    // Solo permitir dominios de la web oficial
+                    if (url.contains("cuandollega.smartmovepro.net") ||
+                        url.contains("smartmovepro.net")) {
+                        view?.loadUrl(url)
+                        return true
+                    }
                 }
-                return true
+                return false
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 hideSplash()
 
-                val cyberUiJs = """
+                // CSS cyberpunk liviano (sin MutationObserver → no cuelga)
+                val cssJs = """
                     (function() {
-                        if (window.__tucolectivoV13) return;
-                        window.__tucolectivoV13 = true;
+                        if (window.__tucolectivoStyle) return;
+                        window.__tucolectivoStyle = true;
 
-                        function isHome() {
-                            try {
-                                return new URL(location.href).pathname === '/';
-                            } catch (e) {
-                                return false;
+                        var style = document.createElement('style');
+                        style.innerHTML = `
+                            body, html {
+                                background-color: #0D0E15 !important;
                             }
-                        }
-
-                        function isNav(el) {
-                            return !!(el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]'));
-                        }
-
-                        function removeBadge() {
-                            try {
-                                var b = document.getElementById('base44-edit-badge');
-                                if (b) b.remove();
-                            } catch (e) {}
-                        }
-
-                        function replaceLogo() {
-                            if (!isHome()) return;
-                            try {
-                                var nodes = document.querySelectorAll('h1, h2, h3, div, span');
-                                for (var i = 0; i < nodes.length; i++) {
-                                    var el = nodes[i];
-                                    var t = (el.textContent || '').trim().toUpperCase();
-                                    if (t.indexOf('TRANSPUNTANO') !== -1 && el.children.length <= 3) {
-                                        el.innerHTML = '<div style="color:#00F0FF;font-weight:bold;letter-spacing:0.06em;">TU COLECTIVO</div><div style="color:#fff;font-weight:bold;font-size:1.7em;">2.0</div>';
-                                        break;
-                                    }
-                                }
-                            } catch (e) {}
-                        }
-
-                        function cleanHome() {
-                            if (!isHome()) return;
-                            try {
-                                document.querySelectorAll('a[href^="/lineas/"]').forEach(function(el) {
-                                    el.style.setProperty('display', 'none', 'important');
-                                });
-
-                                document.querySelectorAll('a, span, button').forEach(function(el) {
-                                    var txt = (el.textContent || '').trim();
-                                    if (/^ver todo\s*>?$/i.test(txt) && !isNav(el)) {
-                                        el.style.setProperty('display', 'none', 'important');
-                                    }
-                                });
-
-                                var labels = ['líneas', 'lineas', 'paradas', 'mapa', 'cercanas', 'favoritos'];
-                                document.querySelectorAll('a, button, span, div').forEach(function(el) {
-                                    var txt = (el.textContent || '').trim().toLowerCase();
-                                    if (labels.indexOf(txt) === -1) return;
-                                    if (isNav(el)) return;
-                                    if ((el.textContent || '').toUpperCase().indexOf('TU COLECTIVO') !== -1) return;
-                                    if ((el.textContent || '').toUpperCase().indexOf('TRANSPUNTANO') !== -1) return;
-                                    el.style.setProperty('display', 'none', 'important');
-                                });
-
-                                document.querySelectorAll('h1, h2, h3, span').forEach(function(el) {
-                                    var txt = (el.textContent || '').trim();
-                                    if (/^líneas$/i.test(txt) && !isNav(el) && el.children.length <= 1) {
-                                        el.style.setProperty('display', 'none', 'important');
-                                    }
-                                });
-
-                                document.querySelectorAll('p, span, small').forEach(function(el) {
-                                    if (el.children.length > 0) return;
-                                    var t = (el.textContent || '').toLowerCase();
-                                    if (t.indexOf('transporte urbano') !== -1 && t.indexOf('tiempo real') !== -1) {
-                                        el.style.setProperty('display', 'none', 'important');
-                                    }
-                                });
-
-                                document.querySelectorAll('input').forEach(function(inp) {
-                                    var ph = (inp.placeholder || '').toLowerCase();
-                                    if (ph.indexOf('buscar') !== -1) {
-                                        var p = inp.parentElement;
-                                        if (p) p.style.setProperty('display', 'none', 'important');
-                                        else inp.style.setProperty('display', 'none', 'important');
-                                    }
-                                });
-                            } catch (e) {}
-                        }
-
-                        var running = false;
-                        function apply() {
-                            if (running) return;
-                            running = true;
-                            try {
-                                removeBadge();
-                                replaceLogo();
-                                cleanHome();
-                            } catch (e) {}
-                            running = false;
-                        }
-
-                        apply();
-                        setTimeout(apply, 600);
-                        setTimeout(apply, 1500);
-                        setTimeout(apply, 3000);
-                        setTimeout(apply, 5000);
-
-                        var t = null;
-                        new MutationObserver(function() {
-                            if (t) clearTimeout(t);
-                            t = setTimeout(apply, 800);
-                        }).observe(document.documentElement, { childList: true, subtree: true });
-
-                        var last = location.href;
-                        setInterval(function() {
-                            if (location.href !== last) {
-                                last = location.href;
-                                setTimeout(apply, 400);
-                                setTimeout(apply, 1200);
+                            /* Header cyberpunk */
+                            header, .navbar, .top-bar, [class*="header"] {
+                                background: linear-gradient(90deg, #0D0E15, #0a1a2a) !important;
+                                border-bottom: 1px solid #00F0FF33 !important;
                             }
-                        }, 1000);
+                            /* Botones y cards */
+                            a, button, .btn, [class*="card"], [class*="btn"] {
+                                transition: all 0.2s ease !important;
+                            }
+                            /* Links activos */
+                            a:active, button:active {
+                                filter: brightness(1.2) !important;
+                            }
+                        `;
+                        (document.head || document.documentElement).appendChild(style);
                     })();
                 """.trimIndent()
 
-                view?.evaluateJavascript(cyberUiJs, null)
+                view?.evaluateJavascript(cssJs, null)
             }
         }
 
-        webView.loadUrl("https://trans-puntano-go.base44.app/")
+        webView.loadUrl(HOME_URL)
     }
 
     private fun startSplashAnimation() {
