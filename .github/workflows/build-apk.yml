@@ -2,6 +2,8 @@ name: Build Android APK
 on:
   push:
     branches: [ "main", "fix/estabilidad-produccion", "native/cyberpunk-ui" ]
+  pull_request:
+    branches: [ "main", "fix/estabilidad-produccion" ]
 jobs:
   build:
     runs-on: ubuntu-latest
