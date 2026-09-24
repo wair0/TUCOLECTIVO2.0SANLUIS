@@ -118,19 +118,18 @@ class MainActivity : AppCompatActivity() {
             setPadding(0, dp(8), 0, dp(18))
         })
         box.addView(panel("NÚCLEO NATIVO", "Interfaz propia. Líneas, paradas, arribos, GPS, favoritos y recorridos."))
-        box.addView(button("SINCRONIZAR LÍNEAS", cyan) { loadLines() })
+        box.addView(button("SINCRONIZAR LÍNEAS", cyan) { loadLines(false) })
         content.addView(ScrollView(this).apply { addView(box) })
-        loadLines()
     }
 
-    private fun loadLines() {
+    private fun loadLines(navigateToLines: Boolean = true) {
         status.text = "● SINCRONIZANDO..."
         executor.execute {
             runCatching { api.getLines() }
                 .onSuccess { lines ->
                     runOnUiThread {
                         status.text = "● " + lines.size + " LÍNEAS"
-                        showLines(lines)
+                        if (navigateToLines) showLines(lines)
                     }
                 }
                 .onFailure { error ->
@@ -171,7 +170,7 @@ class MainActivity : AppCompatActivity() {
                     .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "No se pudo consultar.")) } }
             }
         }
-        box.addView(button("ACTUALIZAR", cyan) { loadLines() })
+        box.addView(button("ACTUALIZAR", cyan) { loadLines(true) })
         content.addView(ScrollView(this).apply { addView(box) })
     }
 
