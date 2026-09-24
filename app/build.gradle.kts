@@ -1,10 +1,10 @@
-plugins {
+namespace = "com.transpuntano.app"plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
 }
 
 android {
-    namespace = "com.transpuntano.transpuntano20"
+    namespace = "com.transpuntano.app"
     compileSdk = 35
 
     defaultConfig {
