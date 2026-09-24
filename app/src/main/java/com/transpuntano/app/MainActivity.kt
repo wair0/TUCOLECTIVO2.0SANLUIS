@@ -3,6 +3,8 @@ package com.transpuntano.app
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.animation.ObjectAnimator
+import android.view.animation.LinearInterpolator
 import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceResponse
@@ -18,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var splashLayout: RelativeLayout
     private var isSplashHidden = false
+    private var splashAnimator: ObjectAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +30,8 @@ class MainActivity : AppCompatActivity() {
         splashLayout = findViewById(R.id.splashLayout)
 
         webView.visibility = View.VISIBLE
+
+        startSplashAnimation()
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -121,6 +126,22 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
+                        function hideHomeTagline() {
+                            if (!isHome()) return;
+
+                            var targetText = 'transporte urbano de san luis, en tiempo real';
+                            var nodes = document.querySelectorAll('body *');
+
+                            for (var i = 0; i < nodes.length; i++) {
+                                var node = nodes[i];
+                                var text = (node.textContent || '').trim().toLowerCase();
+
+                                if (text === targetText) {
+                                    node.style.setProperty('display', 'none', 'important');
+                                }
+                            }
+                        }
+
                         function hideHomeSearch() {
                             if (!isHome()) return;
 
@@ -161,6 +182,7 @@ class MainActivity : AppCompatActivity() {
                             try {
                                 removeBase44Badge();
                                 hideHomeLineCards();
+                                hideHomeTagline();
                                 hideHomeSearch();
                             } catch (e) {
                                 console.error('Transpuntano UI fix:', e);
@@ -215,7 +237,27 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("https://trans-puntano-go.base44.app/")
     }
 
+    private fun startSplashAnimation() {
+        val title = findViewById<android.widget.TextView>(R.id.splashTitle)
+
+        splashAnimator = ObjectAnimator.ofFloat(
+            title,
+            View.ALPHA,
+            1f,
+            0.2f,
+            1f
+        ).apply {
+            duration = 900
+            repeatCount = ObjectAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            start()
+        }
+    }
+
     private fun hideSplash() {
+        splashAnimator?.cancel()
+        splashAnimator = null
+
         if (!isSplashHidden) {
             isSplashHidden = true
 
