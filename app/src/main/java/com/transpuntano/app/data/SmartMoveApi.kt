@@ -13,22 +13,16 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.Locale
 
-/**
- * SmartMove client reconstructed from the official Transpuntano APK.
- * The official app uses SOAP 1.1, not form POST/JSON HTTP endpoints.
- */
 class SmartMoveApi {
     companion object {
         private const val SOAP_ENDPOINT = "http://clswsanluis.smartmovepro.net/moduloparadas/swparadas.asmx"
         private const val SOAP_NAMESPACE = "http://clsw.smartmovepro.net/"
         private const val TIMEOUT_MS = 30_000
-
         private const val USER = "WEB.TRANSPUNTANO"
         private const val PASSWORD = "PAR.SW.TRANSPUNTANO"
         private const val CODIGO_CUANDO_LLEGA = 35
         private const val CODIGO_APLICACION_ARRIBOS = 24
         private const val LISTA_CODIGOS_EMPRESA = "155"
-        private const val LOCALIDAD = "SAN LUIS"
         private const val PROVINCIA = "SAN LUIS"
         private const val PAIS = "ARGENTINA"
     }
@@ -40,11 +34,16 @@ class SmartMoveApi {
             stringParam("clave", PASSWORD),
             boolParam("isSublinea", false)
         ))
-        val array = root.optJSONArray("lineas") ?: return emptyList()
-        return (0 until array.length()).mapNotNull { i ->
-            val item = array.optJSONObject(i) ?: return@mapNotNull null
-            val code = item.optString("CodigoLineaParada").toIntOrNull() ?: return@mapNotNull null
-            TransitLine(code, item.optString("Descripcion").ifBlank { "Línea " + code }, item.optString("CodigoEmpresa"))
+        val array = firstArray(root, "lineas", "Linea", "linea") ?: return emptyList()
+        return (0 until array.length()).mapNotNull { index ->
+            val item = array.optJSONObject(index) ?: return@mapNotNull null
+            val code = item.optStringAny("CodigoLineaParada", "codigoLineaParada", "CodigoLinea", "codigoLinea")
+                ?.toIntOrNull() ?: return@mapNotNull null
+            TransitLine(
+                code,
+                item.optStringAny("Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Línea " + code },
+                item.optStringAny("CodigoEmpresa", "codigoEmpresa").orEmpty()
+            )
         }.distinctBy { it.code }
     }
 
@@ -54,11 +53,15 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        val array = root.optJSONArray("calles") ?: return emptyList()
-        return (0 until array.length()).mapNotNull { i ->
-            val item = array.optJSONObject(i) ?: return@mapNotNull null
-            val code = item.optString("Codigo").toIntOrNull() ?: return@mapNotNull null
-            TransitStreet(code, item.optString("Descripcion").ifBlank { "Calle " + code })
+        val array = firstArray(root, "calles", "Calle", "calle") ?: return emptyList()
+        return (0 until array.length()).mapNotNull { index ->
+            val item = array.optJSONObject(index) ?: return@mapNotNull null
+            val code = item.optStringAny("Codigo", "codigo", "CodigoCalle", "codigoCalle")
+                ?.toIntOrNull() ?: return@mapNotNull null
+            TransitStreet(
+                code,
+                item.optStringAny("Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Calle " + code }
+            )
         }.distinctBy { it.code }
     }
 
@@ -69,11 +72,15 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        val array = root.optJSONArray("interseccion") ?: return emptyList()
-        return (0 until array.length()).mapNotNull { i ->
-            val item = array.optJSONObject(i) ?: return@mapNotNull null
-            val code = item.optIntOrNull("Codigo") ?: return@mapNotNull null
-            TransitIntersection(code, item.optString("Descripcion").ifBlank { "Intersección " + code })
+        val array = firstArray(root, "interseccion", "intersecciones", "Interseccion") ?: return emptyList()
+        return (0 until array.length()).mapNotNull { index ->
+            val item = array.optJSONObject(index) ?: return@mapNotNull null
+            val code = item.optIntAny("Codigo", "codigo", "CodigoInterseccion", "codigoInterseccion")
+                ?: return@mapNotNull null
+            TransitIntersection(
+                code,
+                item.optStringAny("Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Intersección " + code }
+            )
         }.distinctBy { it.code }
     }
 
@@ -85,7 +92,7 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        return parseStops(root.optJSONArray("paradas"), line)
+        return parseStops(firstArray(root, "paradas", "Parada", "parada"), line)
     }
 
     fun getArrivals(identifier: String, line: Int): List<TransitArrival> {
@@ -93,17 +100,17 @@ class SmartMoveApi {
             stringParam("identificadorParada", identifier),
             intParam("codigoLineaParada", line),
             intParam("codigoAplicacion", CODIGO_APLICACION_ARRIBOS),
-            stringParam("localidad", LOCALIDAD),
+            stringParam("localidad", "SAN LUIS"),
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        val array = root.optJSONArray("arribos") ?: return emptyList()
-        return (0 until array.length()).mapNotNull { i ->
-            val item = array.optJSONObject(i) ?: return@mapNotNull null
-            val arrival = item.optString("Arribo")
+        val array = firstArray(root, "arribos", "Arribo", "arribo") ?: return emptyList()
+        return (0 until array.length()).mapNotNull { index ->
+            val item = array.optJSONObject(index) ?: return@mapNotNull null
+            val arrival = item.optStringAny("Arribo", "arribo", "Tiempo", "tiempo").orEmpty()
             TransitArrival(
-                line = item.optString("DescripcionLinea"),
-                destination = item.optString("DescripcionBandera"),
+                line = item.optStringAny("DescripcionLinea", "descripcionLinea", "Linea", "linea").orEmpty().ifBlank { line.toString() },
+                destination = item.optStringAny("DescripcionBandera", "descripcionBandera", "Bandera", "bandera", "Destino", "destino").orEmpty(),
                 minutes = parseMinutes(arrival),
                 status = arrival
             )
@@ -120,7 +127,7 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        return parseStops(root.optJSONArray("paradas"), 0)
+        return parseStops(firstArray(root, "paradas", "Parada", "parada"), 0)
     }
 
     fun getRoute(line: Int): List<Pair<Double, Double>> {
@@ -129,11 +136,11 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        val array = root.optJSONArray("puntos") ?: return emptyList()
-        return (0 until array.length()).mapNotNull { i ->
-            val item = array.optJSONObject(i) ?: return@mapNotNull null
-            val lat = item.optString("Latitud").replace(',', '.').toDoubleOrNull()
-            val lon = item.optString("Longitud").replace(',', '.').toDoubleOrNull()
+        val array = firstArray(root, "puntos", "Puntos", "recorrido", "Recorrido") ?: return emptyList()
+        return (0 until array.length()).mapNotNull { index ->
+            val item = array.optJSONObject(index) ?: return@mapNotNull null
+            val lat = item.optStringAny("Latitud", "latitud", "Latitude", "latitude")?.replace(',', '.')?.toDoubleOrNull()
+            val lon = item.optStringAny("Longitud", "longitud", "Longitude", "longitude")?.replace(',', '.')?.toDoubleOrNull()
             if (lat != null && lon != null) lat to lon else null
         }
     }
@@ -148,16 +155,22 @@ class SmartMoveApi {
             useCaches = false
             setRequestProperty("Content-Type", "text/xml; charset=utf-8")
             setRequestProperty("Accept", "text/xml, application/xml, */*")
-            setRequestProperty("SOAPAction", """ + SOAP_NAMESPACE + operation + """)
+            setRequestProperty("SOAPAction", "\"" + SOAP_NAMESPACE + operation + "\"")
             setRequestProperty("User-Agent", "TU-COLECTIVO-2.0 Android")
         }
 
         return try {
-            OutputStreamWriter(connection.outputStream, StandardCharsets.UTF_8).use { it.write(buildSoapRequest(operation, params)) }
+            OutputStreamWriter(connection.outputStream, StandardCharsets.UTF_8).use { writer ->
+                writer.write(buildSoapRequest(operation, params))
+            }
             val code = connection.responseCode
             val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-            val response = if (stream != null) BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() } else ""
-            if (code !in 200..299) throw SmartMoveException("SmartMove SOAP HTTP " + code + ": " + response.take(500))
+            val response = if (stream != null) {
+                BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() }
+            } else ""
+            if (code !in 200..299) {
+                throw SmartMoveException("SmartMove SOAP HTTP " + code + ": " + response.take(500))
+            }
             parseSoapJson(response)
         } catch (e: SmartMoveException) {
             throw e
@@ -169,19 +182,18 @@ class SmartMoveApi {
     }
 
     private fun buildSoapRequest(operation: String, params: List<SoapParam>): String = buildString {
-        append("<?xml version="1.0" encoding="utf-8"?>")
-        append("<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sm="")
-        append(escapeXml(SOAP_NAMESPACE)).append("">")
-        append("<soapenv:Body><sm:").append(operation).append(">")
-        for (param in params) {
-            append("<").append(param.name)
-            append(" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"")
-            append(" xmlns:xsd="http://www.w3.org/2001/XMLSchema"")
-            append(" xsi:type="xsd:").append(param.xsdType).append("">")
+        append("""<?xml version="1.0" encoding="utf-8"?>""")
+        append("""<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sm="$SOAP_NAMESPACE">""")
+        append("<soapenv:Body><sm:" + operation + ">")
+        params.forEach { param ->
+            append("<" + param.name)
+            append(""" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"""")
+            append(""" xmlns:xsd="http://www.w3.org/2001/XMLSchema"""")
+            append(""" xsi:type="xsd:""" + param.xsdType + """>""")
             append(escapeXml(param.value))
-            append("</").append(param.name).append(">")
+            append("</" + param.name + ">")
         }
-        append("</sm:").append(operation).append("></soapenv:Body></soapenv:Envelope>")
+        append("</sm:" + operation + "></soapenv:Body></soapenv:Envelope>")
     }
 
     private fun parseSoapJson(rawXml: String): JSONObject {
@@ -196,14 +208,16 @@ class SmartMoveApi {
         while (true) {
             when (parser.next()) {
                 XmlPullParser.START_TAG -> if (parser.name.equals("Fault", true)) inFault = true
-                XmlPullParser.TEXT, XmlPullParser.CDSECT -> {
-                    if (inFault) fault.append(parser.text.orEmpty()) else text.append(parser.text.orEmpty())
-                }
+                XmlPullParser.TEXT, XmlPullParser.CDSECT -> if (inFault) fault.append(parser.text.orEmpty()) else text.append(parser.text.orEmpty())
+                XmlPullParser.END_TAG -> if (parser.name.equals("Fault", true)) inFault = false
                 XmlPullParser.END_DOCUMENT -> break
             }
         }
 
-        if (inFault && fault.isNotBlank()) throw SmartMoveException("SmartMove SOAP Fault: " + fault.toString().trim().take(500))
+        if (fault.isNotBlank()) {
+            throw SmartMoveException("SmartMove SOAP Fault: " + fault.toString().trim().take(500))
+        }
+
         val cleaned = text.toString().trim().removePrefix("\uFEFF")
         if (cleaned.startsWith("{")) return JSONObject(cleaned)
         if (cleaned.startsWith("[")) return JSONObject().put("data", JSONArray(cleaned))
@@ -212,17 +226,17 @@ class SmartMoveApi {
 
     private fun parseStops(array: JSONArray?, line: Int): List<TransitStop> {
         if (array == null) return emptyList()
-        return (0 until array.length()).mapNotNull { i ->
-            val item = array.optJSONObject(i) ?: return@mapNotNull null
-            val code = item.optIntOrNull("Codigo") ?: return@mapNotNull null
+        return (0 until array.length()).mapNotNull { index ->
+            val item = array.optJSONObject(index) ?: return@mapNotNull null
+            val code = item.optIntAny("Codigo", "codigo", "CodigoParada", "codigoParada") ?: return@mapNotNull null
             TransitStop(
                 code = code,
-                description = item.optString("Descripcion").ifBlank { "Parada " + code },
-                identifier = item.optString("Identificador").ifBlank { code.toString() },
-                latitude = item.optString("Latitud").replace(',', '.').toDoubleOrNull() ?: 0.0,
-                longitude = item.optString("Longitud").replace(',', '.').toDoubleOrNull() ?: 0.0,
-                street = item.optString("CallePrincipal"),
-                intersection = item.optString("CalleInterseccion"),
+                description = item.optStringAny("Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Parada " + code },
+                identifier = item.optStringAny("Identificador", "identificador", "IdentificadorParada", "identificadorParada").orEmpty().ifBlank { code.toString() },
+                latitude = item.optStringAny("Latitud", "latitud")?.replace(',', '.')?.toDoubleOrNull() ?: 0.0,
+                longitude = item.optStringAny("Longitud", "longitud")?.replace(',', '.')?.toDoubleOrNull() ?: 0.0,
+                street = item.optStringAny("CallePrincipal", "callePrincipal").orEmpty(),
+                intersection = item.optStringAny("CalleInterseccion", "calleInterseccion").orEmpty(),
                 lineCode = line
             )
         }.distinctBy { it.code to it.identifier }
@@ -231,14 +245,17 @@ class SmartMoveApi {
     private fun parseMinutes(value: String): Int? {
         val direct = value.trim().toIntOrNull()
         if (direct != null) return direct
-        return Regex("(-?\\d+)").find(value)?.groupValues?.getOrNull(1)?.toIntOrNull()
+        return Regex("""(-?\d+)""").find(value)?.groupValues?.getOrNull(1)?.toIntOrNull()
     }
 
     private fun formatCoordinate(value: Double): String = String.format(Locale.US, "%.6f", value)
 
     private fun escapeXml(value: String): String = value
-        .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        .replace(""", "&quot;").replace("'", "&apos;")
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&apos;")
 
     private data class SoapParam(val name: String, val value: String, val xsdType: String)
     private fun stringParam(name: String, value: String) = SoapParam(name, value, "string")
@@ -247,9 +264,28 @@ class SmartMoveApi {
 
     class SmartMoveException(message: String, cause: Throwable? = null) : IllegalStateException(message, cause)
 
-    private fun JSONObject.optIntOrNull(name: String): Int? = when (val value = opt(name)) {
-        is Number -> value.toInt()
-        is String -> value.trim().toDoubleOrNull()?.toInt()
-        else -> null
+    private fun JSONObject.optStringAny(vararg names: String): String? {
+        names.forEach { name ->
+            if (has(name) && !isNull(name)) return opt(name)?.toString()
+        }
+        return null
+    }
+
+    private fun JSONObject.optIntAny(vararg names: String): Int? {
+        val value = optStringAny(*names) ?: return null
+        return value.trim().toDoubleOrNull()?.toInt()
+    }
+
+    private fun firstArray(root: JSONObject, vararg names: String): JSONArray? {
+        names.forEach { name ->
+            root.optJSONArray(name)?.let { return it }
+        }
+        val nested = root.optJSONObject("data")
+        if (nested != null) {
+            names.forEach { name ->
+                nested.optJSONArray(name)?.let { return it }
+            }
+        }
+        return null
     }
 }
