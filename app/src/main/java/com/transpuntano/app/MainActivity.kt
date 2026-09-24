@@ -78,8 +78,8 @@ class MainActivity : AppCompatActivity() {
 
                 val cyberUiJs = """
                     (function() {
-                        if (window.__transpuntanoUiFixV9) return;
-                        window.__transpuntanoUiFixV9 = true;
+                        if (window.__transpuntanoUiFixV10) return;
+                        window.__transpuntanoUiFixV10 = true;
 
                         function isHome() {
                             try {
@@ -96,23 +96,63 @@ class MainActivity : AppCompatActivity() {
                             } catch (e) {}
                         }
 
-                        function hideHomeLineCards() {
+                        function cleanHome() {
                             if (!isHome()) return;
+
                             try {
+                                // 1. Ocultar tarjetas de líneas
                                 document.querySelectorAll('a[href^="/lineas/"]').forEach(function(el) {
                                     el.style.setProperty('display', 'none', 'important');
                                 });
-                            } catch (e) {}
-                        }
 
-                        function hideHomeTagline() {
-                            if (!isHome()) return;
-                            try {
-                                // Solo textos pequeños que contengan exactamente la frase del subtítulo
-                                var nodes = document.querySelectorAll('p, span, small');
-                                for (var i = 0; i < nodes.length; i++) {
-                                    var el = nodes[i];
-                                    if (el.children.length > 0) continue;
+                                // 2. Ocultar "Ver todo >"
+                                document.querySelectorAll('a, span, button, div, p').forEach(function(el) {
+                                    var txt = (el.textContent || '').trim();
+                                    if (/^ver todo\s*>?$/i.test(txt) && el.children.length === 0) {
+                                        el.style.setProperty('display', 'none', 'important');
+                                        var p = el.parentElement;
+                                        if (p && p.children.length <= 2) {
+                                            p.style.setProperty('display', 'none', 'important');
+                                        }
+                                    }
+                                });
+
+                                // 3. Ocultar el título de sección "LÍNEAS"
+                                document.querySelectorAll('h1, h2, h3, h4, span, div, p').forEach(function(el) {
+                                    var txt = (el.textContent || '').trim();
+                                    if (/^líneas$/i.test(txt) && el.children.length <= 1) {
+                                        // No tocar la barra de navegación inferior
+                                        if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
+                                        el.style.setProperty('display', 'none', 'important');
+                                        var p = el.parentElement;
+                                        if (p && p.children.length <= 3) {
+                                            p.style.setProperty('display', 'none', 'important');
+                                        }
+                                    }
+                                });
+
+                                // 4. Ocultar los botones rápidos (Líneas, Paradas, Mapa, Cercanas)
+                                // Estos botones suelen estar en un contenedor horizontal debajo del logo
+                                document.querySelectorAll('a, button, div').forEach(function(el) {
+                                    var txt = (el.textContent || '').trim().toLowerCase();
+                                    // Solo textos cortos exactos de los botones
+                                    if (txt === 'líneas' || txt === 'lineas' ||
+                                        txt === 'paradas' ||
+                                        txt === 'mapa' ||
+                                        txt === 'cercanas') {
+                                        // No tocar la navegación inferior
+                                        if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
+                                        // Ocultar el botón o su contenedor inmediato
+                                        var target = el.closest('a, button, div') || el;
+                                        if (target && !target.textContent.toUpperCase().includes('TRANSPUNTANO')) {
+                                            target.style.setProperty('display', 'none', 'important');
+                                        }
+                                    }
+                                });
+
+                                // 5. Ocultar tagline "Transporte urbano de San Luis..."
+                                document.querySelectorAll('p, span, small').forEach(function(el) {
+                                    if (el.children.length > 0) return;
                                     var t = (el.textContent || '').toLowerCase()
                                         .replace(/[·•,.\-–—]/g, ' ')
                                         .replace(/\s+/g, ' ')
@@ -122,48 +162,21 @@ class MainActivity : AppCompatActivity() {
                                         t.indexOf('tiempo real') !== -1) {
                                         el.style.setProperty('display', 'none', 'important');
                                     }
-                                }
-                            } catch (e) {}
-                        }
+                                });
 
-                        function hideVerTodo() {
-                            if (!isHome()) return;
-                            try {
-                                var all = document.querySelectorAll('a, span, button, div, p');
-                                for (var i = 0; i < all.length; i++) {
-                                    var el = all[i];
-                                    var txt = (el.textContent || '').trim();
-                                    // Solo el texto exacto "Ver todo >" o "Ver todo"
-                                    if (/^ver todo\s*>?$/i.test(txt) && el.children.length === 0) {
-                                        el.style.setProperty('display', 'none', 'important');
-                                        // también el contenedor inmediato si es pequeño
-                                        var p = el.parentElement;
-                                        if (p && p.children.length <= 2 && !(p.textContent || '').toLowerCase().includes('transpuntano')) {
-                                            p.style.setProperty('display', 'none', 'important');
-                                        }
-                                    }
-                                }
-                            } catch (e) {}
-                        }
-
-                        function hideHomeSearch() {
-                            if (!isHome()) return;
-                            try {
+                                // 6. Ocultar cualquier input de búsqueda en Inicio
                                 document.querySelectorAll('input').forEach(function(inp) {
                                     var ph = (inp.placeholder || '').toLowerCase();
-                                    if (ph.indexOf('buscar') !== -1 && (ph.indexOf('línea') !== -1 || ph.indexOf('linea') !== -1)) {
+                                    if (ph.indexOf('buscar') !== -1) {
                                         var parent = inp.parentElement;
                                         if (parent) parent.style.setProperty('display', 'none', 'important');
                                         else inp.style.setProperty('display', 'none', 'important');
                                     }
                                 });
-                            } catch (e) {}
-                        }
 
-                        // Protección: nunca ocultar elementos que contengan "TRANSPUNTANO" o "2.0"
-                        function isProtected(el) {
-                            var t = (el.textContent || '').toUpperCase();
-                            return t.indexOf('TRANSPUNTANO') !== -1 || t.indexOf('2.0') !== -1;
+                            } catch (e) {
+                                console.error('cleanHome error', e);
+                            }
                         }
 
                         var running = false;
@@ -172,35 +185,39 @@ class MainActivity : AppCompatActivity() {
                             running = true;
                             try {
                                 removeBase44Badge();
-                                hideHomeLineCards();
-                                hideHomeTagline();
-                                hideVerTodo();
-                                hideHomeSearch();
+                                cleanHome();
                             } catch (e) {}
                             running = false;
                         }
 
+                        // Ejecuciones escalonadas
                         applyUiFix();
-                        setTimeout(applyUiFix, 500);
-                        setTimeout(applyUiFix, 1500);
-                        setTimeout(applyUiFix, 3000);
-                        setTimeout(applyUiFix, 5000);
+                        setTimeout(applyUiFix, 400);
+                        setTimeout(applyUiFix, 1000);
+                        setTimeout(applyUiFix, 2000);
+                        setTimeout(applyUiFix, 3500);
+                        setTimeout(applyUiFix, 5500);
 
+                        // Observer con debounce
                         var timer = null;
                         var observer = new MutationObserver(function() {
                             if (timer) clearTimeout(timer);
-                            timer = setTimeout(applyUiFix, 700);
+                            timer = setTimeout(applyUiFix, 600);
                         });
-                        observer.observe(document.documentElement, { childList: true, subtree: true });
+                        observer.observe(document.documentElement, {
+                            childList: true,
+                            subtree: true
+                        });
 
+                        // Detectar navegación SPA
                         var last = location.href;
                         setInterval(function() {
                             if (location.href !== last) {
                                 last = location.href;
-                                setTimeout(applyUiFix, 400);
-                                setTimeout(applyUiFix, 1200);
+                                setTimeout(applyUiFix, 300);
+                                setTimeout(applyUiFix, 900);
                             }
-                        }, 900);
+                        }, 800);
                     })();
                 """.trimIndent()
 
