@@ -78,8 +78,8 @@ class MainActivity : AppCompatActivity() {
 
                 val cyberUiJs = """
                     (function() {
-                        if (window.__transpuntanoUiFixV12) return;
-                        window.__transpuntanoUiFixV12 = true;
+                        if (window.__tucolectivoV13) return;
+                        window.__tucolectivoV13 = true;
 
                         function isHome() {
                             try {
@@ -89,26 +89,27 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        function removeBase44Badge() {
+                        function isNav(el) {
+                            return !!(el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]'));
+                        }
+
+                        function removeBadge() {
                             try {
                                 var b = document.getElementById('base44-edit-badge');
                                 if (b) b.remove();
                             } catch (e) {}
                         }
 
-                        function replaceHomeLogo() {
+                        function replaceLogo() {
                             if (!isHome()) return;
                             try {
-                                var nodes = document.querySelectorAll('h1, h2, h3, span, div, p');
+                                var nodes = document.querySelectorAll('h1, h2, h3, div, span');
                                 for (var i = 0; i < nodes.length; i++) {
                                     var el = nodes[i];
                                     var t = (el.textContent || '').trim().toUpperCase();
-                                    if (t.indexOf('TRANSPUNTANO') !== -1 && el.children.length <= 4) {
-                                        // Reemplazar por TU COLECTIVO 2.0
-                                        if (t.indexOf('2.0') !== -1 || t === 'TRANSPUNTANO') {
-                                            el.innerHTML = '<div style="color:#00F0FF;font-weight:bold;letter-spacing:0.08em;font-size:1.1em;">TU COLECTIVO</div><div style="color:#FFFFFF;font-weight:bold;font-size:1.8em;line-height:1.1;">2.0</div>';
-                                            break;
-                                        }
+                                    if (t.indexOf('TRANSPUNTANO') !== -1 && el.children.length <= 3) {
+                                        el.innerHTML = '<div style="color:#00F0FF;font-weight:bold;letter-spacing:0.06em;">TU COLECTIVO</div><div style="color:#fff;font-weight:bold;font-size:1.7em;">2.0</div>';
+                                        break;
                                     }
                                 }
                             } catch (e) {}
@@ -117,106 +118,91 @@ class MainActivity : AppCompatActivity() {
                         function cleanHome() {
                             if (!isHome()) return;
                             try {
+                                // Tarjetas de líneas
                                 document.querySelectorAll('a[href^="/lineas/"]').forEach(function(el) {
                                     el.style.setProperty('display', 'none', 'important');
                                 });
 
-                                document.querySelectorAll('*').forEach(function(el) {
+                                // Ver todo
+                                document.querySelectorAll('a, span, button').forEach(function(el) {
                                     var txt = (el.textContent || '').trim();
-                                    if (/^ver todo\s*>?$/i.test(txt)) {
-                                        if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
+                                    if (/^ver todo\s*>?$/i.test(txt) && !isNav(el)) {
                                         el.style.setProperty('display', 'none', 'important');
-                                        var p = el.parentElement;
-                                        if (p && p.children.length <= 3) {
-                                            p.style.setProperty('display', 'none', 'important');
-                                        }
                                     }
                                 });
 
-                                var quickLabels = ['líneas', 'lineas', 'paradas', 'mapa', 'cercanas', 'favoritos'];
-                                document.querySelectorAll('a, button, div, span').forEach(function(el) {
+                                // Botones rápidos
+                                var labels = ['líneas', 'lineas', 'paradas', 'mapa', 'cercanas', 'favoritos'];
+                                document.querySelectorAll('a, button, span, div').forEach(function(el) {
                                     var txt = (el.textContent || '').trim().toLowerCase();
-                                    if (quickLabels.indexOf(txt) !== -1) {
-                                        if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
-                                        if ((el.textContent || '').toUpperCase().indexOf('TRANSPUNTANO') !== -1) return;
-                                        if ((el.textContent || '').toUpperCase().indexOf('TU COLECTIVO') !== -1) return;
-                                        el.style.setProperty('display', 'none', 'important');
-                                        var p = el.parentElement;
-                                        if (p && p.children.length <= 4 && !(p.textContent || '').toUpperCase().includes('TRANSPUNTANO') && !(p.textContent || '').toUpperCase().includes('TU COLECTIVO')) {
-                                            p.style.setProperty('display', 'none', 'important');
-                                        }
-                                    }
+                                    if (labels.indexOf(txt) === -1) return;
+                                    if (isNav(el)) return;
+                                    if ((el.textContent || '').toUpperCase().indexOf('TU COLECTIVO') !== -1) return;
+                                    if ((el.textContent || '').toUpperCase().indexOf('TRANSPUNTANO') !== -1) return;
+                                    el.style.setProperty('display', 'none', 'important');
                                 });
 
-                                document.querySelectorAll('h1, h2, h3, h4, span, div, p').forEach(function(el) {
+                                // Título LÍNEAS
+                                document.querySelectorAll('h1, h2, h3, span').forEach(function(el) {
                                     var txt = (el.textContent || '').trim();
-                                    if (/^líneas$/i.test(txt) && el.children.length <= 1) {
-                                        if (el.closest('nav') || el.closest('[class*="nav"]') || el.closest('[class*="bottom"]')) return;
+                                    if (/^líneas$/i.test(txt) && !isNav(el) && el.children.length <= 1) {
                                         el.style.setProperty('display', 'none', 'important');
                                     }
                                 });
 
+                                // Tagline
                                 document.querySelectorAll('p, span, small').forEach(function(el) {
                                     if (el.children.length > 0) return;
-                                    var t = (el.textContent || '').toLowerCase()
-                                        .replace(/[·•,.\-–—]/g, ' ')
-                                        .replace(/\s+/g, ' ')
-                                        .trim();
-                                    if (t.indexOf('transporte urbano') !== -1 && t.indexOf('san luis') !== -1 && t.indexOf('tiempo real') !== -1) {
+                                    var t = (el.textContent || '').toLowerCase();
+                                    if (t.indexOf('transporte urbano') !== -1 && t.indexOf('tiempo real') !== -1) {
                                         el.style.setProperty('display', 'none', 'important');
                                     }
                                 });
 
+                                // Buscador
                                 document.querySelectorAll('input').forEach(function(inp) {
                                     var ph = (inp.placeholder || '').toLowerCase();
                                     if (ph.indexOf('buscar') !== -1) {
-                                        var parent = inp.parentElement;
-                                        if (parent) parent.style.setProperty('display', 'none', 'important');
+                                        var p = inp.parentElement;
+                                        if (p) p.style.setProperty('display', 'none', 'important');
                                         else inp.style.setProperty('display', 'none', 'important');
                                     }
                                 });
-                            } catch (e) {
-                                console.error('cleanHome error', e);
-                            }
+                            } catch (e) {}
                         }
 
                         var running = false;
-                        function applyUiFix() {
+                        function apply() {
                             if (running) return;
                             running = true;
                             try {
-                                removeBase44Badge();
-                                replaceHomeLogo();
+                                removeBadge();
+                                replaceLogo();
                                 cleanHome();
                             } catch (e) {}
                             running = false;
                         }
 
-                        applyUiFix();
-                        setTimeout(applyUiFix, 400);
-                        setTimeout(applyUiFix, 1000);
-                        setTimeout(applyUiFix, 2000);
-                        setTimeout(applyUiFix, 3500);
-                        setTimeout(applyUiFix, 5500);
+                        apply();
+                        setTimeout(apply, 600);
+                        setTimeout(apply, 1500);
+                        setTimeout(apply, 3000);
+                        setTimeout(apply, 5000);
 
-                        var timer = null;
-                        var observer = new MutationObserver(function() {
-                            if (timer) clearTimeout(timer);
-                            timer = setTimeout(applyUiFix, 600);
-                        });
-                        observer.observe(document.documentElement, {
-                            childList: true,
-                            subtree: true
-                        });
+                        var t = null;
+                        new MutationObserver(function() {
+                            if (t) clearTimeout(t);
+                            t = setTimeout(apply, 800);
+                        }).observe(document.documentElement, { childList: true, subtree: true });
 
                         var last = location.href;
                         setInterval(function() {
                             if (location.href !== last) {
                                 last = location.href;
-                                setTimeout(applyUiFix, 300);
-                                setTimeout(applyUiFix, 900);
+                                setTimeout(apply, 400);
+                                setTimeout(apply, 1200);
                             }
-                        }, 800);
+                        }, 1000);
                     })();
                 """.trimIndent()
 
