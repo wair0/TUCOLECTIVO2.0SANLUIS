@@ -34,7 +34,7 @@ class SmartMoveApi {
             stringParam("clave", PASSWORD),
             boolParam("isSublinea", false)
         ))
-        val array = firstArray(root, "lineas", "Linea", "linea") ?: return emptyList()
+        val array = firstArray(root, "JsonLineas", "listaLineas", "lineas", "Linea", "linea") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
             val code = item.optStringAny("codigoLinea", "CodigoLinea", "CodigoLineaParada", "codigoLineaParada")
@@ -53,7 +53,7 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        val array = firstArray(root, "calles", "Calle", "calle") ?: return emptyList()
+        val array = firstArray(root, "CallesJson", "listaCalle", "listaCalles", "calles", "Calle", "calle") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
             val code = item.optStringAny("codigoCalle", "CodigoCalle", "Codigo", "codigo")
@@ -72,7 +72,7 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        val array = firstArray(root, "interseccion", "intersecciones", "Interseccion") ?: return emptyList()
+        val array = firstArray(root, "InterseccionJson", "intersecciones", "interseccion", "Interseccion") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
             val code = item.optIntAny("codigoInterseccion", "CodigoInterseccion", "Codigo", "codigo")
@@ -92,7 +92,7 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        return parseStops(firstArray(root, "paradas", "Parada", "parada"), line)
+        return parseStops(firstArray(root, "ParadaJson", "paradas", "Parada", "parada"), line)
     }
 
     fun getArrivals(identifier: String, line: Int): List<TransitArrival> {
@@ -104,7 +104,7 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        val array = firstArray(root, "arribos", "Arribo", "arribo") ?: return emptyList()
+        val array = firstArray(root, "ArribosJson", "listaArribos", "arribos", "Arribo", "arribo") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
             val arrival = item.optStringAny("Arribo", "arribo", "Tiempo", "tiempo").orEmpty()
@@ -127,7 +127,7 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        return parseStops(firstArray(root, "paradas", "Parada", "parada"), 0)
+        return parseStops(firstArray(root, "ParadaCercanasJson", "paradasCercanas", "paradas", "Parada", "parada"), 0)
     }
 
     fun getRoute(line: Int): List<Pair<Double, Double>> {
@@ -136,7 +136,7 @@ class SmartMoveApi {
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
         ))
-        val array = firstArray(root, "puntos", "Puntos", "recorrido", "Recorrido") ?: return emptyList()
+        val array = firstArray(root, "PuntosJson", "puntos", "Puntos", "recorrido", "Recorrido") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
             val lat = item.optStringAny("Latitud", "latitud", "Latitude", "latitude")?.replace(',', '.')?.toDoubleOrNull()
@@ -198,14 +198,19 @@ class SmartMoveApi {
         factory.isNamespaceAware = true
         val parser = factory.newPullParser()
         parser.setInput(rawXml.reader())
-        val text = StringBuilder()
+        val textNodes = mutableListOf<String>()
         val fault = StringBuilder()
         var inFault = false
 
         while (true) {
             when (parser.next()) {
                 XmlPullParser.START_TAG -> if (parser.name.equals("Fault", true)) inFault = true
-                XmlPullParser.TEXT, XmlPullParser.CDSECT -> if (inFault) fault.append(parser.text.orEmpty()) else text.append(parser.text.orEmpty())
+                XmlPullParser.TEXT, XmlPullParser.CDSECT -> {
+                    val value = parser.text.orEmpty().trim()
+                    if (value.isNotEmpty()) {
+                        if (inFault) fault.append(value) else textNodes.add(value)
+                    }
+                }
                 XmlPullParser.END_TAG -> if (parser.name.equals("Fault", true)) inFault = false
                 XmlPullParser.END_DOCUMENT -> break
             }
@@ -215,10 +220,28 @@ class SmartMoveApi {
             throw SmartMoveException("SmartMove SOAP Fault: " + fault.toString().trim().take(500))
         }
 
-        val cleaned = text.toString().trim().removePrefix("\uFEFF")
-        if (cleaned.startsWith("{")) return JSONObject(cleaned)
-        if (cleaned.startsWith("[")) return JSONObject().put("data", JSONArray(cleaned))
-        throw SmartMoveException("Respuesta SmartMove SOAP no válida: " + cleaned.take(500))
+        // SmartMove/ksoap2 commonly returns the payload as a JSON string inside
+        // <...Result>. Do not concatenate every XML text node: doing so destroys
+        // the JSON structure and was the reason the app could receive HTTP 200
+        // while still showing "No hay datos".
+        for (candidate in textNodes) {
+            val cleaned = candidate.removePrefix("\uFEFF").trim()
+            if (cleaned.startsWith("{")) {
+                runCatching { return JSONObject(cleaned) }
+            }
+            if (cleaned.startsWith("[")) {
+                runCatching { return JSONObject().put("data", JSONArray(cleaned)) }
+            }
+        }
+
+        val combined = textNodes.joinToString("").removePrefix("\uFEFF").trim()
+        if (combined.startsWith("{")) runCatching { return JSONObject(combined) }
+        if (combined.startsWith("[")) runCatching { return JSONObject().put("data", JSONArray(combined)) }
+
+        throw SmartMoveException(
+            "Respuesta SmartMove SOAP sin JSON. Texto recibido: " +
+                textNodes.joinToString(" | ").take(500)
+        )
     }
 
     private fun parseStops(array: JSONArray?, line: Int): List<TransitStop> {
@@ -274,15 +297,40 @@ class SmartMoveApi {
     }
 
     private fun firstArray(root: JSONObject, vararg names: String): JSONArray? {
-        names.forEach { name ->
-            root.optJSONArray(name)?.let { return it }
-        }
-        val nested = root.optJSONObject("data")
-        if (nested != null) {
-            names.forEach { name ->
-                nested.optJSONArray(name)?.let { return it }
+        val wanted = names.map { it.lowercase(Locale.US) }.toSet()
+
+        fun fromValue(value: Any?): JSONArray? {
+            when (value) {
+                is JSONArray -> return value
+                is JSONObject -> {
+                    val keys = value.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val child = value.opt(key)
+                        if (key.lowercase(Locale.US) in wanted) {
+                            if (child is JSONArray) return child
+                            if (child is String) {
+                                val s = child.trim()
+                                if (s.startsWith("[")) {
+                                    runCatching { return JSONArray(s) }
+                                }
+                                if (s.startsWith("{")) {
+                                    runCatching { fromValue(JSONObject(s))?.let { return it } }
+                                }
+                            }
+                        }
+                        fromValue(child)?.let { return it }
+                    }
+                }
+                is String -> {
+                    val s = value.trim()
+                    if (s.startsWith("[")) runCatching { return JSONArray(s) }
+                    if (s.startsWith("{")) runCatching { return fromValue(JSONObject(s)) }
+                }
             }
+            return null
         }
-        return null
+
+        return fromValue(root)
     }
 }
