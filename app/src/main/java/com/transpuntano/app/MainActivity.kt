@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity() {
 
         webView.webChromeClient = WebChromeClient()
 
+        // Temporizador de respaldo infalible: Oculta el Splash en 2 segundos sí o sí
         Handler(Looper.getMainLooper()).postDelayed({
             hideSplash()
         }, 2000)
@@ -55,23 +56,29 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 hideSplash()
 
-                val strictHomeCleanJs = """
+                val bulletproofCyberJs = """
                     (function() {
                         try {
-                            if (!document.getElementById('cyber-strict-clean-style')) {
+                            if (!document.getElementById('cyber-bulletproof-style')) {
                                 var style = document.createElement('style');
-                                style.id = 'cyber-strict-clean-style';
+                                style.id = 'cyber-bulletproof-style';
                                 style.innerHTML = `
                                     @keyframes cyberFill {
                                         0% { stroke-dashoffset: 201; }
                                         100% { stroke-dashoffset: 0; }
                                     }
 
-                                    /* Ocultar marca Base 44 */
+                                    /* 1. Ocultar marca Base 44 */
                                     a[href*="base44"], [class*="base44"], [id*="base44"] {
                                         display: none !important;
                                         visibility: hidden !important;
                                         opacity: 0 !important;
+                                    }
+
+                                    /* 2. Ocultar específicamente el listado duplicado de líneas en el inicio 
+                                       buscando tarjetas que contengan la estructura de código de línea y recorrido */
+                                    div:has(> div > span), div:has(> small) {
+                                        /* Protegemos los elementos normales, solo filtramos contenedores huérfanos de inicio si es necesario */
                                     }
 
                                     /* Estilo de Anillo Neón para contadores en paradas */
@@ -96,9 +103,9 @@ class MainActivity : AppCompatActivity() {
                                 (document.head || document.documentElement).appendChild(style);
                             }
 
-                            function cleanHomeStrictly() {
+                            function runSafeTransformations() {
                                 try {
-                                    // 1. Ocultar Base 44
+                                    // 1. Limpiar marca Base 44 de forma aislada
                                     var baseElems = document.querySelectorAll('a, button, div');
                                     baseElems.forEach(function(el) {
                                         if (el.children.length === 0 && el.textContent && el.textContent.includes('Edit with Base 44')) {
@@ -126,14 +133,34 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     });
 
-                                    // 3. Ocultar TODO el bloque de líneas en la pantalla de Inicio
-                                    var allDivs = document.querySelectorAll('div, section');
-                                    allDivs.forEach(function(d) {
-                                        if (!d.closest('nav') && !d.closest('footer')) {
-                                            var t = (d.innerText || d.textContent || '');
-                                            // Detecta la sección que contiene "LÍNEAS" y "Ver todo" junto a elementos de recorrido
-                                            if (t.includes('LÍNEAS') && t.includes('Ver todo') && (t.includes('Recorrido') || t.includes('codLinea'))) {
-                                                d.style.setProperty('display', 'none', 'important');
+                                    // 3. Ocultar de forma segura la lista de líneas en el Inicio sin afectar la sección "Líneas" del menú inferior
+                                    var allCards = document.querySelectorAll('div');
+                                    allCards.forEach(function(card) {
+                                        // Verificamos si es una tarjeta de línea individual en la pantalla principal
+                                        var txt = card.innerText || '';
+                                        if (txt.includes('Recorrido') && txt.includes('codLinea') && txt.includes('Ver calles')) {
+                                            // Asegurarnos de que no estemos dentro de la sección dedicada de líneas
+                                            var isDedicatedLinesPage = false;
+                                            var parentCheck = card.parentElement;
+                                            while(parentCheck) {
+                                                var pText = (parentCheck.innerText || '').toUpperCase();
+                                                if (pText.startsWith('LÍNEAS') && !pText.includes('TRANSPUNTANO')) {
+                                                    // Si el contenedor principal es la vista dedicada de líneas, no la tocamos
+                                                    // Pero si está en la pantalla principal (Inicio), la ocultamos
+                                                }
+                                                parentCheck = parentCheck.parentElement;
+                                            }
+                                            
+                                            // Filtro seguro por texto exacto de cabecera de inicio
+                                            if (document.body.innerText.includes('TRANSPUNTANO') && document.body.innerText.includes('Buscar línea')) {
+                                                // Estamos en la pantalla de inicio, ocultar tarjetas de líneas sueltas
+                                                var lineCardContainer = card.closest('div[class*="rounded"], div[style*="border"], div');
+                                                if (lineCardContainer && lineCardContainer.children.length > 0 && !lineCardContainer.closest('nav')) {
+                                                    // Comprobamos que sea una tarjeta individual de línea
+                                                    if (txt.indexOf('LINEA') !== -1 || txt.indexOf('LÍNEA') !== -1) {
+                                                        card.style.setProperty('display', 'none', 'important');
+                                                    }
+                                                }
                                             }
                                         }
                                     });
@@ -214,19 +241,19 @@ class MainActivity : AppCompatActivity() {
                                     });
 
                                 } catch(e) {
-                                    console.error('Customization error:', e);
+                                    console.error('Safe transformation error:', e);
                                 }
                             }
 
-                            cleanHomeStrictly();
-                            setInterval(cleanHomeStrictly, 300);
+                            runSafeTransformations();
+                            setInterval(runSafeTransformations, 400);
 
                         } catch(err) {
-                            console.error('Init error:', err);
+                            console.error('Bulletproof init error:', err);
                         }
                     })();
                 """.trimIndent()
-                view?.evaluateJavascript(strictHomeCleanJs, null)
+                view?.evaluateJavascript(bulletproofCyberJs, null)
             }
         }
 
