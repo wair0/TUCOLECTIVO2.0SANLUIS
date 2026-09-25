@@ -49,6 +49,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         buildShell()
         showHome()
+    }
+
     private fun buildShell() {
         val rootFrame = FrameLayout(this).apply { setBackgroundColor(bg) }
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(bg) }
@@ -57,7 +59,7 @@ class MainActivity : AppCompatActivity() {
         headerLayout.addView(menuBtn, LinearLayout.LayoutParams(dp(40), dp(40)))
         val headerContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(0, -2, 1f) }
         headerContent.addView(TextView(this).apply { text = "TU COLECTIVO 2.0"; textSize = 24f; typeface = Typeface.MONOSPACE; setTextColor(cyan) })
-        title = TextView(this).apply { text = "CENTRO DE MOVILIDAD"; textSize = 11f; setTextColor(muted) }
+        title = TextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
         headerContent.addView(title)
         status = TextView(this).apply { text = "● SISTEMA LISTO"; textSize = 16f; setTextColor(0xFF55FFB0.toInt()) }
         headerContent.addView(status)
