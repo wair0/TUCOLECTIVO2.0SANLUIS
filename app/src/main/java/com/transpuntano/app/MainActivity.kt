@@ -14,9 +14,21 @@ import com.transpuntano.app.data.SmartMoveApi
 import com.transpuntano.app.model.*
 import com.transpuntano.app.ui.CyberMapView
 import com.transpuntano.app.ui.MapStop
+import org.json.JSONObject
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
+    private data class FavoriteStop(
+        val lineCode: Int,
+        val lineName: String,
+        val stopCode: Int,
+        val description: String,
+        val identifier: String,
+        val street: String,
+        val intersection: String,
+        val latitude: Double,
+        val longitude: Double
+    )
     private val api = SmartMoveApi()
     private val executor = Executors.newFixedThreadPool(3)
 
@@ -367,15 +379,83 @@ class MainActivity : AppCompatActivity() {
         val box = box()
         val favorites = getSharedPreferences("favorites", 0).getStringSet("stops", emptySet()).orEmpty()
         box.addView(panel("MIS PARADAS", if (favorites.isEmpty()) "No hay favoritos." else "Guardados localmente."))
-        favorites.forEach { favorite -> box.addView(card(favorite, "GUARDADO") {}) }
+        favorites.forEach { favorite ->
+            val saved = parseFavorite(favorite)
+            if (saved != null) {
+                box.addView(
+                    card(
+                        "LÍNEA ${saved.lineCode} · ${saved.description}",
+                        if (saved.street.isBlank() && saved.intersection.isBlank())
+                            "TOCAR PARA VER ARRIBOS"
+                        else
+                            "${saved.street} · ${saved.intersection}"
+                    ) {
+                        val stop = TransitStop(
+                            saved.stopCode,
+                            saved.description,
+                            saved.identifier,
+                            saved.latitude,
+                            saved.longitude,
+                            saved.street,
+                            saved.intersection,
+                            saved.lineCode
+                        )
+                        showArrivals(stop, TransitLine(saved.lineCode, saved.lineName))
+                    },
+                    LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) }
+                )
+            } else {
+                box.addView(
+                    card(favorite, "FAVORITO ANTIGUO · VOLVÉ A GUARDAR LA PARADA", {}),
+                    LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) }
+                )
+            }
+        }
         content.addView(ScrollView(this).apply { addView(box) })
     }
 
     private fun saveFavorite(stop: TransitStop, line: TransitLine) {
         val prefs = getSharedPreferences("favorites", 0)
         val values = prefs.getStringSet("stops", emptySet())?.toMutableSet() ?: mutableSetOf()
-        values.add("Línea " + line.code + " · " + stop.description)
+
+        val favorite = JSONObject().apply {
+            put("version", 2)
+            put("lineCode", line.code)
+            put("lineName", line.name)
+            put("stopCode", stop.code)
+            put("description", stop.description)
+            put("identifier", stop.identifier)
+            put("street", stop.street)
+            put("intersection", stop.intersection)
+            put("latitude", stop.latitude)
+            put("longitude", stop.longitude)
+        }.toString()
+
+        values.removeAll { raw ->
+            parseFavorite(raw)?.let {
+                it.lineCode == line.code && it.identifier == stop.identifier
+            } ?: false
+        }
+        values.add(favorite)
         prefs.edit().putStringSet("stops", values).apply()
+    }
+
+    private fun parseFavorite(raw: String): FavoriteStop? {
+        return runCatching {
+            val json = JSONObject(raw)
+            if (json.optInt("version", 0) < 2) return null
+            FavoriteStop(
+                lineCode = json.getInt("lineCode"),
+                lineName = json.optString("lineName", "LÍNEA ${json.getInt("lineCode")}"),
+                stopCode = json.optInt("stopCode", 0),
+                description = json.optString("description", ""),
+                identifier = json.optString("identifier", ""),
+                street = json.optString("street", ""),
+                intersection = json.optString("intersection", ""),
+                latitude = json.optDouble("latitude", 0.0),
+                longitude = json.optDouble("longitude", 0.0)
+            )
+        }.getOrNull()
     }
 
     private fun showMap(line: TransitLine?) {
