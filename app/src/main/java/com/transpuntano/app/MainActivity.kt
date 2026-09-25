@@ -285,35 +285,77 @@ class MainActivity : AppCompatActivity() {
         title.text = "PARADAS CERCANAS"
         updateNav(3)
         content.removeAllViews()
-        val box = box()
-        box.addView(panel("RADAR LOCAL", "Buscá paradas próximas a tu ubicación."))
-        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        box.addView(list)
-        box.addView(button("BUSCAR PARADAS CERCANAS", cyan) { loadNearby(list) })
-        content.addView(ScrollView(this).apply { addView(box) })
+        val root = FrameLayout(this)
+        val map = CyberMapView(this)
+        root.addView(map, FrameLayout.LayoutParams(-1, -1))
+
+        val info = TextView(this).apply {
+            text = "RADAR LOCAL  •  UBICACIÓN ACTIVA"
+            textSize = 11f
+            typeface = Typeface.MONOSPACE
+            setTextColor(cyan)
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            setBackgroundColor(0xCC05070C.toInt())
+        }
+        root.addView(info, FrameLayout.LayoutParams(-1, dp(44)).apply { gravity = Gravity.TOP })
+
+        root.addView(button("◉ ACTUALIZAR CERCA", cyan) { loadNearbyOnMap(map, info) },
+            FrameLayout.LayoutParams(-1, dp(52)).apply {
+                gravity = Gravity.BOTTOM
+                leftMargin = dp(16)
+                rightMargin = dp(16)
+                bottomMargin = dp(16)
+            })
+
+        map.setOnStopTap { stop ->
+            toast(stop.title + if (stop.subtitle.isBlank()) "" else " · " + stop.subtitle)
+        }
+
+        content.addView(root)
+        loadNearbyOnMap(map, info)
     }
 
-    private fun loadNearby(list: LinearLayout) {
+    private fun loadNearbyOnMap(map: CyberMapView, info: TextView) {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 42)
             return
         }
+
         val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
             ?: return toast("No hay ubicación disponible")
+
+        map.setUserLocation(location.latitude, location.longitude, true)
+        status.text = "● BUSCANDO PARADAS"
+
         executor.execute {
             runCatching { api.getNearby(location.latitude, location.longitude) }
                 .onSuccess { stops ->
+                    val markers = stops.take(60).map {
+                        MapStop(
+                            it.code,
+                            "🚏 " + it.description,
+                            listOf(it.street, it.intersection)
+                                .filter { value -> value.isNotBlank() }
+                                .joinToString(" · "),
+                            it.latitude,
+                            it.longitude
+                        )
+                    }.filter { it.latitude != 0.0 && it.longitude != 0.0 }
+
                     runOnUiThread {
-                        list.removeAllViews()
-                        stops.take(30).forEach { stop ->
-                            list.addView(card("🚏 " + stop.description, stop.street + " " + stop.intersection) {})
-                        }
-                        if (stops.isEmpty()) list.addView(panel("SIN PARADAS", "No se encontraron paradas cercanas."))
+                        map.setStops(markers, fit = false)
+                        status.text = "● " + markers.size + " PARADAS CERCANAS"
+                        info.text = "RADAR LOCAL  •  " + markers.size + " PARADAS"
                     }
                 }
-                .onFailure { error -> runOnUiThread { list.removeAllViews(); list.addView(panel("ERROR", error.message ?: "Error")) } }
+                .onFailure { error ->
+                    runOnUiThread {
+                        status.text = "● SIN CONEXIÓN"
+                        toast(error.message ?: "No se pudieron cargar las paradas")
+                    }
+                }
         }
     }
 
