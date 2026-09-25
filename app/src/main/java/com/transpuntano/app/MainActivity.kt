@@ -89,10 +89,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun addDrawerItems() {
         val items = listOf(
-            "⌂" to "INICIO" to 0,
-            "▤" to "LÍNEAS" to 1,
-            "★" to "FAVORITOS" to 2,
-            "◎" to "CERCA" to 3
+            Triple("⌂", "INICIO", 0),
+            Triple("▤", "LÍNEAS", 1),
+            Triple("★", "FAVORITOS", 2),
+            Triple("◎", "CERCA", 3)
         )
         items.forEach { (icon, label, index) ->
             drawerPanel.addView(TextView(this).apply {
