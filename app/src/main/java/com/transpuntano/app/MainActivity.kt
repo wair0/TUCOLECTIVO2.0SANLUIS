@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.transpuntano.app.data.SmartMoveApi
 import com.transpuntano.app.model.*
 import com.transpuntano.app.ui.CyberMapView
+import com.transpuntano.app.ui.MapStop
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
