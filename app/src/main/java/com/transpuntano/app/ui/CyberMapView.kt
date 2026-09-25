@@ -250,6 +250,10 @@ class CyberMapView(context: Context) : View(context) {
         ),
             dp(55f),
             width - dp(16f),
+            dp(55f) + (width - dp(32f))
+        ),
+            dp(55f),
+            width - dp(16f),
             height - dp(65f)
         )
     }
