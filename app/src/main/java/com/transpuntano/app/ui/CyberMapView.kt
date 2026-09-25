@@ -188,10 +188,10 @@ class CyberMapView(context: Context) : View(context) {
         c.drawColor(Color.rgb(5, 7, 12))
 
         mapRect.set(
-            dp(8f),
-            dp(8f),
-            width - dp(8f),
-            height - dp(8f)
+            dp(16f),
+            dp(55f),
+            width - dp(16f),
+            height - dp(16f)
         )
 
         if (mapRect.width() <= 0 || mapRect.height() <= 0) return
