@@ -46,6 +46,10 @@ class CyberMapView(context: Context) : View(context) {
     private var lon = -66.3378
     private var zoom = 13
 
+    // OpenStreetMap: nuestro descargador trabaja hasta zoom 19.
+    // Evitamos zoom 20-21 para no ampliar tiles de menor resolución.
+    private val maxZoom = 19
+
     private var downX = 0f
     private var downY = 0f
     private var moved = false
@@ -79,7 +83,7 @@ class CyberMapView(context: Context) : View(context) {
                     accumulator *= detector.scaleFactor
 
                     if (accumulator > 1.22f) {
-                        if (zoom < 21) zoom++
+                        if (zoom < maxZoom) zoom++
                         accumulator = 1f
                         invalidate()
                     } else if (accumulator < 0.82f) {
@@ -108,7 +112,7 @@ class CyberMapView(context: Context) : View(context) {
 
                 override fun onDoubleTap(e: MotionEvent): Boolean {
                     if (mapRect.contains(e.x, e.y)) {
-                        zoom = (zoom + 1).coerceAtMost(21)
+                        zoom = (zoom + 1).coerceAtMost(maxZoom)
                         invalidate()
                     }
                     return true
@@ -851,7 +855,7 @@ private fun updateMapRect() {
 
                 if (plus.contains(e.x, e.y)) {
                     zoom =
-                        (zoom + 1).coerceAtMost(21)
+                        (zoom + 1).coerceAtMost(maxZoom)
                     invalidate()
                     return true
                 }
