@@ -6,10 +6,12 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.transpuntano.app.data.SmartMoveApi
 import com.transpuntano.app.model.*
@@ -44,11 +46,26 @@ class MainActivity : AppCompatActivity() {
     private val panelColor = 0xFF0B1018.toInt()
     private val muted = 0xFF8CA5B5.toInt()
     private lateinit var drawerPanel: LinearLayout
+    private lateinit var drawerScrim: View
     private var drawerOpen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildShell()
+
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (drawerOpen) {
+                        toggleDrawer()
+                    } else {
+                        finish()
+                    }
+                }
+            }
+        )
+
         showHome()
     }
 
@@ -71,7 +88,32 @@ class MainActivity : AppCompatActivity() {
         navBar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF080C13.toInt()); visibility = View.GONE }
         root.addView(navBar, LinearLayout.LayoutParams(-1, dp(64)))
         rootFrame.addView(root)
-        drawerPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(0xFF0E1420.toInt()); layoutParams = FrameLayout.LayoutParams(dp(250), -1).apply { gravity = Gravity.START }; visibility = View.GONE }
+
+        drawerScrim = View(this).apply {
+            setBackgroundColor(Color.TRANSPARENT)
+            visibility = View.GONE
+            setOnClickListener {
+                toggleDrawer()
+            }
+        }
+
+        rootFrame.addView(
+            drawerScrim,
+            FrameLayout.LayoutParams(-1, -1)
+        )
+
+        drawerPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(0xFF0E1420.toInt())
+            layoutParams = FrameLayout.LayoutParams(
+                dp(250),
+                -1
+            ).apply {
+                gravity = Gravity.START
+            }
+            visibility = View.GONE
+        }
+
         addDrawerItems()
         rootFrame.addView(drawerPanel)
         setContentView(rootFrame)
@@ -80,10 +122,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleDrawer() {
         drawerOpen = !drawerOpen
+
         if (drawerOpen) {
-            drawerPanel.visibility = android.view.View.VISIBLE
+            drawerScrim.visibility = View.VISIBLE
+            drawerPanel.visibility = View.VISIBLE
         } else {
-            drawerPanel.visibility = android.view.View.GONE
+            drawerPanel.visibility = View.GONE
+            drawerScrim.visibility = View.GONE
         }
     }
 
@@ -733,6 +778,8 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+            info.text = "MAPA  •  SE NECESITA UBICACIÓN PRECISA"
+
             requestPermissions(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -740,95 +787,181 @@ class MainActivity : AppCompatActivity() {
                 ),
                 42
             )
+
+            toast("Permití ubicación precisa para centrarte correctamente")
             return
         }
 
         val manager =
             getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-        val location =
-            manager.getLastKnownLocation(
-                LocationManager.GPS_PROVIDER
-            )
-                ?: manager.getLastKnownLocation(
-                    LocationManager.NETWORK_PROVIDER
-                )
+        status.text = "● OBTENIENDO UBICACIÓN"
+        info.text = "MAPA  •  OBTENIENDO UBICACIÓN ACTUAL"
 
-        if (location == null) {
-            status.text = "● SIN UBICACIÓN"
-            info.text = "MAPA  •  UBICACIÓN NO DISPONIBLE"
-            toast("No hay ubicación disponible")
-            return
-        }
-
-        map.setUserLocation(
-            location.latitude,
-            location.longitude,
-            true
-        )
-
-        status.text = "● BUSCANDO PARADAS"
-
-        info.text = "MAPA  •  BUSCANDO PARADAS CERCANAS"
-
-        executor.execute {
-            runCatching {
-                api.getNearby(
-                    location.latitude,
-                    location.longitude
-                )
+        fun useLocation(location: android.location.Location?) {
+            if (location == null) {
+                runOnUiThread {
+                    status.text = "● SIN UBICACIÓN"
+                    info.text = "MAPA  •  UBICACIÓN NO DISPONIBLE"
+                    toast("No se pudo obtener una ubicación actual")
+                }
+                return
             }
-                .onSuccess { stops ->
-                    val markers = stops
-                        .take(60)
-                        .map {
-                            MapStop(
-                                it.code,
-                                "🚏 " + it.description,
-                                listOf(
-                                    it.street,
-                                    it.intersection
+
+            runOnUiThread {
+                map.setUserLocation(
+                    location.latitude,
+                    location.longitude,
+                    true
+                )
+
+                val accuracyText =
+                    if (location.hasAccuracy()) {
+                        " ±" + location.accuracy.toInt() + " m"
+                    } else {
+                        ""
+                    }
+
+                status.text = "● UBICACIÓN ACTUAL" + accuracyText
+
+                info.text =
+                    "MAPA  •  UBICACIÓN ACTUAL" +
+                    accuracyText +
+                    "  •  BUSCANDO PARADAS"
+            }
+
+            executor.execute {
+                runCatching {
+                    api.getNearby(
+                        location.latitude,
+                        location.longitude
+                    )
+                }
+                    .onSuccess { stops ->
+                        val markers = stops
+                            .take(60)
+                            .map {
+                                MapStop(
+                                    it.code,
+                                    "🚏 " + it.description,
+                                    listOf(
+                                        it.street,
+                                        it.intersection
+                                    )
+                                        .filter { value ->
+                                            value.isNotBlank()
+                                        }
+                                        .joinToString(" · "),
+                                    it.latitude,
+                                    it.longitude
                                 )
-                                    .filter { value ->
-                                        value.isNotBlank()
-                                    }
-                                    .joinToString(" · "),
-                                it.latitude,
-                                it.longitude
+                            }
+                            .filter {
+                                it.latitude != 0.0 &&
+                                it.longitude != 0.0
+                            }
+
+                        runOnUiThread {
+                            map.setStops(
+                                markers,
+                                fit = false
+                            )
+
+                            status.text =
+                                "● " + markers.size +
+                                " PARADAS CERCANAS"
+
+                            info.text =
+                                "MAPA  •  " +
+                                markers.size +
+                                " PARADAS CERCANAS" +
+                                if (location.hasAccuracy()) {
+                                    "  •  ±" +
+                                    location.accuracy.toInt() +
+                                    " m"
+                                } else {
+                                    ""
+                                }
+                        }
+                    }
+                    .onFailure { error ->
+                        runOnUiThread {
+                            status.text = "● SIN CONEXIÓN"
+                            info.text =
+                                "MAPA  •  ERROR AL CARGAR PARADAS"
+
+                            toast(
+                                error.message
+                                    ?: "No se pudieron cargar las paradas"
                             )
                         }
-                        .filter {
-                            it.latitude != 0.0 &&
-                            it.longitude != 0.0
-                        }
-
-                    runOnUiThread {
-                        map.setStops(
-                            markers,
-                            fit = false
-                        )
-
-                        status.text =
-                            "● " + markers.size +
-                            " PARADAS CERCANAS"
-
-                        info.text =
-                            "MAPA  •  " + markers.size +
-                            " PARADAS CERCANAS"
                     }
-                }
-                .onFailure { error ->
-                    runOnUiThread {
-                        status.text = "● SIN CONEXIÓN"
-                        info.text =
-                            "MAPA  •  ERROR AL CARGAR PARADAS"
+            }
+        }
 
-                        toast(
-                            error.message
-                                ?: "No se pudieron cargar las paradas"
-                        )
-                    }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
+            val provider =
+                when {
+                    manager.isProviderEnabled(
+                        LocationManager.GPS_PROVIDER
+                    ) -> LocationManager.GPS_PROVIDER
+
+                    manager.isProviderEnabled(
+                        LocationManager.NETWORK_PROVIDER
+                    ) -> LocationManager.NETWORK_PROVIDER
+
+                    else -> null
                 }
+
+            if (provider == null) {
+                status.text = "● UBICACIÓN DESACTIVADA"
+                info.text =
+                    "MAPA  •  ACTIVÁ LA UBICACIÓN DEL TELÉFONO"
+
+                toast("Activá la ubicación del teléfono")
+                return
+            }
+
+            manager.getCurrentLocation(
+                provider,
+                null,
+                mainExecutor
+            ) { location ->
+
+                if (location != null) {
+                    useLocation(location)
+
+                } else if (
+                    provider != LocationManager.NETWORK_PROVIDER &&
+                    manager.isProviderEnabled(
+                        LocationManager.NETWORK_PROVIDER
+                    )
+                ) {
+                    manager.getCurrentLocation(
+                        LocationManager.NETWORK_PROVIDER,
+                        null,
+                        mainExecutor
+                    ) { networkLocation ->
+                        useLocation(networkLocation)
+                    }
+
+                } else {
+                    useLocation(null)
+                }
+            }
+
+        } else {
+
+            val location =
+                manager.getLastKnownLocation(
+                    LocationManager.GPS_PROVIDER
+                )
+                    ?: manager.getLastKnownLocation(
+                        LocationManager.NETWORK_PROVIDER
+                    )
+
+            useLocation(location)
         }
     }
 
