@@ -140,7 +140,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun showHome() {
         title.text = ""
-        title.text = ""
         updateNav(0)
         content.removeAllViews()
         val box = box()
@@ -179,6 +178,8 @@ class MainActivity : AppCompatActivity() {
         box.addView(button("SINCRONIZAR LÍNEAS", cyan) { loadLines(false) }, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(20) })
         
         content.addView(ScrollView(this).apply { addView(box) })
+    }
+
     private fun loadLines(navigateToLines: Boolean = true) {
         status.text = "● SINCRONIZANDO..."
         executor.execute {
@@ -562,9 +563,10 @@ class MainActivity : AppCompatActivity() {
         setOnClickListener { action() }
         
         val borderView = View(this@MainActivity).apply {
-            layoutParams = FrameLayout.LayoutParams(dp(1), -1)
+            layoutParams = FrameLayout.LayoutParams(dp(4), -1)
             setBackgroundColor(color)
         }
+        addView(borderView)
         
         addView(TextView(this@MainActivity).apply {
             text = icon
