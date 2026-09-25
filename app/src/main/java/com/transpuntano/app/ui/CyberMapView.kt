@@ -79,7 +79,7 @@ class CyberMapView(context: Context) : View(context) {
                     accumulator *= detector.scaleFactor
 
                     if (accumulator > 1.22f) {
-                        if (zoom < 18) zoom++
+                        if (zoom < 21) zoom++
                         accumulator = 1f
                         invalidate()
                     } else if (accumulator < 0.82f) {
@@ -108,7 +108,7 @@ class CyberMapView(context: Context) : View(context) {
 
                 override fun onDoubleTap(e: MotionEvent): Boolean {
                     if (mapRect.contains(e.x, e.y)) {
-                        zoom = (zoom + 1).coerceAtMost(18)
+                        zoom = (zoom + 1).coerceAtMost(21)
                         invalidate()
                     }
                     return true
@@ -417,6 +417,8 @@ class CyberMapView(context: Context) : View(context) {
         y: Int,
         z: Int
     ) {
+        if (z > 19) return
+
         synchronized(cache) {
             if (cache.get(key) != null) return
             if (!inFlight.add(key)) return
@@ -849,7 +851,7 @@ class CyberMapView(context: Context) : View(context) {
 
                 if (plus.contains(e.x, e.y)) {
                     zoom =
-                        (zoom + 1).coerceAtMost(18)
+                        (zoom + 1).coerceAtMost(21)
                     invalidate()
                     return true
                 }
