@@ -22,6 +22,6 @@ jobs:
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Transpuntano20-native-debug-apk
+          name: TUCOLECTIVO20
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
