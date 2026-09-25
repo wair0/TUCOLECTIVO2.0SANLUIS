@@ -147,6 +147,11 @@ class CyberMapView(context: Context) : View(context) {
     private fun fit(v: List<Pair<Double, Double>>) {
         if (v.isEmpty()) return
 
+        if (width <= 0 || height <= 0) {
+            post { fit(v) }
+            return
+        }
+
         val minLat = v.minOf { it.first }
         val maxLat = v.maxOf { it.first }
         val minLon = v.minOf { it.second }
@@ -155,20 +160,25 @@ class CyberMapView(context: Context) : View(context) {
         lat = (minLat + maxLat) / 2.0
         lon = (minLon + maxLon) / 2.0
 
-        val span = max(
-            maxLat - minLat,
-            (maxLon - minLon) * cos(Math.toRadians(lat))
-        )
+        val availableWidth = max(width - dp(16f), 1f) * 0.86
+        val availableHeight = max(height - dp(16f), 1f) * 0.86
 
-        zoom = when {
-            span < .0015 -> 18
-            span < .003 -> 17
-            span < .006 -> 16
-            span < .015 -> 15
-            span < .03 -> 14
-            span < .07 -> 13
-            span < .14 -> 12
-            else -> 11
+        zoom = 11
+
+        for (z in 18 downTo 11) {
+            val topLeft = world(maxLat, minLon, z)
+            val bottomRight = world(minLat, maxLon, z)
+
+            val projectedWidth = abs(bottomRight.first - topLeft.first)
+            val projectedHeight = abs(bottomRight.second - topLeft.second)
+
+            if (
+                projectedWidth <= availableWidth &&
+                projectedHeight <= availableHeight
+            ) {
+                zoom = z
+                break
+            }
         }
     }
 
@@ -300,21 +310,85 @@ class CyberMapView(context: Context) : View(context) {
                         paint
                     )
                 } else {
-                    paint.style = Paint.Style.FILL
-                    paint.color = Color.rgb(10, 17, 23)
+                    val fallback = findFallbackTile(x, y, zoom)
 
-                    c.drawRect(
-                        dx.toFloat(),
-                        dy.toFloat(),
-                        (dx + 256).toFloat(),
-                        (dy + 256).toFloat(),
-                        paint
-                    )
+                    if (fallback != null) {
+                        c.drawBitmap(
+                            fallback.first,
+                            fallback.second,
+                            RectF(
+                                dx.toFloat(),
+                                dy.toFloat(),
+                                (dx + 256).toFloat(),
+                                (dy + 256).toFloat()
+                            ),
+                            paint
+                        )
+                    } else {
+                        paint.style = Paint.Style.FILL
+                        paint.color = Color.rgb(10, 17, 23)
+
+                        c.drawRect(
+                            dx.toFloat(),
+                            dy.toFloat(),
+                            (dx + 256).toFloat(),
+                            (dy + 256).toFloat(),
+                            paint
+                        )
+                    }
 
                     download(key, x, y, zoom)
                 }
             }
         }
+    }
+
+    private fun findFallbackTile(
+        x: Int,
+        y: Int,
+        z: Int
+    ): Pair<Bitmap, Rect>?
+    {
+        for (delta in 1..4) {
+            val parentZoom = z - delta
+            if (parentZoom < 0) break
+
+            val factor = 1 shl delta
+            val parentXRaw = floor(x.toDouble() / factor).toInt()
+            val parentY = floor(y.toDouble() / factor).toInt()
+            val parentCount = 1 shl parentZoom
+
+            if (parentY !in 0 until parentCount) continue
+
+            val parentX =
+                ((parentXRaw % parentCount) + parentCount) % parentCount
+
+            val key = "$parentZoom/$parentX/$parentY"
+
+            val bitmap = synchronized(cache) {
+                cache[key]
+            } ?: continue
+
+            val localX =
+                x - parentXRaw * factor
+
+            val localY =
+                y - parentY * factor
+
+            val sourceSize =
+                256 / factor
+
+            val source = Rect(
+                localX * sourceSize,
+                localY * sourceSize,
+                (localX + 1) * sourceSize,
+                (localY + 1) * sourceSize
+            )
+
+            return bitmap to source
+        }
+
+        return null
     }
 
     private fun download(
