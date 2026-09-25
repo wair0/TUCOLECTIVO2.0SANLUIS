@@ -91,8 +91,9 @@ class MainActivity : AppCompatActivity() {
         val items = listOf(
             Triple("⌂", "INICIO", 0),
             Triple("▤", "LÍNEAS", 1),
-            Triple("★", "FAVORITOS", 2),
-            Triple("◎", "PARADAS CERCANAS", 3)
+            Triple("◉", "MAPA", 2),
+            Triple("★", "FAVORITOS", 3),
+            Triple("◎", "PARADAS CERCANAS", 4)
         )
         items.forEach { (icon, label, index) ->
             drawerPanel.addView(TextView(this).apply {
@@ -113,8 +114,9 @@ class MainActivity : AppCompatActivity() {
         when (index) {
             0 -> showHome()
             1 -> showLines()
-            2 -> showFavorites()
-            3 -> showNearby()
+            2 -> showMap(null)
+            3 -> showFavorites()
+            4 -> showNearby()
         }
     }
     private fun updateNav(selected: Int) {
@@ -639,6 +641,9 @@ class MainActivity : AppCompatActivity() {
     private fun showMap(line: TransitLine?) {
         title.text = "MAPA"
         content.removeAllViews()
+
+        val root = FrameLayout(this)
+
         val mapFrame = FrameLayout(this).apply {
             setBackgroundColor(panelColor)
             setPadding(dp(6), dp(6), dp(6), dp(6))
@@ -651,7 +656,7 @@ class MainActivity : AppCompatActivity() {
             FrameLayout.LayoutParams(-1, -1)
         )
 
-        content.addView(
+        root.addView(
             mapFrame,
             FrameLayout.LayoutParams(-1, -1).apply {
                 leftMargin = dp(6)
@@ -660,12 +665,170 @@ class MainActivity : AppCompatActivity() {
                 bottomMargin = dp(6)
             }
         )
+
+        val info = TextView(this).apply {
+            text = "MAPA  •  UBICACIÓN Y PARADAS CERCANAS"
+            textSize = 11f
+            typeface = Typeface.MONOSPACE
+            setTextColor(cyan)
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            setBackgroundColor(0xCC05070C.toInt())
+        }
+
+        root.addView(
+            info,
+            FrameLayout.LayoutParams(-1, dp(44)).apply {
+                gravity = Gravity.TOP
+            }
+        )
+
+        root.addView(
+            button("◉ MI UBICACIÓN / PARADAS CERCANAS", cyan) {
+                loadNearbyOnMap(map, info)
+            },
+            FrameLayout.LayoutParams(-1, dp(52)).apply {
+                gravity = Gravity.BOTTOM
+                leftMargin = dp(16)
+                rightMargin = dp(16)
+                bottomMargin = dp(16)
+            }
+        )
+
+        map.setOnStopTap { stop ->
+            toast(
+                stop.title +
+                    if (stop.subtitle.isBlank()) ""
+                    else " · " + stop.subtitle
+            )
+        }
+
+        content.addView(root)
+
         if (line != null) {
             executor.execute {
                 runCatching { api.getRoute(line.code) }
-                    .onSuccess { route -> runOnUiThread { map.setRoute(route) } }
-                    .onFailure { error -> runOnUiThread { toast(error.message ?: "No se pudo cargar el recorrido") } }
+                    .onSuccess { route ->
+                        runOnUiThread {
+                            map.setRoute(route)
+                        }
+                    }
+                    .onFailure { error ->
+                        runOnUiThread {
+                            toast(
+                                error.message
+                                    ?: "No se pudo cargar el recorrido"
+                            )
+                        }
+                    }
             }
+        }
+    }
+
+    private fun loadNearbyOnMap(
+        map: CyberMapView,
+        info: TextView
+    ) {
+        if (
+            checkSelfPermission(
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                42
+            )
+            return
+        }
+
+        val manager =
+            getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        val location =
+            manager.getLastKnownLocation(
+                LocationManager.GPS_PROVIDER
+            )
+                ?: manager.getLastKnownLocation(
+                    LocationManager.NETWORK_PROVIDER
+                )
+
+        if (location == null) {
+            status.text = "● SIN UBICACIÓN"
+            info.text = "MAPA  •  UBICACIÓN NO DISPONIBLE"
+            toast("No hay ubicación disponible")
+            return
+        }
+
+        map.setUserLocation(
+            location.latitude,
+            location.longitude,
+            true
+        )
+
+        status.text = "● BUSCANDO PARADAS"
+
+        info.text = "MAPA  •  BUSCANDO PARADAS CERCANAS"
+
+        executor.execute {
+            runCatching {
+                api.getNearby(
+                    location.latitude,
+                    location.longitude
+                )
+            }
+                .onSuccess { stops ->
+                    val markers = stops
+                        .take(60)
+                        .map {
+                            MapStop(
+                                it.code,
+                                "🚏 " + it.description,
+                                listOf(
+                                    it.street,
+                                    it.intersection
+                                )
+                                    .filter { value ->
+                                        value.isNotBlank()
+                                    }
+                                    .joinToString(" · "),
+                                it.latitude,
+                                it.longitude
+                            )
+                        }
+                        .filter {
+                            it.latitude != 0.0 &&
+                            it.longitude != 0.0
+                        }
+
+                    runOnUiThread {
+                        map.setStops(
+                            markers,
+                            fit = false
+                        )
+
+                        status.text =
+                            "● " + markers.size +
+                            " PARADAS CERCANAS"
+
+                        info.text =
+                            "MAPA  •  " + markers.size +
+                            " PARADAS CERCANAS"
+                    }
+                }
+                .onFailure { error ->
+                    runOnUiThread {
+                        status.text = "● SIN CONEXIÓN"
+                        info.text =
+                            "MAPA  •  ERROR AL CARGAR PARADAS"
+
+                        toast(
+                            error.message
+                                ?: "No se pudieron cargar las paradas"
+                        )
+                    }
+                }
         }
     }
 
