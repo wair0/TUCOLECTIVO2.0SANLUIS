@@ -2,6 +2,7 @@ package com.transpuntano.app.ui
 
 import android.content.Context
 import android.graphics.*
+import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
@@ -10,78 +11,825 @@ import java.net.URL
 import java.util.LinkedHashMap
 import kotlin.math.*
 
-data class MapStop(val id:Int,val title:String,val subtitle:String,val latitude:Double,val longitude:Double)
+data class MapStop(
+    val id: Int,
+    val title: String,
+    val subtitle: String,
+    val latitude: Double,
+    val longitude: Double
+)
 
-class CyberMapView(context:Context):View(context){
- private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
- private val cache=object:LinkedHashMap<String,Bitmap>(64,.75f,true){override fun removeEldestEntry(e:MutableMap.MutableEntry<String,Bitmap>?)=size>60}
- private var route=emptyList<Pair<Double,Double>>();private var stops=emptyList<MapStop>();private var user:Pair<Double,Double>?=null
- private var lat=-33.3017;private var lon=-66.3378;private var zoom=13;private var downX=0f;private var downY=0f;private var moved=false
- private var tap:((MapStop)->Unit)?=null
- private val inFlight=HashSet<String>()
- private val scaleDetector=ScaleGestureDetector(context,object:ScaleGestureDetector.SimpleOnScaleGestureListener(){override fun onScale(d:ScaleGestureDetector):Boolean{val old=zoom;zoom=(zoom+if(d.scaleFactor>1f)1 else -1).coerceIn(11,18);if(zoom!=old)invalidate();return true}})
+class CyberMapView(context: Context) : View(context) {
 
- fun setRoute(v:List<Pair<Double,Double>>){route=v;if(v.isNotEmpty())fit(v);invalidate()}
- fun setStops(v:List<MapStop>,fit:Boolean=true){stops=v;if(fit&&v.isNotEmpty())fit(v.map{it.latitude to it.longitude});invalidate()}
- fun setUserLocation(a:Double,b:Double,center:Boolean=true){user=a to b;if(center){lat=a;lon=b};invalidate()}
- fun setOnStopTap(v:(MapStop)->Unit){tap=v}
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
- private fun fit(v:List<Pair<Double,Double>>){val a=v.minOf{it.first};val b=v.maxOf{it.first};val c=v.minOf{it.second};val d=v.maxOf{it.second};lat=(a+b)/2;lon=(c+d)/2;val s=max(b-a,(d-c)*cos(Math.toRadians(lat)));zoom=when{ s<.002->17;s<.005->16;s<.012->15;s<.025->14;s<.06->13;s<.12->12;else->11}}
- override fun onDraw(c:Canvas){super.onDraw(c);c.drawColor(Color.rgb(5,7,12));tiles(c);grid(c);line(c);stops(c);user(c);overlay(c)}
-
- private fun world(a:Double,b:Double,z:Int):Pair<Double,Double>{val n=2.0.pow(z);val x=(b+180)/360*256*n;val s=sin(Math.toRadians(a)).coerceIn(-.9999,.9999);val y=(.5-ln((1+s)/(1-s))/(4*Math.PI))*256*n;return x to y}
- private fun screen(a:Double,b:Double):PointF{val q=world(lat,lon,zoom);val p=world(a,b,zoom);return PointF((p.first-q.first+width/2).toFloat(),(p.second-q.second+height/2).toFloat())}
-
- private fun tiles(c:Canvas){
-  val q=world(lat,lon,zoom);val left=q.first-width/2;val top=q.second-height/2;val minX=floor(left/256).toInt()-1;val maxX=floor((left+width)/256).toInt()+1;val minY=floor(top/256).toInt()-1;val maxY=floor((top+height)/256).toInt()+1;val n=1 shl zoom
-  for(rx in minX..maxX)for(y in minY..maxY){if(y !in 0 until n)continue;val x=((rx%n)+n)%n;val key="$zoom/$x/$y";val bm=synchronized(cache){cache[key]};val dx=(rx*256-left).toFloat();val dy=(y*256-top).toFloat()
-   if(bm!=null)c.drawBitmap(bm,null,RectF(dx,dy,dx+256,dy+256),paint)else{paint.color=Color.rgb(10,17,23);c.drawRect(dx,dy,dx+256,dy+256,paint);download(key,x,y,zoom)}
-  }
- }
- private fun download(key:String,x:Int,y:Int,z:Int){synchronized(cache){if(cache.containsKey(key)||!inFlight.add(key))return};Thread{runCatching{val h=URL("https://tile.openstreetmap.org/$z/$x/$y.png").openConnection() as HttpURLConnection;h.connectTimeout=6000;h.readTimeout=6000;h.setRequestProperty("User-Agent","TU-COLECTIVO-2.0 Android");h.inputStream.use{BitmapFactory.decodeStream(it)}}.getOrNull()?.let{b->synchronized(cache){cache[key]=b};postInvalidate()}}.start()}
-
- private fun grid(c:Canvas){paint.style=Paint.Style.STROKE;paint.strokeWidth=1f;paint.color=Color.argb(45,0,240,255);var x=0f;while(x<width){c.drawLine(x,0f,x,height.toFloat(),paint);x+=80};var y=0f;while(y<height){c.drawLine(0f,y,width.toFloat(),y,paint);y+=80}}
- private fun line(c:Canvas){if(route.size<2)return;paint.style=Paint.Style.STROKE;paint.strokeCap=Paint.Cap.ROUND;paint.strokeWidth=11f;paint.color=Color.argb(100,0,240,255);path(c,route);paint.strokeWidth=4f;paint.color=Color.rgb(0,240,255);path(c,route)}
- private fun path(c:Canvas,v:List<Pair<Double,Double>>){val p=Path();v.forEachIndexed{i,x->val q=screen(x.first,x.second);if(i==0)p.moveTo(q.x,q.y)else p.lineTo(q.x,q.y)};c.drawPath(p,paint)}
- private fun stops(c:Canvas){stops.forEach{s->val p=screen(s.latitude,s.longitude);if(p.x !in -20f..width+20f||p.y !in -20f..height+20f)return@forEach;paint.style=Paint.Style.FILL;paint.color=Color.argb(90,255,45,178);c.drawCircle(p.x,p.y,11f,paint);paint.color=Color.rgb(255,45,178);c.drawCircle(p.x,p.y,5f,paint);paint.style=Paint.Style.STROKE;paint.color=Color.WHITE;c.drawCircle(p.x,p.y,7f,paint)}}
- private fun user(c:Canvas){val u=user?:return;val p=screen(u.first,u.second);paint.style=Paint.Style.STROKE;paint.strokeWidth=2f;paint.color=Color.rgb(0,240,255);c.drawCircle(p.x,p.y,18f,paint);paint.style=Paint.Style.FILL;c.drawCircle(p.x,p.y,6f,paint)}
- private fun overlay(c:Canvas){paint.style=Paint.Style.FILL;paint.color=Color.argb(210,5,7,12);c.drawRect(0f,0f,width.toFloat(),44f,paint);paint.typeface=Typeface.MONOSPACE;paint.textSize=11f;paint.color=Color.rgb(0,240,255);c.drawText("LIVE MAP • OSM • Z$zoom",14f,27f,paint);paint.textSize=9f;paint.color=Color.WHITE;c.drawText("© OpenStreetMap contributors",14f,height-10f,paint)}
- override fun onTouchEvent(e:MotionEvent):Boolean{
-  when(e.action){
-   MotionEvent.ACTION_DOWN -> {
-    downX=e.x
-    downY=e.y
-    moved=false
-   }
-   MotionEvent.ACTION_MOVE -> {
-    if(e.pointerCount>1)return true
-    val dx=e.x-downX
-    val dy=e.y-downY
-    if(abs(dx)+abs(dy)>3)moved=true
-    val q=world(lat,lon,zoom)
-    val n=unworld(q.first-dx,q.second-dy,zoom)
-    lat=n.first.coerceIn(-85.0,85.0)
-    lon=n.second
-    downX=e.x
-    downY=e.y
-    invalidate()
-   }
-   MotionEvent.ACTION_UP -> {
-    if(!moved){
-     stops.minByOrNull{
-      val p=screen(it.latitude,it.longitude)
-      hypot(p.x-e.x,p.y-e.y)
-     }?.let{
-      val p=screen(it.latitude,it.longitude)
-      if(hypot(p.x-e.x,p.y-e.y)<32){
-       tap?.invoke(it)
-      }
-     }
+    private val cache = object :
+        LinkedHashMap<String, Bitmap>(96, .75f, true) {
+        override fun removeEldestEntry(
+            e: MutableMap.MutableEntry<String, Bitmap>?
+        ) = size > 96
     }
-   }
-  }
-  return true
- }
 
- private fun unworld(x:Double,y:Double,z:Int):Pair<Double,Double>{val n=Math.PI-2*Math.PI*y/(256*2.0.pow(z));return Math.toDegrees(atan(sinh(n))) to (x/(256*2.0.pow(z))*360-180)}
+    private val inFlight = HashSet<String>()
+
+    private var route = emptyList<Pair<Double, Double>>()
+    private var stops = emptyList<MapStop>()
+    private var user: Pair<Double, Double>? = null
+
+    private var lat = -33.3017
+    private var lon = -66.3378
+    private var zoom = 13
+
+    private var downX = 0f
+    private var downY = 0f
+    private var moved = false
+    private var scaleChanged = false
+
+    private var lastTapTime = 0L
+    private var lastTapX = 0f
+    private var lastTapY = 0f
+
+    private var tap: ((MapStop) -> Unit)? = null
+
+    private val mapRect = RectF()
+
+    private val scaleDetector =
+        ScaleGestureDetector(
+            context,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                private var accumulator = 1f
+
+                override fun onScaleBegin(
+                    detector: ScaleGestureDetector
+                ): Boolean {
+                    scaleChanged = true
+                    accumulator = 1f
+                    return true
+                }
+
+                override fun onScale(
+                    detector: ScaleGestureDetector
+                ): Boolean {
+                    accumulator *= detector.scaleFactor
+
+                    if (accumulator > 1.22f) {
+                        if (zoom < 18) zoom++
+                        accumulator = 1f
+                        invalidate()
+                    } else if (accumulator < 0.82f) {
+                        if (zoom > 11) zoom--
+                        accumulator = 1f
+                        invalidate()
+                    }
+
+                    return true
+                }
+
+                override fun onScaleEnd(
+                    detector: ScaleGestureDetector
+                ) {
+                    accumulator = 1f
+                }
+            }
+        )
+
+    private val gestureDetector =
+        GestureDetector(
+            context,
+            object : GestureDetector.SimpleOnGestureListener() {
+
+                override fun onDown(e: MotionEvent): Boolean = true
+
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    if (mapRect.contains(e.x, e.y)) {
+                        zoom = (zoom + 1).coerceAtMost(18)
+                        invalidate()
+                    }
+                    return true
+                }
+            }
+        )
+
+    fun setRoute(v: List<Pair<Double, Double>>) {
+        route = v
+        if (v.isNotEmpty()) fit(v)
+        invalidate()
+    }
+
+    fun setStops(
+        v: List<MapStop>,
+        fit: Boolean = true
+    ) {
+        stops = v
+        if (fit && v.isNotEmpty()) {
+            fit(v.map { it.latitude to it.longitude })
+        }
+        invalidate()
+    }
+
+    fun setUserLocation(
+        a: Double,
+        b: Double,
+        center: Boolean = true
+    ) {
+        user = a to b
+        if (center) {
+            lat = a
+            lon = b
+        }
+        invalidate()
+    }
+
+    fun setOnStopTap(v: (MapStop) -> Unit) {
+        tap = v
+    }
+
+    private fun fit(v: List<Pair<Double, Double>>) {
+        if (v.isEmpty()) return
+
+        val minLat = v.minOf { it.first }
+        val maxLat = v.maxOf { it.first }
+        val minLon = v.minOf { it.second }
+        val maxLon = v.maxOf { it.second }
+
+        lat = (minLat + maxLat) / 2.0
+        lon = (minLon + maxLon) / 2.0
+
+        val span = max(
+            maxLat - minLat,
+            (maxLon - minLon) * cos(Math.toRadians(lat))
+        )
+
+        zoom = when {
+            span < .0015 -> 18
+            span < .003 -> 17
+            span < .006 -> 16
+            span < .015 -> 15
+            span < .03 -> 14
+            span < .07 -> 13
+            span < .14 -> 12
+            else -> 11
+        }
+    }
+
+    override fun onDraw(c: Canvas) {
+        super.onDraw(c)
+
+        c.drawColor(Color.rgb(5, 7, 12))
+
+        mapRect.set(
+            dp(8f),
+            dp(8f),
+            width - dp(8f),
+            height - dp(8f)
+        )
+
+        if (mapRect.width() <= 0 || mapRect.height() <= 0) return
+
+        c.save()
+        c.clipRect(mapRect)
+
+        c.drawRect(
+            mapRect,
+            Paint().apply {
+                color = Color.rgb(10, 17, 23)
+                style = Paint.Style.FILL
+            }
+        )
+
+        tiles(c)
+        grid(c)
+        line(c)
+        stops(c)
+        user(c)
+
+        c.restore()
+
+        drawFrame(c)
+        drawControls(c)
+        drawAttribution(c)
+    }
+
+    private fun world(
+        a: Double,
+        b: Double,
+        z: Int
+    ): Pair<Double, Double> {
+        val n = 2.0.pow(z)
+        val x = (b + 180.0) / 360.0 * 256.0 * n
+        val s = sin(Math.toRadians(a)).coerceIn(-.9999, .9999)
+        val y =
+            (.5 - ln((1 + s) / (1 - s)) / (4 * Math.PI)) *
+                    256.0 * n
+
+        return x to y
+    }
+
+    private fun screen(
+        a: Double,
+        b: Double
+    ): PointF {
+        val center = world(lat, lon, zoom)
+        val p = world(a, b, zoom)
+
+        return PointF(
+            (
+                p.first -
+                        center.first +
+                        mapRect.centerX()
+                ).toFloat(),
+            (
+                p.second -
+                        center.second +
+                        mapRect.centerY()
+                ).toFloat()
+        )
+    }
+
+    private fun tiles(c: Canvas) {
+        val center = world(lat, lon, zoom)
+
+        val left = center.first - mapRect.width() / 2.0
+        val top = center.second - mapRect.height() / 2.0
+
+        val minX =
+            floor(left / 256.0).toInt() - 1
+
+        val maxX =
+            floor((left + mapRect.width()) / 256.0).toInt() + 1
+
+        val minY =
+            floor(top / 256.0).toInt() - 1
+
+        val maxY =
+            floor((top + mapRect.height()) / 256.0).toInt() + 1
+
+        val n = 1 shl zoom
+
+        for (rx in minX..maxX) {
+            for (y in minY..maxY) {
+
+                if (y !in 0 until n) continue
+
+                val x = ((rx % n) + n) % n
+                val key = "$zoom/$x/$y"
+
+                val dx =
+                    mapRect.left +
+                            (rx * 256.0 - left)
+
+                val dy =
+                    mapRect.top +
+                            (y * 256.0 - top)
+
+                val bm =
+                    synchronized(cache) {
+                        cache[key]
+                    }
+
+                if (bm != null) {
+                    c.drawBitmap(
+                        bm,
+                        null,
+                        RectF(
+                            dx.toFloat(),
+                            dy.toFloat(),
+                            (dx + 256).toFloat(),
+                            (dy + 256).toFloat()
+                        ),
+                        paint
+                    )
+                } else {
+                    paint.style = Paint.Style.FILL
+                    paint.color = Color.rgb(10, 17, 23)
+
+                    c.drawRect(
+                        dx.toFloat(),
+                        dy.toFloat(),
+                        (dx + 256).toFloat(),
+                        (dy + 256).toFloat(),
+                        paint
+                    )
+
+                    download(key, x, y, zoom)
+                }
+            }
+        }
+    }
+
+    private fun download(
+        key: String,
+        x: Int,
+        y: Int,
+        z: Int
+    ) {
+        synchronized(cache) {
+            if (cache.containsKey(key)) return
+            if (!inFlight.add(key)) return
+        }
+
+        Thread {
+            var bitmap: Bitmap? = null
+
+            try {
+                val connection =
+                    URL(
+                        "https://tile.openstreetmap.org/$z/$x/$y.png"
+                    ).openConnection() as HttpURLConnection
+
+                connection.connectTimeout = 8000
+                connection.readTimeout = 8000
+                connection.useCaches = true
+                connection.setRequestProperty(
+                    "User-Agent",
+                    "TU-COLECTIVO-2.0 Android"
+                )
+
+                connection.inputStream.use {
+                    bitmap = BitmapFactory.decodeStream(it)
+                }
+
+                if (bitmap != null) {
+                    synchronized(cache) {
+                        cache[key] = bitmap!!
+                    }
+                }
+
+            } catch (_: Exception) {
+                // Se elimina de inFlight abajo para permitir reintento.
+            } finally {
+                synchronized(cache) {
+                    inFlight.remove(key)
+                }
+                postInvalidateOnAnimation()
+            }
+        }.start()
+    }
+
+    private fun grid(c: Canvas) {
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 1f
+        paint.color = Color.argb(35, 0, 240, 255)
+
+        var x = mapRect.left
+        while (x < mapRect.right) {
+            c.drawLine(
+                x,
+                mapRect.top,
+                x,
+                mapRect.bottom,
+                paint
+            )
+            x += dp(80f)
+        }
+
+        var y = mapRect.top
+        while (y < mapRect.bottom) {
+            c.drawLine(
+                mapRect.left,
+                y,
+                mapRect.right,
+                y,
+                paint
+            )
+            y += dp(80f)
+        }
+    }
+
+    private fun line(c: Canvas) {
+        if (route.size < 2) return
+
+        paint.style = Paint.Style.STROKE
+        paint.strokeCap = Paint.Cap.ROUND
+        paint.strokeJoin = Paint.Join.ROUND
+
+        paint.strokeWidth = dp(10f)
+        paint.color = Color.argb(90, 0, 240, 255)
+        path(c, route)
+
+        paint.strokeWidth = dp(4f)
+        paint.color = Color.rgb(0, 240, 255)
+        path(c, route)
+    }
+
+    private fun path(
+        c: Canvas,
+        v: List<Pair<Double, Double>>
+    ) {
+        val p = Path()
+
+        v.forEachIndexed { i, point ->
+            val q = screen(
+                point.first,
+                point.second
+            )
+
+            if (i == 0) {
+                p.moveTo(q.x, q.y)
+            } else {
+                p.lineTo(q.x, q.y)
+            }
+        }
+
+        c.drawPath(p, paint)
+    }
+
+    private fun stops(c: Canvas) {
+        stops.forEach { stop ->
+            val p =
+                screen(
+                    stop.latitude,
+                    stop.longitude
+                )
+
+            if (
+                p.x !in mapRect.left - dp(20f)..mapRect.right + dp(20f) ||
+                p.y !in mapRect.top - dp(20f)..mapRect.bottom + dp(20f)
+            ) return@forEach
+
+            paint.style = Paint.Style.FILL
+            paint.color =
+                Color.argb(90, 255, 45, 178)
+
+            c.drawCircle(
+                p.x,
+                p.y,
+                dp(12f),
+                paint
+            )
+
+            paint.color =
+                Color.rgb(255, 45, 178)
+
+            c.drawCircle(
+                p.x,
+                p.y,
+                dp(5f),
+                paint
+            )
+
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = dp(1.5f)
+            paint.color = Color.WHITE
+
+            c.drawCircle(
+                p.x,
+                p.y,
+                dp(7f),
+                paint
+            )
+        }
+    }
+
+    private fun user(c: Canvas) {
+        val u = user ?: return
+
+        val p =
+            screen(
+                u.first,
+                u.second
+            )
+
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = dp(2f)
+        paint.color =
+            Color.rgb(0, 240, 255)
+
+        c.drawCircle(
+            p.x,
+            p.y,
+            dp(18f),
+            paint
+        )
+
+        paint.style = Paint.Style.FILL
+
+        c.drawCircle(
+            p.x,
+            p.y,
+            dp(6f),
+            paint
+        )
+    }
+
+    private fun drawFrame(c: Canvas) {
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = dp(2f)
+        paint.color = Color.rgb(0, 240, 255)
+
+        c.drawRoundRect(
+            mapRect,
+            dp(8f),
+            dp(8f),
+            paint
+        )
+
+        paint.strokeWidth = dp(1f)
+        paint.color =
+            Color.argb(80, 255, 45, 178)
+
+        c.drawRoundRect(
+            RectF(
+                mapRect.left + dp(4f),
+                mapRect.top + dp(4f),
+                mapRect.right - dp(4f),
+                mapRect.bottom - dp(4f)
+            ),
+            dp(6f),
+            dp(6f),
+            paint
+        )
+    }
+
+    private fun drawControls(c: Canvas) {
+        val size = dp(44f)
+        val right = mapRect.right - dp(12f)
+
+        drawControl(
+            c,
+            RectF(
+                right - size,
+                mapRect.top + dp(12f),
+                right,
+                mapRect.top + dp(12f) + size
+            ),
+            "+"
+        )
+
+        drawControl(
+            c,
+            RectF(
+                right - size,
+                mapRect.top + dp(64f),
+                right,
+                mapRect.top + dp(64f) + size
+            ),
+            "−"
+        )
+    }
+
+    private fun drawControl(
+        c: Canvas,
+        rect: RectF,
+        text: String
+    ) {
+        paint.style = Paint.Style.FILL
+        paint.color =
+            Color.argb(220, 5, 7, 12)
+
+        c.drawRoundRect(
+            rect,
+            dp(6f),
+            dp(6f),
+            paint
+        )
+
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = dp(1.5f)
+        paint.color =
+            Color.rgb(0, 240, 255)
+
+        c.drawRoundRect(
+            rect,
+            dp(6f),
+            dp(6f),
+            paint
+        )
+
+        paint.style = Paint.Style.FILL
+        paint.typeface = Typeface.MONOSPACE
+        paint.textSize = dp(25f)
+        paint.textAlign = Paint.Align.CENTER
+        paint.color = Color.WHITE
+
+        c.drawText(
+            text,
+            rect.centerX(),
+            rect.centerY() + dp(9f),
+            paint
+        )
+
+        paint.textAlign = Paint.Align.LEFT
+    }
+
+    private fun drawAttribution(c: Canvas) {
+        paint.style = Paint.Style.FILL
+        paint.color =
+            Color.argb(210, 5, 7, 12)
+
+        c.drawRoundRect(
+            RectF(
+                mapRect.left + dp(8f),
+                mapRect.bottom - dp(28f),
+                mapRect.left + dp(180f),
+                mapRect.bottom - dp(6f)
+            ),
+            dp(4f),
+            dp(4f),
+            paint
+        )
+
+        paint.typeface = Typeface.MONOSPACE
+        paint.textSize = dp(8f)
+        paint.color = Color.WHITE
+
+        c.drawText(
+            "© OpenStreetMap contributors",
+            mapRect.left + dp(14f),
+            mapRect.bottom - dp(13f),
+            paint
+        )
+    }
+
+    override fun onTouchEvent(e: MotionEvent): Boolean {
+
+        scaleDetector.onTouchEvent(e)
+        gestureDetector.onTouchEvent(e)
+
+        if (
+            e.actionMasked == MotionEvent.ACTION_POINTER_DOWN ||
+            scaleDetector.isInProgress
+        ) {
+            scaleChanged = true
+            return true
+        }
+
+        when (e.actionMasked) {
+
+            MotionEvent.ACTION_DOWN -> {
+                downX = e.x
+                downY = e.y
+                moved = false
+                scaleChanged = false
+                return true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                if (e.pointerCount > 1) {
+                    scaleChanged = true
+                    return true
+                }
+
+                val dx = e.x - downX
+                val dy = e.y - downY
+
+                if (
+                    abs(dx) + abs(dy) >
+                    dp(3f)
+                ) {
+                    moved = true
+                }
+
+                if (moved) {
+                    val center =
+                        world(lat, lon, zoom)
+
+                    val n =
+                        unworld(
+                            center.first - dx,
+                            center.second - dy,
+                            zoom
+                        )
+
+                    lat =
+                        n.first.coerceIn(
+                            -85.0,
+                            85.0
+                        )
+
+                    lon = n.second
+
+                    downX = e.x
+                    downY = e.y
+
+                    invalidate()
+                }
+
+                return true
+            }
+
+            MotionEvent.ACTION_UP -> {
+
+                if (scaleChanged) {
+                    scaleChanged = false
+                    moved = false
+                    return true
+                }
+
+                val now = System.currentTimeMillis()
+
+                val doubleTap =
+                    now - lastTapTime < 320 &&
+                            hypot(
+                                e.x - lastTapX,
+                                e.y - lastTapY
+                            ) < dp(32f)
+
+                if (doubleTap) {
+                    lastTapTime = 0L
+                    return true
+                }
+
+                lastTapTime = now
+                lastTapX = e.x
+                lastTapY = e.y
+
+                val right = mapRect.right - dp(12f)
+                val size = dp(44f)
+
+                val plus =
+                    RectF(
+                        right - size,
+                        mapRect.top + dp(12f),
+                        right,
+                        mapRect.top + dp(12f) + size
+                    )
+
+                val minus =
+                    RectF(
+                        right - size,
+                        mapRect.top + dp(64f),
+                        right,
+                        mapRect.top + dp(64f) + size
+                    )
+
+                if (plus.contains(e.x, e.y)) {
+                    zoom =
+                        (zoom + 1).coerceAtMost(18)
+                    invalidate()
+                    return true
+                }
+
+                if (minus.contains(e.x, e.y)) {
+                    zoom =
+                        (zoom - 1).coerceAtLeast(11)
+                    invalidate()
+                    return true
+                }
+
+                if (
+                    !moved &&
+                    mapRect.contains(e.x, e.y)
+                ) {
+                    stops.minByOrNull {
+                        val p =
+                            screen(
+                                it.latitude,
+                                it.longitude
+                            )
+
+                        hypot(
+                            p.x - e.x,
+                            p.y - e.y
+                        )
+                    }?.let {
+                        val p =
+                            screen(
+                                it.latitude,
+                                it.longitude
+                            )
+
+                        if (
+                            hypot(
+                                p.x - e.x,
+                                p.y - e.y
+                            ) < dp(32f)
+                        ) {
+                            tap?.invoke(it)
+                        }
+                    }
+                }
+
+                return true
+            }
+        }
+
+        return true
+    }
+
+    private fun unworld(
+        x: Double,
+        y: Double,
+        z: Int
+    ): Pair<Double, Double> {
+        val n =
+            Math.PI -
+                    2 *
+                    Math.PI *
+                    y /
+                    (256.0 * 2.0.pow(z))
+
+        return Math.toDegrees(
+            atan(sinh(n))
+        ) to
+                (
+                    x /
+                            (256.0 * 2.0.pow(z)) *
+                            360.0 -
+                            180.0
+                    )
+    }
+
+    private fun dp(value: Float): Float =
+        value * resources.displayMetrics.density
 }

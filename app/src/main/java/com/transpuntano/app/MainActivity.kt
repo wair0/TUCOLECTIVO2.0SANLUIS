@@ -299,8 +299,27 @@ class MainActivity : AppCompatActivity() {
         updateNav(3)
         content.removeAllViews()
         val root = FrameLayout(this)
+
+        val mapFrame = FrameLayout(this).apply {
+            setBackgroundColor(panelColor)
+            setPadding(dp(6), dp(6), dp(6), dp(6))
+        }
+
         val map = CyberMapView(this)
-        root.addView(map, FrameLayout.LayoutParams(-1, -1))
+        mapFrame.addView(
+            map,
+            FrameLayout.LayoutParams(-1, -1)
+        )
+
+        root.addView(
+            mapFrame,
+            FrameLayout.LayoutParams(-1, -1).apply {
+                leftMargin = dp(6)
+                rightMargin = dp(6)
+                topMargin = dp(6)
+                bottomMargin = dp(6)
+            }
+        )
 
         val info = TextView(this).apply {
             text = "RADAR LOCAL  •  UBICACIÓN ACTIVA"
@@ -461,8 +480,27 @@ class MainActivity : AppCompatActivity() {
     private fun showMap(line: TransitLine?) {
         title.text = "MAPA"
         content.removeAllViews()
+        val mapFrame = FrameLayout(this).apply {
+            setBackgroundColor(panelColor)
+            setPadding(dp(6), dp(6), dp(6), dp(6))
+        }
+
         val map = CyberMapView(this)
-        content.addView(map, FrameLayout.LayoutParams(-1, -1))
+
+        mapFrame.addView(
+            map,
+            FrameLayout.LayoutParams(-1, -1)
+        )
+
+        content.addView(
+            mapFrame,
+            FrameLayout.LayoutParams(-1, -1).apply {
+                leftMargin = dp(6)
+                rightMargin = dp(6)
+                topMargin = dp(6)
+                bottomMargin = dp(6)
+            }
+        )
         if (line != null) {
             executor.execute {
                 runCatching { api.getRoute(line.code) }
