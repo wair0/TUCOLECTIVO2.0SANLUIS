@@ -92,7 +92,7 @@ class MainActivity : AppCompatActivity() {
             Triple("⌂", "INICIO", 0),
             Triple("▤", "LÍNEAS", 1),
             Triple("★", "FAVORITOS", 2),
-            Triple("◎", "CERCA", 3)
+            Triple("◎", "PARADAS CERCANAS", 3)
         )
         items.forEach { (icon, label, index) ->
             drawerPanel.addView(TextView(this).apply {
@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
     }
     private fun updateNav(selected: Int) {
         navBar.removeAllViews()
-        val items = listOf("⌂\nINICIO", "▤\nLÍNEAS", "★\nFAVORITOS", "◎\nCERCA")
+        val items = listOf("⌂\nINICIO", "▤\nLÍNEAS", "★\nFAVORITOS", "◎\nPARADAS CERCANAS")
         items.forEachIndexed { index, label ->
             navBar.addView(TextView(this).apply {
                 text = label
@@ -142,42 +142,102 @@ class MainActivity : AppCompatActivity() {
         title.text = ""
         updateNav(0)
         content.removeAllViews()
+
         val box = box()
-        
+
         val grid = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
         }
-        
+
         val row1 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
+                bottomMargin = dp(12)
+            }
         }
-        
+
         val row2 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
+                bottomMargin = dp(12)
+            }
         }
-        
-        val item1 = cardHome("▤", "LÍNEAS", "Recorridos y calles", cyan) { showLines() }
-        val item2 = cardHome("⊕", "LÍNEAS", "Recorridos y calles", pink) { showLines() }
-        val item3 = cardHome("◉", "MAPA", "Explorar el mapa", 0xFF00E87F.toInt()) { showMap(null) }
-        val item4 = cardHome("⇒", "PARADAS CERCANAS", "Por tu ubicación", cyan) { showNearby() }
-        val item5 = cardHome("★", "FAVORITOS", "Paradas guardadas", pink) { showFavorites() }
-        
-        row1.addView(item1, LinearLayout.LayoutParams(0, dp(140), 1f).apply { rightMargin = dp(6) })
-        row1.addView(item2, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
-        
-        row2.addView(item3, LinearLayout.LayoutParams(0, dp(140), 1f).apply { rightMargin = dp(6) })
-        row2.addView(item4, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
-        
+
+        val item1 = cardHome(
+            "▤",
+            "LÍNEAS",
+            "Recorridos y calles",
+            cyan
+        ) { showLines() }
+
+        val item2 = cardHome(
+            "◉",
+            "MAPA",
+            "Explorar el mapa",
+            0xFF00E87F.toInt()
+        ) { showMap(null) }
+
+        val item3 = cardHome(
+            "⇒",
+            "PARADAS CERCANAS",
+            "Por tu ubicación",
+            cyan
+        ) { showNearby() }
+
+        val item4 = cardHome(
+            "★",
+            "FAVORITOS",
+            "Paradas guardadas",
+            pink
+        ) { showFavorites() }
+
+        row1.addView(
+            item1,
+            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
+                rightMargin = dp(6)
+            }
+        )
+
+        row1.addView(
+            item2,
+            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
+                leftMargin = dp(6)
+            }
+        )
+
+        row2.addView(
+            item3,
+            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
+                rightMargin = dp(6)
+            }
+        )
+
+        row2.addView(
+            item4,
+            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
+                leftMargin = dp(6)
+            }
+        )
+
         grid.addView(row1)
         grid.addView(row2)
-        grid.addView(item5, LinearLayout.LayoutParams(-1, dp(100)).apply { topMargin = dp(12) })
-        
+
         box.addView(grid)
-        box.addView(button("SINCRONIZAR LÍNEAS", cyan) { loadLines(false) }, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(20) })
-        
-        content.addView(ScrollView(this).apply { addView(box) })
+
+        box.addView(
+            button("SINCRONIZAR LÍNEAS", cyan) {
+                loadLines(false)
+            },
+            LinearLayout.LayoutParams(-1, dp(48)).apply {
+                topMargin = dp(20)
+            }
+        )
+
+        content.addView(
+            ScrollView(this).apply {
+                addView(box)
+            }
+        )
     }
 
     private fun loadLines(navigateToLines: Boolean = true) {
@@ -343,94 +403,148 @@ class MainActivity : AppCompatActivity() {
         title.text = "PARADAS CERCANAS"
         updateNav(3)
         content.removeAllViews()
-        val root = FrameLayout(this)
 
-        val mapFrame = FrameLayout(this).apply {
-            setBackgroundColor(panelColor)
-            setPadding(dp(6), dp(6), dp(6), dp(6))
-        }
+        val box = box()
 
-        val map = CyberMapView(this)
-        mapFrame.addView(
-            map,
-            FrameLayout.LayoutParams(-1, -1)
+        box.addView(
+            panel(
+                "PARADAS CERCANAS",
+                "Buscando paradas próximas a tu ubicación."
+            )
         )
 
-        root.addView(
-            mapFrame,
-            FrameLayout.LayoutParams(-1, -1).apply {
-                leftMargin = dp(6)
-                rightMargin = dp(6)
-                topMargin = dp(6)
-                bottomMargin = dp(6)
+        val list = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        box.addView(
+            list,
+            LinearLayout.LayoutParams(-1, -2).apply {
+                topMargin = dp(12)
             }
         )
 
-        val info = TextView(this).apply {
-            text = "RADAR LOCAL  •  UBICACIÓN ACTIVA"
-            textSize = 11f
-            typeface = Typeface.MONOSPACE
-            setTextColor(cyan)
-            setPadding(dp(14), dp(10), dp(14), dp(10))
-            setBackgroundColor(0xCC05070C.toInt())
-        }
-        root.addView(info, FrameLayout.LayoutParams(-1, dp(44)).apply { gravity = Gravity.TOP })
+        box.addView(
+            button("◉ ACTUALIZAR PARADAS", cyan) {
+                loadNearbyList(list)
+            },
+            LinearLayout.LayoutParams(-1, dp(52)).apply {
+                topMargin = dp(12)
+            }
+        )
 
-        root.addView(button("◉ ACTUALIZAR CERCA", cyan) { loadNearbyOnMap(map, info) },
-            FrameLayout.LayoutParams(-1, dp(52)).apply {
-                gravity = Gravity.BOTTOM
-                leftMargin = dp(16)
-                rightMargin = dp(16)
-                bottomMargin = dp(16)
-            })
+        content.addView(
+            ScrollView(this).apply {
+                addView(box)
+            }
+        )
 
-        map.setOnStopTap { stop ->
-            toast(stop.title + if (stop.subtitle.isBlank()) "" else " · " + stop.subtitle)
-        }
-
-        content.addView(root)
-        loadNearbyOnMap(map, info)
+        loadNearbyList(list)
     }
 
-    private fun loadNearbyOnMap(map: CyberMapView, info: TextView) {
+    private fun loadNearbyList(list: LinearLayout) {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 42)
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                42
+            )
             return
         }
 
         val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-            ?: return toast("No hay ubicación disponible")
 
-        map.setUserLocation(location.latitude, location.longitude, true)
+        val location =
+            manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+
+        if (location == null) {
+            status.text = "● SIN UBICACIÓN"
+            list.removeAllViews()
+            list.addView(
+                panel(
+                    "UBICACIÓN NO DISPONIBLE",
+                    "Activá la ubicación e intentá nuevamente."
+                )
+            )
+            return
+        }
+
         status.text = "● BUSCANDO PARADAS"
 
-        executor.execute {
-            runCatching { api.getNearby(location.latitude, location.longitude) }
-                .onSuccess { stops ->
-                    val markers = stops.take(60).map {
-                        MapStop(
-                            it.code,
-                            "🚏 " + it.description,
-                            listOf(it.street, it.intersection)
-                                .filter { value -> value.isNotBlank() }
-                                .joinToString(" · "),
-                            it.latitude,
-                            it.longitude
-                        )
-                    }.filter { it.latitude != 0.0 && it.longitude != 0.0 }
+        list.removeAllViews()
+        list.addView(
+            panel(
+                "BUSCANDO...",
+                "Consultando las paradas cercanas."
+            )
+        )
 
+        executor.execute {
+            runCatching {
+                api.getNearby(location.latitude, location.longitude)
+            }
+                .onSuccess { stops ->
                     runOnUiThread {
-                        map.setStops(markers, fit = false)
-                        status.text = "● " + markers.size + " PARADAS CERCANAS"
-                        info.text = "RADAR LOCAL  •  " + markers.size + " PARADAS"
+                        list.removeAllViews()
+
+                        val nearby = stops.take(60)
+
+                        if (nearby.isEmpty()) {
+                            list.addView(
+                                panel(
+                                    "SIN PARADAS",
+                                    "No se encontraron paradas cercanas."
+                                )
+                            )
+                        } else {
+                            nearby.forEach { stop ->
+                                val locationText = listOf(
+                                    stop.street,
+                                    stop.intersection
+                                )
+                                    .filter { value -> value.isNotBlank() }
+                                    .joinToString(" · ")
+
+                                val secondary = if (locationText.isBlank()) {
+                                    "CÓDIGO " + stop.code
+                                } else {
+                                    "CÓDIGO " + stop.code + " · " + locationText
+                                }
+
+                                list.addView(
+                                    card(
+                                        "🚏 " + stop.description,
+                                        secondary
+                                    ) {
+                                        toast(
+                                            "PARADA " + stop.code +
+                                                if (locationText.isBlank()) ""
+                                                else " · " + locationText
+                                        )
+                                    },
+                                    LinearLayout.LayoutParams(-1, dp(72)).apply {
+                                        bottomMargin = dp(8)
+                                    }
+                                )
+                            }
+                        }
+
+                        status.text = "● " + nearby.size + " PARADAS CERCANAS"
                     }
                 }
                 .onFailure { error ->
                     runOnUiThread {
+                        list.removeAllViews()
+                        list.addView(
+                            panel(
+                                "ERROR",
+                                error.message ?: "No se pudieron cargar las paradas."
+                            )
+                        )
                         status.text = "● SIN CONEXIÓN"
-                        toast(error.message ?: "No se pudieron cargar las paradas")
                     }
                 }
         }
