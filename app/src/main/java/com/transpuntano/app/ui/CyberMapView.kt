@@ -236,7 +236,12 @@ class CyberMapView(context: Context) : View(context) {
         val size=min(availableWidth,availableHeight)
 
         if(size<=0f){
-            mapRect.setEmpty()
+            mapRect.set(
+            dp(16f),
+            dp(55f),
+            width - dp(16f),
+            dp(55f) + (width - dp(32f))
+        )
             return
         }
 
