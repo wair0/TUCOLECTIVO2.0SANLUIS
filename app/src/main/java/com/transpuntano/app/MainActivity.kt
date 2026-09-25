@@ -161,7 +161,7 @@ class MainActivity : AppCompatActivity() {
         val item1 = cardHome("▤", "LÍNEAS", "Recorridos y calles", cyan) { showLines() }
         val item2 = cardHome("⊕", "LÍNEAS", "Recorridos y calles", pink) { showLines() }
         val item3 = cardHome("◉", "MAPA", "Explorar el mapa", 0xFF00E87F.toInt()) { showMap(null) }
-        val item4 = cardHome("⇒", "CERCANAS", "Por tu ubicación", cyan) { showNearby() }
+        val item4 = cardHome("⇒", "PARADAS CERCANAS", "Por tu ubicación", cyan) { showNearby() }
         val item5 = cardHome("★", "FAVORITOS", "Paradas guardadas", pink) { showFavorites() }
         
         row1.addView(item1, LinearLayout.LayoutParams(0, dp(140), 1f).apply { rightMargin = dp(6) })
@@ -556,39 +556,65 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cardHome(icon: String, title: String, subtitle: String, color: Int, action: () -> Unit) = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
+        orientation = LinearLayout.HORIZONTAL
         setPadding(dp(12), dp(12), dp(12), dp(12))
         setBackgroundColor(panelColor)
         gravity = Gravity.CENTER_VERTICAL
         setOnClickListener { action() }
-        
-        val borderView = View(this@MainActivity).apply {
-            layoutParams = FrameLayout.LayoutParams(dp(4), -1)
-            setBackgroundColor(color)
+
+        addView(
+            View(this@MainActivity).apply {
+                setBackgroundColor(color)
+            },
+            LinearLayout.LayoutParams(dp(4), -1)
+        )
+
+        val textContent = LinearLayout(this@MainActivity).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
         }
-        addView(borderView)
-        
-        addView(TextView(this@MainActivity).apply {
-            text = icon
-            textSize = 32f
-            setTextColor(color)
-            gravity = Gravity.CENTER
-        }, LinearLayout.LayoutParams(-1, dp(48)))
-        
-        addView(TextView(this@MainActivity).apply {
-            text = title
-            textSize = 13f
-            typeface = Typeface.MONOSPACE
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
-        
-        addView(TextView(this@MainActivity).apply {
-            text = subtitle
-            textSize = 10f
-            setTextColor(muted)
-            gravity = Gravity.CENTER
-        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
+
+        textContent.addView(
+            TextView(this@MainActivity).apply {
+                text = icon
+                textSize = 32f
+                setTextColor(color)
+                gravity = Gravity.CENTER
+            },
+            LinearLayout.LayoutParams(-1, dp(48))
+        )
+
+        textContent.addView(
+            TextView(this@MainActivity).apply {
+                text = title
+                textSize = 13f
+                typeface = Typeface.MONOSPACE
+                setTextColor(Color.WHITE)
+                gravity = Gravity.CENTER
+            },
+            LinearLayout.LayoutParams(-1, -2).apply {
+                topMargin = dp(8)
+            }
+        )
+
+        textContent.addView(
+            TextView(this@MainActivity).apply {
+                text = subtitle
+                textSize = 10f
+                setTextColor(muted)
+                gravity = Gravity.CENTER
+            },
+            LinearLayout.LayoutParams(-1, -2).apply {
+                topMargin = dp(4)
+            }
+        )
+
+        addView(
+            textContent,
+            LinearLayout.LayoutParams(0, -1, 1f).apply {
+                leftMargin = dp(10)
+            }
+        )
     }
     private fun box() = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
