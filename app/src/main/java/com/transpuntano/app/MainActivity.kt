@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         header.addView(title)
         status = TextView(this).apply {
             text = "● SISTEMA LISTO"
-            textSize = 10f
+            textSize = 16f
             setTextColor(0xFF55FFB0.toInt())
         }
         header.addView(status)
@@ -114,15 +114,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showHome() {
-        title.text = "CENTRO DE MOVILIDAD"
+        title.text = ""
         updateNav(0)
         content.removeAllViews()
         val box = box()
-        box.addView(TextView(this).apply {
-            text = "RED TRANSPUNTANO"
-            textSize = 12f
-            setTextColor(pink)
-        })
         box.addView(TextView(this).apply {
             text = "MOVETE\nSIN PERDER TIEMPO."
             textSize = 30f
@@ -130,7 +125,6 @@ class MainActivity : AppCompatActivity() {
             setTextColor(Color.WHITE)
             setPadding(0, dp(8), 0, dp(18))
         })
-        box.addView(panel("NÚCLEO NATIVO", "Interfaz propia. Líneas, paradas, arribos, GPS, favoritos y recorridos."))
         box.addView(button("SINCRONIZAR LÍNEAS", cyan) { loadLines(false) })
         content.addView(ScrollView(this).apply { addView(box) })
     }
