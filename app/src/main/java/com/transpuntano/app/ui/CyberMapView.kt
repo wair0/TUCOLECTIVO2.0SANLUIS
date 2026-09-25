@@ -243,10 +243,10 @@ class CyberMapView(context: Context) : View(context) {
         val left=(width.toFloat()-size)/2f
 
         mapRect.set(
-            left,
-            top,
-            left+size,
-            top+size
+            dp(16f),
+            dp(55f),
+            width - dp(16f),
+            height - dp(65f)
         )
     }
 
