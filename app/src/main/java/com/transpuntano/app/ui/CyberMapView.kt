@@ -24,7 +24,7 @@ class CyberMapView(context: Context) : View(context) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val cache = object :
-        LinkedHashMap<String, Bitmap>(96, .75f, true) {
+        LinkedHashMap<String, Bitmap>(256, .75f, true) {
         override fun removeEldestEntry(
             e: MutableMap.MutableEntry<String, Bitmap>?
         ) = size > 96
