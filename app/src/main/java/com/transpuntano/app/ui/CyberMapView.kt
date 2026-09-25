@@ -8,7 +8,8 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.LinkedHashMap
+import android.util.LruCache
+import java.util.concurrent.Executors
 import kotlin.math.*
 
 data class MapStop(
@@ -23,14 +24,19 @@ class CyberMapView(context: Context) : View(context) {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    private val cache = object :
-        LinkedHashMap<String, Bitmap>(256, .75f, true) {
-        override fun removeEldestEntry(
-            e: MutableMap.MutableEntry<String, Bitmap>?
-        ) = size > 96
-    }
+    private val cache =
+        object : LruCache<String, Bitmap>(24 * 1024 * 1024) {
+            override fun sizeOf(
+                key: String,
+                bitmap: Bitmap
+            ): Int = bitmap.byteCount
+        }
 
-    private val inFlight = HashSet<String>()
+    private val tileExecutor =
+        Executors.newFixedThreadPool(4)
+
+    private val inFlight =
+        HashSet<String>()
 
     private var route = emptyList<Pair<Double, Double>>()
     private var stops = emptyList<MapStop>()
@@ -160,23 +166,28 @@ class CyberMapView(context: Context) : View(context) {
         lat = (minLat + maxLat) / 2.0
         lon = (minLon + maxLon) / 2.0
 
-        val availableWidth = max(width - dp(16f), 1f) * 0.86
-        val availableHeight = max(height - dp(16f), 1f) * 0.86
+        if(width<=0 || height<=0){
+            post { fit(v) }
+            return
+        }
 
-        zoom = 11
+        updateMapRect()
 
-        for (z in 15 downTo 11) {
-            val topLeft = world(maxLat, minLon, z)
-            val bottomRight = world(minLat, maxLon, z)
+        val availableWidth=max(mapRect.width()*0.86f,1f)
+        val availableHeight=max(mapRect.height()*0.86f,1f)
 
-            val projectedWidth = abs(bottomRight.first - topLeft.first) * 1.3
-            val projectedHeight = abs(bottomRight.second - topLeft.second) * 1.3
+        zoom=11
 
-            if (
-                projectedWidth <= availableWidth &&
-                projectedHeight <= availableHeight
-            ) {
-                zoom = z
+        for(z in 18 downTo 10){
+            val topLeft=world(maxLat,minLon,z)
+            val bottomRight=world(minLat,maxLon,z)
+
+            val projectedWidth=abs(bottomRight.first-topLeft.first)
+            val projectedHeight=abs(bottomRight.second-topLeft.second)
+
+            if(projectedWidth<=availableWidth &&
+               projectedHeight<=availableHeight){
+                zoom=z
                 break
             }
         }
@@ -187,12 +198,7 @@ class CyberMapView(context: Context) : View(context) {
 
         c.drawColor(Color.rgb(5, 7, 12))
 
-        mapRect.set(
-            dp(16f),
-            dp(55f),
-            width - dp(16f),
-            height - dp(16f)
-        )
+        updateMapRect()
 
         if (mapRect.width() <= 0 || mapRect.height() <= 0) return
 
@@ -218,6 +224,30 @@ class CyberMapView(context: Context) : View(context) {
         drawFrame(c)
         drawControls(c)
         drawAttribution(c)
+    }
+
+    private fun updateMapRect() {
+        val margin=dp(16f)
+        val top=dp(55f)
+        val bottomMargin=dp(16f)
+
+        val availableWidth=width.toFloat()-margin*2f
+        val availableHeight=height.toFloat()-top-bottomMargin
+        val size=min(availableWidth,availableHeight)
+
+        if(size<=0f){
+            mapRect.setEmpty()
+            return
+        }
+
+        val left=(width.toFloat()-size)/2f
+
+        mapRect.set(
+            left,
+            top,
+            left+size,
+            top+size
+        )
     }
 
     private fun world(
@@ -294,7 +324,7 @@ class CyberMapView(context: Context) : View(context) {
 
                 val bm =
                     synchronized(cache) {
-                        cache[key]
+                        cache.get(key)
                     }
 
                 if (bm != null) {
@@ -325,16 +355,6 @@ class CyberMapView(context: Context) : View(context) {
                             paint
                         )
                     } else {
-                        paint.style = Paint.Style.FILL
-                        paint.color = Color.rgb(15, 22, 30)
-
-                        c.drawRect(
-                            dx.toFloat(),
-                            dy.toFloat(),
-                            (dx + 256).toFloat(),
-                            (dy + 256).toFloat(),
-                            paint
-                        )
                     }
 
                     download(key, x, y, zoom)
@@ -366,7 +386,7 @@ class CyberMapView(context: Context) : View(context) {
             val key = "$parentZoom/$parentX/$parentY"
 
             val bitmap = synchronized(cache) {
-                cache[key]
+                cache.get(key)
             } ?: continue
 
             val localX =
@@ -398,11 +418,11 @@ class CyberMapView(context: Context) : View(context) {
         z: Int
     ) {
         synchronized(cache) {
-            if (cache.containsKey(key)) return
+            if (cache.get(key) != null) return
             if (!inFlight.add(key)) return
         }
 
-        Thread {
+        tileExecutor.execute {
             var bitmap: Bitmap? = null
 
             try {
@@ -425,7 +445,7 @@ class CyberMapView(context: Context) : View(context) {
 
                 if (bitmap != null) {
                     synchronized(cache) {
-                        cache[key] = bitmap!!
+                        cache.get(key) = bitmap!!
                     }
                 }
 
@@ -437,7 +457,7 @@ class CyberMapView(context: Context) : View(context) {
                 }
                 postInvalidateOnAnimation()
             }
-        }.start()
+        }
     }
 
     private fun grid(c: Canvas) {
