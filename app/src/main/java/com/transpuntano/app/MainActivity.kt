@@ -42,56 +42,78 @@ class MainActivity : AppCompatActivity() {
     private val bg = 0xFF05070C.toInt()
     private val panelColor = 0xFF0B1018.toInt()
     private val muted = 0xFF8CA5B5.toInt()
+    private lateinit var drawerPanel: LinearLayout
+    private var drawerOpen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildShell()
         showHome()
-    }
-
     private fun buildShell() {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(bg)
-        }
-
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(16), dp(20), dp(10))
-            setBackgroundColor(0xFF080C13.toInt())
-        }
-        header.addView(TextView(this).apply {
-            text = "TU COLECTIVO 2.0"
-            textSize = 24f
-            typeface = Typeface.MONOSPACE
-            setTextColor(cyan)
-        })
-        title = TextView(this).apply {
-            text = "CENTRO DE MOVILIDAD"
-            textSize = 11f
-            setTextColor(muted)
-        }
-        header.addView(title)
-        status = TextView(this).apply {
-            text = "● SISTEMA LISTO"
-            textSize = 16f
-            setTextColor(0xFF55FFB0.toInt())
-        }
-        header.addView(status)
-        root.addView(header)
-
+        val rootFrame = FrameLayout(this).apply { setBackgroundColor(bg) }
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(bg) }
+        val headerLayout = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(20), dp(16), dp(20), dp(10)); setBackgroundColor(0xFF080C13.toInt()); gravity = Gravity.CENTER_VERTICAL }
+        val menuBtn = TextView(this).apply { text = "☰"; textSize = 24f; setTextColor(cyan); setPadding(0, 0, dp(16), 0); setOnClickListener { toggleDrawer() } }
+        headerLayout.addView(menuBtn, LinearLayout.LayoutParams(dp(40), dp(40)))
+        val headerContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(0, -2, 1f) }
+        headerContent.addView(TextView(this).apply { text = "TU COLECTIVO 2.0"; textSize = 24f; typeface = Typeface.MONOSPACE; setTextColor(cyan) })
+        title = TextView(this).apply { text = "CENTRO DE MOVILIDAD"; textSize = 11f; setTextColor(muted) }
+        headerContent.addView(title)
+        status = TextView(this).apply { text = "● SISTEMA LISTO"; textSize = 16f; setTextColor(0xFF55FFB0.toInt()) }
+        headerContent.addView(status)
+        headerLayout.addView(headerContent)
+        root.addView(headerLayout)
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
-
-        navBar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(0xFF080C13.toInt())
-        }
+        navBar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF080C13.toInt()); visibility = View.GONE }
         root.addView(navBar, LinearLayout.LayoutParams(-1, dp(64)))
-        setContentView(root)
+        rootFrame.addView(root)
+        drawerPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(0xFF0E1420.toInt()); layoutParams = FrameLayout.LayoutParams(dp(250), -1).apply { gravity = Gravity.START }; visibility = View.GONE }
+        addDrawerItems()
+        rootFrame.addView(drawerPanel)
+        setContentView(rootFrame)
         updateNav(0)
     }
 
+    private fun toggleDrawer() {
+        drawerOpen = !drawerOpen
+        if (drawerOpen) {
+            drawerPanel.visibility = android.view.View.VISIBLE
+        } else {
+            drawerPanel.visibility = android.view.View.GONE
+        }
+    }
+
+    private fun addDrawerItems() {
+        val items = listOf(
+            "⌂" to "INICIO" to 0,
+            "▤" to "LÍNEAS" to 1,
+            "★" to "FAVORITOS" to 2,
+            "◎" to "CERCA" to 3
+        )
+        items.forEach { (icon, label, index) ->
+            drawerPanel.addView(TextView(this).apply {
+                text = "$icon  $label"
+                textSize = 16f
+                typeface = Typeface.MONOSPACE
+                setTextColor(cyan)
+                setPadding(dp(16), dp(20), dp(16), dp(20))
+                setOnClickListener {
+                    navigateTo(index)
+                    toggleDrawer()
+                }
+            })
+        }
+    }
+
+    private fun navigateTo(index: Int) {
+        when (index) {
+            0 -> showHome()
+            1 -> showLines()
+            2 -> showFavorites()
+            3 -> showNearby()
+        }
+    }
     private fun updateNav(selected: Int) {
         navBar.removeAllViews()
         val items = listOf("⌂\nINICIO", "▤\nLÍNEAS", "★\nFAVORITOS", "◎\nCERCA")
