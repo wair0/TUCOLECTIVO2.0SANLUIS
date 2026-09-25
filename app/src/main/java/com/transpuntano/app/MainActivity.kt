@@ -140,20 +140,45 @@ class MainActivity : AppCompatActivity() {
 
     private fun showHome() {
         title.text = ""
+        title.text = ""
         updateNav(0)
         content.removeAllViews()
         val box = box()
-        box.addView(TextView(this).apply {
-            text = "MOVETE\nSIN PERDER TIEMPO."
-            textSize = 30f
-            typeface = Typeface.MONOSPACE
-            setTextColor(Color.WHITE)
-            setPadding(0, dp(8), 0, dp(18))
-        })
-        box.addView(button("SINCRONIZAR LÍNEAS", cyan) { loadLines(false) })
+        
+        val grid = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        
+        val row1 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
+        }
+        
+        val row2 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
+        }
+        
+        val item1 = cardHome("▤", "LÍNEAS", "Recorridos y calles", cyan) { showLines() }
+        val item2 = cardHome("⊕", "PARADAS", "Buscar por código", pink) { showStreet() }
+        val item3 = cardHome("◉", "MAPA", "Explorar el mapa", 0xFF00E87F.toInt()) { showMap(null) }
+        val item4 = cardHome("⇒", "CERCANAS", "Por tu ubicación", cyan) { showNearby() }
+        val item5 = cardHome("★", "FAVORITOS", "Paradas guardadas", pink) { showFavorites() }
+        
+        row1.addView(item1, LinearLayout.LayoutParams(0, dp(140), 1f).apply { rightMargin = dp(6) })
+        row1.addView(item2, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
+        
+        row2.addView(item3, LinearLayout.LayoutParams(0, dp(140), 1f).apply { rightMargin = dp(6) })
+        row2.addView(item4, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
+        
+        grid.addView(row1)
+        grid.addView(row2)
+        grid.addView(item5, LinearLayout.LayoutParams(-1, dp(100)).apply { topMargin = dp(12) })
+        
+        box.addView(grid)
+        box.addView(button("SINCRONIZAR LÍNEAS", cyan) { loadLines(false) }, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(20) })
+        
         content.addView(ScrollView(this).apply { addView(box) })
-    }
-
     private fun loadLines(navigateToLines: Boolean = true) {
         status.text = "● SINCRONIZANDO..."
         executor.execute {
@@ -529,6 +554,40 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun cardHome(icon: String, title: String, subtitle: String, color: Int, action: () -> Unit) = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(12), dp(12), dp(12), dp(12))
+        setBackgroundColor(panelColor)
+        gravity = Gravity.CENTER_VERTICAL
+        setOnClickListener { action() }
+        
+        val borderView = View(this@MainActivity).apply {
+            layoutParams = FrameLayout.LayoutParams(dp(1), -1)
+            setBackgroundColor(color)
+        }
+        
+        addView(TextView(this@MainActivity).apply {
+            text = icon
+            textSize = 32f
+            setTextColor(color)
+            gravity = Gravity.CENTER
+        }, LinearLayout.LayoutParams(-1, dp(48)))
+        
+        addView(TextView(this@MainActivity).apply {
+            text = title
+            textSize = 13f
+            typeface = Typeface.MONOSPACE
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        
+        addView(TextView(this@MainActivity).apply {
+            text = subtitle
+            textSize = 10f
+            setTextColor(muted)
+            gravity = Gravity.CENTER
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
+    }
     private fun box() = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(dp(18), dp(16), dp(18), dp(24))
