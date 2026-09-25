@@ -445,7 +445,7 @@ class CyberMapView(context: Context) : View(context) {
 
                 if (bitmap != null) {
                     synchronized(cache) {
-                        cache.get(key) = bitmap!!
+                        cache.put(key, bitmap!!)
                     }
                 }
 
