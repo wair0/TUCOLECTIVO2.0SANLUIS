@@ -208,7 +208,7 @@ class CyberMapView(context: Context) : View(context) {
         c.drawRect(
             mapRect,
             Paint().apply {
-                color = Color.rgb(10, 17, 23)
+                color = Color.rgb(238, 234, 227)
                 style = Paint.Style.FILL
             }
         )
