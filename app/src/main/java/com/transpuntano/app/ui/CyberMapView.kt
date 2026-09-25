@@ -165,12 +165,12 @@ class CyberMapView(context: Context) : View(context) {
 
         zoom = 11
 
-        for (z in 18 downTo 11) {
+        for (z in 15 downTo 11) {
             val topLeft = world(maxLat, minLon, z)
             val bottomRight = world(minLat, maxLon, z)
 
-            val projectedWidth = abs(bottomRight.first - topLeft.first)
-            val projectedHeight = abs(bottomRight.second - topLeft.second)
+            val projectedWidth = abs(bottomRight.first - topLeft.first) * 1.3
+            val projectedHeight = abs(bottomRight.second - topLeft.second) * 1.3
 
             if (
                 projectedWidth <= availableWidth &&
@@ -326,7 +326,7 @@ class CyberMapView(context: Context) : View(context) {
                         )
                     } else {
                         paint.style = Paint.Style.FILL
-                        paint.color = Color.rgb(10, 17, 23)
+                        paint.color = Color.rgb(15, 22, 30)
 
                         c.drawRect(
                             dx.toFloat(),
