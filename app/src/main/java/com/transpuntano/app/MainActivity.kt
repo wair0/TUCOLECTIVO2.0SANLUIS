@@ -159,7 +159,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         val item1 = cardHome("▤", "LÍNEAS", "Recorridos y calles", cyan) { showLines() }
-        val item2 = cardHome("⊕", "PARADAS", "Buscar por código", pink) { showStreet() }
+        val item2 = cardHome("⊕", "LÍNEAS", "Recorridos y calles", pink) { showLines() }
         val item3 = cardHome("◉", "MAPA", "Explorar el mapa", 0xFF00E87F.toInt()) { showMap(null) }
         val item4 = cardHome("⇒", "CERCANAS", "Por tu ubicación", cyan) { showNearby() }
         val item5 = cardHome("★", "FAVORITOS", "Paradas guardadas", pink) { showFavorites() }
