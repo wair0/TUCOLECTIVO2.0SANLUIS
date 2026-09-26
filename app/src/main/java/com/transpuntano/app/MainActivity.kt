@@ -302,18 +302,12 @@ class MainActivity : AppCompatActivity() {
             cyan
         ) { showLines() }
 
-        val item2 = cardHome(
-            "◉",
-            "MAPA",
-            "Explorar el mapa",
-            0xFF00E87F.toInt()
+        val item2 = cardHomeAsset(
+            "mapa_cyberpunk.webp"
         ) { showMap(null) }
 
-        val item3 = cardHome(
-            "⇒",
-            "PARADAS CERCANAS",
-            "Por tu ubicación",
-            cyan
+        val item3 = cardHomeAsset(
+            "paradas_cercanas_cyberpunk.webp"
         ) { showNearby() }
 
         val item4 = cardHome(
@@ -325,7 +319,7 @@ class MainActivity : AppCompatActivity() {
 
         row1.addView(
             item1,
-            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
+            LinearLayout.LayoutParams(0, dp(96), 1f).apply {
                 rightMargin = dp(6)
             }
         )
@@ -758,6 +752,22 @@ class MainActivity : AppCompatActivity() {
         }
         addView(image, FrameLayout.LayoutParams(-1, -1))
         addView(View(this@MainActivity).apply { setBackgroundColor(color); alpha = 0.85f }, FrameLayout.LayoutParams(dp(3), -1).apply { gravity = Gravity.START })
+    }
+
+    private fun cardHomeAsset(assetName: String, action: () -> Unit) = FrameLayout(this).apply {
+        setBackgroundColor(panelColor)
+        setOnClickListener { action() }
+        isClickable = true
+        isFocusable = true
+
+        val image = ImageView(this@MainActivity).apply {
+            val bitmap = assets.open(assetName).use { BitmapFactory.decodeStream(it) }
+            setImageBitmap(bitmap)
+            scaleType = ImageView.ScaleType.FIT_XY
+            contentDescription = assetName
+        }
+
+        addView(image, FrameLayout.LayoutParams(-1, -1))
     }
 
     private fun cardHome(icon: String, title: String, subtitle: String, color: Int, action: () -> Unit) = LinearLayout(this).apply {
