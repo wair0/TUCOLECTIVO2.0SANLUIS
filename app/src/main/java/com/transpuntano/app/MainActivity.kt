@@ -111,14 +111,12 @@ class MainActivity : AppCompatActivity() {
             setPadding(0, 0, dp(16), 0)
             setOnClickListener { toggleDrawer() }
         }
-        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(40), dp(40)).apply {
-            gravity = Gravity.CENTER_VERTICAL
-        })
         val headerContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            layoutParams = FrameLayout.LayoutParams(0, -2, 1f).apply {
-                leftMargin = dp(2)
+            layoutParams = FrameLayout.LayoutParams(-1, -2).apply {
+                leftMargin = dp(50)
+                rightMargin = dp(4)
             }
         }
         headerContent.addView(CyberNeonTextView(this).apply {
@@ -140,6 +138,9 @@ class MainActivity : AppCompatActivity() {
         }
         headerContent.addView(status)
         headerLayout.addView(headerContent)
+        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(40), dp(40)).apply {
+            gravity = Gravity.CENTER_VERTICAL
+        })
         root.addView(headerLayout)
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
