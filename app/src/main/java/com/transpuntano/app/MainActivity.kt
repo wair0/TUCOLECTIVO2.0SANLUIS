@@ -3,7 +3,10 @@ package com.transpuntano.app
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Typeface
 import android.graphics.BitmapFactory
 import android.location.LocationManager
@@ -20,6 +23,8 @@ import com.transpuntano.app.ui.CyberMapView
 import com.transpuntano.app.ui.MapStop
 import org.json.JSONObject
 import java.util.concurrent.Executors
+import kotlin.math.cos
+import kotlin.math.sin
 
 class MainActivity : AppCompatActivity() {
     private data class FavoriteStop(
@@ -96,14 +101,43 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.TRANSPARENT)
         }
-        val headerLayout = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(20), dp(16), dp(20), dp(10)); setBackgroundColor(0xFF080C13.toInt()); gravity = Gravity.CENTER_VERTICAL }
-        val menuBtn = TextView(this).apply { text = "☰"; textSize = 24f; setTextColor(cyan); setPadding(0, 0, dp(16), 0); setOnClickListener { toggleDrawer() } }
-        headerLayout.addView(menuBtn, LinearLayout.LayoutParams(dp(40), dp(40)))
-        val headerContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(0, -2, 1f) }
-        headerContent.addView(TextView(this).apply { text = "TU COLECTIVO 2.0"; textSize = 24f; typeface = Typeface.MONOSPACE; setTextColor(cyan) })
-        title = TextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
+        val headerLayout = CyberHeaderView(this).apply {
+            setPadding(dp(18), dp(12), dp(18), dp(10))
+        }
+        val menuBtn = CyberNeonTextView(this).apply {
+            text = "☰"
+            textSize = 24f
+            setTextColor(cyan)
+            setPadding(0, 0, dp(16), 0)
+            setOnClickListener { toggleDrawer() }
+        }
+        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(40), dp(40)).apply {
+            gravity = Gravity.CENTER_VERTICAL
+        })
+        val headerContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = FrameLayout.LayoutParams(0, -2, 1f).apply {
+                leftMargin = dp(2)
+            }
+        }
+        headerContent.addView(CyberNeonTextView(this).apply {
+            text = "TU COLECTIVO 2.0"
+            textSize = 24f
+            typeface = Typeface.MONOSPACE
+            setTextColor(cyan)
+        })
+        title = CyberNeonTextView(this).apply {
+            text = ""
+            textSize = 11f
+            setTextColor(muted)
+        }
         headerContent.addView(title)
-        status = TextView(this).apply { text = "● SISTEMA LISTO"; textSize = 16f; setTextColor(0xFF55FFB0.toInt()) }
+        status = CyberNeonTextView(this).apply {
+            text = "● SISTEMA LISTO"
+            textSize = 16f
+            setTextColor(0xFF55FFB0.toInt())
+        }
         headerContent.addView(status)
         headerLayout.addView(headerContent)
         root.addView(headerLayout)
@@ -310,12 +344,7 @@ class MainActivity : AppCompatActivity() {
             "paradas_cercanas_cyberpunk.webp"
         ) { showNearby() }
 
-        val item4 = cardHome(
-            "★",
-            "FAVORITOS",
-            "Paradas guardadas",
-            pink
-        ) { showFavorites() }
+        val item4 = cyberFavoriteCard { showFavorites() }
 
         row1.addView(
             item1,
@@ -768,6 +797,182 @@ class MainActivity : AppCompatActivity() {
         }
 
         addView(image, FrameLayout.LayoutParams(-1, -1))
+    }
+
+    private fun cyberFavoriteCard(action: () -> Unit) = CyberFavoriteView(this).apply {
+        setOnClickListener { action() }
+        isClickable = true
+        isFocusable = true
+        contentDescription = "FAVORITOS · Paradas guardadas"
+    }
+
+    private class CyberNeonTextView(context: Context) : TextView(context) {
+        init {
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            setShadowLayer(8f, 0f, 0f, 0xCC00F0FF.toInt())
+        }
+    }
+
+    private class CyberHeaderView(context: Context) : FrameLayout(context) {
+        private val path = Path()
+        private val glow = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val line = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        init {
+            setWillNotDraw(false)
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return
+
+            val d = resources.displayMetrics.density
+            val chamfer = 18f * d
+
+            path.reset()
+            path.moveTo(chamfer, 0f)
+            path.lineTo(w - chamfer, 0f)
+            path.lineTo(w, chamfer)
+            path.lineTo(w, h - chamfer)
+            path.lineTo(w - chamfer, h)
+            path.lineTo(chamfer, h)
+            path.lineTo(0f, h - chamfer)
+            path.lineTo(0f, chamfer)
+            path.close()
+
+            canvas.drawPath(path, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0xE6080C13.toInt()
+            })
+
+            glow.style = Paint.Style.STROKE
+            glow.strokeWidth = 2.5f * d
+            glow.color = 0xFF00F0FF.toInt()
+            glow.setShadowLayer(12f * d, 0f, 0f, 0xCC00F0FF.toInt())
+            canvas.drawPath(path, glow)
+
+            line.style = Paint.Style.STROKE
+            line.strokeWidth = 1.2f * d
+            line.color = 0xFFFF2DB2.toInt()
+            val accent = Path().apply {
+                moveTo(0f, h * 0.78f)
+                lineTo(w * 0.18f, h * 0.78f)
+                lineTo(w * 0.22f, h)
+            }
+            canvas.drawPath(accent, line)
+        }
+    }
+
+    private class CyberFavoriteView(context: Context) : View(context) {
+        private val frame = Path()
+        private val star = Path()
+        private val glow = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val subPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        init {
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return
+
+            val d = resources.displayMetrics.density
+            val chamfer = 16f * d
+
+            frame.reset()
+            frame.moveTo(chamfer, 0f)
+            frame.lineTo(w - chamfer, 0f)
+            frame.lineTo(w, chamfer)
+            frame.lineTo(w, h - chamfer)
+            frame.lineTo(w - chamfer, h)
+            frame.lineTo(chamfer, h)
+            frame.lineTo(0f, h - chamfer)
+            frame.lineTo(0f, chamfer)
+            frame.close()
+
+            canvas.drawPath(frame, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = panelColorStatic
+            })
+
+            glow.style = Paint.Style.STROKE
+            glow.strokeWidth = 2.2f * d
+            glow.color = 0xFFFF2DB2.toInt()
+            glow.setShadowLayer(10f * d, 0f, 0f, 0xCCFF2DB2.toInt())
+            canvas.drawPath(frame, glow)
+
+            val inner = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 1f * d
+                color = 0xFF00F0FF.toInt()
+            }
+            val inset = 6f * d
+            val innerPath = Path().apply {
+                moveTo(chamfer + inset, inset)
+                lineTo(w - chamfer - inset, inset)
+                lineTo(w - inset, chamfer + inset)
+                lineTo(w - inset, h - chamfer - inset)
+                lineTo(w - chamfer - inset, h - inset)
+                lineTo(chamfer + inset, h - inset)
+                lineTo(inset, h - chamfer - inset)
+                lineTo(inset, chamfer + inset)
+                close()
+            }
+            canvas.drawPath(innerPath, inner)
+
+            val cx = w / 2f
+            val iconCy = h * 0.33f
+            val outerR = 27f * d
+            val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 2.5f * d
+                color = 0xFFFF2DB2.toInt()
+                setShadowLayer(10f * d, 0f, 0f, 0xFFFF2DB2.toInt())
+            }
+            canvas.drawCircle(cx, iconCy, outerR, iconPaint)
+
+            star.reset()
+            for (i in 0 until 10) {
+                val angle = Math.toRadians((-90 + i * 36).toDouble())
+                val radius = if (i % 2 == 0) 18f else 8f
+                val x = cx + cos(angle).toFloat() * radius * d
+                val y = iconCy + sin(angle).toFloat() * radius * d
+                if (i == 0) star.moveTo(x, y) else star.lineTo(x, y)
+            }
+            star.close()
+            val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 2.2f * d
+                color = 0xFF00F0FF.toInt()
+                setShadowLayer(9f * d, 0f, 0f, 0xCC00F0FF.toInt())
+            }
+            canvas.drawPath(star, starPaint)
+
+            textPaint.typeface = Typeface.MONOSPACE
+            textPaint.textAlign = Paint.Align.CENTER
+            textPaint.textSize = 15f * d
+            textPaint.color = Color.WHITE
+            textPaint.setShadowLayer(8f * d, 0f, 0f, 0xFF00F0FF.toInt())
+            canvas.drawText("FAVORITOS", cx, h * 0.68f, textPaint)
+
+            subPaint.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
+            subPaint.textAlign = Paint.Align.CENTER
+            subPaint.textSize = 10f * d
+            subPaint.color = 0xFF8CA5B5.toInt()
+            subPaint.setShadowLayer(5f * d, 0f, 0f, 0x5500F0FF)
+            canvas.drawText("Paradas guardadas", cx, h * 0.84f, subPaint)
+        }
+
+        companion object {
+            private const val panelColorStatic = 0xFF0B1018.toInt()
+        }
     }
 
     private fun cardHome(icon: String, title: String, subtitle: String, color: Int, action: () -> Unit) = LinearLayout(this).apply {
