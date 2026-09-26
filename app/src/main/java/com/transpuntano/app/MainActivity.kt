@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.BitmapFactory
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
@@ -210,10 +211,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val item1 = cardHome(
-            "▤",
-            "LÍNEAS",
-            "Recorridos y calles",
+        val item1 = cardHomeImage(
+            "lineas_cyberpunk.webp",
             cyan
         ) { showLines() }
 
@@ -963,6 +962,31 @@ class MainActivity : AppCompatActivity() {
 
             useLocation(location)
         }
+    }
+
+    private fun cardHomeImage(assetName: String, color: Int, action: () -> Unit) = FrameLayout(this).apply {
+        setBackgroundColor(panelColor)
+        setOnClickListener { action() }
+        isClickable = true
+        isFocusable = true
+
+        val image = ImageView(this@MainActivity).apply {
+            val bitmap = assets.open(assetName).use { BitmapFactory.decodeStream(it) }
+            setImageBitmap(bitmap)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setBackgroundColor(bg)
+            contentDescription = "LÍNEAS · Recorridos y calles"
+        }
+
+        addView(image, FrameLayout.LayoutParams(-1, -1))
+
+        addView(
+            View(this@MainActivity).apply {
+                setBackgroundColor(color)
+                alpha = 0.85f
+            },
+            FrameLayout.LayoutParams(dp(3), -1).apply { gravity = Gravity.START }
+        )
     }
 
     private fun cardHome(icon: String, title: String, subtitle: String, color: Int, action: () -> Unit) = LinearLayout(this).apply {
