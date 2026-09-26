@@ -9,6 +9,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Typeface
 import android.graphics.BitmapFactory
+import android.util.Base64
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
@@ -23,8 +24,6 @@ import com.transpuntano.app.ui.CyberMapView
 import com.transpuntano.app.ui.MapStop
 import org.json.JSONObject
 import java.util.concurrent.Executors
-import kotlin.math.cos
-import kotlin.math.sin
 
 class MainActivity : AppCompatActivity() {
     private data class FavoriteStop(
@@ -58,120 +57,66 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildShell()
-
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    if (drawerOpen) {
-                        toggleDrawer()
-                    } else {
-                        finish()
-                    }
-                }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (drawerOpen) toggleDrawer() else finish()
             }
-        )
-
+        })
         showHome()
     }
 
     private fun buildShell() {
         val rootFrame = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
-
         val backgroundImage = ImageView(this).apply {
-            val bitmap = assets.open("background.webp").use {
-                BitmapFactory.decodeStream(it)
-            }
-
-            if (bitmap == null) {
-                throw IllegalStateException("No se pudo decodificar background.webp")
-            }
-
+            val bitmap = assets.open("background.webp").use { BitmapFactory.decodeStream(it) }
+            if (bitmap == null) throw IllegalStateException("No se pudo decodificar background.webp")
             setImageBitmap(bitmap)
             scaleType = ImageView.ScaleType.CENTER_CROP
             contentDescription = "Fondo cyberpunk neon"
         }
-
-        rootFrame.addView(
-            backgroundImage,
-            FrameLayout.LayoutParams(-1, -1)
-        )
-
+        rootFrame.addView(backgroundImage, FrameLayout.LayoutParams(-1, -1))
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.TRANSPARENT)
         }
-        val headerLayout = CyberHeaderView(this).apply {
-            setPadding(dp(18), dp(12), dp(18), dp(10))
-        }
+        val headerLayout = CyberHeaderView(this).apply { setPadding(dp(18), dp(12), dp(18), dp(10)) }
         val menuBtn = CyberNeonTextView(this).apply {
-            text = "☰"
-            textSize = 24f
-            setTextColor(cyan)
-            setPadding(0, 0, dp(16), 0)
+            text = "☰"; textSize = 24f; setTextColor(cyan); setPadding(0, 0, dp(16), 0)
             setOnClickListener { toggleDrawer() }
         }
         val headerContent = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = FrameLayout.LayoutParams(-1, -2).apply {
-                leftMargin = dp(50)
-                rightMargin = dp(4)
-            }
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL
+            layoutParams = FrameLayout.LayoutParams(-1, -2).apply { leftMargin = dp(50); rightMargin = dp(4) }
         }
         headerContent.addView(CyberNeonTextView(this).apply {
-            text = "TU COLECTIVO 2.0"
-            textSize = 24f
-            typeface = Typeface.MONOSPACE
-            setTextColor(cyan)
+            text = "TU COLECTIVO 2.0"; textSize = 24f; typeface = Typeface.MONOSPACE; setTextColor(cyan)
         })
-        title = CyberNeonTextView(this).apply {
-            text = ""
-            textSize = 11f
-            setTextColor(muted)
-        }
+        title = CyberNeonTextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
         headerContent.addView(title)
         status = CyberNeonTextView(this).apply {
-            text = "● SISTEMA LISTO"
-            textSize = 16f
-            setTextColor(0xFF55FFB0.toInt())
+            text = "● SISTEMA LISTO"; textSize = 16f; setTextColor(0xFF55FFB0.toInt())
         }
         headerContent.addView(status)
         headerLayout.addView(headerContent)
-        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(40), dp(40)).apply {
-            gravity = Gravity.CENTER_VERTICAL
-        })
+        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(40), dp(40)).apply { gravity = Gravity.CENTER_VERTICAL })
         root.addView(headerLayout)
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
-        navBar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF080C13.toInt()); visibility = View.GONE }
+        navBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF080C13.toInt()); visibility = View.GONE
+        }
         root.addView(navBar, LinearLayout.LayoutParams(-1, dp(64)))
         rootFrame.addView(root)
-
         drawerScrim = View(this).apply {
-            setBackgroundColor(Color.TRANSPARENT)
-            visibility = View.GONE
-            setOnClickListener {
-                toggleDrawer()
-            }
+            setBackgroundColor(Color.TRANSPARENT); visibility = View.GONE
+            setOnClickListener { toggleDrawer() }
         }
-
-        rootFrame.addView(
-            drawerScrim,
-            FrameLayout.LayoutParams(-1, -1)
-        )
-
+        rootFrame.addView(drawerScrim, FrameLayout.LayoutParams(-1, -1))
         drawerPanel = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
-            layoutParams = FrameLayout.LayoutParams(
-                dp(300),
-                -1
-            ).apply {
-                gravity = Gravity.START
-            }
+            layoutParams = FrameLayout.LayoutParams(dp(300), -1).apply { gravity = Gravity.START }
             visibility = View.GONE
         }
-
         addDrawerItems()
         rootFrame.addView(drawerPanel)
         setContentView(rootFrame)
@@ -182,7 +127,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleDrawer() {
         drawerOpen = !drawerOpen
-
         if (drawerOpen) {
             drawerScrim.visibility = View.VISIBLE
             drawerPanel.visibility = View.VISIBLE
@@ -195,33 +139,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun addDrawerItems() {
         val drawerImage = ImageView(this).apply {
-            val bitmap = assets.open("drawer_menu.webp").use {
-                BitmapFactory.decodeStream(it)
-            }
-
-            if (bitmap == null) {
-                throw IllegalStateException("No se pudo decodificar drawer_menu.webp")
-            }
-
+            val bitmap = assets.open("drawer_menu.webp").use { BitmapFactory.decodeStream(it) }
+            if (bitmap == null) throw IllegalStateException("No se pudo decodificar drawer_menu.webp")
             setImageBitmap(bitmap)
             scaleType = ImageView.ScaleType.FIT_XY
             contentDescription = "Menú principal"
-            isClickable = false
-            isFocusable = false
+            isClickable = false; isFocusable = false
         }
-
-        drawerPanel.addView(
-            drawerImage,
-            FrameLayout.LayoutParams(-1, -1)
-        )
+        drawerPanel.addView(drawerImage, FrameLayout.LayoutParams(-1, -1))
     }
 
     private fun ensureDrawerHotspots() {
         if (drawerHotspotsReady) return
-
         drawerPanel.post {
-            var panelHeight = drawerPanel.height
-            if (panelHeight <= 0) {
+            if (drawerPanel.height <= 0) {
                 drawerPanel.viewTreeObserver.addOnGlobalLayoutListener(
                     object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
                         override fun onGlobalLayout() {
@@ -234,13 +165,12 @@ class MainActivity : AppCompatActivity() {
                 )
                 return@post
             }
-            createDrawerHotspots(panelHeight)
+            createDrawerHotspots(drawerPanel.height)
         }
     }
 
     private fun createDrawerHotspots(panelHeight: Int) {
         if (drawerHotspotsReady) return
-
         val items = listOf(
             Triple("INICIO", 0, 0.15f),
             Triple("LÍNEAS", 1, 0.215f),
@@ -248,60 +178,34 @@ class MainActivity : AppCompatActivity() {
             Triple("FAVORITOS", 3, 0.345f),
             Triple("PARADAS CERCANAS", 4, 0.41f)
         )
-
         val hotspotHeight = maxOf((panelHeight * 0.075f).toInt(), dp(48))
-
         items.forEach { (label, index, topRatio) ->
             val hotspot = TextView(this).apply {
-                text = ""
-                setBackgroundColor(Color.TRANSPARENT)
-                isClickable = true
-                isFocusable = true
-                contentDescription = label
-                setOnClickListener {
-                    navigateTo(index)
-                    toggleDrawer()
-                }
+                text = ""; setBackgroundColor(Color.TRANSPARENT)
+                isClickable = true; isFocusable = true; contentDescription = label
+                setOnClickListener { navigateTo(index); toggleDrawer() }
             }
-
-            drawerPanel.addView(
-                hotspot,
-                FrameLayout.LayoutParams(
-                    -1,
-                    hotspotHeight
-                ).apply {
-                    topMargin = (panelHeight * topRatio).toInt()
-                }
-            )
+            drawerPanel.addView(hotspot, FrameLayout.LayoutParams(-1, hotspotHeight).apply {
+                topMargin = (panelHeight * topRatio).toInt()
+            })
         }
         drawerHotspotsReady = true
     }
 
     private fun navigateTo(index: Int) {
         when (index) {
-            0 -> showHome()
-            1 -> showLines()
-            2 -> showMap(null)
-            3 -> showFavorites()
-            4 -> showNearby()
+            0 -> showHome(); 1 -> showLines(); 2 -> showMap(null); 3 -> showFavorites(); 4 -> showNearby()
         }
     }
+
     private fun updateNav(selected: Int) {
         navBar.removeAllViews()
-        val items = listOf("⌂\nINICIO", "▤\nLÍNEAS", "★\nFAVORITOS", "◎\nPARADAS CERCANAS")
-        items.forEachIndexed { index, label ->
+        listOf("⌂\nINICIO", "▤\nLÍNEAS", "★\nFAVORITOS", "◎\nPARADAS CERCANAS").forEachIndexed { index, label ->
             navBar.addView(TextView(this).apply {
-                text = label
-                gravity = Gravity.CENTER
-                textSize = 10f
+                text = label; gravity = Gravity.CENTER; textSize = 10f
                 setTextColor(if (index == selected) cyan else muted)
                 setOnClickListener {
-                    when (index) {
-                        0 -> showHome()
-                        1 -> showLines()
-                        2 -> showFavorites()
-                        3 -> showNearby()
-                    }
+                    when (index) { 0 -> showHome(); 1 -> showLines(); 2 -> showFavorites(); 3 -> showNearby() }
                 }
             }, LinearLayout.LayoutParams(0, -1, 1f))
         }
@@ -311,169 +215,82 @@ class MainActivity : AppCompatActivity() {
         title.text = ""
         updateNav(0)
         content.removeAllViews()
-
         val box = box()
-
-        val grid = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-
+        val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val row1 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
-                bottomMargin = dp(12)
-            }
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
         }
-
         val row2 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
-                bottomMargin = dp(12)
-            }
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
         }
-
-        val item1 = cardHomeImage(
-            "lineas_cyberpunk.webp",
-            cyan
-        ) { showLines() }
-
-        val item2 = cardHomeAsset(
-            "mapa_cyberpunk.webp",
-            "MAPA · Explorar el mapa"
-        ) { showMap(null) }
-
-        val item3 = cardHomeAsset(
-            "paradas_cercanas_cyberpunk.webp",
-            "PARADAS CERCANAS · Por tu ubicación"
-        ) { showNearby() }
-
-        val item4 = cardHomeAsset(
-            "favoritos_cyberpunk.webp",
-            "FAVORITOS · Paradas guardadas"
-        ) { showFavorites() }
-
-        row1.addView(
-            item1,
-            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
-                rightMargin = dp(6)
-            }
-        )
-
-        row1.addView(
-            item2,
-            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
-                leftMargin = dp(6)
-            }
-        )
-
-        row2.addView(
-            item3,
-            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
-                rightMargin = dp(6)
-            }
-        )
-
-        row2.addView(
-            item4,
-            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
-                leftMargin = dp(6)
-            }
-        )
-
-        grid.addView(row1)
-        grid.addView(row2)
-
-        box.addView(grid)
-
-        box.addView(
-            cyberSyncButton { loadLines(false) },
-            LinearLayout.LayoutParams(-1, dp(60)).apply {
-                topMargin = dp(20)
-            }
-        )
-
-        content.addView(
-            ScrollView(this).apply {
-                addView(box)
-            }
-        )
+        val item1 = cardHomeImage("lineas_cyberpunk.webp", cyan) { showLines() }
+        val item2 = cardHomeAsset("mapa_cyberpunk.webp", "MAPA · Explorar el mapa") { showMap(null) }
+        val item3 = cardHomeAsset("paradas_cercanas_cyberpunk.webp", "PARADAS CERCANAS · Por tu ubicación") { showNearby() }
+        val item4 = cardHomeAsset("favoritos_cyberpunk.webp", "FAVORITOS · Paradas guardadas") { showFavorites() }
+        row1.addView(item1, LinearLayout.LayoutParams(0, dp(140), 1f).apply { rightMargin = dp(6) })
+        row1.addView(item2, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
+        row2.addView(item3, LinearLayout.LayoutParams(0, dp(140), 1f).apply { rightMargin = dp(6) })
+        row2.addView(item4, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
+        grid.addView(row1); grid.addView(row2); box.addView(grid)
+        box.addView(cyberSyncButton { loadLines(false) }, LinearLayout.LayoutParams(-1, dp(60)).apply { topMargin = dp(20) })
+        content.addView(ScrollView(this).apply { addView(box) })
     }
 
     private fun loadLines(navigateToLines: Boolean = true) {
         status.text = "● SINCRONIZANDO..."
         executor.execute {
             runCatching { api.getLines() }
-                .onSuccess { lines ->
-                    runOnUiThread {
-                        status.text = "● " + lines.size + " LÍNEAS"
-                        if (navigateToLines) showLines(lines)
-                    }
-                }
-                .onFailure { error ->
-                    runOnUiThread {
-                        status.text = "● SIN CONEXIÓN"
-                        toast(error.message ?: "Error")
-                    }
-                }
+                .onSuccess { lines -> runOnUiThread {
+                    status.text = "● " + lines.size + " LÍNEAS"
+                    if (navigateToLines) showLines(lines)
+                }}
+                .onFailure { error -> runOnUiThread {
+                    status.text = "● SIN CONEXIÓN"; toast(error.message ?: "Error")
+                }}
         }
     }
 
     private fun showLines(initial: List<TransitLine>? = null) {
-        title.text = "LÍNEAS"
-        updateNav(1)
-        content.removeAllViews()
+        title.text = "LÍNEAS"; updateNav(1); content.removeAllViews()
         val box = box()
         box.addView(panel("CATÁLOGO", "Datos solicitados al servicio SmartMove."))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
-
         fun drawLines(items: List<TransitLine>) {
             list.removeAllViews()
             items.forEach { line ->
-                list.addView(
-                    card(line.name.uppercase(), "LÍNEA " + line.code) { showLine(line) },
-                    LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) }
-                )
+                list.addView(card(line.name.uppercase(), "LÍNEA " + line.code) { showLine(line) },
+                    LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
             }
             if (items.isEmpty()) list.addView(panel("SIN DATOS", "No se encontraron líneas."))
         }
-
-        if (initial != null) {
-            drawLines(initial)
-        } else {
-            executor.execute {
-                runCatching { api.getLines() }
-                    .onSuccess { items -> runOnUiThread { drawLines(items); status.text = "● " + items.size + " LÍNEAS" } }
-                    .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "No se pudo consultar.")) } }
-            }
+        if (initial != null) drawLines(initial)
+        else executor.execute {
+            runCatching { api.getLines() }
+                .onSuccess { items -> runOnUiThread { drawLines(items); status.text = "● " + items.size + " LÍNEAS" } }
+                .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "No se pudo consultar.")) } }
         }
         box.addView(button("ACTUALIZAR", cyan) { loadLines(true) })
         content.addView(ScrollView(this).apply { addView(box) })
     }
 
     private fun showLine(line: TransitLine) {
-        title.text = "LÍNEA " + line.code
-        content.removeAllViews()
+        title.text = "LÍNEA " + line.code; content.removeAllViews()
         val box = box()
         box.addView(TextView(this).apply {
-            text = line.name.uppercase()
-            textSize = 25f
-            typeface = Typeface.MONOSPACE
-            setTextColor(cyan)
+            text = line.name.uppercase(); textSize = 25f; typeface = Typeface.MONOSPACE; setTextColor(cyan)
         })
         box.addView(panel("CALLES", "Seleccioná una calle para continuar."))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         executor.execute {
             runCatching { api.getStreets(line.code) }
-                .onSuccess { streets ->
-                    runOnUiThread {
-                        list.removeAllViews()
-                        streets.forEach { street ->
-                            list.addView(card(street.name, "VER INTERSECCIONES") { showIntersections(line, street) })
-                        }
-                    }
-                }
+                .onSuccess { streets -> runOnUiThread {
+                    list.removeAllViews()
+                    streets.forEach { street -> list.addView(card(street.name, "VER INTERSECCIONES") { showIntersections(line, street) }) }
+                }}
                 .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "Sin datos")) } }
         }
         box.addView(button("MAPA DEL RECORRIDO", pink) { showMap(line) })
@@ -481,53 +298,42 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showIntersections(line: TransitLine, street: TransitStreet) {
-        content.removeAllViews()
-        title.text = street.name
+        content.removeAllViews(); title.text = street.name
         val box = box()
         box.addView(panel("INTERSECCIONES", "LÍNEA " + line.code + " · " + street.name))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         executor.execute {
             runCatching { api.getIntersections(line.code, street.code) }
-                .onSuccess { intersections ->
-                    runOnUiThread {
-                        list.removeAllViews()
-                        intersections.forEach { intersection ->
-                            list.addView(card(intersection.name, "VER PARADAS") { showStops(line, street, intersection) })
-                        }
-                    }
-                }
+                .onSuccess { intersections -> runOnUiThread {
+                    list.removeAllViews()
+                    intersections.forEach { intersection -> list.addView(card(intersection.name, "VER PARADAS") { showStops(line, street, intersection) }) }
+                }}
                 .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "Sin datos")) } }
         }
         content.addView(ScrollView(this).apply { addView(box) })
     }
 
     private fun showStops(line: TransitLine, street: TransitStreet, intersection: TransitIntersection) {
-        content.removeAllViews()
-        title.text = "PARADAS"
+        content.removeAllViews(); title.text = "PARADAS"
         val box = box()
         box.addView(panel("PARADAS", "LÍNEA " + line.code + " · " + intersection.name))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         executor.execute {
             runCatching { api.getStops(line.code, street.code, intersection.code) }
-                .onSuccess { stops ->
-                    runOnUiThread {
-                        list.removeAllViews()
-                        stops.forEach { stop ->
-                            list.addView(card("🚏 " + stop.description, stop.street + " " + stop.intersection) { showArrivals(stop, line) })
-                        }
-                        if (stops.isEmpty()) list.addView(panel("SIN PARADAS", "No se encontraron paradas."))
-                    }
-                }
+                .onSuccess { stops -> runOnUiThread {
+                    list.removeAllViews()
+                    stops.forEach { stop -> list.addView(card("🚏 " + stop.description, stop.street + " " + stop.intersection) { showArrivals(stop, line) }) }
+                    if (stops.isEmpty()) list.addView(panel("SIN PARADAS", "No se encontraron paradas."))
+                }}
                 .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "Sin datos")) } }
         }
         content.addView(ScrollView(this).apply { addView(box) })
     }
 
     private fun showArrivals(stop: TransitStop, line: TransitLine) {
-        content.removeAllViews()
-        title.text = "ARRIBOS"
+        content.removeAllViews(); title.text = "ARRIBOS"
         val box = box()
         box.addView(panel("🚏 " + stop.description, "LÍNEA " + line.code + " · ID " + stop.identifier))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -543,25 +349,23 @@ class MainActivity : AppCompatActivity() {
         list.addView(panel("LIVE", "Consultando próximos arribos..."))
         executor.execute {
             runCatching { api.getArrivals(stop.identifier, line.code) }
-                .onSuccess { arrivals ->
-                    runOnUiThread {
-                        list.removeAllViews()
-                        arrivals.forEach { arrival ->
-                            val lineLabel = if (arrival.line.isBlank()) "LÍNEA " + line.code else arrival.line
-                            val minutes = arrival.minutes?.toString() ?: "--"
-                            list.addView(card(lineLabel + " · " + minutes + " MIN", arrival.destination) {})
-                        }
-                        if (arrivals.isEmpty()) list.addView(panel("SIN ARRIBOS", "El servicio no devolvió datos."))
+                .onSuccess { arrivals -> runOnUiThread {
+                    list.removeAllViews()
+                    arrivals.forEach { arrival ->
+                        val lineLabel = if (arrival.line.isBlank()) "LÍNEA " + line.code else arrival.line
+                        val minutes = arrival.minutes?.toString() ?: "--"
+                        list.addView(card(lineLabel + " · " + minutes + " MIN", arrival.destination) {})
                     }
-                }
-                .onFailure { error -> runOnUiThread { list.removeAllViews(); list.addView(panel("ERROR", error.message ?: "Sin conexión")) } }
+                    if (arrivals.isEmpty()) list.addView(panel("SIN ARRIBOS", "El servicio no devolvió datos."))
+                }}
+                .onFailure { error -> runOnUiThread {
+                    list.removeAllViews(); list.addView(panel("ERROR", error.message ?: "Sin conexión"))
+                }}
         }
     }
 
     private fun showNearby() {
-        title.text = "PARADAS CERCANAS"
-        updateNav(3)
-        content.removeAllViews()
+        title.text = "PARADAS CERCANAS"; updateNav(3); content.removeAllViews()
         val box = box()
         box.addView(panel("PARADAS CERCANAS", "Buscando paradas próximas a tu ubicación."))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -577,7 +381,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER) ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+        val location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
         if (location == null) {
             status.text = "● SIN UBICACIÓN"
             list.removeAllViews()
@@ -589,48 +394,43 @@ class MainActivity : AppCompatActivity() {
         list.addView(panel("BUSCANDO...", "Consultando las paradas cercanas."))
         executor.execute {
             runCatching { api.getNearby(location.latitude, location.longitude) }
-                .onSuccess { stops ->
-                    runOnUiThread {
-                        list.removeAllViews()
-                        val nearby = stops.take(60)
-                        if (nearby.isEmpty()) {
-                            list.addView(panel("SIN PARADAS", "No se encontraron paradas cercanas."))
-                        } else {
-                            nearby.forEach { stop ->
-                                val locationText = listOf(stop.street, stop.intersection).filter { it.isNotBlank() }.joinToString(" · ")
-                                val secondary = if (locationText.isBlank()) "CÓDIGO " + stop.code else "CÓDIGO " + stop.code + " · " + locationText
-                                list.addView(card("🚏 " + stop.description, secondary) { toast("PARADA " + stop.code + if (locationText.isBlank()) "" else " · " + locationText) }, LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
-                            }
-                        }
-                        status.text = "● " + nearby.size + " PARADAS CERCANAS"
+                .onSuccess { stops -> runOnUiThread {
+                    list.removeAllViews()
+                    val nearby = stops.take(60)
+                    if (nearby.isEmpty()) list.addView(panel("SIN PARADAS", "No se encontraron paradas cercanas."))
+                    else nearby.forEach { stop ->
+                        val locationText = listOf(stop.street, stop.intersection).filter { it.isNotBlank() }.joinToString(" · ")
+                        val secondary = if (locationText.isBlank()) "CÓDIGO " + stop.code else "CÓDIGO " + stop.code + " · " + locationText
+                        list.addView(card("🚏 " + stop.description, secondary) {
+                            toast("PARADA " + stop.code + if (locationText.isBlank()) "" else " · " + locationText)
+                        }, LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
                     }
-                }
-                .onFailure { error ->
-                    runOnUiThread {
-                        list.removeAllViews()
-                        list.addView(panel("ERROR", error.message ?: "No se pudieron cargar las paradas."))
-                        status.text = "● SIN CONEXIÓN"
-                    }
-                }
+                    status.text = "● " + nearby.size + " PARADAS CERCANAS"
+                }}
+                .onFailure { error -> runOnUiThread {
+                    list.removeAllViews()
+                    list.addView(panel("ERROR", error.message ?: "No se pudieron cargar las paradas."))
+                    status.text = "● SIN CONEXIÓN"
+                }}
         }
     }
 
     private fun showFavorites() {
-        title.text = "FAVORITOS"
-        updateNav(2)
-        content.removeAllViews()
+        title.text = "FAVORITOS"; updateNav(2); content.removeAllViews()
         val box = box()
         val favorites = getSharedPreferences("favorites", 0).getStringSet("stops", emptySet()).orEmpty()
         box.addView(panel("MIS PARADAS", if (favorites.isEmpty()) "No hay favoritos." else "Guardados localmente."))
         favorites.forEach { favorite ->
             val saved = parseFavorite(favorite)
             if (saved != null) {
-                box.addView(card("LÍNEA ${saved.lineCode} · ${saved.description}", if (saved.street.isBlank() && saved.intersection.isBlank()) "TOCAR PARA VER ARRIBOS" else "${saved.street} · ${saved.intersection}") {
+                box.addView(card("LÍNEA ${saved.lineCode} · ${saved.description}",
+                    if (saved.street.isBlank() && saved.intersection.isBlank()) "TOCAR PARA VER ARRIBOS" else "${saved.street} · ${saved.intersection}") {
                     val stop = TransitStop(saved.stopCode, saved.description, saved.identifier, saved.latitude, saved.longitude, saved.street, saved.intersection, saved.lineCode)
                     showArrivals(stop, TransitLine(saved.lineCode, saved.lineName))
                 }, LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
             } else {
-                box.addView(card(favorite, "FAVORITO ANTIGUO · VOLVÉ A GUARDAR LA PARADA", {}), LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
+                box.addView(card(favorite, "FAVORITO ANTIGUO · VOLVÉ A GUARDAR LA PARADA", {}),
+                    LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
             }
         }
         content.addView(ScrollView(this).apply { addView(box) })
@@ -640,58 +440,52 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("favorites", 0)
         val values = prefs.getStringSet("stops", emptySet())?.toMutableSet() ?: mutableSetOf()
         val favorite = JSONObject().apply {
-            put("version", 2)
-            put("lineCode", line.code)
-            put("lineName", line.name)
-            put("stopCode", stop.code)
-            put("description", stop.description)
-            put("identifier", stop.identifier)
-            put("street", stop.street)
-            put("intersection", stop.intersection)
-            put("latitude", stop.latitude)
-            put("longitude", stop.longitude)
+            put("version", 2); put("lineCode", line.code); put("lineName", line.name)
+            put("stopCode", stop.code); put("description", stop.description); put("identifier", stop.identifier)
+            put("street", stop.street); put("intersection", stop.intersection)
+            put("latitude", stop.latitude); put("longitude", stop.longitude)
         }.toString()
         values.removeAll { raw -> parseFavorite(raw)?.let { it.lineCode == line.code && it.identifier == stop.identifier } ?: false }
         values.add(favorite)
         prefs.edit().putStringSet("stops", values).apply()
     }
 
-    private fun parseFavorite(raw: String): FavoriteStop? {
-        return runCatching {
-            val json = JSONObject(raw)
-            if (json.optInt("version", 0) < 2) return null
-            FavoriteStop(
-                lineCode = json.getInt("lineCode"),
-                lineName = json.optString("lineName", "LÍNEA ${json.getInt("lineCode")}"),
-                stopCode = json.optInt("stopCode", 0),
-                description = json.optString("description", ""),
-                identifier = json.optString("identifier", ""),
-                street = json.optString("street", ""),
-                intersection = json.optString("intersection", ""),
-                latitude = json.optDouble("latitude", 0.0),
-                longitude = json.optDouble("longitude", 0.0)
-            )
-        }.getOrNull()
-    }
+    private fun parseFavorite(raw: String): FavoriteStop? = runCatching {
+        val json = JSONObject(raw)
+        if (json.optInt("version", 0) < 2) return null
+        FavoriteStop(
+            lineCode = json.getInt("lineCode"),
+            lineName = json.optString("lineName", "LÍNEA ${json.getInt("lineCode")}"),
+            stopCode = json.optInt("stopCode", 0),
+            description = json.optString("description", ""),
+            identifier = json.optString("identifier", ""),
+            street = json.optString("street", ""),
+            intersection = json.optString("intersection", ""),
+            latitude = json.optDouble("latitude", 0.0),
+            longitude = json.optDouble("longitude", 0.0)
+        )
+    }.getOrNull()
 
     private fun showMap(line: TransitLine?) {
-        title.text = "MAPA"
-        content.removeAllViews()
+        title.text = "MAPA"; content.removeAllViews()
         val root = FrameLayout(this)
-        val mapFrame = FrameLayout(this).apply { setBackgroundColor(panelColor); setPadding(dp(6), dp(6), dp(6), dp(6)) }
+        val mapFrame = FrameLayout(this).apply {
+            setBackgroundColor(panelColor); setPadding(dp(6), dp(6), dp(6), dp(6))
+        }
         val map = CyberMapView(this)
         mapFrame.addView(map, FrameLayout.LayoutParams(-1, -1))
-        root.addView(mapFrame, FrameLayout.LayoutParams(-1, -1).apply { leftMargin = dp(6); rightMargin = dp(6); topMargin = dp(6); bottomMargin = dp(6) })
+        root.addView(mapFrame, FrameLayout.LayoutParams(-1, -1).apply {
+            leftMargin = dp(6); rightMargin = dp(6); topMargin = dp(6); bottomMargin = dp(6)
+        })
         val info = TextView(this).apply {
-            text = "MAPA  •  UBICACIÓN Y PARADAS CERCANAS"
-            textSize = 11f
-            typeface = Typeface.MONOSPACE
-            setTextColor(cyan)
-            setPadding(dp(14), dp(10), dp(14), dp(10))
-            setBackgroundColor(0xCC05070C.toInt())
+            text = "MAPA  •  UBICACIÓN Y PARADAS CERCANAS"; textSize = 11f; typeface = Typeface.MONOSPACE
+            setTextColor(cyan); setPadding(dp(14), dp(10), dp(14), dp(10)); setBackgroundColor(0xCC05070C.toInt())
         }
         root.addView(info, FrameLayout.LayoutParams(-1, dp(44)).apply { gravity = Gravity.TOP })
-        root.addView(button("◉ MI UBICACIÓN / PARADAS CERCANAS", cyan) { loadNearbyOnMap(map, info) }, FrameLayout.LayoutParams(-1, dp(52)).apply { gravity = Gravity.BOTTOM; leftMargin = dp(16); rightMargin = dp(16); bottomMargin = dp(16) })
+        root.addView(button("◉ MI UBICACIÓN / PARADAS CERCANAS", cyan) { loadNearbyOnMap(map, info) },
+            FrameLayout.LayoutParams(-1, dp(52)).apply {
+                gravity = Gravity.BOTTOM; leftMargin = dp(16); rightMargin = dp(16); bottomMargin = dp(16)
+            })
         map.setOnStopTap { stop -> toast(stop.title + if (stop.subtitle.isBlank()) "" else " · " + stop.subtitle) }
         content.addView(root)
         if (line != null) {
@@ -716,8 +510,7 @@ class MainActivity : AppCompatActivity() {
         fun useLocation(location: android.location.Location?) {
             if (location == null) {
                 runOnUiThread {
-                    status.text = "● SIN UBICACIÓN"
-                    info.text = "MAPA  •  UBICACIÓN NO DISPONIBLE"
+                    status.text = "● SIN UBICACIÓN"; info.text = "MAPA  •  UBICACIÓN NO DISPONIBLE"
                     toast("No se pudo obtener una ubicación actual")
                 }
                 return
@@ -732,21 +525,21 @@ class MainActivity : AppCompatActivity() {
                 runCatching { api.getNearby(location.latitude, location.longitude) }
                     .onSuccess { stops ->
                         val markers = stops.take(60).map {
-                            MapStop(it.code, "🚏 " + it.description, listOf(it.street, it.intersection).filter { v -> v.isNotBlank() }.joinToString(" · "), it.latitude, it.longitude)
+                            MapStop(it.code, "🚏 " + it.description,
+                                listOf(it.street, it.intersection).filter { v -> v.isNotBlank() }.joinToString(" · "),
+                                it.latitude, it.longitude)
                         }.filter { it.latitude != 0.0 && it.longitude != 0.0 }
                         runOnUiThread {
                             map.setStops(markers, fit = false)
                             status.text = "● " + markers.size + " PARADAS CERCANAS"
-                            info.text = "MAPA  •  " + markers.size + " PARADAS CERCANAS" + if (location.hasAccuracy()) "  •  ±" + location.accuracy.toInt() + " m" else ""
+                            info.text = "MAPA  •  " + markers.size + " PARADAS CERCANAS" +
+                                if (location.hasAccuracy()) "  •  ±" + location.accuracy.toInt() + " m" else ""
                         }
                     }
-                    .onFailure { error ->
-                        runOnUiThread {
-                            status.text = "● SIN CONEXIÓN"
-                            info.text = "MAPA  •  ERROR AL CARGAR PARADAS"
-                            toast(error.message ?: "No se pudieron cargar las paradas")
-                        }
-                    }
+                    .onFailure { error -> runOnUiThread {
+                        status.text = "● SIN CONEXIÓN"; info.text = "MAPA  •  ERROR AL CARGAR PARADAS"
+                        toast(error.message ?: "No se pudieron cargar las paradas")
+                    }}
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -758,8 +551,7 @@ class MainActivity : AppCompatActivity() {
             if (provider == null) {
                 status.text = "● UBICACIÓN DESACTIVADA"
                 info.text = "MAPA  •  ACTIVÁ LA UBICACIÓN DEL TELÉFONO"
-                toast("Activá la ubicación del teléfono")
-                return
+                toast("Activá la ubicación del teléfono"); return
             }
             manager.getCurrentLocation(provider, null, mainExecutor) { location ->
                 if (location != null) useLocation(location)
@@ -768,91 +560,72 @@ class MainActivity : AppCompatActivity() {
                 } else useLocation(null)
             }
         } else {
-            val location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER) ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            val location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
             useLocation(location)
         }
     }
 
     private fun cardHomeImage(assetName: String, color: Int, action: () -> Unit) = FrameLayout(this).apply {
-        setBackgroundColor(panelColor)
-        setOnClickListener { action() }
-        isClickable = true
-        isFocusable = true
+        setBackgroundColor(panelColor); setOnClickListener { action() }; isClickable = true; isFocusable = true
         val image = ImageView(this@MainActivity).apply {
             val bitmap = assets.open(assetName).use { BitmapFactory.decodeStream(it) }
-            setImageBitmap(bitmap)
-            scaleType = ImageView.ScaleType.CENTER_CROP
-            setBackgroundColor(bg)
+            setImageBitmap(bitmap); scaleType = ImageView.ScaleType.CENTER_CROP; setBackgroundColor(bg)
             contentDescription = "LÍNEAS · Recorridos y calles"
         }
         addView(image, FrameLayout.LayoutParams(-1, -1))
-        addView(View(this@MainActivity).apply { setBackgroundColor(color); alpha = 0.85f }, FrameLayout.LayoutParams(dp(3), -1).apply { gravity = Gravity.START })
+        addView(View(this@MainActivity).apply { setBackgroundColor(color); alpha = 0.85f },
+            FrameLayout.LayoutParams(dp(3), -1).apply { gravity = Gravity.START })
+    }
+
+    /** Carga bitmap desde assets: prueba .webp y luego .b64 (WEBP en base64). */
+    private fun loadAssetBitmap(assetName: String): android.graphics.Bitmap? {
+        val base = assetName.removeSuffix(".webp").removeSuffix(".b64")
+        runCatching {
+            assets.open("$base.webp").use { BitmapFactory.decodeStream(it) }
+        }.getOrNull()?.let { return it }
+        return runCatching {
+            val b64 = assets.open("$base.b64").bufferedReader().use { it.readText() }.trim()
+            val bytes = Base64.decode(b64, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        }.getOrNull()
     }
 
     private fun cardHomeAsset(assetName: String, description: String = assetName, action: () -> Unit) = FrameLayout(this).apply {
-        setBackgroundColor(panelColor)
-        setOnClickListener { action() }
-        isClickable = true
-        isFocusable = true
-
-        val bitmap = runCatching {
-            assets.open(assetName).use { BitmapFactory.decodeStream(it) }
-        }.getOrNull()
-
+        setBackgroundColor(panelColor); setOnClickListener { action() }; isClickable = true; isFocusable = true
+        val bitmap = loadAssetBitmap(assetName)
         if (bitmap != null) {
-            val image = ImageView(this@MainActivity).apply {
-                setImageBitmap(bitmap)
-                scaleType = ImageView.ScaleType.FIT_XY
-                contentDescription = description
-            }
-            addView(image, FrameLayout.LayoutParams(-1, -1))
+            addView(ImageView(this@MainActivity).apply {
+                setImageBitmap(bitmap); scaleType = ImageView.ScaleType.FIT_XY; contentDescription = description
+            }, FrameLayout.LayoutParams(-1, -1))
         } else {
-            // Fallback texto si el WEBP falta o está corrupto (evita crash)
             val label = description.substringBefore(" · ").ifBlank { assetName }
             addView(TextView(this@MainActivity).apply {
-                text = label
-                gravity = Gravity.CENTER
-                textSize = 14f
-                typeface = Typeface.MONOSPACE
-                setTextColor(cyan)
-                contentDescription = description
+                text = label; gravity = Gravity.CENTER; textSize = 14f; typeface = Typeface.MONOSPACE
+                setTextColor(cyan); contentDescription = description
             }, FrameLayout.LayoutParams(-1, -1))
         }
     }
 
-    private fun cardHome(icon: String, title: String, subtitle: String, color: Int, action: () -> Unit) = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        setPadding(dp(12), dp(12), dp(12), dp(12))
-        setBackgroundColor(panelColor)
-        gravity = Gravity.CENTER_VERTICAL
-        setOnClickListener { action() }
-        addView(View(this@MainActivity).apply { setBackgroundColor(color) }, LinearLayout.LayoutParams(dp(4), -1))
-        val textContent = LinearLayout(this@MainActivity).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
-        textContent.addView(TextView(this@MainActivity).apply { text = icon; textSize = 32f; setTextColor(color); gravity = Gravity.CENTER }, LinearLayout.LayoutParams(-1, dp(48)))
-        textContent.addView(TextView(this@MainActivity).apply { text = title; textSize = 13f; typeface = Typeface.MONOSPACE; setTextColor(Color.WHITE); gravity = Gravity.CENTER }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
-        textContent.addView(TextView(this@MainActivity).apply { text = subtitle; textSize = 10f; setTextColor(muted); gravity = Gravity.CENTER }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
-        addView(textContent, LinearLayout.LayoutParams(0, -1, 1f).apply { leftMargin = dp(10) })
-    }
-
     private fun box() = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(dp(18), dp(16), dp(18), dp(24))
+        orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(16), dp(18), dp(24))
     }
 
     private fun card(primary: String, secondary: String, action: () -> Unit) = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(dp(16), dp(12), dp(16), dp(12))
-        setBackgroundColor(panelColor)
-        setOnClickListener { action() }
-        addView(TextView(this@MainActivity).apply { text = primary; textSize = 14f; typeface = Typeface.MONOSPACE; setTextColor(Color.WHITE) })
+        orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(12), dp(16), dp(12))
+        setBackgroundColor(panelColor); setOnClickListener { action() }
+        addView(TextView(this@MainActivity).apply {
+            text = primary; textSize = 14f; typeface = Typeface.MONOSPACE; setTextColor(Color.WHITE)
+        })
         addView(TextView(this@MainActivity).apply { text = secondary; textSize = 10f; setTextColor(muted) })
     }
 
     private fun panel(primary: String, secondary: String) = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(dp(16), dp(14), dp(16), dp(14))
+        orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
         setBackgroundColor(panelColor)
-        addView(TextView(this@MainActivity).apply { text = primary; textSize = 11f; typeface = Typeface.MONOSPACE; setTextColor(cyan) })
+        addView(TextView(this@MainActivity).apply {
+            text = primary; textSize = 11f; typeface = Typeface.MONOSPACE; setTextColor(cyan)
+        })
         addView(TextView(this@MainActivity).apply { text = secondary; textSize = 13f; setTextColor(muted) })
     }
 
@@ -860,107 +633,52 @@ class MainActivity : AppCompatActivity() {
         val bitmap = runCatching {
             assets.open("sincronizar_lineas.webp").use { BitmapFactory.decodeStream(it) }
         }.getOrNull()
-
-        if (bitmap == null) {
-            return button("SINCRONIZAR LÍNEAS", cyan, action)
-        }
-
+        if (bitmap == null) return button("SINCRONIZAR LÍNEAS", cyan, action)
         val image = ImageView(this).apply {
-            setImageBitmap(bitmap)
-            scaleType = ImageView.ScaleType.FIT_XY
-            contentDescription = "Sincronizar líneas"
-            isClickable = true
-            isFocusable = true
-            adjustViewBounds = true
+            setImageBitmap(bitmap); scaleType = ImageView.ScaleType.FIT_XY
+            contentDescription = "Sincronizar líneas"; isClickable = true; isFocusable = true; adjustViewBounds = true
         }
-
         image.setOnClickListener { view ->
-            view.animate()
-                .scaleX(0.94f)
-                .scaleY(0.94f)
-                .alpha(0.75f)
-                .setDuration(90)
-                .withEndAction {
-                    view.animate()
-                        .scaleX(1.03f)
-                        .scaleY(1.03f)
-                        .alpha(1f)
-                        .setDuration(120)
-                        .withEndAction {
-                            view.animate()
-                                .scaleX(1f)
-                                .scaleY(1f)
-                                .setDuration(100)
-                                .start()
-                            action()
-                        }
-                        .start()
-                }
-                .start()
+            view.animate().scaleX(0.94f).scaleY(0.94f).alpha(0.75f).setDuration(90).withEndAction {
+                view.animate().scaleX(1.03f).scaleY(1.03f).alpha(1f).setDuration(120).withEndAction {
+                    view.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                    action()
+                }.start()
+            }.start()
         }
         return image
     }
 
     private fun button(label: String, color: Int, action: () -> Unit) = TextView(this).apply {
-        text = label
-        gravity = Gravity.CENTER
-        textSize = 12f
-        typeface = Typeface.MONOSPACE
-        setTextColor(color)
-        setBackgroundColor(panelColor)
-        setPadding(0, dp(14), 0, dp(14))
+        text = label; gravity = Gravity.CENTER; textSize = 12f; typeface = Typeface.MONOSPACE
+        setTextColor(color); setBackgroundColor(panelColor); setPadding(0, dp(14), 0, dp(14))
         setOnClickListener { action() }
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 
-    // Keep helper views used by header (from previous commits)
     private class CyberNeonTextView(context: Context) : TextView(context) {
-        init {
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-            setShadowLayer(8f, 0f, 0f, 0xCC00F0FF.toInt())
-        }
+        init { setLayerType(View.LAYER_TYPE_SOFTWARE, null); setShadowLayer(8f, 0f, 0f, 0xCC00F0FF.toInt()) }
     }
 
     private class CyberHeaderView(context: Context) : FrameLayout(context) {
         private val path = Path()
         private val glow = Paint(Paint.ANTI_ALIAS_FLAG)
         private val line = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        init {
-            setWillNotDraw(false)
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-        }
-
+        init { setWillNotDraw(false); setLayerType(View.LAYER_TYPE_SOFTWARE, null) }
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
-            val w = width.toFloat()
-            val h = height.toFloat()
+            val w = width.toFloat(); val h = height.toFloat()
             if (w <= 0f || h <= 0f) return
-
-            val d = resources.displayMetrics.density
-            val chamfer = 18f * d
-
+            val d = resources.displayMetrics.density; val chamfer = 18f * d
             path.reset()
-            path.moveTo(chamfer, 0f)
-            path.lineTo(w - chamfer, 0f)
-            path.lineTo(w, chamfer)
-            path.lineTo(w, h - chamfer)
-            path.lineTo(w - chamfer, h)
-            path.lineTo(chamfer, h)
-            path.lineTo(0f, h - chamfer)
-            path.lineTo(0f, chamfer)
-            path.close()
-
-            glow.style = Paint.Style.STROKE
-            glow.strokeWidth = 4f * d
-            glow.color = 0x6600F0FF.toInt()
+            path.moveTo(chamfer, 0f); path.lineTo(w - chamfer, 0f); path.lineTo(w, chamfer)
+            path.lineTo(w, h - chamfer); path.lineTo(w - chamfer, h); path.lineTo(chamfer, h)
+            path.lineTo(0f, h - chamfer); path.lineTo(0f, chamfer); path.close()
+            glow.style = Paint.Style.STROKE; glow.strokeWidth = 4f * d; glow.color = 0x6600F0FF.toInt()
             canvas.drawPath(path, glow)
-
-            line.style = Paint.Style.STROKE
-            line.strokeWidth = 1.5f * d
-            line.color = 0xFF00F0FF.toInt()
+            line.style = Paint.Style.STROKE; line.strokeWidth = 1.5f * d; line.color = 0xFF00F0FF.toInt()
             canvas.drawPath(path, line)
         }
     }
