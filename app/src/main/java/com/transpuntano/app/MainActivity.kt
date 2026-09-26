@@ -71,8 +71,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildShell() {
-        val rootFrame = FrameLayout(this).apply { setBackgroundColor(bg) }
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(bg) }
+        val rootFrame = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
+
+        val backgroundImage = ImageView(this).apply {
+            val bitmap = assets.open("background.webp").use {
+                BitmapFactory.decodeStream(it)
+            }
+
+            if (bitmap == null) {
+                throw IllegalStateException("No se pudo decodificar background.webp")
+            }
+
+            setImageBitmap(bitmap)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            contentDescription = "Fondo cyberpunk neon"
+        }
+
+        rootFrame.addView(
+            backgroundImage,
+            FrameLayout.LayoutParams(-1, -1)
+        )
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.TRANSPARENT)
+        }
         val headerLayout = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(20), dp(16), dp(20), dp(10)); setBackgroundColor(0xFF080C13.toInt()); gravity = Gravity.CENTER_VERTICAL }
         val menuBtn = TextView(this).apply { text = "☰"; textSize = 24f; setTextColor(cyan); setPadding(0, 0, dp(16), 0); setOnClickListener { toggleDrawer() } }
         headerLayout.addView(menuBtn, LinearLayout.LayoutParams(dp(40), dp(40)))
