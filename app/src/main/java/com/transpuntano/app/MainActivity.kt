@@ -3,7 +3,9 @@ package com.transpuntano.app
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Path
 import android.graphics.Typeface
 import android.graphics.BitmapFactory
 import android.location.LocationManager
@@ -806,7 +808,7 @@ class MainActivity : AppCompatActivity() {
             return button("SINCRONIZAR LÍNEAS", cyan, action)
         }
 
-        val image = ImageView(this).apply {
+        val image = CyberSyncImageView(this).apply {
             setImageBitmap(bitmap)
             scaleType = ImageView.ScaleType.FIT_XY
             contentDescription = "Sincronizar líneas"
@@ -841,6 +843,41 @@ class MainActivity : AppCompatActivity() {
                 .start()
         }
         return image
+    }
+
+    /**
+     * Recorta las esquinas rectangulares del asset y deja transparente el exterior
+     * del marco cyberpunk, sin modificar el WEBP que se carga desde assets.
+     */
+    private class CyberSyncImageView(context: Context) : ImageView(context) {
+        private val clipPath = Path()
+
+        override fun onDraw(canvas: Canvas) {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f) {
+                super.onDraw(canvas)
+                return
+            }
+
+            val chamferX = w * 0.075f
+            val chamferY = h * 0.24f
+            clipPath.reset()
+            clipPath.moveTo(chamferX, 0f)
+            clipPath.lineTo(w - chamferX, 0f)
+            clipPath.lineTo(w, chamferY)
+            clipPath.lineTo(w, h - chamferY)
+            clipPath.lineTo(w - chamferX, h)
+            clipPath.lineTo(chamferX, h)
+            clipPath.lineTo(0f, h - chamferY)
+            clipPath.lineTo(0f, chamferY)
+            clipPath.close()
+
+            canvas.save()
+            canvas.clipPath(clipPath)
+            super.onDraw(canvas)
+            canvas.restore()
+        }
     }
 
     private fun button(label: String, color: Int, action: () -> Unit) = TextView(this).apply {
