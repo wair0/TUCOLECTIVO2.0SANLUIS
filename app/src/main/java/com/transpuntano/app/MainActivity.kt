@@ -319,28 +319,28 @@ class MainActivity : AppCompatActivity() {
 
         row1.addView(
             item1,
-            LinearLayout.LayoutParams(0, dp(96), 1f).apply {
+            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
                 rightMargin = dp(6)
             }
         )
 
         row1.addView(
             item2,
-            LinearLayout.LayoutParams(0, dp(96), 1f).apply {
+            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
                 leftMargin = dp(6)
             }
         )
 
         row2.addView(
             item3,
-            LinearLayout.LayoutParams(0, dp(96), 1f).apply {
+            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
                 rightMargin = dp(6)
             }
         )
 
         row2.addView(
             item4,
-            LinearLayout.LayoutParams(0, dp(96), 1f).apply {
+            LinearLayout.LayoutParams(0, dp(140), 1f).apply {
                 leftMargin = dp(6)
             }
         )
