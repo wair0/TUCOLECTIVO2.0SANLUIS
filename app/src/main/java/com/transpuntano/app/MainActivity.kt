@@ -157,12 +157,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun addDrawerItems() {
         val drawerImage = ImageView(this).apply {
-            val bitmap = assets.open("drawer_menu.jpg").use {
+            val bitmap = assets.open("drawer_menu.webp").use {
                 BitmapFactory.decodeStream(it)
             }
 
             if (bitmap == null) {
-                throw IllegalStateException("No se pudo decodificar drawer_menu.jpg")
+                throw IllegalStateException("No se pudo decodificar drawer_menu.webp")
             }
 
             setImageBitmap(bitmap)
