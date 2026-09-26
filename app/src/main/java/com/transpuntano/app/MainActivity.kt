@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity() {
     private val bg = 0xFF05070C.toInt()
     private val panelColor = 0xFF0B1018.toInt()
     private val muted = 0xFF8CA5B5.toInt()
-    private lateinit var drawerPanel: LinearLayout
+    private lateinit var drawerPanel: FrameLayout
     private lateinit var drawerScrim: View
     private var drawerOpen = false
 
@@ -126,11 +126,10 @@ class MainActivity : AppCompatActivity() {
             FrameLayout.LayoutParams(-1, -1)
         )
 
-        drawerPanel = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xFF0E1420.toInt())
+        drawerPanel = FrameLayout(this).apply {
+            setBackgroundColor(Color.BLACK)
             layoutParams = FrameLayout.LayoutParams(
-                dp(250),
+                dp(300),
                 -1
             ).apply {
                 gravity = Gravity.START
@@ -157,25 +156,60 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addDrawerItems() {
-        val items = listOf(
-            Triple("⌂", "INICIO", 0),
-            Triple("▤", "LÍNEAS", 1),
-            Triple("◉", "MAPA", 2),
-            Triple("★", "FAVORITOS", 3),
-            Triple("◎", "PARADAS CERCANAS", 4)
+        val drawerImage = ImageView(this).apply {
+            val bitmap = assets.open("drawer_menu.jpg").use {
+                BitmapFactory.decodeStream(it)
+            }
+
+            if (bitmap == null) {
+                throw IllegalStateException("No se pudo decodificar drawer_menu.jpg")
+            }
+
+            setImageBitmap(bitmap)
+            scaleType = ImageView.ScaleType.FIT_XY
+            contentDescription = "Menú principal"
+        }
+
+        drawerPanel.addView(
+            drawerImage,
+            FrameLayout.LayoutParams(-1, -1)
         )
-        items.forEach { (icon, label, index) ->
-            drawerPanel.addView(TextView(this).apply {
-                text = "$icon  $label"
-                textSize = 16f
-                typeface = Typeface.MONOSPACE
-                setTextColor(cyan)
-                setPadding(dp(16), dp(20), dp(16), dp(20))
-                setOnClickListener {
-                    navigateTo(index)
-                    toggleDrawer()
+
+        val items = listOf(
+            Triple("INICIO", 0, 0.15f),
+            Triple("LÍNEAS", 1, 0.215f),
+            Triple("MAPA", 2, 0.28f),
+            Triple("FAVORITOS", 3, 0.345f),
+            Triple("PARADAS CERCANAS", 4, 0.41f)
+        )
+
+        drawerPanel.post {
+            val panelHeight = drawerPanel.height
+            val hotspotHeight = (panelHeight * 0.075f).toInt()
+
+            items.forEach { (label, index, topRatio) ->
+                val hotspot = TextView(this).apply {
+                    text = ""
+                    setBackgroundColor(Color.TRANSPARENT)
+                    isClickable = true
+                    isFocusable = true
+                    contentDescription = label
+                    setOnClickListener {
+                        navigateTo(index)
+                        toggleDrawer()
+                    }
                 }
-            })
+
+                drawerPanel.addView(
+                    hotspot,
+                    FrameLayout.LayoutParams(
+                        -1,
+                        hotspotHeight
+                    ).apply {
+                        topMargin = (panelHeight * topRatio).toInt()
+                    }
+                )
+            }
         }
     }
 
