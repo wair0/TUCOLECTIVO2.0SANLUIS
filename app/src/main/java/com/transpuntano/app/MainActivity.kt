@@ -943,7 +943,7 @@ class MainActivity : AppCompatActivity() {
             ringPaint.alpha = (175f * fade).toInt().coerceIn(0, 255)
             canvas.drawCircle(touchX, touchY, radius * 0.86f, ringPaint)
 
-            ringPaint.strokeWidth = 1f * resources.displayMetrics.density
+            ringPaint.strokeWidth = 1f * density
             ringPaint.color = cyan
             ringPaint.alpha = (235f * fade).toInt().coerceIn(0, 255)
             canvas.drawCircle(touchX, touchY, radius * 0.62f, ringPaint)
@@ -1022,7 +1022,7 @@ class MainActivity : AppCompatActivity() {
         private val cyanGhostPaint = Paint(titlePaint)
         private val pinkGhostPaint = Paint(titlePaint)
         private val scanPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            strokeWidth = 1f * density
+            strokeWidth = 1f * resources.displayMetrics.density
         }
 
         private var frame = 0
