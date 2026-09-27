@@ -1,9 +1,6 @@
 package com.transpuntano.app
 
 import android.Manifest
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
-import android.view.animation.LinearInterpolator
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Canvas
@@ -40,9 +37,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var content: FrameLayout
     private lateinit var title: TextView
     private lateinit var status: TextView
-    private lateinit var headerTitle: TextView
+    private lateinit var headerTitle: CyberHeaderTitleView
     private var currentSection = 0
-    private var headerFlickerAnimator: AnimatorSet? = null
     private lateinit var navBar: LinearLayout
     private val cyan = 0xFF00F0FF.toInt()
     private val pink = 0xFFFF2DB2.toInt()
@@ -57,7 +53,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildShell()
-        startHeaderFlickerAnimation()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when {
@@ -93,13 +88,8 @@ class MainActivity : AppCompatActivity() {
                 leftMargin = dp(44); rightMargin = dp(4); topMargin = dp(7)
             }
         }
-        headerTitle = TextView(this).apply {
-            text = "TU COLECTIVO 2.0"
-            textSize = 15f
+        headerTitle = CyberHeaderTitleView(this, cyberpunkTypeface, cyan, pink).apply {
             translationX = -dp(20).toFloat()
-            typeface = cyberpunkTypeface
-            setTextColor(cyan)
-            gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(-1, dp(40))
         }
         headerContent.addView(headerTitle)
@@ -427,46 +417,6 @@ class MainActivity : AppCompatActivity() {
             navBar.addView(item, LinearLayout.LayoutParams(0, -1, 1f))
         }
     }
-    private fun startHeaderFlickerAnimation() {
-        headerFlickerAnimator?.cancel()
-
-        val alpha = ObjectAnimator.ofFloat(
-            headerTitle,
-            View.ALPHA,
-            1f, 1f, 0.22f, 0.22f, 0.82f, 0.35f, 1f, 0.72f, 1f
-        ).apply {
-            duration = 1450L
-            repeatCount = android.animation.ValueAnimator.INFINITE
-            interpolator = LinearInterpolator()
-        }
-
-        val pulseX = ObjectAnimator.ofFloat(
-            headerTitle,
-            View.SCALE_X,
-            1f, 1.015f, 1f, 1.008f, 1f
-        ).apply {
-            duration = 1450L
-            repeatCount = android.animation.ValueAnimator.INFINITE
-            interpolator = LinearInterpolator()
-        }
-
-        val pulseY = ObjectAnimator.ofFloat(
-            headerTitle,
-            View.SCALE_Y,
-            1f, 1.02f, 1f, 1.01f, 1f
-        ).apply {
-            duration = 1450L
-            repeatCount = android.animation.ValueAnimator.INFINITE
-            interpolator = LinearInterpolator()
-        }
-
-        headerFlickerAnimator = AnimatorSet().apply {
-            playTogether(alpha, pulseX, pulseY)
-            startDelay = 350L
-            start()
-        }
-    }
-
     private fun showHome() {
         title.text = ""
         updateNav(0)
@@ -1003,6 +953,135 @@ class MainActivity : AppCompatActivity() {
         private fun dpLocal(v: Int) = (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
     }
 
+    /**
+     * Header title rendered directly on Canvas.
+     *
+     * Unlike a TextView property animation, the title's pixels are rebuilt on
+     * every animation frame: cyan/magenta RGB ghosts, brightness cuts and
+     * short horizontal glitch slices are all part of the rendered frame.
+     */
+    private class CyberHeaderTitleView(
+        context: Context,
+        typeface: Typeface,
+        private val cyan: Int,
+        private val pink: Int
+    ) : View(context) {
+        private companion object {
+            const val TITLE = "TU COLECTIVO 2.0"
+            const val FRAME_DELAY_MS = 45L
+            const val FRAME_COUNT = 48
+        }
+
+        private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+            this.typeface = typeface
+            textSize = 15f * resources.displayMetrics.scaledDensity
+            textAlign = Paint.Align.CENTER
+            color = cyan
+        }
+        private val cyanGhostPaint = Paint(titlePaint)
+        private val pinkGhostPaint = Paint(titlePaint)
+        private val scanPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            strokeWidth = 1f * resources.displayMetrics.density
+        }
+
+        private var frame = 0
+
+        private val frameRunner = object : Runnable {
+            override fun run() {
+                if (!isAttachedToWindow) return
+                frame = (frame + 1) % FRAME_COUNT
+                postInvalidateOnAnimation()
+                postOnAnimationDelayed(this, FRAME_DELAY_MS)
+            }
+        }
+
+        init {
+            contentDescription = TITLE
+            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+            setWillNotDraw(false)
+        }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            removeCallbacks(frameRunner)
+            postOnAnimation(frameRunner)
+        }
+
+        override fun onDetachedFromWindow() {
+            removeCallbacks(frameRunner)
+            super.onDetachedFromWindow()
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+
+            val centerX = width * 0.5f
+            val baseline = height * 0.5f - (titlePaint.ascent() + titlePaint.descent()) * 0.5f
+            val textWidth = titlePaint.measureText(TITLE)
+            val top = baseline + titlePaint.ascent()
+            val bottom = baseline + titlePaint.descent()
+
+            val cycle = frame % 16
+            val glitch = when (cycle) {
+                3, 4, 9, 10, 11 -> true
+                else -> false
+            }
+
+            val brightness = when (cycle) {
+                3 -> 0.34f
+                4 -> 1.0f
+                9 -> 0.52f
+                10 -> 0.86f
+                11 -> 0.30f
+                else -> 1.0f
+            }
+
+            val ghostShift = when (cycle) {
+                3 -> 4.5f
+                4 -> -3.0f
+                9 -> -4.0f
+                10 -> 2.5f
+                11 -> -1.5f
+                else -> 0f
+            }
+
+            // Persistent low-level RGB separation keeps the title alive even
+            // between the stronger glitch bursts.
+            cyanGhostPaint.alpha = if (glitch) 210 else 92
+            pinkGhostPaint.alpha = if (glitch) 190 else 72
+            titlePaint.alpha = (255f * brightness).toInt().coerceIn(55, 255)
+
+            canvas.drawText(TITLE, centerX + ghostShift, baseline, cyanGhostPaint)
+            canvas.drawText(TITLE, centerX - ghostShift, baseline, pinkGhostPaint)
+            canvas.drawText(TITLE, centerX, baseline, titlePaint)
+
+            if (glitch) {
+                val sliceTop = top + (bottom - top) * if (cycle == 9) 0.22f else 0.48f
+                val sliceBottom = sliceTop + (bottom - top) * 0.20f
+
+                canvas.save()
+                canvas.clipRect(0f, sliceTop, width.toFloat(), sliceBottom)
+                canvas.drawText(TITLE, centerX + 6.0f, baseline, cyanGhostPaint)
+                canvas.drawText(TITLE, centerX - 5.0f, baseline, pinkGhostPaint)
+                canvas.drawText(TITLE, centerX + ghostShift, baseline, titlePaint)
+                canvas.restore()
+            }
+
+            // A thin scanning line traverses the title band once per cycle.
+            val scanProgress = (frame % 24) / 23f
+            val scanY = top + (bottom - top) * scanProgress
+            scanPaint.color = cyan
+            scanPaint.alpha = if (glitch) 185 else 55
+            canvas.drawLine(
+                centerX - textWidth * 0.56f,
+                scanY,
+                centerX + textWidth * 0.56f,
+                scanY,
+                scanPaint
+            )
+        }
+    }
+
     private class CyberHeaderView(context: Context) : View(context) {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
         private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -1064,7 +1143,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        headerFlickerAnimator?.cancel()
         executor.shutdownNow()
         super.onDestroy()
     }
