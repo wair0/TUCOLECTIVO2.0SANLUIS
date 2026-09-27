@@ -22,6 +22,7 @@ import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
+    private val cyberpunkTypeface by lazy { Typeface.createFromAsset(assets, "fonts/cyberpunk.ttf") }
     private data class FavoriteStop(
         val lineCode: Int, val lineName: String, val stopCode: Int,
         val description: String, val identifier: String, val street: String,
@@ -103,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         title = CyberNeonTextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
         headerContent.addView(title)
         status = CyberNeonTextView(this).apply {
-            text = "● SISTEMA LISTO"; textSize = 16f; setTextColor(0xFF55FFB0.toInt())
+            text = "● SISTEMA LISTO"; textSize = 16f; typeface = cyberpunkTypeface; setTextColor(0xFF55FFB0.toInt())
         }
         headerLayout.addView(headerContent)
         headerLayout.addView(status, FrameLayout.LayoutParams(-2, dp(28)).apply {
