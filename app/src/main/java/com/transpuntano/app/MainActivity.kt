@@ -665,25 +665,101 @@ class MainActivity : AppCompatActivity() {
 
     private class CyberHeaderView(context: Context) : View(context) {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+        private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
         private val path = Path()
+
         override fun onDraw(canvas: Canvas) {
-            val w = width.toFloat(); val h = height.toFloat()
-            canvas.drawColor(0xFF05070C.toInt())
-            paint.strokeWidth = 2f; paint.color = 0xFF00F0FF.toInt()
-            path.reset(); path.moveTo(0f, h); path.lineTo(0f, 4f); path.lineTo(dpLocal(18).toFloat(), 4f)
-            path.lineTo(dpLocal(32).toFloat(), h * .48f); path.lineTo(dpLocal(18).toFloat(), h - 4f); path.lineTo(0f, h - 4f)
+            val w = width.toFloat()
+            val h = height.toFloat()
+            val cyan = 0xFF00F0FF.toInt()
+            val pink = 0xFFFF2DB2.toInt()
+
+            canvas.drawColor(0xFF020509.toInt())
+
+            // Dark inner panel: the header remains black, with a subtle depth gradient simulated by bands.
+            fill.color = 0xFF050A11.toInt()
+            canvas.drawRect(dpLocal(6).toFloat(), dpLocal(6).toFloat(),
+                w - dpLocal(6).toFloat(), h - dpLocal(6).toFloat(), fill)
+
+            // Neon outer frame with clipped / technical corners.
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = dpLocal(1).toFloat()
+            paint.color = cyan
+            paint.alpha = 220
+            path.reset()
+            path.moveTo(0f, h)
+            path.lineTo(0f, dpLocal(7).toFloat())
+            path.lineTo(dpLocal(24).toFloat(), dpLocal(7).toFloat())
+            path.lineTo(dpLocal(34).toFloat(), dpLocal(18).toFloat())
+            path.lineTo(w - dpLocal(34).toFloat(), dpLocal(18).toFloat())
+            path.lineTo(w - dpLocal(24).toFloat(), dpLocal(7).toFloat())
+            path.lineTo(w, dpLocal(7).toFloat())
+            path.lineTo(w, h)
             canvas.drawPath(path, paint)
-            paint.color = 0xFFFF2DB2.toInt(); paint.strokeWidth = 1.5f
-            canvas.drawLine(dpLocal(42).toFloat(), 3f, w - dpLocal(42).toFloat(), 3f, paint)
-            canvas.drawLine(dpLocal(42).toFloat(), h - 3f, w - dpLocal(42).toFloat(), h - 3f, paint)
-            paint.color = 0xFF00F0FF.toInt(); paint.strokeWidth = 1f
-            canvas.drawLine(w * .28f, h * .86f, w * .42f, h * .86f, paint)
-            canvas.drawLine(w * .58f, h * .86f, w * .72f, h * .86f, paint)
-            paint.color = 0xFFFF2DB2.toInt()
-            canvas.drawCircle(w * .92f, h * .28f, dpLocal(3).toFloat(), paint)
-            canvas.drawCircle(w * .95f, h * .28f, dpLocal(3).toFloat(), paint)
+
+            // Strong cyan lower rail and secondary magenta rail.
+            paint.alpha = 255
+            paint.strokeWidth = dpLocal(2).toFloat()
+            canvas.drawLine(dpLocal(8).toFloat(), h - dpLocal(2).toFloat(),
+                w - dpLocal(8).toFloat(), h - dpLocal(2).toFloat(), paint)
+            paint.color = pink
+            paint.strokeWidth = dpLocal(1).toFloat()
+            canvas.drawLine(dpLocal(34).toFloat(), h - dpLocal(6).toFloat(),
+                w - dpLocal(34).toFloat(), h - dpLocal(6).toFloat(), paint)
+
+            // Header scan-line / circuit details.
+            paint.color = cyan
+            paint.alpha = 115
+            paint.strokeWidth = dpLocal(1).toFloat()
+            val scanY = dpLocal(27).toFloat()
+            canvas.drawLine(dpLocal(48).toFloat(), scanY, w - dpLocal(48).toFloat(), scanY, paint)
+            for (x in (dpLocal(52)..(w.toInt() - dpLocal(52)) step dpLocal(34).coerceAtLeast(1))) {
+                canvas.drawLine(x.toFloat(), scanY - dpLocal(3).toFloat(), x.toFloat(), scanY + dpLocal(3).toFloat(), paint)
+            }
+
+            // Left technical bracket around the menu zone.
+            paint.alpha = 235
+            paint.color = cyan
+            path.reset()
+            path.moveTo(dpLocal(3).toFloat(), dpLocal(16).toFloat())
+            path.lineTo(dpLocal(3).toFloat(), h - dpLocal(12).toFloat())
+            path.lineTo(dpLocal(14).toFloat(), h - dpLocal(12).toFloat())
+            path.moveTo(dpLocal(3).toFloat(), dpLocal(16).toFloat())
+            path.lineTo(dpLocal(14).toFloat(), dpLocal(16).toFloat())
+            canvas.drawPath(path, paint)
+
+            // Right technical bracket around the action zone.
+            path.reset()
+            path.moveTo(w - dpLocal(3).toFloat(), dpLocal(16).toFloat())
+            path.lineTo(w - dpLocal(3).toFloat(), h - dpLocal(12).toFloat())
+            path.lineTo(w - dpLocal(14).toFloat(), h - dpLocal(12).toFloat())
+            path.moveTo(w - dpLocal(3).toFloat(), dpLocal(16).toFloat())
+            path.lineTo(w - dpLocal(14).toFloat(), dpLocal(16).toFloat())
+            canvas.drawPath(path, paint)
+
+            // Central HUD accents: these do not move or alter the title/status TextViews.
+            paint.alpha = 170
+            paint.color = cyan
+            canvas.drawLine(w * .31f, dpLocal(40).toFloat(), w * .39f, dpLocal(40).toFloat(), paint)
+            canvas.drawLine(w * .61f, dpLocal(40).toFloat(), w * .69f, dpLocal(40).toFloat(), paint)
+            paint.color = pink
+            canvas.drawCircle(w * .72f, dpLocal(11).toFloat(), dpLocal(2).toFloat(), paint)
+            canvas.drawCircle(w * .77f, dpLocal(11).toFloat(), dpLocal(2).toFloat(), paint)
+
+            // Tiny status nodes / data markers.
+            paint.color = cyan
+            paint.alpha = 210
+            for (i in 0..2) {
+                val x = dpLocal(52 + i * 7).toFloat()
+                canvas.drawRect(x, h - dpLocal(13).toFloat(), x + dpLocal(3), h - dpLocal(10).toFloat(), paint)
+            }
+            paint.color = pink
+            canvas.drawRect(w - dpLocal(70).toFloat(), h - dpLocal(13).toFloat(),
+                w - dpLocal(67).toFloat(), h - dpLocal(10).toFloat(), paint)
         }
-        private fun dpLocal(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+        private fun dpLocal(v: Int) =
+            (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
     }
 
 
