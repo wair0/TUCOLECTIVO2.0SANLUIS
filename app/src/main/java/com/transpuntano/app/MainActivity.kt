@@ -1,6 +1,8 @@
 package com.transpuntano.app
 
 import android.Manifest
+import android.animation.ObjectAnimator
+import android.view.animation.LinearInterpolator
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Canvas
@@ -37,6 +39,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var content: FrameLayout
     private lateinit var title: TextView
     private lateinit var status: TextView
+    private lateinit var headerTitle: TextView
+    private var currentSection = 0
+    private var headerFlickerAnimator: ObjectAnimator? = null
     private lateinit var navBar: LinearLayout
     private val cyan = 0xFF00F0FF.toInt()
     private val pink = 0xFFFF2DB2.toInt()
@@ -51,9 +56,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildShell()
+        startHeaderFlickerAnimation()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (drawerOpen) toggleDrawer() else finish()
+                when {
+                    drawerOpen -> toggleDrawer()
+                    currentSection != 0 -> showHome()
+                    else -> finish()
+                }
             }
         })
         showHome()
@@ -82,19 +92,20 @@ class MainActivity : AppCompatActivity() {
                 leftMargin = dp(44); rightMargin = dp(4); topMargin = dp(7)
             }
         }
-        headerContent.addView(TextView(this).apply {
+        headerTitle = TextView(this).apply {
             text = "TU COLECTIVO 2.0"
             textSize = 15f
-            translationX = -dp(15).toFloat()
+            translationX = -dp(20).toFloat()
             typeface = cyberpunkTypeface
             setTextColor(cyan)
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(-1, dp(40))
-        })
+        }
+        headerContent.addView(headerTitle)
         // El título de sección se conserva solo para la lógica interna; no se muestra en el header.
         title = TextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
         status = TextView(this).apply {
-            text = "● SISTEMA LISTO"; textSize = 14f; typeface = cyberpunkTypeface
+            text = "● SISTEMA LISTO"; textSize = 9f; typeface = cyberpunkTypeface
             setTextColor(0xFF55FFB0.toInt())
         }
         headerLayout.addView(headerContent)
@@ -356,6 +367,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateNav(selected: Int) {
+        currentSection = selected
         navBar.removeAllViews()
         navBar.setPadding(0, dp(3), 0, 0)
         navBar.clipChildren = false
@@ -414,6 +426,21 @@ class MainActivity : AppCompatActivity() {
             navBar.addView(item, LinearLayout.LayoutParams(0, -1, 1f))
         }
     }
+    private fun startHeaderFlickerAnimation() {
+        headerFlickerAnimator?.cancel()
+        headerFlickerAnimator = ObjectAnimator.ofFloat(
+            headerTitle,
+            View.ALPHA,
+            1f, 1f, 0.18f, 0.18f, 0.92f, 0.35f, 1f, 1f
+        ).apply {
+            duration = 2600L
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            startDelay = 700L
+            start()
+        }
+    }
+
     private fun showHome() {
         title.text = ""
         updateNav(0)
@@ -457,11 +484,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cardHomeAsset(assetName: String, description: String = assetName, action: () -> Unit) = FrameLayout(this).apply {
-        setBackgroundColor(panelColor); setOnClickListener { action() }; isClickable = true; isFocusable = true
+        setBackgroundColor(panelColor)
+        foreground = cyberRippleBackground()
+        setOnClickListener {
+            isEnabled = false
+            cyberTouchFeedback(this)
+            postDelayed({
+                isEnabled = true
+                action()
+            }, 260L)
+        }
+        isClickable = true; isFocusable = true
         val bitmap = loadAssetBitmap(assetName)
         if (bitmap != null) {
             addView(ImageView(this@MainActivity).apply {
-                if (bitmap != null) setImageBitmap(bitmap)
+                setImageBitmap(bitmap)
                 scaleType = ImageView.ScaleType.CENTER_CROP
                 setBackgroundColor(bg)
                 contentDescription = description
@@ -476,7 +513,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cardHomeImage(assetName: String, action: () -> Unit) = FrameLayout(this).apply {
-        setBackgroundColor(panelColor); setOnClickListener { action() }; isClickable = true; isFocusable = true
+        setBackgroundColor(panelColor)
+        foreground = cyberRippleBackground()
+        setOnClickListener {
+            isEnabled = false
+            cyberTouchFeedback(this)
+            postDelayed({
+                isEnabled = true
+                action()
+            }, 260L)
+        }
+        isClickable = true; isFocusable = true
         val image = ImageView(this@MainActivity).apply {
             val bitmap = loadAssetBitmap(assetName)
             if (bitmap != null) setImageBitmap(bitmap)
@@ -991,6 +1038,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        headerFlickerAnimator?.cancel()
         executor.shutdownNow()
         super.onDestroy()
     }
