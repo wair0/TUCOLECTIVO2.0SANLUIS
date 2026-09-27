@@ -616,13 +616,13 @@ class MainActivity : AppCompatActivity() {
             paint.color = 0x2200F0FF; paint.strokeWidth = 1.2f
             for (y in (dpLocal(90)..height step dpLocal(78))) {
                 path.reset(); path.moveTo(0f, y.toFloat()); path.lineTo(w * .28f, y.toFloat())
-                path.lineTo(w * .34f, y - dpLocal(8)); path.lineTo(w * .62f, y - dpLocal(8))
+                path.lineTo(w * .34f, (y - dpLocal(8)).toFloat()); path.lineTo(w * .62f, (y - dpLocal(8)).toFloat())
                 path.lineTo(w * .68f, y.toFloat()); path.lineTo(w, y.toFloat()); canvas.drawPath(path, paint)
             }
             paint.color = 0x1FFF2DB2
             for (x in (dpLocal(28)..width step dpLocal(74))) {
-                canvas.drawLine(x.toFloat(), h * .78f, x.toFloat() + dpLocal(18), h * .70f, paint)
-                canvas.drawLine(x.toFloat() + dpLocal(18), h * .70f, x.toFloat() + dpLocal(36), h * .70f, paint)
+                canvas.drawLine(x.toFloat(), h * .78f, x.toFloat() + dpLocal(18).toFloat(), h * .70f, paint)
+                canvas.drawLine(x.toFloat() + dpLocal(18).toFloat(), h * .70f, x.toFloat() + dpLocal(36).toFloat(), h * .70f, paint)
             }
             paint.color = 0x1600F0FF
             canvas.drawCircle(w * .84f, h * .26f, dpLocal(70).toFloat(), paint)
@@ -638,12 +638,12 @@ class MainActivity : AppCompatActivity() {
             val w = width.toFloat(); val h = height.toFloat()
             canvas.drawColor(0xFF05070C.toInt())
             paint.strokeWidth = 2f; paint.color = 0xFF00F0FF.toInt()
-            path.reset(); path.moveTo(0f, h); path.lineTo(0f, 4f); path.lineTo(dpLocal(18), 4f)
-            path.lineTo(dpLocal(32), h * .48f); path.lineTo(dpLocal(18), h - 4f); path.lineTo(0f, h - 4f)
+            path.reset(); path.moveTo(0f, h); path.lineTo(0f, 4f); path.lineTo(dpLocal(18).toFloat(), 4f)
+            path.lineTo(dpLocal(32).toFloat(), h * .48f); path.lineTo(dpLocal(18).toFloat(), h - 4f); path.lineTo(0f, h - 4f)
             canvas.drawPath(path, paint)
             paint.color = 0xFFFF2DB2.toInt(); paint.strokeWidth = 1.5f
-            canvas.drawLine(dpLocal(42), 3f, w - dpLocal(42), 3f, paint)
-            canvas.drawLine(dpLocal(42), h - 3f, w - dpLocal(42), h - 3f, paint)
+            canvas.drawLine(dpLocal(42).toFloat(), 3f, w - dpLocal(42).toFloat(), 3f, paint)
+            canvas.drawLine(dpLocal(42).toFloat(), h - 3f, w - dpLocal(42).toFloat(), h - 3f, paint)
             paint.color = 0xFF00F0FF.toInt(); paint.strokeWidth = 1f
             canvas.drawLine(w * .28f, h * .86f, w * .42f, h * .86f, paint)
             canvas.drawLine(w * .58f, h * .86f, w * .72f, h * .86f, paint)
