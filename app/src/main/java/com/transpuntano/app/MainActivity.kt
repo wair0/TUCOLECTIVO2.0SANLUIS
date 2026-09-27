@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
         headerContent.addView(CyberNeonTextView(this).apply {
             text = "TU COLECTIVO 2.0"
             textSize = 18f
-            typeface = Typeface.MONOSPACE
+            typeface = cyberpunkTypeface
             setTextColor(cyan)
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(-1, dp(40))
