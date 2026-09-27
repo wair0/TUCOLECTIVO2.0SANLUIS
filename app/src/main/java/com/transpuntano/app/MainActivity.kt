@@ -107,8 +107,8 @@ class MainActivity : AppCompatActivity() {
         }
         headerLayout.addView(headerContent)
         headerLayout.addView(status, FrameLayout.LayoutParams(-2, dp(28)).apply {
-            leftMargin = dp(171.5f)
-            topMargin = dp(38.5f)
+            leftMargin = dp(170.0f)
+            topMargin = dp(40.0f)
             gravity = Gravity.TOP
         })
         menuBtn.apply {
