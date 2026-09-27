@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
         headerContent.addView(TextView(this).apply {
             text = "TU COLECTIVO 2.0"
             textSize = 15f
-            translationX = -dp(10).toFloat()
+            translationX = -dp(15).toFloat()
             typeface = cyberpunkTypeface
             setTextColor(cyan)
             gravity = Gravity.CENTER
@@ -518,51 +518,103 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openLineSearch() {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0xFF050B12.toInt())
+                setStroke(dp(1), cyan)
+                cornerRadius = dp(4).toFloat()
+            }
+        }
+        val header = TextView(this).apply {
+            text = "BUSCAR // LÍNEAS"
+            textSize = 12f
+            typeface = cyberpunkTypeface
+            setTextColor(cyan)
+            setPadding(0, 0, 0, dp(8))
+        }
         val input = EditText(this).apply {
-            hint = "BUSCAR LÍNEA"
+            hint = "NÚMERO O NOMBRE"
             setSingleLine(true)
-            textSize = 16f
+            textSize = 15f
             typeface = cyberpunkTypeface
             setTextColor(cyan)
             setHintTextColor(muted)
-        }
-        val dialog = android.app.AlertDialog.Builder(this)
-            .setTitle("BUSCADOR")
-            .setView(input)
-            .setNegativeButton("CANCELAR", null)
-            .setPositiveButton("BUSCAR", null)
-            .create()
-        dialog.setOnShowListener {
-            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val query = input.text.toString().trim()
-                if (query.isBlank()) {
-                    input.error = "Ingresá un número o nombre de línea"
-                    return@setOnClickListener
-                }
-                dialog.dismiss()
-                status.text = "● BUSCANDO..."
-                executor.execute {
-                    runCatching { api.getLines() }
-                        .onSuccess { lines ->
-                            val q = query.lowercase(java.util.Locale.getDefault())
-                            val matches = lines.filter {
-                                it.code.toString().contains(q) ||
-                                    it.name.lowercase(java.util.Locale.getDefault()).contains(q)
-                            }
-                            runOnUiThread {
-                                showLines(matches)
-                                status.text = if (matches.isEmpty()) "● SIN RESULTADOS" else "● " + matches.size + " RESULTADOS"
-                            }
-                        }
-                        .onFailure { error -> runOnUiThread {
-                            status.text = "● SIN CONEXIÓN"
-                            toast(error.message ?: "No se pudo realizar la búsqueda")
-                        }}
-                }
+            setPadding(dp(10), 0, dp(10), 0)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0xFF0A111A.toInt())
+                setStroke(dp(1), 0xFF176A78.toInt())
+                cornerRadius = dp(3).toFloat()
             }
         }
-        dialog.show()
-        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+        val search = TextView(this).apply {
+            text = "BUSCAR"
+            textSize = 10f
+            gravity = Gravity.CENTER
+            typeface = cyberpunkTypeface
+            setTextColor(cyan)
+            isClickable = true
+            isFocusable = true
+            background = cyberRippleBackground()
+            setPadding(dp(12), 0, dp(12), 0)
+        }
+        panel.addView(header, LinearLayout.LayoutParams(-1, dp(28)))
+        panel.addView(input, LinearLayout.LayoutParams(-1, dp(42)))
+        panel.addView(search, LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(8) })
+
+        val popup = android.widget.PopupWindow(
+            panel, dp(270), dp(132), true
+        ).apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+            isOutsideTouchable = true
+            elevation = dp(12).toFloat()
+        }
+
+        fun performSearch() {
+            val query = input.text.toString().trim()
+            if (query.isBlank()) {
+                input.error = "Ingresá un número o nombre de línea"
+                return
+            }
+            popup.dismiss()
+            status.text = "● BUSCANDO..."
+            executor.execute {
+                runCatching { api.getLines() }
+                    .onSuccess { lines ->
+                        val q = query.lowercase(java.util.Locale.getDefault())
+                            .replace("línea", "")
+                            .replace("linea", "")
+                            .replace("line", "")
+                            .replace("#", "")
+                            .trim()
+                        val matches = lines.filter {
+                            it.code.toString().contains(q) ||
+                                it.name.lowercase(java.util.Locale.getDefault()).contains(q)
+                        }
+                        runOnUiThread {
+                            showLines(matches)
+                            status.text = if (matches.isEmpty()) "● SIN RESULTADOS" else "● " + matches.size + " RESULTADOS"
+                        }
+                    }
+                    .onFailure { error -> runOnUiThread {
+                        status.text = "● SIN CONEXIÓN"
+                        toast(error.message ?: "No se pudo realizar la búsqueda")
+                    }}
+            }
+        }
+
+        search.setOnClickListener {
+            cyberTouchFeedback(search)
+            performSearch()
+        }
+        input.setOnEditorActionListener { _, _, _ -> performSearch(); true }
+
+        popup.setOnDismissListener { input.clearFocus() }
+        popup.showAsDropDown(findViewById(android.R.id.content), -dp(270) + dp(8), -dp(8), Gravity.END)
+        input.requestFocus()
+        popup.inputMethodMode = android.widget.PopupWindow.INPUT_METHOD_NEEDED
+        popup.softInputMode = android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
     }
 
     private fun showLines(initial: List<TransitLine>? = null) {
@@ -849,11 +901,6 @@ class MainActivity : AppCompatActivity() {
             path.lineTo(w - dpLocal(5).toFloat(), h - dpLocal(8).toFloat())
             path.lineTo(w - dpLocal(17).toFloat(), h - dpLocal(8).toFloat())
             canvas.drawPath(path, paint)
-
-            // Technical rails below the title area.
-            paint.alpha = 150
-            canvas.drawLine(w * .08f, dpLocal(51).toFloat(), w * .34f, dpLocal(51).toFloat(), paint)
-            canvas.drawLine(w * .66f, dpLocal(51).toFloat(), w * .92f, dpLocal(51).toFloat(), paint)
 
             // Neon data ticks and nodes.
             paint.color = cyan
