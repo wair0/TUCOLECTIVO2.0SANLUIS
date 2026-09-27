@@ -71,11 +71,9 @@ class MainActivity : AppCompatActivity() {
             setBackgroundColor(0xFF05070C.toInt())
             addView(CyberHeaderView(this@MainActivity), FrameLayout.LayoutParams(-1, -1))
         }
-        val menuBtn = TextView(this).apply {
-            text = "☰"; textSize = 24f; typeface = cyberpunkTypeface
-            setTextColor(cyan); gravity = Gravity.CENTER
-            setOnClickListener { cyberTouchFeedback(this); toggleDrawer() }
-        }
+        val menuBtn = headerIconButton("nav_menu", "MENÚ") { toggleDrawer() }
+        val searchBtn = headerIconButton("nav_search", "BUSCAR") { showLines() }
+        val alertBtn = headerIconButton("nav_bell", "NOTIFICACIONES") { toast("NOTIFICACIONES") }
         val headerContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             layoutParams = FrameLayout.LayoutParams(-1, dp(48)).apply {
@@ -104,6 +102,15 @@ class MainActivity : AppCompatActivity() {
         headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(44), dp(44)).apply {
             leftMargin = dp(4); topMargin = dp(14)
         })
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        actions.addView(searchBtn, LinearLayout.LayoutParams(dp(40), dp(40)))
+        actions.addView(alertBtn, LinearLayout.LayoutParams(dp(40), dp(40)))
+        headerLayout.addView(actions, FrameLayout.LayoutParams(dp(88), dp(44)).apply {
+            rightMargin = dp(4); topMargin = dp(14); gravity = Gravity.END
+        })
         root.addView(headerLayout, LinearLayout.LayoutParams(-1, dp(72)))
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -127,6 +134,29 @@ class MainActivity : AppCompatActivity() {
         rootFrame.addView(drawerPanel)
         setContentView(rootFrame)
         updateNav(0)
+    }
+
+    private fun headerIconButton(iconName: String, description: String, action: () -> Unit) = ImageButton(this).apply {
+        val id = resources.getIdentifier(iconName, "drawable", packageName)
+        setImageResource(id)
+        setColorFilter(cyan)
+        background = cyberRippleBackground()
+        contentDescription = description
+        scaleType = ImageView.ScaleType.CENTER
+        setPadding(dp(8), dp(8), dp(8), dp(8))
+        setOnClickListener {
+            cyberTouchFeedback(this)
+            action()
+        }
+    }
+
+    private fun cyberRippleBackground(): android.graphics.drawable.Drawable {
+        val mask = android.graphics.drawable.ColorDrawable(Color.WHITE)
+        return android.graphics.drawable.RippleDrawable(
+            android.content.res.ColorStateList.valueOf(0x6600FFF2),
+            android.graphics.drawable.ColorDrawable(Color.TRANSPARENT),
+            mask
+        )
     }
 
     private fun cyberTouchFeedback(view: View) {
@@ -178,7 +208,7 @@ class MainActivity : AppCompatActivity() {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(12), 0, dp(8), 0); isClickable = true; isFocusable = true
-                setBackgroundColor(0xFF09111B.toInt())
+                background = cyberRippleBackground()
                 setOnClickListener {
                     cyberTouchFeedback(this)
                     postDelayed({ navigateTo(index); toggleDrawer() }, 110)
@@ -227,6 +257,7 @@ class MainActivity : AppCompatActivity() {
                 clipChildren = false
                 clipToPadding = false
                 setPadding(0, 0, 0, dp(2))
+                background = cyberRippleBackground()
             }
             val iconRes = resources.getIdentifier(iconName, "drawable", packageName)
             val icon = ImageView(this).apply {
@@ -365,6 +396,7 @@ class MainActivity : AppCompatActivity() {
         return ImageView(this).apply {
             setImageBitmap(bitmap); scaleType = ImageView.ScaleType.FIT_XY
             contentDescription = "Sincronizar líneas"; isClickable = true; isFocusable = true
+            background = cyberRippleBackground()
             setOnClickListener { cyberTouchFeedback(this); action() }
         }
     }
