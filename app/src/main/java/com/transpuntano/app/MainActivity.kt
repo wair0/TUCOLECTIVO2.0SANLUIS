@@ -224,15 +224,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadAssetBitmap(assetName: String): android.graphics.Bitmap? {
         val base = assetName.removeSuffix(".webp").removeSuffix(".b64")
+        // Prefer the canonical WEBP asset so a stale legacy B64 cannot override it.
         runCatching {
+            assets.open("$base.webp").use { BitmapFactory.decodeStream(it) }
+        }.getOrNull()?.let { return it }
+        return runCatching {
             val b64 = assets.open("$base.b64").bufferedReader().use { it.readText() }.trim()
             if (b64.isNotEmpty()) {
                 val bytes = Base64.decode(b64, Base64.DEFAULT)
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             } else null
-        }.getOrNull()?.let { return it }
-        return runCatching {
-            assets.open("$base.webp").use { BitmapFactory.decodeStream(it) }
         }.getOrNull()
     }
 
