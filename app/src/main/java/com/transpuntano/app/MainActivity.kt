@@ -125,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
         navBar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF080C13.toInt()); visibility = View.GONE
+            orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF080C13.toInt()); visibility = View.VISIBLE
         }
         root.addView(navBar, LinearLayout.LayoutParams(-1, dp(64)))
         rootFrame.addView(root)
@@ -227,17 +227,58 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateNav(selected: Int) {
         navBar.removeAllViews()
-        listOf("⌂\\nINICIO", "▤\\nLÍNEAS", "★\\nFAVORITOS", "◎\\nPARADAS CERCANAS").forEachIndexed { index, label ->
-            navBar.addView(TextView(this).apply {
-                text = label; gravity = Gravity.CENTER; textSize = 10f
+        navBar.setPadding(0, dp(3), 0, 0)
+        navBar.clipChildren = false
+        navBar.clipToPadding = false
+        val items = listOf(
+            Triple("INICIO", "nav_home", 0),
+            Triple("LÍNEAS", "nav_lineas", 1),
+            Triple("MAPA", "nav_mapa", 2),
+            Triple("FAVORITOS", "nav_favoritos", 3),
+            Triple("CERCANAS", "nav_cercanas", 4)
+        )
+        items.forEach { (label, iconName, index) ->
+            val item = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                isClickable = true
+                isFocusable = true
+                clipChildren = false
+                clipToPadding = false
+                setPadding(0, 0, 0, dp(2))
+            }
+            val iconRes = resources.getIdentifier(iconName, "drawable", packageName)
+            val icon = ImageView(this).apply {
+                setImageResource(iconRes)
+                alpha = if (index == selected) 1f else 0.52f
+                contentDescription = label
+                layoutParams = LinearLayout.LayoutParams(dp(27), dp(27))
+            }
+            val text = TextView(this).apply {
+                this.text = label
+                textSize = 8.5f
+                typeface = cyberpunkTypeface
+                gravity = Gravity.CENTER
                 setTextColor(if (index == selected) cyan else muted)
-                setOnClickListener {
-                    when (index) { 0 -> showHome(); 1 -> showLines(); 2 -> showFavorites(); 3 -> showNearby() }
+                alpha = if (index == selected) 1f else 0.72f
+                maxLines = 1
+                layoutParams = LinearLayout.LayoutParams(-1, dp(18))
+            }
+            item.addView(icon)
+            item.addView(text)
+            item.setOnClickListener {
+                cyberTouchFeedback(item)
+                when (index) {
+                    0 -> showHome()
+                    1 -> showLines()
+                    2 -> showMap(null)
+                    3 -> showFavorites()
+                    4 -> showNearby()
                 }
-            }, LinearLayout.LayoutParams(0, -1, 1f))
+            }
+            navBar.addView(item, LinearLayout.LayoutParams(0, -1, 1f))
         }
     }
-
     private fun showHome() {
         title.text = ""
         updateNav(0)
@@ -386,7 +427,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showLine(line: TransitLine) {
-        title.text = "LÍNEA " + line.code; content.removeAllViews()
+        title.text = "LÍNEA " + line.code; updateNav(1); content.removeAllViews()
         val box = box()
         box.addView(TextView(this).apply {
             text = line.name.uppercase(); textSize = 25f; typeface = Typeface.MONOSPACE; setTextColor(cyan)
@@ -407,7 +448,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showIntersections(line: TransitLine, street: TransitStreet) {
-        content.removeAllViews(); title.text = street.name
+        content.removeAllViews(); title.text = street.name; updateNav(1)
         val box = box()
         box.addView(panel("INTERSECCIONES", "LÍNEA " + line.code + " · " + street.name))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -424,7 +465,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showStops(line: TransitLine, street: TransitStreet, intersection: TransitIntersection) {
-        content.removeAllViews(); title.text = "PARADAS"
+        content.removeAllViews(); title.text = "PARADAS"; updateNav(1)
         val box = box()
         box.addView(panel("PARADAS", "LÍNEA " + line.code + " · " + intersection.name))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -442,7 +483,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showArrivals(stop: TransitStop, line: TransitLine) {
-        content.removeAllViews(); title.text = "ARRIBOS"
+        content.removeAllViews(); title.text = "ARRIBOS"; updateNav(1)
         val box = box()
         box.addView(panel("🚏 " + stop.description, "LÍNEA " + line.code + " · ID " + stop.identifier))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -474,7 +515,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showNearby() {
-        title.text = "PARADAS CERCANAS"; updateNav(3); content.removeAllViews()
+        title.text = "PARADAS CERCANAS"; updateNav(4); content.removeAllViews()
         val box = box()
         box.addView(panel("PARADAS CERCANAS", "Buscando paradas próximas a tu ubicación."))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -522,7 +563,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFavorites() {
-        title.text = "FAVORITOS"; updateNav(2); content.removeAllViews()
+        title.text = "FAVORITOS"; updateNav(3); content.removeAllViews()
         val box = box()
         val favorites = loadFavorites()
         box.addView(panel("MIS PARADAS", if (favorites.isEmpty()) "No hay favoritos." else "Guardados localmente."))
@@ -537,7 +578,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showMap(line: TransitLine?) {
-        title.text = "MAPA"; content.removeAllViews()
+        title.text = "MAPA"; updateNav(2); content.removeAllViews()
         val root = FrameLayout(this)
         val mapFrame = FrameLayout(this).apply {
             setBackgroundColor(panelColor); setPadding(dp(6), dp(6), dp(6), dp(6))
