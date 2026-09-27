@@ -146,57 +146,36 @@ class MainActivity : AppCompatActivity() {
         val id = resources.getIdentifier(iconName, "drawable", packageName)
         setImageResource(id)
         setColorFilter(cyan)
-        background = cyberRippleBackground()
+        background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         contentDescription = description
         scaleType = ImageView.ScaleType.CENTER
         setPadding(dp(8), dp(8), dp(8), dp(8))
-        setOnClickListener {
-            cyberTouchFeedback(this)
-            action()
+        setOnClickListener { action() }
+        applyCyberTap(this)
+    }
+
+    private fun applyCyberTap(view: View) {
+        val pulse = CyberTapDrawable(cyan, pink)
+        view.foreground = pulse
+        view.setOnTouchListener { _, event ->
+            if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+                pulse.pulse(event.x, event.y)
+            }
+            false
         }
     }
 
-    private fun cyberRippleBackground(): android.graphics.drawable.Drawable {
-        val mask = android.graphics.drawable.ColorDrawable(Color.WHITE)
-        return android.graphics.drawable.RippleDrawable(
-            android.content.res.ColorStateList.valueOf(0x6600FFF2),
-            android.graphics.drawable.ColorDrawable(Color.TRANSPARENT),
-            mask
-        )
-    }
-
-    private fun cyberTouchFeedback(view: View) {
-        view.animate().cancel()
-        view.animate()
-            .scaleX(0.92f).scaleY(0.92f).alpha(0.62f).translationY(dp(2).toFloat())
-            .setDuration(75)
-            .withEndAction {
-                view.animate()
-                    .scaleX(1.06f).scaleY(1.06f).alpha(1f).translationY(-dp(1).toFloat())
-                    .setDuration(105)
-                    .setInterpolator(android.view.animation.OvershootInterpolator(2.2f))
-                    .withEndAction {
-                        view.animate()
-                            .scaleX(1f).scaleY(1f).alpha(1f).translationY(0f)
-                            .setDuration(90)
-                            .setInterpolator(android.view.animation.DecelerateInterpolator())
-                            .start()
-                    }.start()
-            }.start()
-    }
 
     private fun toggleDrawer() {
         drawerOpen = !drawerOpen
         if (drawerOpen) {
             drawerScrim.visibility = View.VISIBLE
             drawerPanel.visibility = View.VISIBLE
-            drawerPanel.translationX = -dp(300).toFloat()
-            drawerPanel.animate().translationX(0f).setDuration(180).start()
+            drawerPanel.translationX = 0f
         } else {
-            drawerPanel.animate().translationX(-dp(300).toFloat()).setDuration(150).withEndAction {
-                drawerPanel.visibility = View.GONE
-                drawerScrim.visibility = View.GONE
-            }.start()
+            drawerPanel.translationX = 0f
+            drawerPanel.visibility = View.GONE
+            drawerScrim.visibility = View.GONE
         }
     }
 
@@ -324,16 +303,11 @@ class MainActivity : AppCompatActivity() {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(12), 0, dp(8), 0); isClickable = true; isFocusable = true
-                background = cyberRippleBackground()
                 setOnClickListener {
-                    cyberTouchFeedback(this)
-                    isEnabled = false
-                    postDelayed({
-                        isEnabled = true
-                        navigateTo(index)
-                        toggleDrawer()
-                    }, 300L)
+                    navigateTo(index)
+                    toggleDrawer()
                 }
+                applyCyberTap(this)
             }
             val icon = ImageView(this).apply {
                 val id = resources.getIdentifier(iconName, "drawable", packageName)
@@ -379,8 +353,7 @@ class MainActivity : AppCompatActivity() {
                 clipChildren = false
                 clipToPadding = false
                 setPadding(0, 0, 0, dp(2))
-                background = cyberRippleBackground()
-            }
+                }
             val iconRes = resources.getIdentifier(iconName, "drawable", packageName)
             val icon = ImageView(this).apply {
                 setImageResource(iconRes)
@@ -401,19 +374,15 @@ class MainActivity : AppCompatActivity() {
             item.addView(icon)
             item.addView(text)
             item.setOnClickListener {
-                cyberTouchFeedback(item)
-                item.isEnabled = false
-                item.postDelayed({
-                    item.isEnabled = true
-                    when (index) {
-                        0 -> showHome()
-                        1 -> showLines()
-                        2 -> showMap(null)
-                        3 -> showFavorites()
-                        4 -> showNearby()
-                    }
-                }, 300L)
+                when (index) {
+                    0 -> showHome()
+                    1 -> showLines()
+                    2 -> showMap(null)
+                    3 -> showFavorites()
+                    4 -> showNearby()
+                }
             }
+            applyCyberTap(item)
             navBar.addView(item, LinearLayout.LayoutParams(0, -1, 1f))
         }
     }
@@ -461,15 +430,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun cardHomeAsset(assetName: String, description: String = assetName, action: () -> Unit) = FrameLayout(this).apply {
         setBackgroundColor(panelColor)
-        foreground = cyberRippleBackground()
-        setOnClickListener {
-            isEnabled = false
-            cyberTouchFeedback(this)
-            postDelayed({
-                isEnabled = true
-                action()
-            }, 260L)
-        }
+        setOnClickListener { action() }
+        applyCyberTap(this)
         isClickable = true; isFocusable = true
         val bitmap = loadAssetBitmap(assetName)
         if (bitmap != null) {
@@ -490,15 +452,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun cardHomeImage(assetName: String, action: () -> Unit) = FrameLayout(this).apply {
         setBackgroundColor(panelColor)
-        foreground = cyberRippleBackground()
-        setOnClickListener {
-            isEnabled = false
-            cyberTouchFeedback(this)
-            postDelayed({
-                isEnabled = true
-                action()
-            }, 260L)
-        }
+        setOnClickListener { action() }
+        applyCyberTap(this)
         isClickable = true; isFocusable = true
         val image = ImageView(this@MainActivity).apply {
             val bitmap = loadAssetBitmap(assetName)
@@ -539,12 +494,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun cyberSyncButton(action: () -> Unit): View {
         val bitmap = loadAssetBitmap("sincronizar_lineas.webp")
-        if (bitmap == null) return button("SINCRONIZAR LÍNEAS", cyan, action)
+        if (bitmap == null) {
+            return button("SINCRONIZAR LÍNEAS", cyan, action).also { applyCyberTap(it) }
+        }
         return ImageView(this).apply {
             setImageBitmap(bitmap); scaleType = ImageView.ScaleType.FIT_XY
             contentDescription = "Sincronizar líneas"; isClickable = true; isFocusable = true
-            background = cyberRippleBackground()
-            setOnClickListener { cyberTouchFeedback(this); action() }
+            background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+            setOnClickListener { action() }
+            applyCyberTap(this)
         }
     }
 
@@ -604,9 +562,10 @@ class MainActivity : AppCompatActivity() {
             setTextColor(cyan)
             isClickable = true
             isFocusable = true
-            background = cyberRippleBackground()
+            background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
             setPadding(dp(12), 0, dp(12), 0)
         }
+        applyCyberTap(search)
 
         panel.addView(header, LinearLayout.LayoutParams(-1, dp(28)))
         panel.addView(input, LinearLayout.LayoutParams(-1, dp(42)))
@@ -681,7 +640,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         search.setOnClickListener {
-            cyberTouchFeedback(search)
             performSearch()
         }
 
@@ -928,6 +886,88 @@ class MainActivity : AppCompatActivity() {
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private fun dp(v: Float) = (v * resources.displayMetrics.density).roundToInt()
+    /** Canvas-only cyberpunk pulse used for tap feedback. It never scales, fades, translates or moves the target view. */
+    private class CyberTapDrawable(
+        private val cyan: Int,
+        private val pink: Int
+    ) : android.graphics.drawable.Drawable() {
+        private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+        private val corePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        private var active = false
+        private var startTime = 0L
+        private var touchX = 0f
+        private var touchY = 0f
+        private val durationMs = 220L
+        private val runner = object : Runnable {
+            override fun run() {
+                if (!active) return
+                val elapsed = android.os.SystemClock.uptimeMillis() - startTime
+                if (elapsed >= durationMs) {
+                    active = false
+                    invalidateSelf()
+                    return
+                }
+                invalidateSelf()
+                scheduleSelf(this, android.os.SystemClock.uptimeMillis() + 16L)
+            }
+        }
+
+        fun pulse(x: Float, y: Float) {
+            touchX = x
+            touchY = y
+            startTime = android.os.SystemClock.uptimeMillis()
+            active = true
+            unscheduleSelf(runner)
+            invalidateSelf()
+            scheduleSelf(runner, android.os.SystemClock.uptimeMillis() + 16L)
+        }
+
+        override fun draw(canvas: Canvas) {
+            if (!active) return
+            val elapsed = android.os.SystemClock.uptimeMillis() - startTime
+            val progress = (elapsed.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+            val eased = 1f - (1f - progress) * (1f - progress)
+            val maxRadius = maxOf(bounds.width(), bounds.height()).toFloat() * 0.78f
+            val radius = maxRadius * eased
+            val fade = 1f - progress
+
+            // Broad translucent rings create the neon "energy pulse" without any View animation.
+            ringPaint.strokeWidth = 5f * resources.displayMetrics.density
+            ringPaint.color = cyan
+            ringPaint.alpha = (110f * fade).toInt().coerceIn(0, 255)
+            canvas.drawCircle(touchX, touchY, radius, ringPaint)
+
+            ringPaint.strokeWidth = 2f * resources.displayMetrics.density
+            ringPaint.color = pink
+            ringPaint.alpha = (175f * fade).toInt().coerceIn(0, 255)
+            canvas.drawCircle(touchX, touchY, radius * 0.86f, ringPaint)
+
+            ringPaint.strokeWidth = 1f * resources.displayMetrics.density
+            ringPaint.color = cyan
+            ringPaint.alpha = (235f * fade).toInt().coerceIn(0, 255)
+            canvas.drawCircle(touchX, touchY, radius * 0.62f, ringPaint)
+
+            corePaint.color = cyan
+            corePaint.alpha = (180f * fade).toInt().coerceIn(0, 255)
+            canvas.drawCircle(touchX, touchY, maxOf(1f, 2.5f * resources.displayMetrics.density * fade), corePaint)
+
+            // Four short HUD ticks emphasize the cyberpunk pulse.
+            val tick = maxOf(3f, radius * 0.13f)
+            ringPaint.strokeWidth = 1.5f * resources.displayMetrics.density
+            ringPaint.color = pink
+            ringPaint.alpha = (190f * fade).toInt().coerceIn(0, 255)
+            canvas.drawLine(touchX - radius - tick, touchY, touchX - radius, touchY, ringPaint)
+            canvas.drawLine(touchX + radius, touchY, touchX + radius + tick, touchY, ringPaint)
+            canvas.drawLine(touchX, touchY - radius - tick, touchX, touchY - radius, ringPaint)
+            canvas.drawLine(touchX, touchY + radius, touchX, touchY + radius + tick, ringPaint)
+        }
+
+        override fun setAlpha(alpha: Int) {}
+        override fun setColorFilter(colorFilter: ColorFilter?) {}
+        @Suppress("DEPRECATION")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
     private class CyberBackgroundView(context: Context) : View(context) {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.5f }
         private val path = Path()
