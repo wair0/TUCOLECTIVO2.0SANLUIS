@@ -115,7 +115,9 @@ class MainActivity : AppCompatActivity() {
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
         navBar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF05070C.toInt()); visibility = View.VISIBLE
+            orientation = LinearLayout.HORIZONTAL
+            background = CyberBottomBarBackground()
+            visibility = View.VISIBLE
         }
         root.addView(navBar, LinearLayout.LayoutParams(-1, dp(64)))
         rootFrame.addView(root)
@@ -126,7 +128,7 @@ class MainActivity : AppCompatActivity() {
         }
         rootFrame.addView(drawerScrim, FrameLayout.LayoutParams(-1, -1))
         drawerPanel = FrameLayout(this).apply {
-            setBackgroundColor(0xFF05070C.toInt())
+            background = CyberDrawerBackground()
             layoutParams = FrameLayout.LayoutParams(dp(300), -1).apply { gravity = Gravity.START }
             visibility = View.GONE
         }
@@ -181,6 +183,111 @@ class MainActivity : AppCompatActivity() {
                 drawerScrim.visibility = View.GONE
             }.start()
         }
+    }
+
+    private class CyberBottomBarBackground : android.graphics.drawable.Drawable() {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        override fun draw(canvas: Canvas) {
+            val w = bounds.width().toFloat()
+            val h = bounds.height().toFloat()
+            val cyan = 0xFF00F0FF.toInt()
+            val pink = 0xFFFF2DB2.toInt()
+            paint.style = Paint.Style.FILL
+            paint.color = 0xFF02070D.toInt()
+            canvas.drawRect(0f, 0f, w, h, paint)
+
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1f
+            paint.color = cyan
+            paint.alpha = 235
+            canvas.drawLine(0f, 2f, w * .16f, 2f, paint)
+            canvas.drawLine(w * .84f, 2f, w, 2f, paint)
+            paint.alpha = 100
+            canvas.drawLine(w * .22f, 2f, w * .78f, 2f, paint)
+
+            paint.alpha = 230
+            canvas.drawLine(0f, 2f, 14f, h * .28f, paint)
+            canvas.drawLine(w, 2f, w - 14f, h * .28f, paint)
+
+            paint.color = cyan
+            paint.alpha = 30
+            for (x in 0..w.toInt() step 28) canvas.drawLine(x.toFloat(), h * .25f, x.toFloat(), h, paint)
+            for (y in 24..h.toInt() step 18) canvas.drawLine(0f, y.toFloat(), w, y.toFloat(), paint)
+
+            paint.color = cyan
+            paint.alpha = 230
+            paint.strokeWidth = 2f
+            canvas.drawLine(8f, h - 2f, w - 8f, h - 2f, paint)
+            paint.color = pink
+            paint.alpha = 190
+            paint.strokeWidth = 1f
+            canvas.drawLine(w * .30f, h - 6f, w * .70f, h - 6f, paint)
+            paint.color = cyan
+            paint.style = Paint.Style.FILL
+            paint.alpha = 190
+            canvas.drawCircle(w / 2f, 5f, 1.5f, paint)
+        }
+        override fun setAlpha(alpha: Int) {}
+        override fun setColorFilter(colorFilter: ColorFilter?) {}
+        @Suppress("DEPRECATION")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private class CyberDrawerBackground : android.graphics.drawable.Drawable() {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        override fun draw(canvas: Canvas) {
+            val w = bounds.width().toFloat()
+            val h = bounds.height().toFloat()
+            val cyan = 0xFF00F0FF.toInt()
+            val pink = 0xFFFF2DB2.toInt()
+
+            paint.style = Paint.Style.FILL
+            paint.color = 0xFF02060B.toInt()
+            canvas.drawRect(0f, 0f, w, h, paint)
+
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1f
+            paint.color = cyan
+            paint.alpha = 235
+            val cut = 22f
+            val p = Path()
+            p.moveTo(0f, 0f)
+            p.lineTo(w - cut, 0f)
+            p.lineTo(w, cut)
+            p.lineTo(w, h - cut)
+            p.lineTo(w - cut, h)
+            canvas.drawPath(p, paint)
+
+            paint.alpha = 180
+            canvas.drawLine(w - 4f, cut + 8f, w - 4f, h - cut - 8f, paint)
+            paint.color = pink
+            paint.alpha = 170
+            canvas.drawLine(7f, 72f, 7f, h - 40f, paint)
+
+            paint.color = cyan
+            paint.alpha = 32
+            for (y in 20..h.toInt() step 24) canvas.drawLine(12f, y.toFloat(), w - 12f, y.toFloat(), paint)
+            paint.alpha = 120
+            canvas.drawLine(18f, 58f, w - 30f, 58f, paint)
+            canvas.drawLine(18f, 62f, w * .58f, 62f, paint)
+            paint.alpha = 240
+            paint.strokeWidth = 2f
+            canvas.drawLine(12f, 78f, w - 18f, 78f, paint)
+            canvas.drawLine(18f, h - 14f, w - 18f, h - 14f, paint)
+            paint.color = pink
+            paint.strokeWidth = 1f
+            canvas.drawLine(w * .28f, 82f, w * .72f, 82f, paint)
+
+            paint.color = cyan
+            paint.style = Paint.Style.FILL
+            paint.alpha = 220
+            canvas.drawCircle(w - 12f, 12f, 2f, paint)
+            canvas.drawCircle(12f, h - 12f, 2f, paint)
+        }
+        override fun setAlpha(alpha: Int) {}
+        override fun setColorFilter(colorFilter: ColorFilter?) {}
+        @Suppress("DEPRECATION")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
     }
 
     private fun addDrawerItems() {
@@ -674,94 +781,72 @@ class MainActivity : AppCompatActivity() {
             val cyan = 0xFF00F0FF.toInt()
             val pink = 0xFFFF2DB2.toInt()
 
-            canvas.drawColor(0xFF020509.toInt())
+            canvas.drawColor(0xFF010408.toInt())
+            fill.color = 0xFF030912.toInt()
+            canvas.drawRect(dpLocal(5).toFloat(), dpLocal(5).toFloat(),
+                w - dpLocal(5).toFloat(), h - dpLocal(5).toFloat(), fill)
 
-            // Dark inner panel: the header remains black, with a subtle depth gradient simulated by bands.
-            fill.color = 0xFF050A11.toInt()
-            canvas.drawRect(dpLocal(6).toFloat(), dpLocal(6).toFloat(),
-                w - dpLocal(6).toFloat(), h - dpLocal(6).toFloat(), fill)
-
-            // Neon outer frame with clipped / technical corners.
+            // Top neon rails leave a deliberate central gap so they do not crowd the title.
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = dpLocal(1).toFloat()
             paint.color = cyan
+            paint.alpha = 245
+            canvas.drawLine(dpLocal(5).toFloat(), dpLocal(3).toFloat(), dpLocal(72).toFloat(), dpLocal(3).toFloat(), paint)
+            canvas.drawLine(w - dpLocal(72).toFloat(), dpLocal(3).toFloat(), w - dpLocal(5).toFloat(), dpLocal(3).toFloat(), paint)
+            paint.alpha = 120
+            canvas.drawLine(dpLocal(82).toFloat(), dpLocal(3).toFloat(), dpLocal(116).toFloat(), dpLocal(3).toFloat(), paint)
+            canvas.drawLine(w - dpLocal(116).toFloat(), dpLocal(3).toFloat(), w - dpLocal(82).toFloat(), dpLocal(3).toFloat(), paint)
+
+            // Angular side frame and HUD brackets.
             paint.alpha = 220
             path.reset()
-            path.moveTo(0f, h)
-            path.lineTo(0f, dpLocal(7).toFloat())
-            path.lineTo(dpLocal(24).toFloat(), dpLocal(7).toFloat())
-            path.lineTo(dpLocal(34).toFloat(), dpLocal(18).toFloat())
-            path.lineTo(w - dpLocal(34).toFloat(), dpLocal(18).toFloat())
-            path.lineTo(w - dpLocal(24).toFloat(), dpLocal(7).toFloat())
-            path.lineTo(w, dpLocal(7).toFloat())
-            path.lineTo(w, h)
+            path.moveTo(dpLocal(5).toFloat(), dpLocal(3).toFloat())
+            path.lineTo(dpLocal(5).toFloat(), h - dpLocal(8).toFloat())
+            path.lineTo(dpLocal(17).toFloat(), h - dpLocal(8).toFloat())
+            path.moveTo(w - dpLocal(5).toFloat(), dpLocal(3).toFloat())
+            path.lineTo(w - dpLocal(5).toFloat(), h - dpLocal(8).toFloat())
+            path.lineTo(w - dpLocal(17).toFloat(), h - dpLocal(8).toFloat())
             canvas.drawPath(path, paint)
 
-            // Strong cyan lower rail and secondary magenta rail.
+            // Technical rails below the title area.
+            paint.alpha = 150
+            canvas.drawLine(w * .08f, dpLocal(51).toFloat(), w * .34f, dpLocal(51).toFloat(), paint)
+            canvas.drawLine(w * .66f, dpLocal(51).toFloat(), w * .92f, dpLocal(51).toFloat(), paint)
+            paint.color = pink
+            paint.alpha = 190
+            canvas.drawLine(w * .36f, dpLocal(51).toFloat(), w * .44f, dpLocal(51).toFloat(), paint)
+            canvas.drawLine(w * .56f, dpLocal(51).toFloat(), w * .64f, dpLocal(51).toFloat(), paint)
+
+            // Neon data ticks and nodes.
+            paint.color = cyan
+            paint.alpha = 230
+            for (i in 0..4) {
+                val x = dpLocal(22 + i * 7).toFloat()
+                canvas.drawLine(x, dpLocal(56).toFloat(), x, dpLocal(60).toFloat(), paint)
+            }
+            for (i in 0..4) {
+                val x = w - dpLocal(22 + i * 7).toFloat()
+                canvas.drawLine(x, dpLocal(56).toFloat(), x, dpLocal(60).toFloat(), paint)
+            }
+            paint.color = pink
+            canvas.drawCircle(w * .5f, dpLocal(3).toFloat(), dpLocal(1).toFloat(), paint)
+
+            // Strong neon lower edge.
+            paint.color = cyan
             paint.alpha = 255
             paint.strokeWidth = dpLocal(2).toFloat()
             canvas.drawLine(dpLocal(8).toFloat(), h - dpLocal(2).toFloat(),
                 w - dpLocal(8).toFloat(), h - dpLocal(2).toFloat(), paint)
             paint.color = pink
             paint.strokeWidth = dpLocal(1).toFloat()
-            canvas.drawLine(dpLocal(34).toFloat(), h - dpLocal(6).toFloat(),
-                w - dpLocal(34).toFloat(), h - dpLocal(6).toFloat(), paint)
-
-            // Header scan-line / circuit details.
-            paint.color = cyan
-            paint.alpha = 115
-            paint.strokeWidth = dpLocal(1).toFloat()
-            val scanY = dpLocal(27).toFloat()
-            canvas.drawLine(dpLocal(48).toFloat(), scanY, w - dpLocal(48).toFloat(), scanY, paint)
-            for (x in (dpLocal(52)..(w.toInt() - dpLocal(52)) step dpLocal(34).coerceAtLeast(1))) {
-                canvas.drawLine(x.toFloat(), scanY - dpLocal(3).toFloat(), x.toFloat(), scanY + dpLocal(3).toFloat(), paint)
-            }
-
-            // Left technical bracket around the menu zone.
-            paint.alpha = 235
-            paint.color = cyan
-            path.reset()
-            path.moveTo(dpLocal(3).toFloat(), dpLocal(16).toFloat())
-            path.lineTo(dpLocal(3).toFloat(), h - dpLocal(12).toFloat())
-            path.lineTo(dpLocal(14).toFloat(), h - dpLocal(12).toFloat())
-            path.moveTo(dpLocal(3).toFloat(), dpLocal(16).toFloat())
-            path.lineTo(dpLocal(14).toFloat(), dpLocal(16).toFloat())
-            canvas.drawPath(path, paint)
-
-            // Right technical bracket around the action zone.
-            path.reset()
-            path.moveTo(w - dpLocal(3).toFloat(), dpLocal(16).toFloat())
-            path.lineTo(w - dpLocal(3).toFloat(), h - dpLocal(12).toFloat())
-            path.lineTo(w - dpLocal(14).toFloat(), h - dpLocal(12).toFloat())
-            path.moveTo(w - dpLocal(3).toFloat(), dpLocal(16).toFloat())
-            path.lineTo(w - dpLocal(14).toFloat(), dpLocal(16).toFloat())
-            canvas.drawPath(path, paint)
-
-            // Central HUD accents: these do not move or alter the title/status TextViews.
-            paint.alpha = 170
-            paint.color = cyan
-            canvas.drawLine(w * .31f, dpLocal(40).toFloat(), w * .39f, dpLocal(40).toFloat(), paint)
-            canvas.drawLine(w * .61f, dpLocal(40).toFloat(), w * .69f, dpLocal(40).toFloat(), paint)
-            paint.color = pink
-            canvas.drawCircle(w * .72f, dpLocal(11).toFloat(), dpLocal(2).toFloat(), paint)
-            canvas.drawCircle(w * .77f, dpLocal(11).toFloat(), dpLocal(2).toFloat(), paint)
-
-            // Tiny status nodes / data markers.
-            paint.color = cyan
             paint.alpha = 210
-            for (i in 0..2) {
-                val x = dpLocal(52 + i * 7).toFloat()
-                canvas.drawRect(x, h - dpLocal(13).toFloat(), x + dpLocal(3), h - dpLocal(10).toFloat(), paint)
-            }
-            paint.color = pink
-            canvas.drawRect(w - dpLocal(70).toFloat(), h - dpLocal(13).toFloat(),
-                w - dpLocal(67).toFloat(), h - dpLocal(10).toFloat(), paint)
+            canvas.drawLine(dpLocal(42).toFloat(), h - dpLocal(6).toFloat(),
+                w - dpLocal(42).toFloat(), h - dpLocal(6).toFloat(), paint)
         }
 
         private fun dpLocal(v: Int) =
             (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
     }
-
 
     override fun onDestroy() {
         executor.shutdownNow()
