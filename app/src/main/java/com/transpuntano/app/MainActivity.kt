@@ -165,11 +165,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun cyberTouchFeedback(view: View) {
         view.animate().cancel()
-        view.animate().scaleX(0.90f).scaleY(0.90f).alpha(0.55f).setDuration(70).withEndAction {
-            view.animate().scaleX(1.08f).scaleY(1.08f).alpha(1f).setDuration(90).withEndAction {
-                view.animate().scaleX(1f).scaleY(1f).setDuration(90).start()
+        view.animate()
+            .scaleX(0.92f).scaleY(0.92f).alpha(0.62f).translationY(dp(2).toFloat())
+            .setDuration(75)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1.06f).scaleY(1.06f).alpha(1f).translationY(-dp(1).toFloat())
+                    .setDuration(105)
+                    .setInterpolator(android.view.animation.OvershootInterpolator(2.2f))
+                    .withEndAction {
+                        view.animate()
+                            .scaleX(1f).scaleY(1f).alpha(1f).translationY(0f)
+                            .setDuration(90)
+                            .setInterpolator(android.view.animation.DecelerateInterpolator())
+                            .start()
+                    }.start()
             }.start()
-        }.start()
     }
 
     private fun toggleDrawer() {
@@ -408,7 +419,7 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
         }
-        val item1 = cardHomeImage("lineas_cyberpunk.webp", cyan) { showLines() }
+        val item1 = cardHomeImage("lineas_cyberpunk.webp") { showLines() }
         val item2 = cardHomeAsset("mapa_cyberpunk.webp", "MAPA · Explorar el mapa") { showMap(null) }
         val item3 = cardHomeAsset("paradas_cercanas_cyberpunk.webp", "PARADAS CERCANAS · Por tu ubicación") { showNearby() }
         val item4 = cardHomeAsset("favoritos_cyberpunk.webp", "FAVORITOS · Paradas guardadas") { showFavorites() }
@@ -452,7 +463,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun cardHomeImage(assetName: String, color: Int, action: () -> Unit) = FrameLayout(this).apply {
+    private fun cardHomeImage(assetName: String, action: () -> Unit) = FrameLayout(this).apply {
         setBackgroundColor(panelColor); setOnClickListener { action() }; isClickable = true; isFocusable = true
         val image = ImageView(this@MainActivity).apply {
             val bitmap = loadAssetBitmap(assetName)
@@ -461,8 +472,6 @@ class MainActivity : AppCompatActivity() {
             contentDescription = "LÍNEAS · Recorridos y calles"
         }
         addView(image, FrameLayout.LayoutParams(-1, -1))
-        addView(View(this@MainActivity).apply { setBackgroundColor(color); alpha = 0.85f },
-            FrameLayout.LayoutParams(dp(3), -1).apply { gravity = Gravity.START })
     }
 
     private fun box() = LinearLayout(this).apply {
