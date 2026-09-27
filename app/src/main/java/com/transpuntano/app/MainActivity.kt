@@ -19,6 +19,7 @@ import com.transpuntano.app.model.*
 import com.transpuntano.app.ui.CyberMapView
 import com.transpuntano.app.ui.MapStop
 import java.util.concurrent.Executors
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
     private data class FavoriteStop(
@@ -571,6 +572,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+    private fun dp(v: Float) = (v * resources.displayMetrics.density).roundToInt()
 
     override fun onDestroy() {
         executor.shutdownNow()
