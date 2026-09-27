@@ -943,7 +943,7 @@ class MainActivity : AppCompatActivity() {
             ringPaint.alpha = (175f * fade).toInt().coerceIn(0, 255)
             canvas.drawCircle(touchX, touchY, radius * 0.86f, ringPaint)
 
-            ringPaint.strokeWidth = 1f * density
+            ringPaint.strokeWidth = 1f * resources.displayMetrics.density
             ringPaint.color = cyan
             ringPaint.alpha = (235f * fade).toInt().coerceIn(0, 255)
             canvas.drawCircle(touchX, touchY, radius * 0.62f, ringPaint)
