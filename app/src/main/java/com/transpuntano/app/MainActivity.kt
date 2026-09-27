@@ -1,6 +1,7 @@
 package com.transpuntano.app
 
 import android.Manifest
+import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.view.animation.LinearInterpolator
 import android.content.Context
@@ -41,7 +42,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var status: TextView
     private lateinit var headerTitle: TextView
     private var currentSection = 0
-    private var headerFlickerAnimator: ObjectAnimator? = null
+    private var headerFlickerAnimator: AnimatorSet? = null
     private lateinit var navBar: LinearLayout
     private val cyan = 0xFF00F0FF.toInt()
     private val pink = 0xFFFF2DB2.toInt()
@@ -428,15 +429,40 @@ class MainActivity : AppCompatActivity() {
     }
     private fun startHeaderFlickerAnimation() {
         headerFlickerAnimator?.cancel()
-        headerFlickerAnimator = ObjectAnimator.ofFloat(
+
+        val alpha = ObjectAnimator.ofFloat(
             headerTitle,
             View.ALPHA,
-            1f, 1f, 0.18f, 0.18f, 0.92f, 0.35f, 1f, 1f
+            1f, 1f, 0.22f, 0.22f, 0.82f, 0.35f, 1f, 0.72f, 1f
         ).apply {
-            duration = 2600L
+            duration = 1450L
             repeatCount = android.animation.ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
-            startDelay = 700L
+        }
+
+        val pulseX = ObjectAnimator.ofFloat(
+            headerTitle,
+            View.SCALE_X,
+            1f, 1.015f, 1f, 1.008f, 1f
+        ).apply {
+            duration = 1450L
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+        }
+
+        val pulseY = ObjectAnimator.ofFloat(
+            headerTitle,
+            View.SCALE_Y,
+            1f, 1.02f, 1f, 1.01f, 1f
+        ).apply {
+            duration = 1450L
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+        }
+
+        headerFlickerAnimator = AnimatorSet().apply {
+            playTogether(alpha, pulseX, pulseY)
+            startDelay = 350L
             start()
         }
     }
