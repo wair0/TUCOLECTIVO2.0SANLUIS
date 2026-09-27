@@ -86,11 +86,18 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener { toggleDrawer() }
         }
         val headerContent = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL
-            layoutParams = FrameLayout.LayoutParams(-1, -2).apply { leftMargin = dp(50); rightMargin = dp(4) }
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            layoutParams = FrameLayout.LayoutParams(-1, dp(48)).apply {
+                leftMargin = dp(44); rightMargin = dp(4); topMargin = dp(2)
+            }
         }
         headerContent.addView(CyberNeonTextView(this).apply {
-            text = "TU COLECTIVO 2.0"; textSize = 24f; typeface = Typeface.MONOSPACE; setTextColor(cyan)
+            text = "TU COLECTIVO 2.0"
+            textSize = 24f
+            typeface = Typeface.MONOSPACE
+            setTextColor(cyan)
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(-1, dp(40))
         })
         title = CyberNeonTextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
         headerContent.addView(title)
