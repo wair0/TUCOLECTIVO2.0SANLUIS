@@ -884,8 +884,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-    private fun dp(v: Int) = (v * density).toInt()
-    private fun dp(v: Float) = (v * density).roundToInt()
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+    private fun dp(v: Float) = (v * resources.displayMetrics.density).roundToInt()
     /** Canvas-only cyberpunk pulse used for tap feedback. It never scales, fades, translates or moves the target view. */
     private class CyberTapDrawable(
         private val cyan: Int,
@@ -991,7 +991,7 @@ class MainActivity : AppCompatActivity() {
             canvas.drawCircle(w * .84f, h * .26f, dpLocal(70).toFloat(), paint)
             canvas.drawCircle(w * .84f, h * .26f, dpLocal(82).toFloat(), paint)
         }
-        private fun dpLocal(v: Int) = (v * density).toInt().coerceAtLeast(1)
+        private fun dpLocal(v: Int) = (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
     }
 
     /**
@@ -1180,7 +1180,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun dpLocal(v: Int) =
-            (v * density).toInt().coerceAtLeast(1)
+            (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
     }
 
     override fun onDestroy() {
