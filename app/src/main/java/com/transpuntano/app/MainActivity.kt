@@ -3,7 +3,10 @@ package com.transpuntano.app
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Typeface
 import android.graphics.BitmapFactory
 import android.util.Base64
@@ -44,9 +47,6 @@ class MainActivity : AppCompatActivity() {
     private var drawerOpen = false
     private var drawerHotspotsReady = false
 
-    // WEBP del header convertido a Base64.
-    private val headerWebpBase64 = """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"""
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildShell()
@@ -60,31 +60,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildShell() {
         val rootFrame = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
-        val backgroundImage = ImageView(this).apply {
-            val bitmap = assets.open("background.webp").use { BitmapFactory.decodeStream(it) }
-            if (bitmap == null) throw IllegalStateException("No se pudo decodificar background.webp")
-            setImageBitmap(bitmap)
-            scaleType = ImageView.ScaleType.CENTER_CROP
-            contentDescription = "Fondo cyberpunk neon"
-        }
-        rootFrame.addView(backgroundImage, FrameLayout.LayoutParams(-1, -1))
+        rootFrame.addView(CyberBackgroundView(this), FrameLayout.LayoutParams(-1, -1))
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.TRANSPARENT)
         }
-        val headerLayout = CyberHeaderView(this)
-        val headerImage = ImageView(this).apply {
-            val bytes = Base64.decode(headerWebpBase64, Base64.DEFAULT)
-            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-            if (bitmap == null) throw IllegalStateException("No se pudo decodificar el WEBP del header")
-            setImageBitmap(bitmap)
-            scaleType = ImageView.ScaleType.FIT_XY
-            isClickable = false
-            isFocusable = false
+
+        val headerLayout = FrameLayout(this).apply {
+            setBackgroundColor(0xFF05070C.toInt())
+            addView(CyberHeaderView(this@MainActivity), FrameLayout.LayoutParams(-1, -1))
         }
-        headerLayout.addView(headerImage, FrameLayout.LayoutParams(-1, -1))
-        val menuBtn = CyberNeonTextView(this).apply {
-            text = "☰"; textSize = 24f; setTextColor(cyan); setPadding(0, 0, dp(16), 0)
+        val menuBtn = TextView(this).apply {
+            text = "☰"; textSize = 24f; typeface = cyberpunkTypeface
+            setTextColor(cyan); gravity = Gravity.CENTER
             setOnClickListener { cyberTouchFeedback(this); toggleDrawer() }
         }
         val headerContent = LinearLayout(this).apply {
@@ -93,7 +82,7 @@ class MainActivity : AppCompatActivity() {
                 leftMargin = dp(44); rightMargin = dp(4); topMargin = dp(7)
             }
         }
-        headerContent.addView(CyberNeonTextView(this).apply {
+        headerContent.addView(TextView(this).apply {
             text = "TU COLECTIVO 2.0"
             textSize = 15f
             translationX = -dp(5).toFloat()
@@ -102,40 +91,35 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(-1, dp(40))
         })
-        title = CyberNeonTextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
+        title = TextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
         headerContent.addView(title)
-        status = CyberNeonTextView(this).apply {
-            text = "● SISTEMA LISTO"; textSize = 14f; typeface = cyberpunkTypeface; setTextColor(0xFF55FFB0.toInt())
+        status = TextView(this).apply {
+            text = "● SISTEMA LISTO"; textSize = 14f; typeface = cyberpunkTypeface
+            setTextColor(0xFF55FFB0.toInt())
         }
         headerLayout.addView(headerContent)
         headerLayout.addView(status, FrameLayout.LayoutParams(-2, dp(28)).apply {
-            leftMargin = dp(169.0f)
-            topMargin = dp(41.5f)
-            gravity = Gravity.TOP
+            leftMargin = dp(169.0f); topMargin = dp(41.5f); gravity = Gravity.TOP
         })
-        menuBtn.apply {
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 0)
-        }
         headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(44), dp(44)).apply {
-            leftMargin = dp(4)
-            topMargin = dp(14)
+            leftMargin = dp(4); topMargin = dp(14)
         })
         root.addView(headerLayout, LinearLayout.LayoutParams(-1, dp(72)))
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
         navBar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF080C13.toInt()); visibility = View.VISIBLE
+            orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF05070C.toInt()); visibility = View.VISIBLE
         }
         root.addView(navBar, LinearLayout.LayoutParams(-1, dp(64)))
         rootFrame.addView(root)
+
         drawerScrim = View(this).apply {
-            setBackgroundColor(Color.TRANSPARENT); visibility = View.GONE
+            setBackgroundColor(0x99000000.toInt()); visibility = View.GONE
             setOnClickListener { toggleDrawer() }
         }
         rootFrame.addView(drawerScrim, FrameLayout.LayoutParams(-1, -1))
         drawerPanel = FrameLayout(this).apply {
-            setBackgroundColor(Color.BLACK)
+            setBackgroundColor(0xFF05070C.toInt())
             layoutParams = FrameLayout.LayoutParams(dp(300), -1).apply { gravity = Gravity.START }
             visibility = View.GONE
         }
@@ -159,64 +143,61 @@ class MainActivity : AppCompatActivity() {
         if (drawerOpen) {
             drawerScrim.visibility = View.VISIBLE
             drawerPanel.visibility = View.VISIBLE
-            ensureDrawerHotspots()
+            drawerPanel.translationX = -dp(300).toFloat()
+            drawerPanel.animate().translationX(0f).setDuration(180).start()
         } else {
-            drawerPanel.visibility = View.GONE
-            drawerScrim.visibility = View.GONE
+            drawerPanel.animate().translationX(-dp(300).toFloat()).setDuration(150).withEndAction {
+                drawerPanel.visibility = View.GONE
+                drawerScrim.visibility = View.GONE
+            }.start()
         }
     }
 
     private fun addDrawerItems() {
-        val drawerImage = ImageView(this).apply {
-            val bitmap = assets.open("drawer_menu.webp").use { BitmapFactory.decodeStream(it) }
-            if (bitmap == null) throw IllegalStateException("No se pudo decodificar drawer_menu.webp")
-            setImageBitmap(bitmap)
-            scaleType = ImageView.ScaleType.FIT_XY
-            contentDescription = "Menú principal"
-            isClickable = false; isFocusable = false
+        drawerPanel.removeAllViews()
+        val border = View(this).apply { setBackgroundColor(cyan) }
+        drawerPanel.addView(border, FrameLayout.LayoutParams(dp(2), -1).apply { gravity = Gravity.END })
+        val title = TextView(this).apply {
+            text = "SISTEMA // NAVEGACIÓN"
+            textSize = 13f; typeface = cyberpunkTypeface; setTextColor(cyan); gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(20), 0, dp(10), 0)
         }
-        drawerPanel.addView(drawerImage, FrameLayout.LayoutParams(-1, -1))
-    }
-
-    private fun ensureDrawerHotspots() {
-        if (drawerHotspotsReady) return
-        drawerPanel.post {
-            if (drawerPanel.height <= 0) {
-                drawerPanel.viewTreeObserver.addOnGlobalLayoutListener(
-                    object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
-                        override fun onGlobalLayout() {
-                            if (drawerPanel.height > 0) {
-                                drawerPanel.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                                createDrawerHotspots(drawerPanel.height)
-                            }
-                        }
-                    }
-                )
-                return@post
-            }
-            createDrawerHotspots(drawerPanel.height)
-        }
-    }
-
-    private fun createDrawerHotspots(panelHeight: Int) {
-        if (drawerHotspotsReady) return
+        drawerPanel.addView(title, FrameLayout.LayoutParams(-1, dp(60)))
         val items = listOf(
-            Triple("INICIO", 0, 0.15f), Triple("LÍNEAS", 1, 0.215f),
-            Triple("MAPA", 2, 0.28f), Triple("FAVORITOS", 3, 0.345f),
-            Triple("PARADAS CERCANAS", 4, 0.41f)
+            Triple("INICIO", "nav_home", 0),
+            Triple("LÍNEAS", "nav_lineas", 1),
+            Triple("MAPA", "nav_mapa", 2),
+            Triple("FAVORITOS", "nav_favoritos", 3),
+            Triple("PARADAS CERCANAS", "nav_cercanas", 4)
         )
-        val hotspotHeight = maxOf((panelHeight * 0.075f).toInt(), dp(48))
-        items.forEach { (label, index, topRatio) ->
-            val hotspot = TextView(this).apply {
-                text = ""; setBackgroundColor(Color.TRANSPARENT)
-                isClickable = true; isFocusable = true; contentDescription = label
-                setOnClickListener { navigateTo(index); toggleDrawer() }
-            }
-            drawerPanel.addView(hotspot, FrameLayout.LayoutParams(-1, hotspotHeight).apply {
-                topMargin = (panelHeight * topRatio).toInt()
-            })
+        val list = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(8), dp(12), dp(8))
         }
-        drawerHotspotsReady = true
+        items.forEach { (label, iconName, index) ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(12), 0, dp(8), 0); isClickable = true; isFocusable = true
+                setBackgroundColor(0xFF09111B.toInt())
+                setOnClickListener {
+                    cyberTouchFeedback(this)
+                    postDelayed({ navigateTo(index); toggleDrawer() }, 110)
+                }
+            }
+            val icon = ImageView(this).apply {
+                val id = resources.getIdentifier(iconName, "drawable", packageName)
+                setImageResource(id); alpha = 0.95f; contentDescription = label
+            }
+            row.addView(icon, LinearLayout.LayoutParams(dp(34), dp(34)).apply { rightMargin = dp(14) })
+            row.addView(TextView(this@MainActivity).apply {
+                text = label; textSize = 11f; typeface = cyberpunkTypeface; setTextColor(if (index == 0) cyan else muted)
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+            list.addView(row, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(8) })
+        }
+        drawerPanel.addView(list, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(60) })
+        drawerPanel.addView(View(this).apply { setBackgroundColor(pink) }, FrameLayout.LayoutParams(dp(2), dp(90)).apply {
+            leftMargin = dp(8); topMargin = dp(66)
+        })
     }
 
     private fun navigateTo(index: Int) {
@@ -625,6 +606,54 @@ class MainActivity : AppCompatActivity() {
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private fun dp(v: Float) = (v * resources.displayMetrics.density).roundToInt()
+    private class CyberBackgroundView(context: Context) : View(context) {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.5f }
+        private val path = Path()
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            canvas.drawColor(Color.BLACK)
+            val w = width.toFloat(); val h = height.toFloat()
+            paint.color = 0x2200F0FF; paint.strokeWidth = 1.2f
+            for (y in (dpLocal(90)..height step dpLocal(78))) {
+                path.reset(); path.moveTo(0f, y.toFloat()); path.lineTo(w * .28f, y.toFloat())
+                path.lineTo(w * .34f, y - dpLocal(8)); path.lineTo(w * .62f, y - dpLocal(8))
+                path.lineTo(w * .68f, y.toFloat()); path.lineTo(w, y.toFloat()); canvas.drawPath(path, paint)
+            }
+            paint.color = 0x1FFF2DB2
+            for (x in (dpLocal(28)..width step dpLocal(74))) {
+                canvas.drawLine(x.toFloat(), h * .78f, x.toFloat() + dpLocal(18), h * .70f, paint)
+                canvas.drawLine(x.toFloat() + dpLocal(18), h * .70f, x.toFloat() + dpLocal(36), h * .70f, paint)
+            }
+            paint.color = 0x1600F0FF
+            canvas.drawCircle(w * .84f, h * .26f, dpLocal(70).toFloat(), paint)
+            canvas.drawCircle(w * .84f, h * .26f, dpLocal(82).toFloat(), paint)
+        }
+        private fun dpLocal(v: Int) = (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+    }
+
+    private class CyberHeaderView(context: Context) : View(context) {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+        private val path = Path()
+        override fun onDraw(canvas: Canvas) {
+            val w = width.toFloat(); val h = height.toFloat()
+            canvas.drawColor(0xFF05070C.toInt())
+            paint.strokeWidth = 2f; paint.color = 0xFF00F0FF.toInt()
+            path.reset(); path.moveTo(0f, h); path.lineTo(0f, 4f); path.lineTo(dpLocal(18), 4f)
+            path.lineTo(dpLocal(32), h * .48f); path.lineTo(dpLocal(18), h - 4f); path.lineTo(0f, h - 4f)
+            canvas.drawPath(path, paint)
+            paint.color = 0xFFFF2DB2.toInt(); paint.strokeWidth = 1.5f
+            canvas.drawLine(dpLocal(42), 3f, w - dpLocal(42), 3f, paint)
+            canvas.drawLine(dpLocal(42), h - 3f, w - dpLocal(42), h - 3f, paint)
+            paint.color = 0xFF00F0FF.toInt(); paint.strokeWidth = 1f
+            canvas.drawLine(w * .28f, h * .86f, w * .42f, h * .86f, paint)
+            canvas.drawLine(w * .58f, h * .86f, w * .72f, h * .86f, paint)
+            paint.color = 0xFFFF2DB2.toInt()
+            canvas.drawCircle(w * .92f, h * .28f, dpLocal(3).toFloat(), paint)
+            canvas.drawCircle(w * .95f, h * .28f, dpLocal(3).toFloat(), paint)
+        }
+        private fun dpLocal(v: Int) = (v * resources.displayMetrics.density).toInt()
+    }
+
 
     override fun onDestroy() {
         executor.shutdownNow()
