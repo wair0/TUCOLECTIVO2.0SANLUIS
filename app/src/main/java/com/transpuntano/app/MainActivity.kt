@@ -67,26 +67,20 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.TRANSPARENT)
         }
-        val headerLayout = CyberHeaderView(this).apply { setPadding(dp(18), dp(12), dp(18), dp(10)) }
-        val menuBtn = CyberNeonTextView(this).apply {
-            text = "☰"; textSize = 24f; setTextColor(cyan); setPadding(0, 0, dp(16), 0)
+        val headerLayout = CyberHeaderView(this)
+        // Zona táctil invisible: conserva el menú lateral sin volver a dibujar las tres líneas.
+        val menuHotspot = View(this).apply {
+            setBackgroundColor(Color.TRANSPARENT)
             setOnClickListener { toggleDrawer() }
         }
-        val headerContent = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL
-            layoutParams = FrameLayout.LayoutParams(-1, -2).apply { leftMargin = dp(50); rightMargin = dp(4) }
-        }
-        headerContent.addView(CyberNeonTextView(this).apply {
-            text = "TU COLECTIVO 2.0"; textSize = 24f; typeface = Typeface.MONOSPACE; setTextColor(cyan)
-        })
-        title = CyberNeonTextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
-        headerContent.addView(title)
-        status = CyberNeonTextView(this).apply {
-            text = "● SISTEMA LISTO"; textSize = 16f; setTextColor(0xFF55FFB0.toInt())
-        }
-        headerContent.addView(status)
-        headerLayout.addView(headerContent)
-        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(40), dp(40)).apply { gravity = Gravity.CENTER_VERTICAL })
+        headerLayout.addView(
+            menuHotspot,
+            FrameLayout.LayoutParams(dp(64), -1).apply { gravity = Gravity.START }
+        )
+
+        // Se mantienen estos estados para la lógica interna, pero no se muestran sobre el header gráfico.
+        title = TextView(this)
+        status = TextView(this)
         root.addView(headerLayout)
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
