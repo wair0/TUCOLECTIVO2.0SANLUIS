@@ -90,8 +90,8 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(-1, dp(40))
         })
+        // El título de sección se conserva solo para la lógica interna; no se muestra en el header.
         title = TextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
-        headerContent.addView(title)
         status = TextView(this).apply {
             text = "● SISTEMA LISTO"; textSize = 14f; typeface = cyberpunkTypeface
             setTextColor(0xFF55FFB0.toInt())
