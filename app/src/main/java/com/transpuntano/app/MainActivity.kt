@@ -653,7 +653,7 @@ class MainActivity : AppCompatActivity() {
         // El menú queda anclado al botón del buscador y aparece inmediatamente debajo,
         // sin depender de la posición global del contenido/header.
         // Debajo del header, alineado con el borde derecho del icono buscador.
-        popup.showAsDropDown(anchor, -dp(230), dp(18))
+        popup.showAsDropDown(anchor, -dp(190), dp(18))
         input.requestFocus()
         input.postDelayed({
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
