@@ -73,7 +73,7 @@ class MainActivity : AppCompatActivity() {
             addView(CyberHeaderView(this@MainActivity), FrameLayout.LayoutParams(-1, -1))
         }
         val menuBtn = headerIconButton("nav_menu", "MENÚ") { toggleDrawer() }
-        val searchBtn = headerIconButton("nav_search", "BUSCAR") { openLineSearch() }
+        val searchBtn = headerIconButton("nav_search", "BUSCAR") { openLineSearch(searchBtn) }
         val alertBtn = headerIconButton("nav_bell", "NOTIFICACIONES") { toast("NOTIFICACIONES") }
         val headerContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -517,7 +517,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openLineSearch() {
+    private fun openLineSearch(anchor: View) {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), dp(12), dp(14), dp(12))
@@ -527,6 +527,7 @@ class MainActivity : AppCompatActivity() {
                 cornerRadius = dp(4).toFloat()
             }
         }
+
         val header = TextView(this).apply {
             text = "BUSCAR // LÍNEAS"
             textSize = 12f
@@ -534,6 +535,7 @@ class MainActivity : AppCompatActivity() {
             setTextColor(cyan)
             setPadding(0, 0, 0, dp(8))
         }
+
         val input = EditText(this).apply {
             hint = "NÚMERO O NOMBRE"
             setSingleLine(true)
@@ -548,6 +550,7 @@ class MainActivity : AppCompatActivity() {
                 cornerRadius = dp(3).toFloat()
             }
         }
+
         val search = TextView(this).apply {
             text = "BUSCAR"
             textSize = 10f
@@ -559,6 +562,7 @@ class MainActivity : AppCompatActivity() {
             background = cyberRippleBackground()
             setPadding(dp(12), 0, dp(12), 0)
         }
+
         panel.addView(header, LinearLayout.LayoutParams(-1, dp(28)))
         panel.addView(input, LinearLayout.LayoutParams(-1, dp(42)))
         panel.addView(search, LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(8) })
@@ -568,39 +572,57 @@ class MainActivity : AppCompatActivity() {
         ).apply {
             setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
             isOutsideTouchable = true
+            isClippingEnabled = true
             elevation = dp(12).toFloat()
+            inputMethodMode = android.widget.PopupWindow.INPUT_METHOD_NOT_NEEDED
+            softInputMode = android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
 
         fun performSearch() {
-            val query = input.text.toString().trim()
-            if (query.isBlank()) {
+            val rawQuery = input.text.toString().trim()
+            if (rawQuery.isBlank()) {
                 input.error = "Ingresá un número o nombre de línea"
                 return
             }
+
             popup.dismiss()
             status.text = "● BUSCANDO..."
             executor.execute {
                 runCatching { api.getLines() }
                     .onSuccess { lines ->
-                        val q = query.lowercase(java.util.Locale.getDefault())
+                        val normalizedQuery = rawQuery
+                            .lowercase(java.util.Locale.getDefault())
                             .replace("línea", "")
                             .replace("linea", "")
                             .replace("line", "")
                             .replace("#", "")
                             .trim()
-                        val matches = lines.filter {
-                            it.code.toString().contains(q) ||
-                                it.name.lowercase(java.util.Locale.getDefault()).contains(q)
+
+                        val matches = if (normalizedQuery.isBlank()) {
+                            emptyList()
+                        } else {
+                            lines.filter { line ->
+                                val code = line.code.toString()
+                                val name = line.name.lowercase(java.util.Locale.getDefault())
+                                code.contains(normalizedQuery) || name.contains(normalizedQuery)
+                            }
                         }
+
                         runOnUiThread {
                             showLines(matches)
-                            status.text = if (matches.isEmpty()) "● SIN RESULTADOS" else "● " + matches.size + " RESULTADOS"
+                            status.text = if (matches.isEmpty()) {
+                                "● SIN RESULTADOS"
+                            } else {
+                                "● " + matches.size + " RESULTADOS"
+                            }
                         }
                     }
-                    .onFailure { error -> runOnUiThread {
-                        status.text = "● SIN CONEXIÓN"
-                        toast(error.message ?: "No se pudo realizar la búsqueda")
-                    }}
+                    .onFailure { error ->
+                        runOnUiThread {
+                            status.text = "● SIN CONEXIÓN"
+                            toast(error.message ?: "No se pudo realizar la búsqueda")
+                        }
+                    }
             }
         }
 
@@ -608,13 +630,19 @@ class MainActivity : AppCompatActivity() {
             cyberTouchFeedback(search)
             performSearch()
         }
-        input.setOnEditorActionListener { _, _, _ -> performSearch(); true }
 
-        popup.setOnDismissListener { input.clearFocus() }
-        popup.showAsDropDown(findViewById(android.R.id.content), -dp(270) + dp(8), -dp(8), Gravity.END)
-        input.requestFocus()
-        popup.inputMethodMode = android.widget.PopupWindow.INPUT_METHOD_NEEDED
-        popup.softInputMode = android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+        input.setOnEditorActionListener { _, _, _ ->
+            performSearch()
+            true
+        }
+
+        popup.setOnDismissListener {
+            input.clearFocus()
+        }
+
+        // El menú queda anclado al botón del buscador y aparece inmediatamente debajo,
+        // sin depender de la posición global del contenido/header.
+        popup.showAsDropDown(anchor, -dp(230), dp(6), Gravity.END)
     }
 
     private fun showLines(initial: List<TransitLine>? = null) {
