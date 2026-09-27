@@ -155,7 +155,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyCyberTap(view: View) {
-        val pulse = CyberTapDrawable(cyan, pink, density)
+        val pulse = CyberTapDrawable(cyan, pink, resources.displayMetrics.density)
         view.foreground = pulse
         view.setOnTouchListener { _, event ->
             if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
