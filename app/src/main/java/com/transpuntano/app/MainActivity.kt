@@ -155,48 +155,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyCyberTap(view: View) {
-        val pulse = CyberTapDrawable(cyan, pink, resources.displayMetrics.density)
+        val pulse = CyberTapDrawable(
+            cyan = cyan,
+            pink = pink,
+            density = resources.displayMetrics.density
+        ) { offset ->
+            // El propio ciclo Canvas controla el desplazamiento frame a frame.
+            // No usamos View.animate(), Animator ni interpoladores externos.
+            view.translationY = offset
+        }
+
         view.foreground = pulse
-
-        // Micro-rebote cyberpunk: desplaza físicamente la View unos píxeles y
-        // vuelve a su posición con un rebote corto. La acción del click sigue
-        // siendo inmediata y el efecto Canvas continúa encima.
-        val bounceDistance = dp(3f).toFloat()
-        var bounceToken = 0
-
         view.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 android.view.MotionEvent.ACTION_DOWN -> {
-                    bounceToken++
-                    val token = bounceToken
                     pulse.pulse(event.x, event.y)
-                    view.animate().cancel()
-                    view.translationY = bounceDistance
-                    view.postOnAnimation {
-                        if (token == bounceToken) {
-                            view.animate()
-                                .translationY(0f)
-                                .setDuration(150L)
-                                .setInterpolator(android.view.animation.OvershootInterpolator(2.8f))
-                                .start()
-                        }
-                    }
                 }
-
                 android.view.MotionEvent.ACTION_CANCEL -> {
-                    bounceToken++
-                    view.animate().cancel()
-                    view.animate()
-                        .translationY(0f)
-                        .setDuration(110L)
-                        .setInterpolator(android.view.animation.OvershootInterpolator(2.2f))
-                        .start()
+                    pulse.resetMotion()
                 }
             }
             false
         }
     }
-
 
     private fun toggleDrawer() {
         drawerOpen = !drawerOpen
@@ -919,10 +900,18 @@ class MainActivity : AppCompatActivity() {
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private fun dp(v: Float) = (v * resources.displayMetrics.density).roundToInt()
     /** Canvas-only cyberpunk pulse used for tap feedback. It never scales, fades, translates or moves the target view. */
+    /**
+     * Canvas-only cyberpunk tap feedback.
+     *
+     * The drawable drives both the neon pulse and a tiny physical-looking
+     * bounce through its own frame scheduler. The target View is never
+     * animated with ViewPropertyAnimator/Animator.
+     */
     private class CyberTapDrawable(
         private val cyan: Int,
         private val pink: Int,
-        private val density: Float
+        private val density: Float,
+        private val onMotion: (Float) -> Unit
     ) : android.graphics.drawable.Drawable() {
         private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
         private val corePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -930,16 +919,40 @@ class MainActivity : AppCompatActivity() {
         private var startTime = 0L
         private var touchX = 0f
         private var touchY = 0f
-        private val durationMs = 220L
+        private val durationMs = 240L
+        private val bounceDistance = 3.5f * density
+
         private val runner = object : Runnable {
             override fun run() {
                 if (!active) return
+
                 val elapsed = android.os.SystemClock.uptimeMillis() - startTime
-                if (elapsed >= durationMs) {
+                val progress = (elapsed.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+
+                // Rebote corto: baja, vuelve, y termina exactamente en cero.
+                val motion = when {
+                    progress < 0.30f -> {
+                        val p = progress / 0.30f
+                        bounceDistance * p
+                    }
+                    progress < 0.62f -> {
+                        val p = (progress - 0.30f) / 0.32f
+                        bounceDistance * (1f - p * 1.22f)
+                    }
+                    else -> {
+                        val p = (progress - 0.62f) / 0.38f
+                        bounceDistance * (-0.22f * (1f - p))
+                    }
+                }
+                onMotion(motion)
+
+                if (progress >= 1f) {
                     active = false
+                    onMotion(0f)
                     invalidateSelf()
                     return
                 }
+
                 invalidateSelf()
                 scheduleSelf(this, android.os.SystemClock.uptimeMillis() + 16L)
             }
@@ -951,12 +964,21 @@ class MainActivity : AppCompatActivity() {
             startTime = android.os.SystemClock.uptimeMillis()
             active = true
             unscheduleSelf(runner)
+            onMotion(0f)
             invalidateSelf()
             scheduleSelf(runner, android.os.SystemClock.uptimeMillis() + 16L)
         }
 
+        fun resetMotion() {
+            active = false
+            unscheduleSelf(runner)
+            onMotion(0f)
+            invalidateSelf()
+        }
+
         override fun draw(canvas: Canvas) {
             if (!active) return
+
             val elapsed = android.os.SystemClock.uptimeMillis() - startTime
             val progress = (elapsed.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
             val eased = 1f - (1f - progress) * (1f - progress)
@@ -964,7 +986,6 @@ class MainActivity : AppCompatActivity() {
             val radius = maxRadius * eased
             val fade = 1f - progress
 
-            // Broad translucent rings create the neon "energy pulse" without any View animation.
             ringPaint.strokeWidth = 5f * density
             ringPaint.color = cyan
             ringPaint.alpha = (110f * fade).toInt().coerceIn(0, 255)
@@ -982,9 +1003,13 @@ class MainActivity : AppCompatActivity() {
 
             corePaint.color = cyan
             corePaint.alpha = (180f * fade).toInt().coerceIn(0, 255)
-            canvas.drawCircle(touchX, touchY, maxOf(1f, 2.5f * density * fade), corePaint)
+            canvas.drawCircle(
+                touchX,
+                touchY,
+                maxOf(1f, 2.5f * density * fade),
+                corePaint
+            )
 
-            // Four short HUD ticks emphasize the cyberpunk pulse.
             val tick = maxOf(3f, radius * 0.13f)
             ringPaint.strokeWidth = 1.5f * density
             ringPaint.color = pink
@@ -993,6 +1018,15 @@ class MainActivity : AppCompatActivity() {
             canvas.drawLine(touchX + radius, touchY, touchX + radius + tick, touchY, ringPaint)
             canvas.drawLine(touchX, touchY - radius - tick, touchX, touchY - radius, ringPaint)
             canvas.drawLine(touchX, touchY + radius, touchX, touchY + radius + tick, ringPaint)
+
+            // Estelas direccionales: refuerzan visualmente el rebote sin tocar el layout.
+            val streakAlpha = (95f * fade).toInt().coerceIn(0, 255)
+            ringPaint.color = cyan
+            ringPaint.alpha = streakAlpha
+            ringPaint.strokeWidth = 1f * density
+            val streak = maxOf(4f * density, radius * 0.08f)
+            canvas.drawLine(touchX - radius * 0.72f, touchY + streak, touchX - radius * 0.72f - streak, touchY + streak, ringPaint)
+            canvas.drawLine(touchX + radius * 0.72f, touchY - streak, touchX + radius * 0.72f + streak, touchY - streak, ringPaint)
         }
 
         override fun setAlpha(alpha: Int) {}
