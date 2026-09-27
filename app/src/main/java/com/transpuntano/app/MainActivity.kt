@@ -73,7 +73,7 @@ class MainActivity : AppCompatActivity() {
             addView(CyberHeaderView(this@MainActivity), FrameLayout.LayoutParams(-1, -1))
         }
         val menuBtn = headerIconButton("nav_menu", "MENÚ") { toggleDrawer() }
-        val searchBtn = headerIconButton("nav_search", "BUSCAR") { showLines() }
+        val searchBtn = headerIconButton("nav_search", "BUSCAR") { openLineSearch() }
         val alertBtn = headerIconButton("nav_bell", "NOTIFICACIONES") { toast("NOTIFICACIONES") }
         val headerContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
         headerContent.addView(TextView(this).apply {
             text = "TU COLECTIVO 2.0"
             textSize = 15f
-            translationX = -dp(5).toFloat()
+            translationX = -dp(10).toFloat()
             typeface = cyberpunkTypeface
             setTextColor(cyan)
             gravity = Gravity.CENTER
@@ -295,12 +295,6 @@ class MainActivity : AppCompatActivity() {
         drawerPanel.removeAllViews()
         val border = View(this).apply { setBackgroundColor(cyan) }
         drawerPanel.addView(border, FrameLayout.LayoutParams(dp(2), -1).apply { gravity = Gravity.END })
-        val title = TextView(this).apply {
-            text = "SISTEMA // NAVEGACIÓN"
-            textSize = 13f; typeface = cyberpunkTypeface; setTextColor(cyan); gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(20), 0, dp(10), 0)
-        }
-        drawerPanel.addView(title, FrameLayout.LayoutParams(-1, dp(60)))
         val items = listOf(
             Triple("INICIO", "nav_home", 0),
             Triple("LÍNEAS", "nav_lineas", 1),
@@ -521,6 +515,54 @@ class MainActivity : AppCompatActivity() {
                     status.text = "● SIN CONEXIÓN"; toast(error.message ?: "Error")
                 }}
         }
+    }
+
+    private fun openLineSearch() {
+        val input = EditText(this).apply {
+            hint = "BUSCAR LÍNEA"
+            singleLine = true
+            textSize = 16f
+            typeface = cyberpunkTypeface
+            setTextColor(cyan)
+            setHintTextColor(muted)
+        }
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setTitle("BUSCADOR")
+            .setView(input)
+            .setNegativeButton("CANCELAR", null)
+            .setPositiveButton("BUSCAR", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val query = input.text.toString().trim()
+                if (query.isBlank()) {
+                    input.error = "Ingresá un número o nombre de línea"
+                    return@setOnClickListener
+                }
+                dialog.dismiss()
+                status.text = "● BUSCANDO..."
+                executor.execute {
+                    runCatching { api.getLines() }
+                        .onSuccess { lines ->
+                            val q = query.lowercase(java.util.Locale.getDefault())
+                            val matches = lines.filter {
+                                it.code.toString().contains(q) ||
+                                    it.name.lowercase(java.util.Locale.getDefault()).contains(q)
+                            }
+                            runOnUiThread {
+                                showLines(matches)
+                                status.text = if (matches.isEmpty()) "● SIN RESULTADOS" else "● " + matches.size + " RESULTADOS"
+                            }
+                        }
+                        .onFailure { error -> runOnUiThread {
+                            status.text = "● SIN CONEXIÓN"
+                            toast(error.message ?: "No se pudo realizar la búsqueda")
+                        }}
+                }
+            }
+        }
+        dialog.show()
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
     }
 
     private fun showLines(initial: List<TransitLine>? = null) {
@@ -780,7 +822,6 @@ class MainActivity : AppCompatActivity() {
             val w = width.toFloat()
             val h = height.toFloat()
             val cyan = 0xFF00F0FF.toInt()
-            val pink = 0xFFFF2DB2.toInt()
 
             canvas.drawColor(0xFF010408.toInt())
             fill.color = 0xFF030912.toInt()
@@ -813,10 +854,6 @@ class MainActivity : AppCompatActivity() {
             paint.alpha = 150
             canvas.drawLine(w * .08f, dpLocal(51).toFloat(), w * .34f, dpLocal(51).toFloat(), paint)
             canvas.drawLine(w * .66f, dpLocal(51).toFloat(), w * .92f, dpLocal(51).toFloat(), paint)
-            paint.color = pink
-            paint.alpha = 190
-            canvas.drawLine(w * .36f, dpLocal(51).toFloat(), w * .44f, dpLocal(51).toFloat(), paint)
-            canvas.drawLine(w * .56f, dpLocal(51).toFloat(), w * .64f, dpLocal(51).toFloat(), paint)
 
             // Neon data ticks and nodes.
             paint.color = cyan
@@ -829,20 +866,12 @@ class MainActivity : AppCompatActivity() {
                 val x = w - dpLocal(22 + i * 7).toFloat()
                 canvas.drawLine(x, dpLocal(56).toFloat(), x, dpLocal(60).toFloat(), paint)
             }
-            paint.color = pink
-            canvas.drawCircle(w * .5f, dpLocal(3).toFloat(), dpLocal(1).toFloat(), paint)
-
             // Strong neon lower edge.
             paint.color = cyan
             paint.alpha = 255
             paint.strokeWidth = dpLocal(2).toFloat()
             canvas.drawLine(dpLocal(8).toFloat(), h - dpLocal(2).toFloat(),
                 w - dpLocal(8).toFloat(), h - dpLocal(2).toFloat(), paint)
-            paint.color = pink
-            paint.strokeWidth = dpLocal(1).toFloat()
-            paint.alpha = 210
-            canvas.drawLine(dpLocal(42).toFloat(), h - dpLocal(6).toFloat(),
-                w - dpLocal(42).toFloat(), h - dpLocal(6).toFloat(), paint)
         }
 
         private fun dpLocal(v: Int) =
