@@ -325,7 +325,12 @@ class MainActivity : AppCompatActivity() {
                 background = cyberRippleBackground()
                 setOnClickListener {
                     cyberTouchFeedback(this)
-                    postDelayed({ navigateTo(index); toggleDrawer() }, 110)
+                    isEnabled = false
+                    postDelayed({
+                        isEnabled = true
+                        navigateTo(index)
+                        toggleDrawer()
+                    }, 300L)
                 }
             }
             val icon = ImageView(this).apply {
@@ -394,13 +399,17 @@ class MainActivity : AppCompatActivity() {
             item.addView(text)
             item.setOnClickListener {
                 cyberTouchFeedback(item)
-                when (index) {
-                    0 -> showHome()
-                    1 -> showLines()
-                    2 -> showMap(null)
-                    3 -> showFavorites()
-                    4 -> showNearby()
-                }
+                item.isEnabled = false
+                item.postDelayed({
+                    item.isEnabled = true
+                    when (index) {
+                        0 -> showHome()
+                        1 -> showLines()
+                        2 -> showMap(null)
+                        3 -> showFavorites()
+                        4 -> showNearby()
+                    }
+                }, 300L)
             }
             navBar.addView(item, LinearLayout.LayoutParams(0, -1, 1f))
         }
