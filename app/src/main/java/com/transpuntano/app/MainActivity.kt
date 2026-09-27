@@ -155,7 +155,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyCyberTap(view: View) {
-        val pulse = CyberTapDrawable(cyan, pink)
+        val pulse = CyberTapDrawable(cyan, pink, density)
         view.foreground = pulse
         view.setOnTouchListener { _, event ->
             if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
@@ -884,12 +884,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
-    private fun dp(v: Float) = (v * resources.displayMetrics.density).roundToInt()
+    private fun dp(v: Int) = (v * density).toInt()
+    private fun dp(v: Float) = (v * density).roundToInt()
     /** Canvas-only cyberpunk pulse used for tap feedback. It never scales, fades, translates or moves the target view. */
     private class CyberTapDrawable(
         private val cyan: Int,
-        private val pink: Int
+        private val pink: Int,
+        private val density: Float
     ) : android.graphics.drawable.Drawable() {
         private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
         private val corePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -932,28 +933,28 @@ class MainActivity : AppCompatActivity() {
             val fade = 1f - progress
 
             // Broad translucent rings create the neon "energy pulse" without any View animation.
-            ringPaint.strokeWidth = 5f * resources.displayMetrics.density
+            ringPaint.strokeWidth = 5f * density
             ringPaint.color = cyan
             ringPaint.alpha = (110f * fade).toInt().coerceIn(0, 255)
             canvas.drawCircle(touchX, touchY, radius, ringPaint)
 
-            ringPaint.strokeWidth = 2f * resources.displayMetrics.density
+            ringPaint.strokeWidth = 2f * density
             ringPaint.color = pink
             ringPaint.alpha = (175f * fade).toInt().coerceIn(0, 255)
             canvas.drawCircle(touchX, touchY, radius * 0.86f, ringPaint)
 
-            ringPaint.strokeWidth = 1f * resources.displayMetrics.density
+            ringPaint.strokeWidth = 1f * density
             ringPaint.color = cyan
             ringPaint.alpha = (235f * fade).toInt().coerceIn(0, 255)
             canvas.drawCircle(touchX, touchY, radius * 0.62f, ringPaint)
 
             corePaint.color = cyan
             corePaint.alpha = (180f * fade).toInt().coerceIn(0, 255)
-            canvas.drawCircle(touchX, touchY, maxOf(1f, 2.5f * resources.displayMetrics.density * fade), corePaint)
+            canvas.drawCircle(touchX, touchY, maxOf(1f, 2.5f * density * fade), corePaint)
 
             // Four short HUD ticks emphasize the cyberpunk pulse.
             val tick = maxOf(3f, radius * 0.13f)
-            ringPaint.strokeWidth = 1.5f * resources.displayMetrics.density
+            ringPaint.strokeWidth = 1.5f * density
             ringPaint.color = pink
             ringPaint.alpha = (190f * fade).toInt().coerceIn(0, 255)
             canvas.drawLine(touchX - radius - tick, touchY, touchX - radius, touchY, ringPaint)
@@ -990,7 +991,7 @@ class MainActivity : AppCompatActivity() {
             canvas.drawCircle(w * .84f, h * .26f, dpLocal(70).toFloat(), paint)
             canvas.drawCircle(w * .84f, h * .26f, dpLocal(82).toFloat(), paint)
         }
-        private fun dpLocal(v: Int) = (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        private fun dpLocal(v: Int) = (v * density).toInt().coerceAtLeast(1)
     }
 
     /**
@@ -1021,7 +1022,7 @@ class MainActivity : AppCompatActivity() {
         private val cyanGhostPaint = Paint(titlePaint)
         private val pinkGhostPaint = Paint(titlePaint)
         private val scanPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            strokeWidth = 1f * resources.displayMetrics.density
+            strokeWidth = 1f * density
         }
 
         private var frame = 0
@@ -1179,7 +1180,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun dpLocal(v: Int) =
-            (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+            (v * density).toInt().coerceAtLeast(1)
     }
 
     override fun onDestroy() {
