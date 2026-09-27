@@ -520,7 +520,7 @@ class MainActivity : AppCompatActivity() {
     private fun openLineSearch() {
         val input = EditText(this).apply {
             hint = "BUSCAR LÍNEA"
-            singleLine = true
+            setSingleLine(true)
             textSize = 16f
             typeface = cyberpunkTypeface
             setTextColor(cyan)
