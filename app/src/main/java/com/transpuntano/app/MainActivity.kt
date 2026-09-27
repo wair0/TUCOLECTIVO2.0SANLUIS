@@ -73,7 +73,8 @@ class MainActivity : AppCompatActivity() {
             addView(CyberHeaderView(this@MainActivity), FrameLayout.LayoutParams(-1, -1))
         }
         val menuBtn = headerIconButton("nav_menu", "MENÚ") { toggleDrawer() }
-        val searchBtn = headerIconButton("nav_search", "BUSCAR") { openLineSearch(searchBtn) }
+        lateinit var searchBtn: ImageButton
+        searchBtn = headerIconButton("nav_search", "BUSCAR") { openLineSearch(searchBtn) }
         val alertBtn = headerIconButton("nav_bell", "NOTIFICACIONES") { toast("NOTIFICACIONES") }
         val headerContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -574,7 +575,7 @@ class MainActivity : AppCompatActivity() {
             isOutsideTouchable = true
             isClippingEnabled = true
             elevation = dp(12).toFloat()
-            inputMethodMode = android.widget.PopupWindow.INPUT_METHOD_NOT_NEEDED
+            inputMethodMode = android.widget.PopupWindow.INPUT_METHOD_NEEDED
             softInputMode = android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
 
@@ -643,6 +644,11 @@ class MainActivity : AppCompatActivity() {
         // El menú queda anclado al botón del buscador y aparece inmediatamente debajo,
         // sin depender de la posición global del contenido/header.
         popup.showAsDropDown(anchor, -dp(230), dp(6), Gravity.END)
+        input.requestFocus()
+        input.postDelayed {
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        }
     }
 
     private fun showLines(initial: List<TransitLine>? = null) {
