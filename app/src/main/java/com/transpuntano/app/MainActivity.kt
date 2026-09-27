@@ -461,7 +461,10 @@ class MainActivity : AppCompatActivity() {
         val bitmap = loadAssetBitmap(assetName)
         if (bitmap != null) {
             addView(ImageView(this@MainActivity).apply {
-                setImageBitmap(bitmap); scaleType = ImageView.ScaleType.FIT_XY; contentDescription = description
+                if (bitmap != null) setImageBitmap(bitmap)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setBackgroundColor(bg)
+                contentDescription = description
             }, FrameLayout.LayoutParams(-1, -1))
         } else {
             val label = description.substringBefore(" · ").ifBlank { assetName }
