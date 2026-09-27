@@ -88,12 +88,12 @@ class MainActivity : AppCompatActivity() {
         val headerContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             layoutParams = FrameLayout.LayoutParams(-1, dp(48)).apply {
-                leftMargin = dp(44); rightMargin = dp(4); topMargin = dp(4)
+                leftMargin = dp(44); rightMargin = dp(4); topMargin = dp(7)
             }
         }
         headerContent.addView(CyberNeonTextView(this).apply {
             text = "TU COLECTIVO 2.0"
-            textSize = 20f
+            textSize = 18f
             typeface = Typeface.MONOSPACE
             setTextColor(cyan)
             gravity = Gravity.CENTER
