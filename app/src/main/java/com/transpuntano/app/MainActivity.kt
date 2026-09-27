@@ -538,7 +538,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val input = EditText(this).apply {
-            hint = "NÚMERO O NOMBRE"
+            hint = "LETRA O NOMBRE"
             setSingleLine(true)
             textSize = 15f
             typeface = cyberpunkTypeface
@@ -598,14 +598,23 @@ class MainActivity : AppCompatActivity() {
                             .replace("line", "")
                             .replace("#", "")
                             .trim()
+                            .replace(Regex("\\s+"), " ")
 
                         val matches = if (normalizedQuery.isBlank()) {
                             emptyList()
                         } else {
                             lines.filter { line ->
-                                val code = line.code.toString()
-                                val name = line.name.lowercase(java.util.Locale.getDefault())
-                                code.contains(normalizedQuery) || name.contains(normalizedQuery)
+                                // Las líneas de TU COLECTIVO se identifican por letras.
+                                // El código numérico del servicio es interno y no se usa
+                                // como criterio de búsqueda.
+                                val name = line.name
+                                    .lowercase(java.util.Locale.getDefault())
+                                    .replace("línea", "")
+                                    .replace("linea", "")
+                                    .trim()
+                                    .replace(Regex("\\s+"), " ")
+
+                                name == normalizedQuery || name.contains(normalizedQuery)
                             }
                         }
 
@@ -643,7 +652,7 @@ class MainActivity : AppCompatActivity() {
 
         // El menú queda anclado al botón del buscador y aparece inmediatamente debajo,
         // sin depender de la posición global del contenido/header.
-        popup.showAsDropDown(anchor, -dp(230), dp(6), Gravity.END)
+        // Debajo del header, alineado con el borde derecho del icono buscador.\n        popup.showAsDropDown(anchor, -dp(230), dp(18))
         input.requestFocus()
         input.postDelayed({
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
