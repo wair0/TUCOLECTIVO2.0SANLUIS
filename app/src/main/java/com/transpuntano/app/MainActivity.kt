@@ -97,9 +97,20 @@ class MainActivity : AppCompatActivity() {
         status = CyberNeonTextView(this).apply {
             text = "● SISTEMA LISTO"; textSize = 16f; setTextColor(0xFF55FFB0.toInt())
         }
-        headerContent.addView(status)
         headerLayout.addView(headerContent)
-        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(40), dp(40)).apply { gravity = Gravity.CENTER_VERTICAL })
+        headerLayout.addView(status, FrameLayout.LayoutParams(-2, dp(28)).apply {
+            leftMargin = dp(164)
+            topMargin = dp(50)
+            gravity = Gravity.TOP
+        })
+        menuBtn.apply {
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 0)
+        }
+        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(44), dp(44)).apply {
+            leftMargin = dp(4)
+            topMargin = dp(14)
+        })
         root.addView(headerLayout, LinearLayout.LayoutParams(-1, dp(72)))
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
