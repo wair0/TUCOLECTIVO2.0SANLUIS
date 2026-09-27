@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
         }
         headerContent.addView(CyberNeonTextView(this).apply {
             text = "TU COLECTIVO 2.0"
-            textSize = 22f
+            textSize = 20f
             typeface = Typeface.MONOSPACE
             setTextColor(cyan)
             gravity = Gravity.CENTER
@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         }
         headerLayout.addView(headerContent)
         headerLayout.addView(status, FrameLayout.LayoutParams(-2, dp(28)).apply {
-            leftMargin = dp(172)
+            leftMargin = dp(173)
             topMargin = dp(44)
             gravity = Gravity.TOP
         })
