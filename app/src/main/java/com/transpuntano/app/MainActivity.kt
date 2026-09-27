@@ -157,9 +157,41 @@ class MainActivity : AppCompatActivity() {
     private fun applyCyberTap(view: View) {
         val pulse = CyberTapDrawable(cyan, pink, resources.displayMetrics.density)
         view.foreground = pulse
+
+        // Micro-rebote cyberpunk: desplaza físicamente la View unos píxeles y
+        // vuelve a su posición con un rebote corto. La acción del click sigue
+        // siendo inmediata y el efecto Canvas continúa encima.
+        val bounceDistance = dp(3f).toFloat()
+        var bounceToken = 0
+
         view.setOnTouchListener { _, event ->
-            if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
-                pulse.pulse(event.x, event.y)
+            when (event.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    bounceToken++
+                    val token = bounceToken
+                    pulse.pulse(event.x, event.y)
+                    view.animate().cancel()
+                    view.translationY = bounceDistance
+                    view.postOnAnimation {
+                        if (token == bounceToken) {
+                            view.animate()
+                                .translationY(0f)
+                                .setDuration(150L)
+                                .setInterpolator(android.view.animation.OvershootInterpolator(2.8f))
+                                .start()
+                        }
+                    }
+                }
+
+                android.view.MotionEvent.ACTION_CANCEL -> {
+                    bounceToken++
+                    view.animate().cancel()
+                    view.animate()
+                        .translationY(0f)
+                        .setDuration(110L)
+                        .setInterpolator(android.view.animation.OvershootInterpolator(2.2f))
+                        .start()
+                }
             }
             false
         }
