@@ -645,10 +645,10 @@ class MainActivity : AppCompatActivity() {
         // sin depender de la posición global del contenido/header.
         popup.showAsDropDown(anchor, -dp(230), dp(6), Gravity.END)
         input.requestFocus()
-        input.postDelayed {
+        input.postDelayed({
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
             imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-        }
+        }, 200L)
     }
 
     private fun showLines(initial: List<TransitLine>? = null) {
