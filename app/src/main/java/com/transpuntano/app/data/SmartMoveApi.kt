@@ -96,13 +96,9 @@ class SmartMoveApi {
     }
 
     fun getArrivals(identifier: String, line: Int): List<TransitArrival> {
-        val root = soap("RecuperarProximosArribos", listOf(
+        val root = soap("RecuperarProximosArribosW", listOf(
             stringParam("identificadorParada", identifier),
-            intParam("codigoLineaParada", line),
-            intParam("codigoAplicacion", CODIGO_APLICACION_ARRIBOS),
-            stringParam("localidad", "SAN LUIS"),
-            stringParam("usuario", USER),
-            stringParam("clave", PASSWORD)
+            intParam("codigoLineaParada", line)
         ))
         val array = firstArray(root, "ArribosJson", "listaArribos", "arribos", "Arribo", "arribo") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
@@ -110,9 +106,13 @@ class SmartMoveApi {
             val arrival = item.optStringAny("Arribo", "arribo", "Tiempo", "tiempo").orEmpty()
             TransitArrival(
                 line = item.optStringAny("DescripcionLinea", "descripcionLinea", "Linea", "linea").orEmpty().ifBlank { line.toString() },
-                destination = item.optStringAny("DescripcionBandera", "descripcionBandera", "Bandera", "bandera", "Destino", "destino").orEmpty(),
+                destination = item.optStringAny("DescripcionCartelBandera", "descripcionCartelBandera", "DescripcionBandera", "descripcionBandera", "Bandera", "bandera", "Destino", "destino").orEmpty(),
                 minutes = parseMinutes(arrival),
-                status = arrival
+                status = arrival,
+                vehicleId = item.optStringAny("IdentificadorCoche", "identificadorCoche", "Coche", "coche").orEmpty(),
+                latitude = item.optStringAny("Latitud", "latitud")?.replace(',', '.')?.toDoubleOrNull(),
+                longitude = item.optStringAny("Longitud", "longitud")?.replace(',', '.')?.toDoubleOrNull(),
+                gpsTimestamp = item.optStringAny("UltimaFechaHoraGPS", "ultimaFechaHoraGPS", "FechaHoraGPS", "fechaHoraGPS").orEmpty()
             )
         }
     }
