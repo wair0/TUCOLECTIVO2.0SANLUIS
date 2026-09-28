@@ -41,8 +41,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var headerStatus: CyberHeaderStatusView
     private var currentSection = 0
     private lateinit var navBar: LinearLayout
-    private val cyan = 0xFF00F0FF.toInt()
-    private val pink = 0xFFFF2DB2.toInt()
+    private val cyan = 0xFFB7FF00.toInt()
+    private val pink = 0xFFFF6A00.toInt()
     private val bg = 0xFF05070C.toInt()
     private val panelColor = 0xFF0B1018.toInt()
     private val muted = 0xFF8CA5B5.toInt()
@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val headerLayout = FrameLayout(this).apply {
-            setBackgroundColor(0xFF05070C.toInt())
+            setBackgroundColor(0xFF010503.toInt())
             addView(CyberHeaderView(this@MainActivity), FrameLayout.LayoutParams(-1, -1))
         }
         val menuBtn = headerIconButton("nav_menu", "MENÚ") { toggleDrawer() }
@@ -85,13 +85,13 @@ class MainActivity : AppCompatActivity() {
         val alertBtn = headerIconButton("nav_bell", "NOTIFICACIONES") { toast("NOTIFICACIONES") }
         val headerContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            layoutParams = FrameLayout.LayoutParams(-1, dp(48)).apply {
-                leftMargin = dp(44); rightMargin = dp(4); topMargin = dp(7)
+            layoutParams = FrameLayout.LayoutParams(-1, dp(56)).apply {
+                leftMargin = dp(58); rightMargin = dp(58); topMargin = dp(10)
             }
         }
         headerTitle = CyberHeaderTitleView(this, cyberpunkTypeface, cyan, pink).apply {
-            translationX = -dp(20).toFloat()
-            layoutParams = LinearLayout.LayoutParams(-1, dp(40))
+            translationX = 0f
+            layoutParams = LinearLayout.LayoutParams(-1, dp(44))
         }
         headerContent.addView(headerTitle)
         // El título de sección se conserva solo para la lógica interna; no se muestra en el header.
@@ -101,21 +101,21 @@ class MainActivity : AppCompatActivity() {
         }
         headerLayout.addView(headerContent)
         headerLayout.addView(headerStatus, FrameLayout.LayoutParams(-2, dp(28)).apply {
-            leftMargin = dp(169.0f); topMargin = dp(41.5f); gravity = Gravity.TOP
+            leftMargin = dp(58); topMargin = dp(57); gravity = Gravity.TOP
         })
-        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(44), dp(44)).apply {
-            leftMargin = dp(4); topMargin = dp(14)
+        headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(50), dp(50)).apply {
+            leftMargin = dp(5); topMargin = dp(11)
         })
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
-        actions.addView(searchBtn, LinearLayout.LayoutParams(dp(40), dp(40)))
-        actions.addView(alertBtn, LinearLayout.LayoutParams(dp(40), dp(40)))
-        headerLayout.addView(actions, FrameLayout.LayoutParams(dp(88), dp(44)).apply {
-            rightMargin = dp(4); topMargin = dp(14); gravity = Gravity.END
+        actions.addView(searchBtn, LinearLayout.LayoutParams(dp(44), dp(44)))
+        actions.addView(alertBtn, LinearLayout.LayoutParams(dp(44), dp(44)))
+        headerLayout.addView(actions, FrameLayout.LayoutParams(dp(96), dp(50)).apply {
+            rightMargin = dp(4); topMargin = dp(11); gravity = Gravity.END
         })
-        root.addView(headerLayout, LinearLayout.LayoutParams(-1, dp(72)))
+        root.addView(headerLayout, LinearLayout.LayoutParams(-1, dp(88)))
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
         navBar = LinearLayout(this).apply {
@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity() {
             background = CyberBottomBarBackground()
             visibility = View.VISIBLE
         }
-        root.addView(navBar, LinearLayout.LayoutParams(-1, dp(64)))
+        root.addView(navBar, LinearLayout.LayoutParams(-1, dp(72)))
         rootFrame.addView(root)
 
         drawerScrim = View(this).apply {
@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         rootFrame.addView(drawerScrim, FrameLayout.LayoutParams(-1, -1))
         drawerPanel = FrameLayout(this).apply {
             background = CyberDrawerBackground(this@MainActivity)
-            layoutParams = FrameLayout.LayoutParams(dp(300), -1).apply { gravity = Gravity.START }
+            layoutParams = FrameLayout.LayoutParams(dp(320), -1).apply { gravity = Gravity.START }
             visibility = View.GONE
         }
         addDrawerItems()
@@ -240,12 +240,12 @@ class MainActivity : AppCompatActivity() {
         )
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setPadding(dp(18), dp(22), dp(18), dp(18))
         }
         items.forEach { (label, iconName, index) ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(12), 0, dp(8), 0); isClickable = true; isFocusable = true
+                setPadding(dp(16), 0, dp(10), 0); isClickable = true; isFocusable = true
                 setOnClickListener {
                     navigateTo(index)
                     toggleDrawer()
@@ -256,13 +256,13 @@ class MainActivity : AppCompatActivity() {
                 val id = resources.getIdentifier(iconName, "drawable", packageName)
                 setImageResource(id); alpha = 0.95f; contentDescription = label
             }
-            row.addView(icon, LinearLayout.LayoutParams(dp(34), dp(34)).apply { rightMargin = dp(14) })
+            row.addView(icon, LinearLayout.LayoutParams(dp(40), dp(40)).apply { rightMargin = dp(16) })
             row.addView(TextView(this@MainActivity).apply {
-                text = label; textSize = 11f; typeface = cyberpunkTypeface; setTextColor(if (index == 0) cyan else muted)
+                text = label; textSize = 11f; typeface = cyberpunkTypeface; setTextColor(if (index == 0) cyan else 0xFF8FC7D8.toInt())
             }, LinearLayout.LayoutParams(0, -2, 1f))
-            list.addView(row, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(8) })
+            list.addView(row, LinearLayout.LayoutParams(-1, dp(60)).apply { bottomMargin = dp(10) })
         }
-        drawerPanel.addView(list, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(16) })
+        drawerPanel.addView(list, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(8) })
         drawerPanel.addView(View(this).apply { setBackgroundColor(pink) }, FrameLayout.LayoutParams(dp(2), dp(90)).apply {
             leftMargin = dp(8); topMargin = dp(22)
         })
@@ -286,7 +286,7 @@ class MainActivity : AppCompatActivity() {
             Triple("LÍNEAS", "nav_lineas", 1),
             Triple("MAPA", "nav_mapa", 2),
             Triple("FAVORITOS", "nav_favoritos", 3),
-            Triple("CERCANAS", "nav_cercanas", 4)
+            Triple("PARADAS", "nav_cercanas", 4)
         )
         items.forEach { (label, iconName, index) ->
             val item = LinearLayout(this).apply {
@@ -307,7 +307,7 @@ class MainActivity : AppCompatActivity() {
             }
             val text = TextView(this).apply {
                 this.text = label
-                textSize = 8.5f
+                textSize = 9f
                 typeface = cyberpunkTypeface
                 gravity = Gravity.CENTER
                 setTextColor(if (index == selected) cyan else muted)
@@ -973,11 +973,11 @@ class MainActivity : AppCompatActivity() {
             c.drawColor(0xFF010302.toInt());p.style=Paint.Style.FILL
             p.shader=android.graphics.RadialGradient(cx,cy,maxOf(w,h)*.78f,intArrayOf(0x403A4A00,0x20220B00,0x00000000),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
             // New visual language: vertical light shafts + orange volumetric zones.
-            for(i in 0..7){val x=w*(.08f+i*.12f);p.color=if(i%2==0)lime else orange;p.alpha=12;path.reset();path.moveTo(x,0f);path.lineTo(x+28f,0f);path.lineTo(cx+(x-cx)*.18f,h);path.lineTo(cx+(x-cx)*.18f+12f,h);path.close();c.drawPath(path,p)}
+            for(i in 0..7){val x=w*(.08f+i*.12f);p.color=if(i%2==0)lime else orange;p.alpha=34;path.reset();path.moveTo(x,0f);path.lineTo(x+28f,0f);path.lineTo(cx+(x-cx)*.18f,h);path.lineTo(cx+(x-cx)*.18f+12f,h);path.close();c.drawPath(path,p)}
             p.style=Paint.Style.STROKE;p.strokeWidth=1f
             // Radar rings, no grid.
-            p.color=lime;p.alpha=60;c.drawCircle(cx,cy,38f,p);c.drawCircle(cx,cy,74f,p);c.drawCircle(cx,cy,126f,p)
-            p.color=orange;p.alpha=65;c.drawArc(cx-170f,cy-170f,cx+170f,cy+170f,18f,95f,false,p);c.drawArc(cx-120f,cy-120f,cx+120f,cy+120f,202f,78f,false,p)
+            p.color=lime;p.alpha=105;c.drawCircle(cx,cy,38f,p);c.drawCircle(cx,cy,74f,p);c.drawCircle(cx,cy,126f,p)
+            p.color=orange;p.alpha=110;c.drawArc(cx-170f,cy-170f,cx+170f,cy+170f,18f,95f,false,p);c.drawArc(cx-120f,cy-120f,cx+120f,cy+120f,202f,78f,false,p)
             // Data beams.
             for(i in 0..11){val x=w*i/11f;p.color=if(i%2==0) blue else orange;p.alpha=42;c.drawLine(x,0f,cx+(x-cx)*.25f,cy,p);c.drawLine(x,h,cx+(x-cx)*.25f,cy,p)}
             // Floating nodes / beacons.
