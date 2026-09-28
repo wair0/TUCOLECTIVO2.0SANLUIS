@@ -32,8 +32,7 @@ import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
-    private val cyberformDemoTypeface by lazy { Typeface.createFromAsset(assets, "fonts/cyberformdemoregular.otf") }
-    private val cyberpunkTypeface: Typeface get() = cyberformDemoTypeface
+    private val cyberpunkTypeface by lazy { Typeface.createFromAsset(assets, "fonts/cyberpunk.ttf") }
     private data class FavoriteStop(
         val lineCode: Int, val lineName: String, val stopCode: Int,
         val description: String, val identifier: String, val street: String,
@@ -103,7 +102,7 @@ class MainActivity : AppCompatActivity() {
         }
         headerContent.addView(headerTitle)
         // El título de sección se conserva solo para la lógica interna; no se muestra en el header.
-        title = TextView(this).apply { text = ""; textSize = 11f; typeface = cyberformDemoTypeface; setTextColor(muted) }
+        title = TextView(this).apply { text = ""; textSize = 11f; typeface = cyberpunkTypeface; setTextColor(muted) }
         headerStatus = CyberHeaderStatusView(this, cyberpunkTypeface, cyan, pink).apply {
             setStatusText("● SISTEMA LISTO")
         }
@@ -396,13 +395,13 @@ class MainActivity : AppCompatActivity() {
         row2.addView(item4, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
         grid.addView(row1); grid.addView(row2); box.addView(grid)
         box.addView(cyberSyncButton { loadLines(false) }, LinearLayout.LayoutParams(-1, dp(60)).apply { topMargin = dp(20) })
-        // FUENTE CYBERFORM DEMO: se reaplica a TODA la sección Inicio.
+        // FUENTE CYBERPUNK: se reaplica a TODA la sección Inicio.
         // Esto incluye todos los TextView actuales y cualquier TextView hijo
         // generado dentro de las tarjetas, botones o textos de respaldo.
-        applyCyberformDemoTypeface(box)
+        applyCyberpunkTypeface(box)
         content.addView(ScrollView(this).apply {
             addView(box)
-            // Cyberform Demo ya fue aplicada recursivamente al contenido completo de Inicio.
+            // Cyberpunk ya fue aplicada recursivamente al contenido completo de Inicio.
         })
     }
 
@@ -444,7 +443,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             val label = description.substringBefore(" · ").ifBlank { assetName }
             addView(TextView(this@MainActivity).apply {
-                text = label; gravity = Gravity.CENTER; textSize = 14f; typeface = cyberformDemoTypeface
+                text = label; gravity = Gravity.CENTER; textSize = 14f; typeface = cyberpunkTypeface
                 setTextColor(cyan); contentDescription = description
             }, FrameLayout.LayoutParams(-1, -1))
         }
@@ -466,13 +465,13 @@ class MainActivity : AppCompatActivity() {
         addCyberVioletFrame(this)
     }
 
-    private fun applyCyberformDemoTypeface(view: View) {
+    private fun applyCyberpunkTypeface(view: View) {
         if (view is TextView) {
             view.typeface = cyberpunkTypeface
         }
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) {
-                applyCyberformDemoTypeface(view.getChildAt(i))
+                applyCyberpunkTypeface(view.getChildAt(i))
             }
         }
     }
@@ -485,22 +484,22 @@ class MainActivity : AppCompatActivity() {
         orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(12), dp(16), dp(12))
         setBackgroundColor(panelColor); setOnClickListener { action() }
         addView(TextView(this@MainActivity).apply {
-            text = primary; textSize = 14f; typeface = cyberformDemoTypeface; setTextColor(Color.WHITE)
+            text = primary; textSize = 14f; typeface = cyberpunkTypeface; setTextColor(Color.WHITE)
         })
-        addView(TextView(this@MainActivity).apply { text = secondary; textSize = 10f; typeface = cyberformDemoTypeface; setTextColor(muted) })
+        addView(TextView(this@MainActivity).apply { text = secondary; textSize = 10f; typeface = cyberpunkTypeface; setTextColor(muted) })
     }
 
     private fun panel(primary: String, secondary: String) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
         setBackgroundColor(panelColor)
         addView(TextView(this@MainActivity).apply {
-            text = primary; textSize = 11f; typeface = cyberformDemoTypeface; setTextColor(cyan)
+            text = primary; textSize = 11f; typeface = cyberpunkTypeface; setTextColor(cyan)
         })
-        addView(TextView(this@MainActivity).apply { text = secondary; textSize = 13f; typeface = cyberformDemoTypeface; setTextColor(muted) })
+        addView(TextView(this@MainActivity).apply { text = secondary; textSize = 13f; typeface = cyberpunkTypeface; setTextColor(muted) })
     }
 
     private fun button(label: String, color: Int, action: () -> Unit) = TextView(this).apply {
-        text = label; gravity = Gravity.CENTER; textSize = 13f; typeface = cyberformDemoTypeface
+        text = label; gravity = Gravity.CENTER; textSize = 13f; typeface = cyberpunkTypeface
         setTextColor(color); setBackgroundColor(panelColor); setPadding(dp(12), dp(14), dp(12), dp(14))
         isClickable = true; isFocusable = true; setOnClickListener { action() }
     }
@@ -716,7 +715,7 @@ class MainActivity : AppCompatActivity() {
         title.text = "LÍNEA " + line.code; updateNav(1); content.removeAllViews()
         val box = box()
         box.addView(TextView(this).apply {
-            text = line.name.uppercase(); textSize = 25f; typeface = cyberformDemoTypeface; setTextColor(cyan)
+            text = line.name.uppercase(); textSize = 25f; typeface = cyberpunkTypeface; setTextColor(cyan)
         })
         box.addView(panel("CALLES", "Seleccioná una calle para continuar."))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -876,7 +875,7 @@ class MainActivity : AppCompatActivity() {
         })
         val info = TextView(this).apply {
             text = "MAPA  •  UBICACIÓN Y PARADAS CERCANAS"
-            textSize = 11f; typeface = cyberformDemoTypeface; setTextColor(cyan)
+            textSize = 11f; typeface = cyberpunkTypeface; setTextColor(cyan)
             setPadding(dp(14), dp(10), dp(14), dp(10)); setBackgroundColor(0xCC05070C.toInt())
         }
         root.addView(info, FrameLayout.LayoutParams(-1, dp(44)).apply { gravity = Gravity.TOP })
