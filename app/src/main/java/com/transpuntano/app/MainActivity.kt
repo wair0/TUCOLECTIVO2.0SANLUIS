@@ -1159,31 +1159,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class CyberHeaderView(context: Context) : View(context) {
-        private val p=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
-        override fun onDraw(c:Canvas){
-            val w=width.toFloat(); val h=height.toFloat(); val cyan=0xFF00F6FF.toInt(); val mag=0xFFFF008C.toInt(); val vio=0xFF7C4DFF.toInt()
-            p.style=Paint.Style.FILL
-            p.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF00030B.toInt(),0xFF180026.toInt(),0xFF000812.toInt()),null,android.graphics.Shader.TileMode.CLAMP)
-            c.drawRect(0f,0f,w,h,p); p.shader=null
-            // Asymmetric holographic command frame
-            p.color=vio; p.alpha=38; path.reset(); path.moveTo(0f,0f); path.lineTo(w*.38f,0f); path.lineTo(w*.27f,h); path.lineTo(0f,h); path.close(); c.drawPath(path,p)
-            p.color=mag; p.alpha=28; path.reset(); path.moveTo(w,0f); path.lineTo(w*.70f,0f); path.lineTo(w*.82f,h); path.lineTo(w,h); path.close(); c.drawPath(path,p)
-            p.style=Paint.Style.STROKE; p.strokeWidth=2f; p.color=cyan; p.alpha=240
-            c.drawLine(0f,2f,w*.22f,2f,p); c.drawLine(w*.78f,2f,w,2f,p)
-            p.color=mag; p.alpha=240; p.strokeWidth=1f; c.drawLine(w*.22f,2f,w*.36f,2f,p); c.drawLine(w*.64f,2f,w*.78f,2f,p)
-            // Central holographic lens
-            p.color=cyan; p.alpha=90; p.strokeWidth=1.5f; c.drawOval(w*.33f,-9f,w*.67f,h+9f,p)
-            p.color=mag; p.alpha=130; c.drawArc(w*.35f,-5f,w*.65f,h+5f,25f,120f,false,p)
-            p.color=vio; p.alpha=80; c.drawArc(w*.31f,-8f,w*.69f,h+8f,205f,110f,false,p)
-            // segmented telemetry
-            p.color=cyan; p.alpha=180; p.strokeWidth=1f
-            for(i in 0..13){ val x=12f+i*7f; c.drawLine(x,h-10f,x,h-5f-(i%3)*2,p); val xr=w-12f-i*7f; c.drawLine(xr,10f,xr,5f+(i%3)*2,p) }
-            // side energy emitters
-            p.style=Paint.Style.FILL; p.color=mag; p.alpha=230; c.drawCircle(11f,h*.5f,2.5f,p); c.drawCircle(w-11f,h*.5f,2.5f,p)
-            p.color=cyan; p.alpha=150; c.drawCircle(11f,h*.5f,7f,p); c.drawCircle(w-11f,h*.5f,7f,p)
-            // hard HUD corner cuts
-            p.style=Paint.Style.STROKE; p.color=cyan; p.alpha=210; p.strokeWidth=1.5f
-            c.drawLine(7f,12f,7f,h-12f,p); c.drawLine(7f,h-12f,30f,h-12f,p); c.drawLine(w-7f,12f,w-7f,h-12f,p); c.drawLine(w-7f,12f,w-30f,12f,p)
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
+        override fun onDraw(c:Canvas){val w=width.toFloat();val h=height.toFloat();val lime=0xFFB7FF00.toInt();val orange=0xFFFF6A00.toInt();val blue=0xFF00A8FF.toInt()
+            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF010503,0xFF111500,0xFF090308),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
+            // Command visor: horizontal HUD aperture rather than the former central oval.
+            p.color=lime;p.alpha=22;path.reset();path.moveTo(0f,0f);path.lineTo(w*.32f,0f);path.lineTo(w*.24f,h);path.lineTo(0f,h);path.close();c.drawPath(path,p)
+            p.color=orange;p.alpha=24;path.reset();path.moveTo(w,0f);path.lineTo(w*.68f,0f);path.lineTo(w*.78f,h);path.lineTo(w,h);path.close();c.drawPath(path,p)
+            p.style=Paint.Style.STROKE;p.strokeWidth=2f;p.color=lime;p.alpha=235;c.drawLine(0f,2f,w*.18f,2f,p);c.drawLine(w*.82f,2f,w,2f,p)
+            p.color=orange;p.alpha=240;c.drawLine(w*.18f,2f,w*.30f,2f,p);c.drawLine(w*.70f,2f,w*.82f,2f,p)
+            // segmented visor
+            p.color=blue;p.alpha=130;p.strokeWidth=1f;c.drawLine(w*.30f,h*.5f,w*.70f,h*.5f,p);for(i in 0..11){val x=w*.30f+i*w*.40f/11f;c.drawLine(x,h*.42f,x,h*.58f,p)}
+            p.color=orange;p.alpha=220;p.strokeWidth=1.5f;c.drawCircle(w*.5f,h*.5f,3f,p)
+            // tactical side rails
+            p.color=lime;p.alpha=170;for(i in 0..5){val y=10f+i*(h-20f)/5f;c.drawLine(10f,y,30f,y,p);c.drawLine(w-30f,y,w-10f,y,p)}
+            p.style=Paint.Style.FILL;p.color=orange;p.alpha=240;c.drawCircle(10f,h*.5f,2.5f,p);c.drawCircle(w-10f,h*.5f,2.5f,p)
         }
     }
 
