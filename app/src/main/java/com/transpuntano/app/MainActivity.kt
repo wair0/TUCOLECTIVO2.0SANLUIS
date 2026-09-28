@@ -32,7 +32,7 @@ import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
-    private val cyberformDemoTypeface by lazy { Typeface.createFromAsset(assets, "fonts/cyberpunk.ttf") }
+    private val cyberformDemoTypeface by lazy { Typeface.createFromAsset(assets, "fonts/cyberformdemoregular.otf") }
     private val cyberpunkTypeface: Typeface get() = cyberformDemoTypeface
     private data class FavoriteStop(
         val lineCode: Int, val lineName: String, val stopCode: Int,
