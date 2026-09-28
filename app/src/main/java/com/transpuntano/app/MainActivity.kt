@@ -1238,11 +1238,11 @@ class MainActivity : AppCompatActivity() {
             textSize = 10.5f * scaledDensity
             textAlign = Paint.Align.LEFT
         }
-        private var phase = if (selected) 0f else 8f
+        private var phase = 0f
         private val runner = object : Runnable {
             override fun run() {
-                if (!isAttachedToWindow) return
-                phase += if (selected) .72f else .42f
+                if (!isAttachedToWindow || !selected) return
+                phase += .72f
                 postInvalidateOnAnimation()
                 postOnAnimationDelayed(this, 60L)
             }
@@ -1255,7 +1255,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
-            postOnAnimation(runner)
+            if (selected) postOnAnimation(runner)
         }
 
         override fun onDetachedFromWindow() {
