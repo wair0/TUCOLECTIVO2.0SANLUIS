@@ -47,6 +47,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var headerTitle: CyberHeaderTitleView
     private lateinit var headerStatus: CyberHeaderStatusView
     private var currentSection = 0
+    private var mapVehicleRefreshToken = 0
+    private var lastMapNearbyStops = emptyList<TransitStop>()
     private lateinit var navBar: LinearLayout
     private val cyan = 0xFF00F0FF.toInt()
     private val pink = 0xFFFF00FF.toInt()
@@ -908,6 +910,7 @@ class MainActivity : AppCompatActivity() {
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         box.addView(cyberActionCard("ACTUALIZAR ARRIBOS", cyan) { loadArrivals(stop, line, list) })
+        box.addView(cyberActionCard("VER COLECTIVOS EN MAPA", pink) { showMap(line) })
         box.addView(cyberActionCard("☆ GUARDAR PARADA", cyan) { saveFavorite(stop, line); toast("Parada guardada") })
         content.addView(ScrollView(this).apply { addView(box) })
         loadArrivals(stop, line, list)
@@ -1271,14 +1274,18 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         }
         val map = CyberMapView(this)
         map.setOnLocationRequest {
-            syncMapLocation(map)
+            syncMapLocation(map, line)
         }
         mapFrame.addView(map, FrameLayout.LayoutParams(-1, -1))
         root.addView(mapFrame, FrameLayout.LayoutParams(-1, -1).apply {
             leftMargin = dp(6); rightMargin = dp(6); topMargin = dp(6); bottomMargin = dp(6)
         })
         val info = TextView(this).apply {
-            text = "MAPA  •  UBICACIÓN Y PARADAS CERCANAS"
+            text = if (line == null) {
+                "MAPA  •  UBICACIÓN Y PARADAS CERCANAS"
+            } else {
+                "MAPA  •  LÍNEA " + line.code + "  •  GPS EN TIEMPO REAL"
+            }
             textSize = 11f; typeface = cyberpunkTypeface; setTextColor(cyan)
             setPadding(dp(14), dp(10), dp(14), dp(10)); setBackgroundColor(0xCC05070C.toInt())
         }
@@ -1290,10 +1297,24 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                     .onSuccess { route -> runOnUiThread { map.setRoute(route) } }
                     .onFailure { error -> runOnUiThread { toast(error.message ?: "No se pudo cargar el recorrido") } }
             }
+            mapVehicleRefreshToken++
+            val token = mapVehicleRefreshToken
+            val refresh = object : Runnable {
+                override fun run() {
+                    if (token != mapVehicleRefreshToken) return
+                    if (map.isAttachedToWindow) {
+                        refreshMapVehicles(map, line, lastMapNearbyStops)
+                        Handler(Looper.getMainLooper()).postDelayed(this, 10_000L)
+                    }
+                }
+            }
+            Handler(Looper.getMainLooper()).post(refresh)
+        } else {
+            mapVehicleRefreshToken++
         }
     }
 
-    private fun syncMapLocation(map: CyberMapView) {
+    private fun syncMapLocation(map: CyberMapView, line: TransitLine? = null) {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -1324,13 +1345,13 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                 if (delivered) return
                 delivered = true
                 manager.removeUpdates(this)
-                applyMapLocation(map, location)
+                applyMapLocation(map, line, location)
             }
             override fun onProviderDisabled(providerName: String) {
                 if (!delivered && lastKnown != null) {
                     delivered = true
                     manager.removeUpdates(this)
-                    applyMapLocation(map, lastKnown)
+                    applyMapLocation(map, line, lastKnown)
                 }
             }
         }
@@ -1356,12 +1377,17 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         }, 6000L)
     }
 
-    private fun applyMapLocation(map: CyberMapView, location: android.location.Location) {
+    private fun applyMapLocation(
+        map: CyberMapView,
+        line: TransitLine?,
+        location: android.location.Location
+    ) {
         map.setUserLocation(location.latitude, location.longitude, center = true)
         headerStatus.setStatusText("● UBICACIÓN SINCRONIZADA")
         executor.execute {
             runCatching { api.getNearby(location.latitude, location.longitude) }
                 .onSuccess { nearby ->
+                    lastMapNearbyStops = nearby
                     val mapStops = nearby.map { stop ->
                         MapStop(
                             id = stop.code,
@@ -1373,8 +1399,13 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                     }
                     runOnUiThread {
                         map.setStops(mapStops, fit = false)
-                        headerStatus.setStatusText("● ${mapStops.size} PARADAS CERCANAS")
+                        headerStatus.setStatusText(
+                            if (line == null) "● " + mapStops.size + " PARADAS CERCANAS"
+                            else "● " + mapStops.size + " PARADAS • GPS LÍNEA " + line.code
+                        )
                     }
+                    if (line != null) refreshMapVehicles(map, line, nearby)
+                    else runOnUiThread { map.setVehicles(emptyList()) }
                 }
                 .onFailure {
                     runOnUiThread {
@@ -1382,6 +1413,46 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                         toast("Ubicación sincronizada, pero no se pudieron cargar las paradas cercanas.")
                     }
                 }
+        }
+    }
+
+    private fun refreshMapVehicles(
+        map: CyberMapView,
+        line: TransitLine,
+        nearby: List<TransitStop>
+    ) {
+        if (nearby.isEmpty()) return
+        executor.execute {
+            val found = LinkedHashMap<String, com.transpuntano.app.ui.MapVehicle>()
+            nearby.take(8).forEach { stop ->
+                runCatching { api.getArrivals(stop.identifier, line.code) }
+                    .getOrNull()
+                    .orEmpty()
+                    .forEach { arrival ->
+                        val lat = arrival.latitude ?: return@forEach
+                        val lon = arrival.longitude ?: return@forEach
+                        if (lat == 0.0 || lon == 0.0) return@forEach
+                        val id = arrival.vehicleId.ifBlank {
+                            String.format(java.util.Locale.US, "%.5f_%.5f", lat, lon)
+                        }
+                        found[id] = com.transpuntano.app.ui.MapVehicle(
+                            id = id,
+                            label = arrival.vehicleId.ifBlank { "BUS" },
+                            destination = arrival.destination,
+                            latitude = lat,
+                            longitude = lon,
+                            gpsTimestamp = arrival.gpsTimestamp
+                        )
+                    }
+            }
+            val vehicles = found.values.toList()
+            runOnUiThread {
+                map.setVehicles(vehicles)
+                headerStatus.setStatusText(
+                    if (vehicles.isEmpty()) "● LÍNEA " + line.code + " • SIN GPS DISPONIBLE"
+                    else "● LÍNEA " + line.code + " • " + vehicles.size + " COLECTIVOS EN GPS"
+                )
+            }
         }
     }
 
