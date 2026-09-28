@@ -20,6 +20,15 @@ data class MapStop(
     val longitude: Double
 )
 
+data class MapVehicle(
+    val id: String,
+    val label: String,
+    val destination: String,
+    val latitude: Double,
+    val longitude: Double,
+    val gpsTimestamp: String = ""
+)
+
 class CyberMapView(context: Context) : View(context) {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -41,7 +50,17 @@ class CyberMapView(context: Context) : View(context) {
 
     private var route = emptyList<Pair<Double, Double>>()
     private var stops = emptyList<MapStop>()
+    private var vehicles = emptyList<MapVehicle>()
     private var user: Pair<Double, Double>? = null
+    private var vehiclePhase = 0f
+    private val vehicleRunner = object : Runnable {
+        override fun run() {
+            if (!isAttachedToWindow) return
+            vehiclePhase += 0.22f
+            postInvalidateOnAnimation()
+            postOnAnimationDelayed(this, 60L)
+        }
+    }
 
     private var lat = -33.3017
     private var lon = -66.3378
@@ -139,6 +158,11 @@ class CyberMapView(context: Context) : View(context) {
         invalidate()
     }
 
+    fun setVehicles(v: List<MapVehicle>) {
+        vehicles = v
+        invalidate()
+    }
+
     fun setUserLocation(
         a: Double,
         b: Double,
@@ -227,6 +251,7 @@ class CyberMapView(context: Context) : View(context) {
         grid(c)
         line(c)
         stops(c)
+        vehicles(c)
         user(c)
 
         c.restore()
@@ -584,6 +609,34 @@ private fun updateMapRect() {
                 dp(7f),
                 paint
             )
+        }
+    }
+
+    private fun vehicles(c: Canvas) {
+        vehicles.forEach { vehicle ->
+            val p = screen(vehicle.latitude, vehicle.longitude)
+            if (
+                p.x !in mapRect.left - dp(28f)..mapRect.right + dp(28f) ||
+                p.y !in mapRect.top - dp(28f)..mapRect.bottom + dp(28f)
+            ) return@forEach
+
+            val pulse = sin(vehiclePhase) * 0.5f + 0.5f
+            paint.style = Paint.Style.FILL
+            paint.color = Color.argb((35 + pulse * 35).toInt(), 255, 0, 255)
+            c.drawCircle(p.x, p.y, dp(17f) + dp(4f) * pulse, paint)
+            paint.color = Color.rgb(255, 0, 255)
+            c.drawCircle(p.x, p.y, dp(8f), paint)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = dp(2f)
+            paint.color = Color.rgb(0, 240, 255)
+            c.drawCircle(p.x, p.y, dp(10f), paint)
+            paint.style = Paint.Style.FILL
+            paint.typeface = cyberpunkTypeface
+            paint.textSize = dp(8f)
+            paint.textAlign = Paint.Align.CENTER
+            paint.color = Color.WHITE
+            c.drawText(vehicle.label, p.x, p.y + dp(3f), paint)
+            paint.textAlign = Paint.Align.LEFT
         }
     }
 
