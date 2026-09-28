@@ -196,62 +196,103 @@ class MainActivity : AppCompatActivity() {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         var selectedIndex: Int = 0
             set(value) { field = value; invalidateSelf() }
+
         override fun draw(canvas: Canvas) {
             val w = bounds.width().toFloat()
             val h = bounds.height().toFloat()
             val cyan = 0xFF00F0FF.toInt()
             val pink = 0xFFFF2DB2.toInt()
+            val violet = 0xFF7A5CFF.toInt()
+
             paint.style = Paint.Style.FILL
-            paint.color = 0xFF02070D.toInt()
+            paint.shader = android.graphics.LinearGradient(
+                0f, 0f, 0f, h,
+                0xFF020711.toInt(), 0xFF080319.toInt(),
+                android.graphics.Shader.TileMode.CLAMP
+            )
             canvas.drawRect(0f, 0f, w, h, paint)
+            paint.shader = null
 
+            // Holographic top rail with segmented energy breaks.
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 1f
+            paint.strokeWidth = 1.5f
             paint.color = cyan
-            paint.alpha = 235
-            canvas.drawLine(0f, 2f, w * .16f, 2f, paint)
-            canvas.drawLine(w * .84f, 2f, w, 2f, paint)
-            paint.alpha = 100
-            canvas.drawLine(w * .22f, 2f, w * .78f, 2f, paint)
+            paint.alpha = 220
+            canvas.drawLine(0f, 2f, w * .12f, 2f, paint)
+            canvas.drawLine(w * .18f, 2f, w * .43f, 2f, paint)
+            canvas.drawLine(w * .57f, 2f, w * .82f, 2f, paint)
+            canvas.drawLine(w * .88f, 2f, w, 2f, paint)
+            paint.color = pink
+            paint.alpha = 210
+            canvas.drawLine(w * .43f, 2f, w * .48f, 2f, paint)
+            canvas.drawLine(w * .52f, 2f, w * .57f, 2f, paint)
 
-            paint.alpha = 230
-            canvas.drawLine(0f, 2f, 14f, h * .28f, paint)
-            canvas.drawLine(w, 2f, w - 14f, h * .28f, paint)
-
-            // Selected navigation cell: a restrained HUD bracket, entirely rendered by Canvas.
+            // Deep holographic perspective grid.
+            paint.color = violet
+            paint.alpha = 26
+            paint.strokeWidth = 1f
             val cellW = w / 5f
+            for (i in 0..5) canvas.drawLine(i * cellW, h * .28f, i * cellW, h, paint)
+            for (i in 1..4) {
+                val y = h * (0.28f + i * 0.16f)
+                canvas.drawLine(0f, y, w, y, paint)
+            }
+
+            // Selected slot becomes a compact holographic cockpit panel.
             val sx = selectedIndex.coerceIn(0, 4) * cellW
             paint.style = Paint.Style.FILL
             paint.color = cyan
-            paint.alpha = 12
-            canvas.drawRect(sx + 3f, 7f, sx + cellW - 3f, h - 5f, paint)
+            paint.alpha = 18
+            canvas.drawRect(sx + 5f, 8f, sx + cellW - 5f, h - 5f, paint)
+
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 1f
-            paint.color = cyan
-            paint.alpha = 180
-            canvas.drawLine(sx + 8f, 9f, sx + 22f, 9f, paint)
-            canvas.drawLine(sx + 8f, 9f, sx + 8f, 18f, paint)
-            canvas.drawLine(sx + cellW - 8f, h - 9f, sx + cellW - 22f, h - 9f, paint)
-            canvas.drawLine(sx + cellW - 8f, h - 9f, sx + cellW - 8f, h - 18f, paint)
-
-            paint.color = cyan
-            paint.alpha = 30
-            for (x in 0..w.toInt() step 28) canvas.drawLine(x.toFloat(), h * .25f, x.toFloat(), h, paint)
-            for (y in 24..h.toInt() step 18) canvas.drawLine(0f, y.toFloat(), w, y.toFloat(), paint)
-
             paint.color = cyan
             paint.alpha = 230
-            paint.strokeWidth = 2f
-            canvas.drawLine(8f, h - 2f, w - 8f, h - 2f, paint)
+            paint.strokeWidth = 1.4f
+            val inset = 7f
+            val top = 8f
+            val bottom = h - 6f
+            val notch = 8f
+            val path = Path()
+            path.moveTo(sx + inset + notch, top)
+            path.lineTo(sx + cellW - inset - notch, top)
+            path.lineTo(sx + cellW - inset, top + notch)
+            path.lineTo(sx + cellW - inset, bottom - notch)
+            path.lineTo(sx + cellW - inset - notch, bottom)
+            path.lineTo(sx + inset + notch, bottom)
+            path.lineTo(sx + inset, bottom - notch)
+            path.lineTo(sx + inset, top + notch)
+            path.close()
+            canvas.drawPath(path, paint)
+
             paint.color = pink
-            paint.alpha = 190
-            paint.strokeWidth = 1f
-            canvas.drawLine(w * .30f, h - 6f, w * .70f, h - 6f, paint)
-            paint.color = cyan
+            paint.alpha = 220
+            paint.strokeWidth = 2f
+            canvas.drawLine(sx + 14f, top, sx + 30f, top, paint)
+            canvas.drawLine(sx + cellW - 30f, bottom, sx + cellW - 14f, bottom, paint)
+
+            // Central command node.
             paint.style = Paint.Style.FILL
-            paint.alpha = 190
-            canvas.drawCircle(w / 2f, 5f, 1.5f, paint)
+            paint.color = cyan
+            paint.alpha = 210
+            canvas.drawCircle(w / 2f, 3f, 1.7f, paint)
+            paint.color = pink
+            paint.alpha = 170
+            canvas.drawCircle(w / 2f, 3f, 4f, paint)
+
+            // Bottom reactor rail.
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 2f
+            paint.color = cyan
+            paint.alpha = 230
+            canvas.drawLine(10f, h - 2f, w * .38f, h - 2f, paint)
+            canvas.drawLine(w * .62f, h - 2f, w - 10f, h - 2f, paint)
+            paint.color = pink
+            paint.alpha = 220
+            canvas.drawLine(w * .38f, h - 2f, w * .47f, h - 2f, paint)
+            canvas.drawLine(w * .53f, h - 2f, w * .62f, h - 2f, paint)
         }
+
         override fun setAlpha(alpha: Int) {}
         override fun setColorFilter(colorFilter: ColorFilter?) {}
         @Suppress("DEPRECATION")
@@ -259,73 +300,79 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class CyberDrawerBackground(private val context: Context) : android.graphics.drawable.Drawable() {
-        private val density = context.resources.displayMetrics.density
-        private val scaledDensity = context.resources.displayMetrics.scaledDensity
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         override fun draw(canvas: Canvas) {
             val w = bounds.width().toFloat()
             val h = bounds.height().toFloat()
             val cyan = 0xFF00F0FF.toInt()
             val pink = 0xFFFF2DB2.toInt()
+            val violet = 0xFF7A5CFF.toInt()
 
             paint.style = Paint.Style.FILL
-            paint.color = 0xFF02060B.toInt()
+            paint.shader = android.graphics.LinearGradient(
+                0f, 0f, w, h,
+                0xFF02050D.toInt(), 0xFF10031B.toInt(),
+                android.graphics.Shader.TileMode.CLAMP
+            )
             canvas.drawRect(0f, 0f, w, h, paint)
+            paint.shader = null
 
+            // Futuristic angular shell; no title text is drawn here.
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 1f
+            paint.strokeWidth = 1.5f
             paint.color = cyan
-            paint.alpha = 235
-            val cut = 22f
-            val p = Path()
-            p.moveTo(0f, 0f)
-            p.lineTo(w - cut, 0f)
-            p.lineTo(w, cut)
-            p.lineTo(w, h - cut)
-            p.lineTo(w - cut, h)
-            canvas.drawPath(p, paint)
+            paint.alpha = 230
+            val shell = Path()
+            shell.moveTo(0f, 0f)
+            shell.lineTo(w - 30f, 0f)
+            shell.lineTo(w, 30f)
+            shell.lineTo(w, h - 30f)
+            shell.lineTo(w - 30f, h)
+            canvas.drawPath(shell, paint)
 
-            paint.alpha = 180
-            canvas.drawLine(w - 4f, cut + 8f, w - 4f, h - cut - 8f, paint)
             paint.color = pink
-            paint.alpha = 170
-            canvas.drawLine(7f, 72f, 7f, h - 40f, paint)
+            paint.alpha = 200
+            canvas.drawLine(4f, 0f, 4f, h, paint)
+            canvas.drawLine(w - 5f, 30f, w - 5f, h - 30f, paint)
 
+            // Circuit traces and HUD rails.
+            paint.color = violet
+            paint.alpha = 75
+            paint.strokeWidth = 1f
+            for (i in 0..7) {
+                val y = 28f + i * 78f
+                val trace = Path()
+                trace.moveTo(18f, y)
+                trace.lineTo(w * .38f, y)
+                trace.lineTo(w * .45f, y + 10f)
+                trace.lineTo(w - 18f, y + 10f)
+                canvas.drawPath(trace, paint)
+            }
             paint.color = cyan
-            paint.alpha = 32
-            for (y in 20..h.toInt() step 24) canvas.drawLine(12f, y.toFloat(), w - 12f, y.toFloat(), paint)
-            paint.alpha = 120
-            canvas.drawLine(18f, 58f, w - 30f, 58f, paint)
-            canvas.drawLine(18f, 62f, w * .58f, 62f, paint)
+            paint.alpha = 70
+            for (y in 18..h.toInt() step 24) canvas.drawLine(12f, y.toFloat(), w - 18f, y.toFloat(), paint)
+
+            // Side energy spine.
+            paint.color = cyan
             paint.alpha = 240
             paint.strokeWidth = 2f
-            canvas.drawLine(12f, 78f, w - 18f, 78f, paint)
-            canvas.drawLine(18f, h - 14f, w - 18f, h - 14f, paint)
+            canvas.drawLine(w - 10f, 46f, w - 10f, h - 46f, paint)
             paint.color = pink
-            paint.strokeWidth = 1f
-            canvas.drawLine(w * .28f, 82f, w * .72f, 82f, paint)
-
-            paint.color = cyan
-            paint.style = Paint.Style.FILL
             paint.alpha = 220
-            canvas.drawCircle(w - 12f, 12f, 2f, paint)
-            canvas.drawCircle(12f, h - 12f, 2f, paint)
+            paint.strokeWidth = 1f
+            canvas.drawLine(12f, 18f, 12f, h - 18f, paint)
 
-            // Canvas-rendered drawer HUD title using the same asset font as the header.
-            val typeface = try { Typeface.createFromAsset(context.assets, "fonts/cyberpunk.ttf") } catch (_: Exception) { Typeface.MONOSPACE }
-            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
-                this.typeface = typeface
-                textSize = 12f * scaledDensity
-                textAlign = Paint.Align.LEFT
-                color = cyan
-                alpha = 235
-            }
-            canvas.drawText("NAVEGACIÓN", 18f, 34f, textPaint)
-            textPaint.textSize = 7.5f * scaledDensity
-            textPaint.color = pink
-            textPaint.alpha = 185
-            canvas.drawText("// TU COLECTIVO 2.0 //", 18f, 49f, textPaint)
+            // Corner data markers.
+            paint.style = Paint.Style.FILL
+            paint.color = cyan
+            paint.alpha = 230
+            canvas.drawCircle(w - 18f, 18f, 2f, paint)
+            canvas.drawCircle(w - 18f, h - 18f, 2f, paint)
+            paint.color = pink
+            canvas.drawCircle(18f, 18f, 2f, paint)
+            canvas.drawCircle(18f, h - 18f, 2f, paint)
         }
+
         override fun setAlpha(alpha: Int) {}
         override fun setColorFilter(colorFilter: ColorFilter?) {}
         @Suppress("DEPRECATION")
@@ -367,9 +414,9 @@ class MainActivity : AppCompatActivity() {
             }, LinearLayout.LayoutParams(0, -2, 1f))
             list.addView(row, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(8) })
         }
-        drawerPanel.addView(list, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(60) })
+        drawerPanel.addView(list, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(16) })
         drawerPanel.addView(View(this).apply { setBackgroundColor(pink) }, FrameLayout.LayoutParams(dp(2), dp(90)).apply {
-            leftMargin = dp(8); topMargin = dp(66)
+            leftMargin = dp(8); topMargin = dp(22)
         })
     }
 
@@ -1072,54 +1119,84 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class CyberBackgroundView(context: Context) : View(context) {
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.5f }
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val path = Path()
+
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
-            canvas.drawColor(Color.BLACK)
-            val w = width.toFloat(); val h = height.toFloat()
-            paint.color = 0x2200F0FF; paint.strokeWidth = 1.2f
-            for (y in (dpLocal(90)..height step dpLocal(78))) {
-                path.reset(); path.moveTo(0f, y.toFloat()); path.lineTo(w * .28f, y.toFloat())
-                path.lineTo(w * .34f, (y - dpLocal(8)).toFloat()); path.lineTo(w * .62f, (y - dpLocal(8)).toFloat())
-                path.lineTo(w * .68f, y.toFloat()); path.lineTo(w, y.toFloat()); canvas.drawPath(path, paint)
-            }
-            paint.color = 0x1FFF2DB2
-            for (x in (dpLocal(28)..width step dpLocal(74))) {
-                canvas.drawLine(x.toFloat(), h * .78f, x.toFloat() + dpLocal(18).toFloat(), h * .70f, paint)
-                canvas.drawLine(x.toFloat() + dpLocal(18).toFloat(), h * .70f, x.toFloat() + dpLocal(36).toFloat(), h * .70f, paint)
-            }
-            paint.color = 0x1600F0FF
-            canvas.drawCircle(w * .84f, h * .26f, dpLocal(70).toFloat(), paint)
-            canvas.drawCircle(w * .84f, h * .26f, dpLocal(82).toFloat(), paint)
+            val w = width.toFloat()
+            val h = height.toFloat()
+            val cyan = 0xFF00F0FF.toInt()
+            val pink = 0xFFFF2DB2.toInt()
+            val violet = 0xFF7A5CFF.toInt()
 
-            // Low-contrast cyber grid and HUD nodes: visual identity without affecting layout.
-            paint.color = 0x1200F0FF
-            paint.strokeWidth = 1f
-            val gridStep = dpLocal(48).toFloat()
-            var gx = 0f
-            while (gx <= w) {
-                canvas.drawLine(gx, h * .12f, gx, h, paint)
-                gx += gridStep
-            }
-            var gy = h * .16f
-            while (gy <= h) {
-                canvas.drawLine(0f, gy, w, gy, paint)
-                gy += gridStep
-            }
-            paint.color = 0x2600F0FF
+            canvas.drawColor(0xFF01030A.toInt())
+
+            // Layered depth field: diagonal holographic planes instead of the old grid.
             paint.style = Paint.Style.FILL
-            val nodeY = h * .18f
-            for (i in 1..4) canvas.drawCircle(w * (i / 5f), nodeY, dpLocal(1).toFloat(), paint)
-            paint.style = Paint.Style.STROKE
-            paint.color = 0x18FF2DB2
-            canvas.drawCircle(w * .16f, h * .72f, dpLocal(34).toFloat(), paint)
-            canvas.drawCircle(w * .16f, h * .72f, dpLocal(41).toFloat(), paint)
+            paint.shader = android.graphics.LinearGradient(
+                0f, 0f, w, h,
+                0x1800F0FF, 0x00000000,
+                android.graphics.Shader.TileMode.CLAMP
+            )
+            canvas.drawRect(0f, 0f, w, h, paint)
+            paint.shader = null
 
-            // Fine scanline near the content horizon.
-            paint.color = 0x2200F0FF
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1f
+            paint.color = cyan
+            paint.alpha = 34
+
+            val step = dpLocal(56).toFloat()
+            var x = -h
+            while (x < w + h) {
+                canvas.drawLine(x, 0f, x + h, h, paint)
+                x += step
+            }
+
+            // Broken magenta orbital arcs.
+            paint.color = pink
+            paint.alpha = 48
+            val r = minOf(w, h) * .34f
+            canvas.drawArc(w * .78f - r, h * .18f - r, w * .78f + r, h * .18f + r, 210f, 105f, false, paint)
+            canvas.drawArc(w * .18f - r * .65f, h * .82f - r * .65f, w * .18f + r * .65f, h * .82f + r * .65f, 25f, 120f, false, paint)
+
+            // Floating circuit routes.
+            paint.color = violet
+            paint.alpha = 42
+            for (i in 0..5) {
+                val y = dpLocal(90 + i * 92).toFloat()
+                path.reset()
+                path.moveTo(0f, y)
+                path.lineTo(w * .22f, y)
+                path.lineTo(w * .28f, y - dpLocal(12))
+                path.lineTo(w * .56f, y - dpLocal(12))
+                path.lineTo(w * .62f, y)
+                path.lineTo(w, y)
+                canvas.drawPath(path, paint)
+            }
+
+            // Tiny HUD nodes give the background a layered, instrument-panel feel.
+            paint.style = Paint.Style.FILL
+            paint.color = cyan
+            paint.alpha = 95
+            for (i in 1..5) {
+                val nx = w * (i / 6f)
+                val ny = h * (0.20f + (i % 2) * .50f)
+                canvas.drawCircle(nx, ny, dpLocal(1).toFloat(), paint)
+            }
+
+            // One scan horizon and two accent brackets.
+            paint.style = Paint.Style.STROKE
+            paint.color = cyan
+            paint.alpha = 35
             canvas.drawLine(0f, h * .62f, w, h * .62f, paint)
+            paint.alpha = 75
+            canvas.drawLine(dpLocal(12).toFloat(), h * .62f, dpLocal(74).toFloat(), h * .62f, paint)
+            paint.color = pink
+            canvas.drawLine(w - dpLocal(74).toFloat(), h * .62f, w - dpLocal(12).toFloat(), h * .62f, paint)
         }
+
         private fun dpLocal(v: Int) = (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
     }
 
@@ -1292,63 +1369,93 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class CyberHeaderView(context: Context) : View(context) {
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-        private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val path = Path()
 
         override fun onDraw(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
             val cyan = 0xFF00F0FF.toInt()
+            val pink = 0xFFFF2DB2.toInt()
+            val violet = 0xFF7A5CFF.toInt()
 
-            canvas.drawColor(0xFF010408.toInt())
-            fill.color = 0xFF030912.toInt()
-            canvas.drawRect(dpLocal(5).toFloat(), dpLocal(5).toFloat(),
-                w - dpLocal(5).toFloat(), h - dpLocal(5).toFloat(), fill)
+            // New cockpit-style header: layered glass, angular armor and energy rails.
+            paint.style = Paint.Style.FILL
+            paint.shader = android.graphics.LinearGradient(
+                0f, 0f, w, h,
+                0xFF020817.toInt(), 0xFF12031A.toInt(),
+                android.graphics.Shader.TileMode.CLAMP
+            )
+            canvas.drawRoundRect(4f, 4f, w - 4f, h - 5f, 9f, 9f, paint)
+            paint.shader = null
 
-            // Top neon rails leave a deliberate central gap so they do not crowd the title.
+            // Inner glass plane.
+            paint.color = 0xFF06101B.toInt()
+            paint.alpha = 210
+            canvas.drawRoundRect(9f, 9f, w - 9f, h - 10f, 6f, 6f, paint)
+
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = dpLocal(1).toFloat()
+            paint.strokeWidth = 1.2f
             paint.color = cyan
-            paint.alpha = 245
-            canvas.drawLine(dpLocal(5).toFloat(), dpLocal(3).toFloat(), dpLocal(72).toFloat(), dpLocal(3).toFloat(), paint)
-            canvas.drawLine(w - dpLocal(72).toFloat(), dpLocal(3).toFloat(), w - dpLocal(5).toFloat(), dpLocal(3).toFloat(), paint)
-            paint.alpha = 120
-            canvas.drawLine(dpLocal(82).toFloat(), dpLocal(3).toFloat(), dpLocal(116).toFloat(), dpLocal(3).toFloat(), paint)
-            canvas.drawLine(w - dpLocal(116).toFloat(), dpLocal(3).toFloat(), w - dpLocal(82).toFloat(), dpLocal(3).toFloat(), paint)
-
-            // Angular side frame and HUD brackets.
-            paint.alpha = 220
+            paint.alpha = 235
             path.reset()
-            path.moveTo(dpLocal(5).toFloat(), dpLocal(3).toFloat())
-            path.lineTo(dpLocal(5).toFloat(), h - dpLocal(8).toFloat())
-            path.lineTo(dpLocal(17).toFloat(), h - dpLocal(8).toFloat())
-            path.moveTo(w - dpLocal(5).toFloat(), dpLocal(3).toFloat())
-            path.lineTo(w - dpLocal(5).toFloat(), h - dpLocal(8).toFloat())
-            path.lineTo(w - dpLocal(17).toFloat(), h - dpLocal(8).toFloat())
+            path.moveTo(4f, 20f)
+            path.lineTo(4f, 6f)
+            path.lineTo(w - 34f, 6f)
+            path.lineTo(w - 20f, 20f)
+            path.moveTo(w - 4f, h - 20f)
+            path.lineTo(w - 4f, h - 6f)
+            path.lineTo(34f, h - 6f)
+            path.lineTo(20f, h - 20f)
             canvas.drawPath(path, paint)
 
-            // Neon data ticks and nodes.
+            // Pink counter-rail creates the RGB split characteristic of a cyber HUD.
+            paint.color = pink
+            paint.alpha = 210
+            paint.strokeWidth = 1f
+            canvas.drawLine(16f, 7f, w * .34f, 7f, paint)
+            canvas.drawLine(w * .66f, h - 7f, w - 16f, h - 7f, paint)
+
+            // Central reactor window behind the title.
+            paint.color = violet
+            paint.alpha = 42
+            paint.style = Paint.Style.FILL
+            canvas.drawRoundRect(w * .24f, 12f, w * .76f, h - 13f, 5f, 5f, paint)
+
+            // Data ticks, nodes and micro-bars.
+            paint.style = Paint.Style.STROKE
+            paint.color = cyan
+            paint.alpha = 190
+            for (i in 0..6) {
+                val x = 18f + i * 8f
+                canvas.drawLine(x, h - 17f, x, h - 12f, paint)
+            }
+            for (i in 0..6) {
+                val x = w - 18f - i * 8f
+                canvas.drawLine(x, 12f, x, 17f, paint)
+            }
+
+            paint.style = Paint.Style.FILL
             paint.color = cyan
             paint.alpha = 230
-            for (i in 0..4) {
-                val x = dpLocal(22 + i * 7).toFloat()
-                canvas.drawLine(x, dpLocal(56).toFloat(), x, dpLocal(60).toFloat(), paint)
-            }
-            for (i in 0..4) {
-                val x = w - dpLocal(22 + i * 7).toFloat()
-                canvas.drawLine(x, dpLocal(56).toFloat(), x, dpLocal(60).toFloat(), paint)
-            }
-            // Strong neon lower edge.
+            canvas.drawCircle(17f, 17f, 2f, paint)
+            canvas.drawCircle(w - 17f, h - 17f, 2f, paint)
+            paint.color = pink
+            paint.alpha = 220
+            canvas.drawCircle(w - 17f, 17f, 2f, paint)
+            canvas.drawCircle(17f, h - 17f, 2f, paint)
+
+            // Thin scan rails.
+            paint.style = Paint.Style.STROKE
             paint.color = cyan
-            paint.alpha = 255
-            paint.strokeWidth = dpLocal(2).toFloat()
-            canvas.drawLine(dpLocal(8).toFloat(), h - dpLocal(2).toFloat(),
-                w - dpLocal(8).toFloat(), h - dpLocal(2).toFloat(), paint)
+            paint.alpha = 55
+            canvas.drawLine(w * .08f, h * .48f, w * .92f, h * .48f, paint)
+            paint.color = pink
+            paint.alpha = 90
+            canvas.drawLine(w * .38f, h - 11f, w * .62f, h - 11f, paint)
         }
 
-        private fun dpLocal(v: Int) =
-            (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        private fun dpLocal(v: Int) = (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
     }
 
     override fun onDestroy() {
