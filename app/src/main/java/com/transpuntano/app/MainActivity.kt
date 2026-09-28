@@ -1084,8 +1084,8 @@ class MainActivity : AppCompatActivity() {
                 runnerPaint.style=Paint.Style.STROKE
                 runnerPaint.strokeCap=Paint.Cap.ROUND
                 runnerPaint.strokeWidth=3f*d
-                runnerPaint.color=cyan
-                runnerPaint.setShadowLayer(8f*d,0f,0f,cyan)
+                runnerPaint.color=pink
+                runnerPaint.setShadowLayer(8f*d,0f,0f,pink)
                 if (startDistance+segment <= total) drawSegment(startDistance,startDistance+segment)
                 else {
                     drawSegment(startDistance,total)
@@ -1132,8 +1132,10 @@ class MainActivity : AppCompatActivity() {
             p.textSize=12f*sd
             p.shader=android.graphics.LinearGradient(0f,0f,textRight,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
             c.drawText(lineLabel,12f*d,34f*d,p)
-            p.shader=null; p.textSize=9f*sd; p.color=muted; p.alpha=230
+            p.shader=null; p.textSize=9f*sd; p.color=pink; p.alpha=255
+            p.setShadowLayer(5f*d,0f,0f,pink)
             c.drawText(destination,12f*d,57f*d,p)
+            p.clearShadowLayer()
 
             if (!isArriving) {
                 p.textAlign=Paint.Align.CENTER
