@@ -548,7 +548,7 @@ class MainActivity : AppCompatActivity() {
             val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
                 color = 0xFF050714.toInt()
-                alpha = 248
+                alpha=255
             }
             canvas.drawRect(left, top, right, bottom, fill)
 
@@ -890,7 +890,7 @@ class MainActivity : AppCompatActivity() {
                 .onSuccess { stops -> runOnUiThread {
                     list.removeAllViews()
                     stops.forEach { stop ->
-                        list.addView(cyberDetailCard("🚏 " + stop.description, stop.street + " · " + stop.intersection) {
+                        list.addView(cyberDetailCard(stop.description, stop.street + " · " + stop.intersection) {
                             showArrivals(stop, line)
                         })
                     }
@@ -904,7 +904,7 @@ class MainActivity : AppCompatActivity() {
     private fun showArrivals(stop: TransitStop, line: TransitLine) {
         content.removeAllViews(); title.text = "ARRIBOS"; updateNav(1)
         val box = box()
-        box.addView(cyberSectionHeader("🚏 " + stop.description, "LÍNEA " + line.code + " · ID " + stop.identifier))
+        box.addView(cyberSectionHeader(stop.description, ""))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         box.addView(button("ACTUALIZAR ARRIBOS", cyan) { loadArrivals(stop, line, list) })
@@ -964,7 +964,7 @@ class MainActivity : AppCompatActivity() {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
         override fun onDraw(c: Canvas) {
             val r=RectF(2f*d,2f*d,width-2f*d,height-2f*d)
-            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=248; c.drawRect(r,p)
+            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=255; c.drawRect(r,p)
             p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=235; c.drawRect(r,p)
             p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT
             p.textSize=15f*sd; p.shader=android.graphics.LinearGradient(0f,0f,width*.65f,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
@@ -982,7 +982,7 @@ class MainActivity : AppCompatActivity() {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
         override fun onDraw(c: Canvas) {
             val l=2f*d; val t=2f*d; val rr=width-2f*d; val b=height-2f*d
-            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=248; c.drawRect(l,t,rr,b,p)
+            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=255; c.drawRect(l,t,rr,b,p)
             p.style=Paint.Style.STROKE; p.strokeWidth=1.8f*d; p.color=cyan; p.alpha=235; c.drawRect(l,t,rr,b,p)
             p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT
             p.textSize=13f*sd; p.shader=android.graphics.LinearGradient(0f,0f,width*.65f,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
@@ -1014,7 +1014,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun onDraw(c: Canvas) {
             val l=2f*d; val t=2f*d; val rr=width-2f*d; val b=height-2f*d
-            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=248; c.drawRect(l,t,rr,b,p)
+            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=255; c.drawRect(l,t,rr,b,p)
             p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=235; c.drawRect(l,t,rr,b,p)
 
             // Área de texto amplia; el contador circular queda separado a la derecha.
@@ -1052,8 +1052,18 @@ class MainActivity : AppCompatActivity() {
             p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER
             p.textSize=15f*sd; p.color=cyan; p.alpha=255
             c.drawText(minutes,circleCx,circleCy-1f*d-(p.ascent()+p.descent())*.5f,p)
-            p.textSize=6.5f*sd; p.color=muted; p.alpha=230
-            c.drawText("MIN",circleCx,circleCy+17f*d,p)
+            p.textSize=6.5f*sd; p.color=muted; p.alpha=255
+            // Dibujamos cada letra por separado para que "MIN" sea siempre legible con la fuente Cyberpunk.
+            val minY=circleCy+17f*d
+            val minGap=2.2f*d
+            val mWidth=p.measureText("M")
+            val iWidth=p.measureText("I")
+            val nWidth=p.measureText("N")
+            val minTotal=mWidth+iWidth+nWidth+minGap*2f
+            var minX=circleCx-minTotal*.5f
+            c.drawText("M",minX+mWidth*.5f,minY,p); minX+=mWidth+minGap
+            c.drawText("I",minX+iWidth*.5f,minY,p); minX+=iWidth+minGap
+            c.drawText("N",minX+nWidth*.5f,minY,p)
         }
     }
 
