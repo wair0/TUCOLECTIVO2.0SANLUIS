@@ -907,8 +907,8 @@ class MainActivity : AppCompatActivity() {
         box.addView(cyberSectionHeader(stop.description, ""))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
-        box.addView(button("ACTUALIZAR ARRIBOS", cyan) { loadArrivals(stop, line, list) })
-        box.addView(button("☆ GUARDAR PARADA", pink) { saveFavorite(stop, line); toast("Parada guardada") })
+        box.addView(cyberActionCard("ACTUALIZAR ARRIBOS", cyan) { loadArrivals(stop, line, list) })
+        box.addView(cyberActionCard("☆ GUARDAR PARADA", cyan) { saveFavorite(stop, line); toast("Parada guardada") })
         content.addView(ScrollView(this).apply { addView(box) })
         loadArrivals(stop, line, list)
     }
@@ -956,6 +956,14 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(-1, dp(92)).apply { bottomMargin = dp(8) }
         }
 
+    private fun cyberActionCard(label: String, color: Int, action: () -> Unit): View =
+        CyberActionCardView(this, label, color, cyberpunkTypeface).apply {
+            layoutParams = LinearLayout.LayoutParams(-1, dp(60)).apply { topMargin = dp(10); bottomMargin = dp(2) }
+            setOnClickListener { action() }
+            isClickable = true
+            isFocusable = true
+        }
+
     private class CyberSectionHeaderView(
         context: Context, private val heading: String, private val subtitle: String,
         private val typeface: Typeface, private val cyan: Int, private val pink: Int, private val muted: Int
@@ -999,14 +1007,30 @@ class MainActivity : AppCompatActivity() {
         private val d=resources.displayMetrics.density; private val sd=resources.displayMetrics.scaledDensity
         private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
         private val circlePaint=Paint(Paint.ANTI_ALIAS_FLAG)
+        private val numericMinutes = minutes.trim().toIntOrNull()
+        private val isArriving = minutes.trim().equals("ARRIBANDO", true) || (numericMinutes != null && numericMinutes <= 1)
+        private val displayMinutes = if (isArriving) "ARRIBANDO" else minutes.trim()
         private var phase=0f
+
         private val runner=object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                phase=(phase+5f)%360f
+                // Menos minutos = mayor velocidad. La velocidad cae progresivamente
+                // a medida que aumenta el tiempo restante.
+                val m = numericMinutes ?: 5
+                val speed = when {
+                    m <= 0 -> 18f
+                    m == 1 -> 15f
+                    else -> (15f / (m + 1f)).coerceIn(1.5f, 15f)
+                }
+                phase=(phase+speed)%360f
                 postInvalidateOnAnimation()
                 postOnAnimationDelayed(this,45L)
             }
+        }
+
+        init {
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
         }
 
         override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
@@ -1018,7 +1042,7 @@ class MainActivity : AppCompatActivity() {
             p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=235; c.drawRect(l,t,rr,b,p)
 
             // Área de texto amplia; el contador circular queda separado a la derecha.
-            val circleR=27f*d
+            val circleR=if (isArriving) 31f*d else 27f*d
             val circleCx=rr-circleR-12f*d
             val circleCy=(t+b)*.5f
             val textRight=circleCx-circleR-14f*d
@@ -1030,40 +1054,85 @@ class MainActivity : AppCompatActivity() {
             p.shader=null; p.textSize=9f*sd; p.color=muted; p.alpha=230
             c.drawText(destination,12f*d,57f*d,p)
 
-            // Contador circular neon: aro base + arco animado que recorre el círculo.
+            // Círculo exclusivamente celeste, con varias capas de resplandor neon.
             circlePaint.style=Paint.Style.STROKE
             circlePaint.strokeCap=Paint.Cap.ROUND
-            circlePaint.strokeWidth=2f*d
             circlePaint.color=cyan
-            circlePaint.alpha=80
+            circlePaint.setShadowLayer(10f*d, 0f, 0f, cyan)
+            circlePaint.strokeWidth=7f*d; circlePaint.alpha=22
+            c.drawCircle(circleCx,circleCy,circleR,circlePaint)
+            circlePaint.clearShadowLayer()
+
+            circlePaint.strokeWidth=4f*d; circlePaint.alpha=45
             c.drawCircle(circleCx,circleCy,circleR,circlePaint)
 
-            circlePaint.strokeWidth=3f*d
-            circlePaint.color=cyan
-            circlePaint.alpha=255
-            val oval=RectF(circleCx-circleR,circleCy-circleR,circleCx+circleR,circleCy+circleR)
-            c.drawArc(oval,phase,245f,false,circlePaint)
+            circlePaint.strokeWidth=2f*d; circlePaint.alpha=105
+            c.drawCircle(circleCx,circleCy,circleR,circlePaint)
 
-            circlePaint.strokeWidth=1.5f*d
-            circlePaint.color=pink
-            circlePaint.alpha=210
-            c.drawArc(oval,phase+245f,55f,false,circlePaint)
+            val oval=RectF(circleCx-circleR,circleCy-circleR,circleCx+circleR,circleCy+circleR)
+            circlePaint.strokeWidth=3f*d; circlePaint.alpha=255
+            circlePaint.setShadowLayer(7f*d, 0f, 0f, cyan)
+            c.drawArc(oval,phase,270f,false,circlePaint)
+            circlePaint.clearShadowLayer()
 
             p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER
-            p.textSize=15f*sd; p.color=cyan; p.alpha=255
-            c.drawText(minutes,circleCx,circleCy-1f*d-(p.ascent()+p.descent())*.5f,p)
-            p.textSize=6.5f*sd; p.color=muted; p.alpha=255
-            // Dibujamos cada letra por separado para que "MIN" sea siempre legible con la fuente Cyberpunk.
-            val minY=circleCy+17f*d
-            val minGap=2.2f*d
-            val mWidth=p.measureText("M")
-            val iWidth=p.measureText("I")
-            val nWidth=p.measureText("N")
-            val minTotal=mWidth+iWidth+nWidth+minGap*2f
-            var minX=circleCx-minTotal*.5f
-            c.drawText("M",minX+mWidth*.5f,minY,p); minX+=mWidth+minGap
-            c.drawText("I",minX+iWidth*.5f,minY,p); minX+=iWidth+minGap
-            c.drawText("N",minX+nWidth*.5f,minY,p)
+            p.color=cyan; p.alpha=255
+            if (isArriving) {
+                var size=9f*sd
+                p.textSize=size
+                while (p.measureText(displayMinutes) > circleR*1.62f && size > 4.5f*sd) {
+                    size-=0.5f*sd
+                    p.textSize=size
+                }
+                c.drawText(displayMinutes,circleCx,circleCy-(p.ascent()+p.descent())*.5f,p)
+            } else {
+                p.textSize=15f*sd
+                c.drawText(displayMinutes,circleCx,circleCy-1f*d-(p.ascent()+p.descent())*.5f,p)
+                p.textSize=6.5f*sd; p.alpha=255
+                val minY=circleCy+17f*d
+                val minGap=2.2f*d
+                val mWidth=p.measureText("M")
+                val iWidth=p.measureText("I")
+                val nWidth=p.measureText("N")
+                val minTotal=mWidth+iWidth+nWidth+minGap*2f
+                var minX=circleCx-minTotal*.5f
+                c.drawText("M",minX+mWidth*.5f,minY,p); minX+=mWidth+minGap
+                c.drawText("I",minX+iWidth*.5f,minY,p); minX+=iWidth+minGap
+                c.drawText("N",minX+nWidth*.5f,minY,p)
+            }
+        }
+    }
+
+    private class CyberActionCardView(
+        context: Context, private val label: String, private val color: Int, private val typeface: Typeface
+    ) : View(context) {
+        private val d=resources.displayMetrics.density
+        private val sd=resources.displayMetrics.scaledDensity
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
+
+        override fun onDraw(c: Canvas) {
+            val r=RectF(2f*d,2f*d,width-2f*d,height-2f*d)
+
+            p.style=Paint.Style.FILL
+            p.color=0xFF050714.toInt()
+            p.alpha=255
+            c.drawRect(r,p)
+
+            p.style=Paint.Style.STROKE
+            p.strokeWidth=2f*d
+            p.color=color
+            p.alpha=245
+            p.setShadowLayer(7f*d,0f,0f,color)
+            c.drawRect(r,p)
+            p.clearShadowLayer()
+
+            p.style=Paint.Style.FILL
+            p.typeface=typeface
+            p.textAlign=Paint.Align.CENTER
+            p.textSize=12.5f*sd
+            p.color=color
+            p.alpha=255
+            c.drawText(label,width*.5f,height*.5f-(p.ascent()+p.descent())*.5f,p)
         }
     }
 
