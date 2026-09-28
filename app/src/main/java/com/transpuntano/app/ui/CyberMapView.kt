@@ -48,7 +48,7 @@ class CyberMapView(context: Context) : View(context) {
     private val inFlight =
         HashSet<String>()
 
-    private var route = emptyList<Pair<Double, Double>>()
+    private var routes = emptyList<List<Pair<Double, Double>>>()
     private var stops = emptyList<MapStop>()
     private var vehicles = emptyList<MapVehicle>()
     private var user: Pair<Double, Double>? = null
@@ -142,8 +142,14 @@ class CyberMapView(context: Context) : View(context) {
         )
 
     fun setRoute(v: List<Pair<Double, Double>>) {
-        route = v
-        if (v.isNotEmpty()) fit(v)
+        setRoutes(if (v.isEmpty()) emptyList() else listOf(v), fit = true)
+    }
+
+    fun setRoutes(v: List<List<Pair<Double, Double>>>, fit: Boolean = true) {
+        routes = v.filter { it.size >= 2 }
+        if (fit && routes.isNotEmpty()) {
+            fit(routes.flatten())
+        }
         invalidate()
     }
 
@@ -528,19 +534,22 @@ private fun updateMapRect() {
     }
 
     private fun line(c: Canvas) {
-        if (route.size < 2) return
+        if (routes.isEmpty()) return
 
         paint.style = Paint.Style.STROKE
         paint.strokeCap = Paint.Cap.ROUND
         paint.strokeJoin = Paint.Join.ROUND
 
-        paint.strokeWidth = dp(10f)
-        paint.color = Color.argb(90, 0, 240, 255)
-        path(c, route)
+        routes.forEach { currentRoute ->
+            if (currentRoute.size < 2) return@forEach
+            paint.strokeWidth = dp(10f)
+            paint.color = Color.argb(90, 0, 240, 255)
+            path(c, currentRoute)
 
-        paint.strokeWidth = dp(4f)
-        paint.color = Color.rgb(0, 240, 255)
-        path(c, route)
+            paint.strokeWidth = dp(4f)
+            paint.color = Color.rgb(0, 240, 255)
+            path(c, currentRoute)
+        }
     }
 
     private fun path(
