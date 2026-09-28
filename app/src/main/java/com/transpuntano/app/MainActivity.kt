@@ -121,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         navBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             background = CyberBottomBarBackground()
+            foreground = CyberHeaderOuterFrameDrawable(cyan, pink, resources.displayMetrics.density)
             visibility = View.VISIBLE
         }
         root.addView(navBar, LinearLayout.LayoutParams(-1, dp(72)))
@@ -146,7 +147,7 @@ class MainActivity : AppCompatActivity() {
         val id = resources.getIdentifier(iconName, "drawable", packageName)
         setImageResource(id)
         setColorFilter(cyan)
-        background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+        background = CyberHeaderFrameDrawable(cyan, pink, resources.displayMetrics.density, dp(7).toFloat(), dp(4).toFloat())
         contentDescription = description
         scaleType = ImageView.ScaleType.CENTER
         setPadding(dp(8), dp(8), dp(8), dp(8))
@@ -303,7 +304,12 @@ class MainActivity : AppCompatActivity() {
                 setImageResource(iconRes)
                 alpha = if (index == selected) 1f else 0.52f
                 contentDescription = label
-                layoutParams = LinearLayout.LayoutParams(dp(27), dp(27))
+                scaleType = ImageView.ScaleType.CENTER
+                background = CyberHeaderFrameDrawable(
+                    cyan, pink, resources.displayMetrics.density,
+                    dp(5).toFloat(), dp(2).toFloat()
+                )
+                layoutParams = LinearLayout.LayoutParams(dp(38), dp(38))
             }
             val text = TextView(this).apply {
                 this.text = label
@@ -997,6 +1003,125 @@ class MainActivity : AppCompatActivity() {
      * every animation frame: cyan/magenta RGB ghosts, brightness cuts and
      * short horizontal glitch slices are all part of the rendered frame.
      */
+    private class CyberHeaderOuterFrameDrawable(
+        private val cyan: Int,
+        private val pink: Int,
+        private val density: Float
+    ) : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: Canvas) {
+            val inset = 2f * density
+            CyberHeaderFrameDrawable.drawFrame(
+                canvas,
+                bounds.left + inset,
+                bounds.top + inset,
+                bounds.right - inset,
+                bounds.bottom - inset,
+                cyan,
+                pink,
+                density,
+                9f * density,
+                1f,
+                0f
+            )
+        }
+
+        override fun setAlpha(alpha: Int) {}
+        override fun setColorFilter(colorFilter: ColorFilter?) {}
+        @Suppress("DEPRECATION")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private class CyberHeaderFrameDrawable(
+        private val cyan: Int,
+        private val pink: Int,
+        private val density: Float,
+        private val cornerCut: Float,
+        private val inset: Float
+    ) : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: Canvas) {
+            drawFrame(
+                canvas,
+                bounds.left + inset,
+                bounds.top + inset,
+                bounds.right - inset,
+                bounds.bottom - inset,
+                cyan,
+                pink,
+                density,
+                cornerCut,
+                1f,
+                0f
+            )
+        }
+
+        override fun setAlpha(alpha: Int) {}
+        override fun setColorFilter(colorFilter: ColorFilter?) {}
+        @Suppress("DEPRECATION")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+
+        companion object {
+            fun drawFrame(
+                canvas: Canvas,
+                left: Float,
+                top: Float,
+                right: Float,
+                bottom: Float,
+                cyan: Int,
+                pink: Int,
+                density: Float,
+                cut: Float,
+                intensity: Float,
+                phase: Float
+            ) {
+                if (right <= left || bottom <= top) return
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+                val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+                val w = right - left
+                val h = bottom - top
+                val c = cut.coerceAtMost(minOf(w, h) * 0.28f)
+                val path = Path().apply {
+                    moveTo(left + c, top)
+                    lineTo(right - c, top)
+                    lineTo(right, top + c)
+                    lineTo(right, bottom - c)
+                    lineTo(right - c, bottom)
+                    lineTo(left + c, bottom)
+                    lineTo(left, bottom - c)
+                    lineTo(left, top + c)
+                    close()
+                }
+                glow.strokeWidth = 5f * density
+                glow.color = cyan
+                glow.alpha = (48 * intensity).toInt()
+                canvas.drawPath(path, glow)
+                glow.strokeWidth = 2.5f * density
+                glow.color = pink
+                glow.alpha = (36 * intensity).toInt()
+                canvas.drawPath(path, glow)
+                p.strokeWidth = 1.15f * density
+                p.color = cyan
+                p.alpha = (230 * intensity).toInt()
+                canvas.drawPath(path, p)
+                p.strokeWidth = 1f * density
+                p.color = pink
+                p.alpha = (190 * intensity).toInt()
+                val split = left + w * 0.54f
+                canvas.drawLine(left, bottom, split, bottom, p)
+                canvas.drawLine(right, top, split, top, p)
+                p.color = cyan
+                p.alpha = (210 * intensity).toInt()
+                val notch = minOf(11f * density, w * 0.22f)
+                canvas.drawLine(left + c, top, left + c + notch, top, p)
+                canvas.drawLine(right - c - notch, bottom, right - c, bottom, p)
+                p.color = pink
+                p.alpha = (180 * intensity).toInt()
+                val pulse = ((phase % 16f) / 16f)
+                val px = left + w * pulse
+                canvas.drawLine(px, top, minOf(px + 8f * density, right), top, p)
+            }
+        }
+    }
+
     private class CyberHeaderTitleView(
         context: Context,
         typeface: Typeface,
