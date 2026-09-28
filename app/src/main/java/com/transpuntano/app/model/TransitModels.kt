@@ -31,5 +31,9 @@ data class TransitArrival(
     val line: String,
     val destination: String,
     val minutes: Int?,
-    val status: String = ""
+    val status: String = "",
+    val vehicleId: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val gpsTimestamp: String = ""
 )
