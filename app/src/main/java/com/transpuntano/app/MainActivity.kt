@@ -837,7 +837,7 @@ class MainActivity : AppCompatActivity() {
     private fun showLine(line: TransitLine) {
         title.text = "LÍNEA " + line.code; updateNav(1); content.removeAllViews()
         val box = box()
-        box.addView(cyberSectionHeader("LÍNEA " + line.name.uppercase(), "RECORRIDO · CALLES"))
+        box.addView(cyberSectionHeader(line.name.uppercase(), "RECORRIDO · CALLES"))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         executor.execute {
