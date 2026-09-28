@@ -61,6 +61,7 @@ class CyberMapView(context: Context) : View(context) {
     private var lastTapY = 0f
 
     private var tap: ((MapStop) -> Unit)? = null
+    private var locationRequest: (() -> Unit)? = null
 
     private val mapRect = RectF()
 
@@ -153,6 +154,10 @@ class CyberMapView(context: Context) : View(context) {
 
     fun setOnStopTap(v: (MapStop) -> Unit) {
         tap = v
+    }
+
+    fun setOnLocationRequest(v: () -> Unit) {
+        locationRequest = v
     }
 
     private fun fit(v: List<Pair<Double, Double>>) {
@@ -667,6 +672,17 @@ private fun updateMapRect() {
             ),
             "−"
         )
+
+        drawControl(
+            c,
+            RectF(
+                right - size,
+                mapRect.top + dp(116f),
+                right,
+                mapRect.top + dp(116f) + size
+            ),
+            "◎"
+        )
     }
 
     private fun drawControl(
@@ -865,6 +881,18 @@ private fun updateMapRect() {
                     zoom =
                         (zoom - 1).coerceAtLeast(11)
                     invalidate()
+                    return true
+                }
+
+                val locationButton = RectF(
+                    right - size,
+                    mapRect.top + dp(116f),
+                    right,
+                    mapRect.top + dp(116f) + size
+                )
+
+                if (locationButton.contains(e.x, e.y)) {
+                    locationRequest?.invoke()
                     return true
                 }
 
