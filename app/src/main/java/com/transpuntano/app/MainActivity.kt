@@ -1778,6 +1778,9 @@ class MainActivity : AppCompatActivity() {
             }
             textPaint.color = if (selected) cyan else muted
             textPaint.alpha = if (selected) 255 else 190
+            // FAVORITOS es el único rótulo que necesita un tamaño menor para
+            // quedar completamente contenido dentro de su marco.
+            textPaint.textSize = if (label == "FAVORITOS") 7.2f * scaledDensity else 8.5f * scaledDensity
             canvas.drawText(label, width * .5f, height - 10f * density, textPaint)
         }
     }
