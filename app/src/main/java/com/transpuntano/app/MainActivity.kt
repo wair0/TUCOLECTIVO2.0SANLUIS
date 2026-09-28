@@ -52,6 +52,7 @@ class MainActivity : AppCompatActivity() {
     private var mapVehicleRefreshToken = 0
     @Volatile private var mapVehicleRefreshInProgress = false
     private var lastMapNearbyStops = emptyList<TransitStop>()
+    private var lastMapLineCodes = emptyList<Int>()
     private lateinit var navBar: LinearLayout
     private val cyan = 0xFF00F0FF.toInt()
     private val pink = 0xFFFF00FF.toInt()
@@ -913,7 +914,6 @@ class MainActivity : AppCompatActivity() {
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         box.addView(cyberActionCard("ACTUALIZAR ARRIBOS", cyan) { loadArrivals(stop, line, list) })
-        box.addView(cyberActionCard("VER COLECTIVOS EN MAPA", pink) { showMap(line) })
         box.addView(cyberActionCard("☆ GUARDAR PARADA", cyan) { saveFavorite(stop, line); toast("Parada guardada") })
         content.addView(ScrollView(this).apply { addView(box) })
         loadArrivals(stop, line, list)
@@ -1300,21 +1300,22 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                     .onSuccess { route -> runOnUiThread { map.setRoute(route) } }
                     .onFailure { error -> runOnUiThread { toast(error.message ?: "No se pudo cargar el recorrido") } }
             }
-            mapVehicleRefreshToken++
-            val token = mapVehicleRefreshToken
-            val refresh = object : Runnable {
-                override fun run() {
-                    if (token != mapVehicleRefreshToken) return
-                    if (map.isAttachedToWindow) {
+        }
+
+        mapVehicleRefreshToken++
+        val token = mapVehicleRefreshToken
+        val refresh = object : Runnable {
+            override fun run() {
+                if (token != mapVehicleRefreshToken) return
+                if (map.isAttachedToWindow) {
+                    if (lastMapNearbyStops.isNotEmpty()) {
                         refreshMapVehicles(map, line, lastMapNearbyStops)
-                        Handler(Looper.getMainLooper()).postDelayed(this, 10_000L)
                     }
+                    Handler(Looper.getMainLooper()).postDelayed(this, 5_000L)
                 }
             }
-            Handler(Looper.getMainLooper()).post(refresh)
-        } else {
-            mapVehicleRefreshToken++
         }
+        Handler(Looper.getMainLooper()).post(refresh)
     }
 
     private fun syncMapLocation(map: CyberMapView, line: TransitLine? = null) {
@@ -1407,8 +1408,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                             else "● " + mapStops.size + " PARADAS • GPS LÍNEA " + line.code
                         )
                     }
-                    if (line != null) refreshMapVehicles(map, line, nearby)
-                    else runOnUiThread { map.setVehicles(emptyList()) }
+                    refreshMapVehicles(map, line, nearby)
                 }
                 .onFailure {
                     runOnUiThread {
@@ -1421,29 +1421,55 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
 
     private fun refreshMapVehicles(
         map: CyberMapView,
-        line: TransitLine,
+        line: TransitLine?,
         nearby: List<TransitStop>
     ) {
         if (nearby.isEmpty() || mapVehicleRefreshInProgress) return
         mapVehicleRefreshInProgress = true
 
         vehicleExecutor.execute {
-            val found = LinkedHashMap<String, com.transpuntano.app.ui.MapVehicle>()
+            val lineCodes = if (line != null) {
+                listOf(line.code)
+            } else {
+                val fromStops = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct()
+                if (fromStops.isNotEmpty()) {
+                    lastMapLineCodes = fromStops
+                    fromStops
+                } else {
+                    val cached = lastMapLineCodes
+                    if (cached.isNotEmpty()) cached
+                    else runCatching { api.getLines().map { it.code }.distinct() }.getOrDefault(emptyList()).also {
+                        lastMapLineCodes = it
+                    }
+                }
+            }
 
-            // Las 8 paradas se consultan en paralelo para que una ronda no tarde
-            // 8 veces el tiempo de una consulta individual.
-            val tasks = nearby.take(8).map { stop ->
-                java.util.concurrent.Callable {
-                    runCatching {
-                        api.getArrivals(stop.identifier, line.code, 8_000)
-                    }.getOrDefault(emptyList())
+            if (lineCodes.isEmpty()) {
+                runOnUiThread {
+                    mapVehicleRefreshInProgress = false
+                    map.setVehicles(emptyList())
+                    headerStatus.setStatusText("● PARADAS CERCANAS • SIN LÍNEAS GPS")
+                }
+                return@execute
+            }
+
+            val found = LinkedHashMap<String, com.transpuntano.app.ui.MapVehicle>()
+            val stopSubset = nearby.take(8)
+            val tasks = stopSubset.flatMap { stop ->
+                lineCodes.map { lineCode ->
+                    java.util.concurrent.Callable {
+                        val arrivals = runCatching {
+                            api.getArrivals(stop.identifier, lineCode, 5_000)
+                        }.getOrDefault(emptyList())
+                        Triple(stop, lineCode, arrivals)
+                    }
                 }
             }
 
             runCatching {
-                vehicleQueryExecutor.invokeAll(tasks, 9, java.util.concurrent.TimeUnit.SECONDS)
+                vehicleQueryExecutor.invokeAll(tasks, 7, java.util.concurrent.TimeUnit.SECONDS)
             }.getOrNull().orEmpty().forEach { future ->
-                runCatching { future.get() }.getOrNull().orEmpty().forEach { arrival ->
+                runCatching { future.get() }.getOrNull()?.third.orEmpty().forEach { arrival ->
                     val lat = arrival.latitude ?: return@forEach
                     val lon = arrival.longitude ?: return@forEach
                     if (lat == 0.0 || lon == 0.0) return@forEach
@@ -1467,14 +1493,14 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             runOnUiThread {
                 mapVehicleRefreshInProgress = false
                 map.setVehicles(vehicles)
+                val prefix = if (line != null) "● LÍNEA " + line.code else "● GPS PARADAS CERCANAS"
                 headerStatus.setStatusText(
-                    if (vehicles.isEmpty()) "● LÍNEA " + line.code + " • SIN GPS DISPONIBLE"
-                    else "● LÍNEA " + line.code + " • " + vehicles.size + " COLECTIVOS EN GPS"
+                    if (vehicles.isEmpty()) prefix + " • SIN GPS DISPONIBLE"
+                    else prefix + " • " + vehicles.size + " COLECTIVOS EN GPS"
                 )
             }
         }
     }
-
     private fun saveFavorite(stop: TransitStop, line: TransitLine) {
         val prefs = getSharedPreferences("favorites", MODE_PRIVATE)
         val key = stop.identifier
