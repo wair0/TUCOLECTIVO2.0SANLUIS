@@ -41,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     )
     private val api = SmartMoveApi()
     private val executor = Executors.newFixedThreadPool(3)
+    private val vehicleExecutor = Executors.newFixedThreadPool(8)
     private lateinit var content: FrameLayout
     private lateinit var title: TextView
     private lateinit var status: TextView
@@ -1422,29 +1423,43 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         nearby: List<TransitStop>
     ) {
         if (nearby.isEmpty()) return
-        executor.execute {
+
+        vehicleExecutor.execute {
             val found = LinkedHashMap<String, com.transpuntano.app.ui.MapVehicle>()
-            nearby.take(8).forEach { stop ->
-                runCatching { api.getArrivals(stop.identifier, line.code) }
-                    .getOrNull()
-                    .orEmpty()
-                    .forEach { arrival ->
-                        val lat = arrival.latitude ?: return@forEach
-                        val lon = arrival.longitude ?: return@forEach
-                        if (lat == 0.0 || lon == 0.0) return@forEach
-                        val id = arrival.vehicleId.ifBlank {
-                            String.format(java.util.Locale.US, "%.5f_%.5f", lat, lon)
-                        }
-                        found[id] = com.transpuntano.app.ui.MapVehicle(
-                            id = id,
-                            label = arrival.vehicleId.ifBlank { "BUS" },
-                            destination = arrival.destination,
-                            latitude = lat,
-                            longitude = lon,
-                            gpsTimestamp = arrival.gpsTimestamp
-                        )
-                    }
+
+            // Las 8 paradas se consultan en paralelo para que una ronda no tarde
+            // 8 veces el tiempo de una consulta individual.
+            val tasks = nearby.take(8).map { stop ->
+                java.util.concurrent.Callable {
+                    runCatching {
+                        api.getArrivals(stop.identifier, line.code, 8_000)
+                    }.getOrDefault(emptyList())
+                }
             }
+
+            runCatching {
+                vehicleExecutor.invokeAll(tasks, 9, java.util.concurrent.TimeUnit.SECONDS)
+            }.getOrNull().orEmpty().forEach { future ->
+                runCatching { future.get() }.getOrNull().orEmpty().forEach { arrival ->
+                    val lat = arrival.latitude ?: return@forEach
+                    val lon = arrival.longitude ?: return@forEach
+                    if (lat == 0.0 || lon == 0.0) return@forEach
+
+                    val id = arrival.vehicleId.ifBlank {
+                        String.format(java.util.Locale.US, "%.5f_%.5f", lat, lon)
+                    }
+
+                    found[id] = com.transpuntano.app.ui.MapVehicle(
+                        id = id,
+                        label = arrival.vehicleId.ifBlank { "BUS" },
+                        destination = arrival.destination,
+                        latitude = lat,
+                        longitude = lon,
+                        gpsTimestamp = arrival.gpsTimestamp
+                    )
+                }
+            }
+
             val vehicles = found.values.toList()
             runOnUiThread {
                 map.setVehicles(vehicles)
