@@ -100,7 +100,7 @@ class MainActivity : AppCompatActivity() {
             setStatusText("● SISTEMA LISTO")
         }
         headerLayout.addView(headerContent)
-        headerLayout.addView(headerStatus, FrameLayout.LayoutParams(-2, dp(28)).apply {
+        headerLayout.addView(headerStatus, FrameLayout.LayoutParams(dp(150), dp(28)).apply {
             leftMargin = dp(58); topMargin = dp(57); gravity = Gravity.TOP
         })
         headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(50), dp(50)).apply {
@@ -1110,110 +1110,44 @@ class MainActivity : AppCompatActivity() {
         private val cyan: Int,
         private val pink: Int
     ) : View(context) {
-        private companion object {
-            const val TITLE = "TU COLECTIVO 2.0"
-            const val FRAME_DELAY_MS = 45L
-            const val FRAME_COUNT = 48
-        }
-
         private val density = resources.displayMetrics.density
         private val scaledDensity = resources.displayMetrics.scaledDensity
-        private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
             this.typeface = typeface
             textSize = 15f * scaledDensity
             textAlign = Paint.Align.CENTER
         }
-        private val cyanGhostPaint = Paint(titlePaint)
-        private val pinkGhostPaint = Paint(titlePaint)
-        private val scanPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            strokeWidth = 1f * density
-        }
+        private val ghost = Paint(paint)
         private var frame = 0
-
-        private val frameRunner = object : Runnable {
+        private val runner = object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                frame = (frame + 1) % FRAME_COUNT
+                frame = (frame + 1) % 48
                 postInvalidateOnAnimation()
-                postOnAnimationDelayed(this, FRAME_DELAY_MS)
+                postOnAnimationDelayed(this, 55L)
             }
         }
-
-        init {
-            contentDescription = TITLE
-            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
-            setWillNotDraw(false)
-        }
-
-        override fun onAttachedToWindow() {
-            super.onAttachedToWindow()
-            removeCallbacks(frameRunner)
-            postOnAnimation(frameRunner)
-        }
-
-        override fun onDetachedFromWindow() {
-            removeCallbacks(frameRunner)
-            super.onDetachedFromWindow()
-        }
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
+        override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
 
         override fun onDraw(canvas: Canvas) {
-            super.onDraw(canvas)
+            val text = "TU COLECTIVO 2.0"
+            val cx = width * .5f
+            val baseline = height * .55f - (paint.ascent() + paint.descent()) * .5f
+            val tw = paint.measureText(text)
+            val left = cx - tw * .5f - 18f * density
+            val right = cx + tw * .5f + 18f * density
+            val top = maxOf(2f * density, baseline + paint.ascent() - 7f * density)
+            val bottom = minOf(height - 2f * density, baseline + paint.descent() + 7f * density)
+            CyberHeaderFrameDrawable.drawFrame(canvas, left, top, right, bottom, cyan, pink, density, 6f * density, .82f, frame * .55f)
 
-            val left = 2f * density
-            val top = 2f * density
-            val right = width - 2f * density
-            val bottom = height - 2f * density
-
-            CyberHeaderFrameDrawable.drawFrame(
-                canvas, left, top, right, bottom,
-                cyan, pink, density, 8f * density, 1f,
-                frame.toFloat() * 0.55f
-            )
-
-            val centerX = width * 0.5f
-            val baseline = height * 0.5f - (titlePaint.ascent() + titlePaint.descent()) * 0.5f
-            val textWidth = titlePaint.measureText(TITLE)
-            val textTop = baseline + titlePaint.ascent()
-            val textBottom = baseline + titlePaint.descent()
-            val cycle = frame % 16
-            val glitch = cycle in setOf(3, 4, 9, 10, 11)
-            val brightness = when (cycle) {
-                3 -> 0.34f; 4 -> 1.0f; 9 -> 0.52f; 10 -> 0.86f; 11 -> 0.30f; else -> 1.0f
-            }
-            val ghostShift = when (cycle) {
-                3 -> 4.5f; 4 -> -3.0f; 9 -> -4.0f; 10 -> 2.5f; 11 -> -1.5f; else -> 0f
-            }
-
-            cyanGhostPaint.alpha = if (glitch) 210 else 92
-            pinkGhostPaint.alpha = if (glitch) 190 else 72
-            titlePaint.alpha = (255f * brightness).toInt().coerceIn(55, 255)
-            titlePaint.color = cyan
-            cyanGhostPaint.color = cyan
-            pinkGhostPaint.color = pink
-
-            canvas.drawText(TITLE, centerX + ghostShift, baseline, cyanGhostPaint)
-            canvas.drawText(TITLE, centerX - ghostShift, baseline, pinkGhostPaint)
-            canvas.drawText(TITLE, centerX, baseline, titlePaint)
-
-            if (glitch) {
-                val sliceTop = textTop + (textBottom - textTop) * if (cycle == 9) 0.22f else 0.48f
-                val sliceBottom = sliceTop + (textBottom - textTop) * 0.20f
-                canvas.save()
-                canvas.clipRect(0f, sliceTop, width.toFloat(), sliceBottom)
-                canvas.drawText(TITLE, centerX + 6f, baseline, cyanGhostPaint)
-                canvas.drawText(TITLE, centerX - 5f, baseline, pinkGhostPaint)
-                canvas.drawText(TITLE, centerX + ghostShift, baseline, titlePaint)
-                canvas.restore()
-            }
-
-            val scanProgress = (frame % 24) / 23f
-            val scanY = textTop + (textBottom - textTop) * scanProgress
-            scanPaint.color = cyan
-            scanPaint.alpha = if (glitch) 185 else 55
-            canvas.drawLine(
-                centerX - textWidth * 0.56f, scanY,
-                centerX + textWidth * 0.56f, scanY, scanPaint
-            )
+            val glitch = frame % 16 in setOf(3, 4, 9, 10)
+            ghost.color = if (frame % 2 == 0) cyan else pink
+            ghost.alpha = if (glitch) 190 else 70
+            canvas.drawText(text, cx + if (glitch) 2.5f else 0f, baseline, ghost)
+            paint.color = cyan
+            paint.alpha = 255
+            canvas.drawText(text, cx, baseline, paint)
         }
     }
 
@@ -1224,74 +1158,37 @@ class MainActivity : AppCompatActivity() {
         private val pink: Int
     ) : View(context) {
         private val density = resources.displayMetrics.density
-        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
-            this.typeface = typeface
-            textSize = 8.5f * resources.displayMetrics.scaledDensity
-            textAlign = Paint.Align.CENTER
-        }
-        private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+        private val scaledDensity = resources.displayMetrics.scaledDensity
         private var value = "● SISTEMA LISTO"
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+            this.typeface = typeface
+            textSize = 8.5f * scaledDensity
+            textAlign = Paint.Align.LEFT
+        }
         private var phase = 0f
-
         private val runner = object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                phase += 1f
+                phase += .7f
                 postInvalidateOnAnimation()
-                postOnAnimationDelayed(this, 55L)
+                postOnAnimationDelayed(this, 60L)
             }
         }
-
-        fun setStatusText(text: String) {
-            value = text
-            invalidate()
-        }
-
-        override fun onAttachedToWindow() {
-            super.onAttachedToWindow()
-            removeCallbacks(runner)
-            postOnAnimation(runner)
-        }
-
-        override fun onDetachedFromWindow() {
-            removeCallbacks(runner)
-            super.onDetachedFromWindow()
-        }
+        fun setStatusText(text: String) { value = text; invalidate() }
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
+        override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
 
         override fun onDraw(canvas: Canvas) {
-            super.onDraw(canvas)
-            CyberHeaderFrameDrawable.drawFrame(
-                canvas,
-                2f * density, 2f * density,
-                width - 2f * density, height - 2f * density,
-                cyan, pink, density, 7f * density, 1f, phase
-            )
-
-            val baseline = height * .63f
-            textPaint.color = if (value.contains("ERROR")) pink else cyan
-            textPaint.alpha = 245
-            val textWidth = textPaint.measureText(value)
-            canvas.drawText(value, width * .5f, baseline, textPaint)
-
-            linePaint.color = cyan
-            linePaint.alpha = 115
-            linePaint.strokeWidth = density
-            canvas.drawLine(
-                maxOf(8f * density, width * .5f - textWidth * .5f),
-                height - 5f * density,
-                minOf(width - 8f * density, width * .5f + textWidth * .5f),
-                height - 5f * density,
-                linePaint
-            )
-            linePaint.color = pink
-            linePaint.alpha = 175
-            canvas.drawLine(
-                width * .5f - textWidth * .18f,
-                height - 2.5f * density,
-                width * .5f + textWidth * .18f,
-                height - 2.5f * density,
-                linePaint
-            )
+            val baseline = height * .68f
+            val textWidth = paint.measureText(value)
+            val left = 0f
+            val right = textWidth + 18f * density
+            val top = maxOf(1f * density, baseline + paint.ascent() - 5f * density)
+            val bottom = minOf(height - 1f * density, baseline + paint.descent() + 5f * density)
+            CyberHeaderFrameDrawable.drawFrame(canvas, left, top, right, bottom, cyan, pink, density, 5f * density, .72f, phase)
+            paint.color = if (value.contains("ERROR")) pink else cyan
+            paint.alpha = 245
+            canvas.drawText(value, 9f * density, baseline, paint)
         }
     }
 
@@ -1307,154 +1204,48 @@ class MainActivity : AppCompatActivity() {
     ) : View(context) {
         private val density = resources.displayMetrics.density
         private val scaledDensity = resources.displayMetrics.scaledDensity
-        private val icon: android.graphics.drawable.Drawable? =
-            runCatching {
-                val id = resources.getIdentifier(iconName, "drawable", context.packageName)
-                if (id != 0) resources.getDrawable(id, context.theme) else null
-            }.getOrNull()
-        private val framePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val icon: android.graphics.drawable.Drawable? = runCatching {
+            val id = resources.getIdentifier(iconName, "drawable", context.packageName)
+            if (id != 0) resources.getDrawable(id, context.theme) else null
+        }.getOrNull()
         private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
             this.typeface = typeface
             textAlign = Paint.Align.CENTER
             textSize = 8.5f * scaledDensity
         }
         private var phase = if (selected) 4f else 10f
-
         private val runner = object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                phase += if (selected) 0.7f else 0.38f
+                phase += if (selected) .7f else .38f
                 postInvalidateOnAnimation()
-                postOnAnimationDelayed(this, 55L)
+                postOnAnimationDelayed(this, 60L)
             }
         }
-
-        init {
-            setWillNotDraw(false)
-            contentDescription = label
-        }
-
-        override fun onAttachedToWindow() {
-            super.onAttachedToWindow()
-            removeCallbacks(runner)
-            postOnAnimation(runner)
-        }
-
-        override fun onDetachedFromWindow() {
-            removeCallbacks(runner)
-            super.onDetachedFromWindow()
-        }
+        init { setWillNotDraw(false); contentDescription = label }
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
+        override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
 
         override fun onDraw(canvas: Canvas) {
-            super.onDraw(canvas)
-            val inset = 2.5f * density
+            val frameW = 66f * density
+            val frameL = (width - frameW) * .5f
+            val frameR = frameL + frameW
             CyberHeaderFrameDrawable.drawFrame(
-                canvas,
-                inset, inset, width - inset, height - inset,
-                cyan, pink, density,
-                7f * density,
-                if (selected) 1.08f else 0.78f,
-                phase
+                canvas, frameL, 3f * density, frameR, height - 3f * density,
+                cyan, pink, density, 7f * density, if (selected) .95f else .62f, phase
             )
-
-            val iconSize = minOf(width * 0.40f, 28f * density)
+            val iconSize = 25f * density
             val iconLeft = width * .5f - iconSize * .5f
-            val iconTop = 7f * density
+            val iconTop = 8f * density
             icon?.let {
-                it.setBounds(
-                    iconLeft.toInt(),
-                    iconTop.toInt(),
-                    (iconLeft + iconSize).toInt(),
-                    (iconTop + iconSize).toInt()
-                )
-                it.alpha = if (selected) 255 else 135
+                it.setBounds(iconLeft.toInt(), iconTop.toInt(), (iconLeft + iconSize).toInt(), (iconTop + iconSize).toInt())
+                it.alpha = if (selected) 255 else 120
                 it.setTint(if (selected) cyan else muted)
                 it.draw(canvas)
             }
-
             textPaint.color = if (selected) cyan else muted
-            textPaint.alpha = if (selected) 255 else 205
-            val baseline = height - 8f * density
-            canvas.drawText(label, width * .5f, baseline, textPaint)
-
-            // Small Canvas-only status ticks make the whole tile read as one HUD element.
-            framePaint.style = Paint.Style.FILL
-            framePaint.color = if (selected) pink else cyan
-            framePaint.alpha = if (selected) 225 else 120
-            val tick = 4f * density
-            canvas.drawRect(width * .5f - tick, height - 4.5f * density, width * .5f + tick, height - 3f * density, framePaint)
-        }
-    }
-
-    private class CyberHeaderView(context: Context) : View(context) {
-        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val path = Path()
-        private val density = resources.displayMetrics.density
-
-        override fun onDraw(c: Canvas) {
-            val w = width.toFloat()
-            val h = height.toFloat()
-            val lime = 0xFF00F0FF.toInt()
-            val orange = 0xFFFF00FF.toInt()
-            val blue = 0xFF006CFF.toInt()
-
-            p.style = Paint.Style.FILL
-            p.shader = android.graphics.LinearGradient(
-                0f, 0f, w, 0f,
-                intArrayOf(0xFF02030B.toInt(), 0xFF08051A.toInt(), 0xFF01020A.toInt()),
-                null,
-                android.graphics.Shader.TileMode.CLAMP
-            )
-            c.drawRect(0f, 0f, w, h, p)
-            p.shader = null
-
-            // Full-header Canvas frame: this is the outer shell, not a View background.
-            CyberHeaderFrameDrawable.drawFrame(
-                c,
-                2f * density, 2f * density,
-                w - 2f * density, h - 2f * density,
-                lime, orange, density, 10f * density, 1f, 0f
-            )
-
-            // Secondary rails and HUD segmentation.
-            p.style = Paint.Style.STROKE
-            p.strokeWidth = 1.2f * density
-            p.color = lime
-            p.alpha = 155
-            c.drawLine(10f * density, h - 9f * density, w * .25f, h - 9f * density, p)
-            c.drawLine(w * .75f, h - 9f * density, w - 10f * density, h - 9f * density, p)
-
-            p.color = orange
-            p.alpha = 185
-            c.drawLine(w * .25f, h - 9f * density, w * .34f, h - 9f * density, p)
-            c.drawLine(w * .66f, h - 9f * density, w * .75f, h - 9f * density, p)
-
-            p.color = blue
-            p.alpha = 120
-            p.strokeWidth = 1f * density
-            c.drawLine(w * .31f, h * .50f, w * .69f, h * .50f, p)
-            for (i in 0..11) {
-                val x = w * .31f + i * w * .38f / 11f
-                c.drawLine(x, h * .43f, x, h * .57f, p)
-            }
-
-            p.style = Paint.Style.FILL
-            p.color = orange
-            p.alpha = 225
-            c.drawCircle(w * .5f, h * .50f, 2.5f * density, p)
-
-            p.color = lime
-            p.alpha = 170
-            for (i in 0..5) {
-                val y = 11f * density + i * (h - 22f * density) / 5f
-                c.drawLine(11f * density, y, 29f * density, y, p)
-                c.drawLine(w - 29f * density, y, w - 11f * density, y, p)
-            }
-
-            p.color = orange
-            p.alpha = 235
-            c.drawCircle(11f * density, h * .50f, 2.2f * density, p)
-            c.drawCircle(w - 11f * density, h * .50f, 2.2f * density, p)
+            textPaint.alpha = if (selected) 255 else 190
+            canvas.drawText(label, width * .5f, height - 10f * density, textPaint)
         }
     }
 
