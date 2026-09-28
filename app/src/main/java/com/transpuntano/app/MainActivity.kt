@@ -41,11 +41,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var headerStatus: CyberHeaderStatusView
     private var currentSection = 0
     private lateinit var navBar: LinearLayout
-    private val cyan = 0xFFB7FF00.toInt()
-    private val pink = 0xFFFF6A00.toInt()
-    private val bg = 0xFF05070C.toInt()
-    private val panelColor = 0xFF0B1018.toInt()
-    private val muted = 0xFF8CA5B5.toInt()
+    private val cyan = 0xFF00F0FF.toInt()
+    private val pink = 0xFFFF00FF.toInt()
+    private val bg = 0xFF02030B.toInt()
+    private val panelColor = 0xFF070916.toInt()
+    private val muted = 0xFF6D9BB0.toInt()
     private lateinit var drawerPanel: FrameLayout
     private lateinit var drawerScrim: View
     private var drawerOpen = false
@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val headerLayout = FrameLayout(this).apply {
-            setBackgroundColor(0xFF010503.toInt())
+            setBackgroundColor(0xFF02030B.toInt())
             addView(CyberHeaderView(this@MainActivity), FrameLayout.LayoutParams(-1, -1))
         }
         val menuBtn = headerIconButton("nav_menu", "MENÚ") { toggleDrawer() }
@@ -115,7 +115,7 @@ class MainActivity : AppCompatActivity() {
         headerLayout.addView(actions, FrameLayout.LayoutParams(dp(96), dp(50)).apply {
             rightMargin = dp(4); topMargin = dp(11); gravity = Gravity.END
         })
-        root.addView(headerLayout, LinearLayout.LayoutParams(-1, dp(88)))
+        root.addView(headerLayout, LinearLayout.LayoutParams(-1, dp(92)))
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
         navBar = LinearLayout(this).apply {
@@ -196,8 +196,8 @@ class MainActivity : AppCompatActivity() {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
         var selectedIndex=0; set(v){field=v;invalidateSelf()}
         override fun draw(c:Canvas){ val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
-            val lime=0xFFB7FF00.toInt(); val orange=0xFFFF6A00.toInt(); val blue=0xFF00A8FF.toInt()
-            p.style=Paint.Style.FILL; p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF020504.toInt(),0xFF101006.toInt(),0xFF05020A.toInt()),null,android.graphics.Shader.TileMode.CLAMP); c.drawRect(0f,0f,w,h,p);p.shader=null
+            val lime=0xFF00F0FF.toInt(); val orange=0xFFFF00FF.toInt(); val blue=0xFF006CFF.toInt()
+            p.style=Paint.Style.FILL; p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF02030B.toInt(),0xFF09051A.toInt(),0xFF02030B.toInt()),null,android.graphics.Shader.TileMode.CLAMP); c.drawRect(0f,0f,w,h,p);p.shader=null
             val cw=w/5f
             for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex) lime else blue;p.alpha=if(i==selectedIndex)30 else 12;path.reset();path.moveTo(x+4,h);path.lineTo(x+cw*.32f,0f);path.lineTo(x+cw-4,0f);path.lineTo(x+cw*.68f,h);path.close();c.drawPath(path,p)}
             p.style=Paint.Style.STROKE;p.strokeWidth=1.5f;p.color=lime;p.alpha=190;c.drawLine(0f,1f,w*.18f,1f,p);c.drawLine(w*.82f,1f,w,1f,p)
@@ -212,8 +212,8 @@ class MainActivity : AppCompatActivity() {
     private class CyberDrawerBackground(private val context: Context) : android.graphics.drawable.Drawable(){
         private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
         override fun draw(c:Canvas){val w=bounds.width().toFloat();val h=bounds.height().toFloat()
-            val lime=0xFFB7FF00.toInt();val orange=0xFFFF6A00.toInt();val blue=0xFF00A8FF.toInt()
-            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF020403.toInt(),0xFF0A1007.toInt(),0xFF08030A.toInt()),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
+            val lime=0xFF00F0FF.toInt();val orange=0xFFFF00FF.toInt();val blue=0xFF006CFF.toInt()
+            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF02030B.toInt(),0xFF09051A.toInt(),0xFF030417.toInt()),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
             p.color=lime;p.alpha=20
             for(i in 0..5){path.reset();path.moveTo(0f,i*h/6f);path.lineTo(w*.8f,(i+1)*h/6f);path.lineTo(w,(i+.75f)*h/6f);path.lineTo(w*.2f,(i-.25f)*h/6f);path.close();c.drawPath(path,p)}
             p.style=Paint.Style.STROKE;p.color=lime;p.alpha=230;p.strokeWidth=2f;c.drawLine(w-3f,0f,w-3f,h,p)
@@ -254,11 +254,11 @@ class MainActivity : AppCompatActivity() {
             }
             val icon = ImageView(this).apply {
                 val id = resources.getIdentifier(iconName, "drawable", packageName)
-                setImageResource(id); alpha = 0.95f; contentDescription = label
+                setImageResource(id); setColorFilter(if (index == 0) cyan else 0xFF006CFF.toInt()); alpha = 0.95f; contentDescription = label
             }
             row.addView(icon, LinearLayout.LayoutParams(dp(40), dp(40)).apply { rightMargin = dp(16) })
             row.addView(TextView(this@MainActivity).apply {
-                text = label; textSize = 11f; typeface = cyberpunkTypeface; setTextColor(if (index == 0) cyan else 0xFF8FC7D8.toInt())
+                text = label; textSize = 11f; typeface = cyberpunkTypeface; setTextColor(if (index == 0) cyan else 0xFF6D9BB0.toInt())
             }, LinearLayout.LayoutParams(0, -2, 1f))
             list.addView(row, LinearLayout.LayoutParams(-1, dp(60)).apply { bottomMargin = dp(10) })
         }
@@ -969,9 +969,9 @@ class MainActivity : AppCompatActivity() {
     private class CyberBackgroundView(context: Context) : View(context) {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
         override fun onDraw(c:Canvas){val w=width.toFloat();val h=height.toFloat();val cx=w*.5f;val cy=h*.48f
-            val lime=0xFFB7FF00.toInt();val orange=0xFFFF6A00.toInt();val blue=0xFF00A8FF.toInt()
+            val lime=0xFF00F0FF.toInt();val orange=0xFFFF00FF.toInt();val blue=0xFF006CFF.toInt()
             c.drawColor(0xFF010302.toInt());p.style=Paint.Style.FILL
-            p.shader=android.graphics.RadialGradient(cx,cy,maxOf(w,h)*.78f,intArrayOf(0x403A4A00,0x20220B00,0x00000000),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
+            p.shader=android.graphics.RadialGradient(cx,cy,maxOf(w,h)*.78f,intArrayOf(0x30100035,0x18002C45,0x00000000),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
             // New visual language: vertical light shafts + orange volumetric zones.
             for(i in 0..7){val x=w*(.08f+i*.12f);p.color=if(i%2==0)lime else orange;p.alpha=34;path.reset();path.moveTo(x,0f);path.lineTo(x+28f,0f);path.lineTo(cx+(x-cx)*.18f,h);path.lineTo(cx+(x-cx)*.18f+12f,h);path.close();c.drawPath(path,p)}
             p.style=Paint.Style.STROKE;p.strokeWidth=1f
@@ -1143,7 +1143,7 @@ class MainActivity : AppCompatActivity() {
             val d = resources.displayMetrics.density
             val h = height.toFloat()
             val baseline = h * .68f
-            textPaint.color = if (value.contains("ERROR")) pink else 0xFF55FFB0.toInt()
+            textPaint.color = if (value.contains("ERROR")) pink else 0xFF00F0FF.toInt()
             textPaint.alpha = 245
             canvas.drawText(value, 0f, baseline, textPaint)
 
@@ -1160,8 +1160,8 @@ class MainActivity : AppCompatActivity() {
 
     private class CyberHeaderView(context: Context) : View(context) {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
-        override fun onDraw(c:Canvas){val w=width.toFloat();val h=height.toFloat();val lime=0xFFB7FF00.toInt();val orange=0xFFFF6A00.toInt();val blue=0xFF00A8FF.toInt()
-            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF010503.toInt(),0xFF111500.toInt(),0xFF090308.toInt()),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
+        override fun onDraw(c:Canvas){val w=width.toFloat();val h=height.toFloat();val lime=0xFF00F0FF.toInt();val orange=0xFFFF00FF.toInt();val blue=0xFF006CFF.toInt()
+            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF02030B.toInt(),0xFF08051A.toInt(),0xFF01020A.toInt()),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
             // Command visor: horizontal HUD aperture rather than the former central oval.
             p.color=lime;p.alpha=22;path.reset();path.moveTo(0f,0f);path.lineTo(w*.32f,0f);path.lineTo(w*.24f,h);path.lineTo(0f,h);path.close();c.drawPath(path,p)
             p.color=orange;p.alpha=24;path.reset();path.moveTo(w,0f);path.lineTo(w*.68f,0f);path.lineTo(w*.78f,h);path.lineTo(w,h);path.close();c.drawPath(path,p)
