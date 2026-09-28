@@ -16,6 +16,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify Cyberform Demo font
+        run: |
+          test -f app/src/main/assets/fonts/cyberformdemoregular.otf
+          test ! -f app/src/main/assets/fonts/cyberpunk.ttf
+          test "$(stat -c%s app/src/main/assets/fonts/cyberformdemoregular.otf)" = "55860"
+          echo "9ef52a9f404a8a8935b7f25435f62ad74a216b7cf1b57974c043582ced0a79b9  app/src/main/assets/fonts/cyberformdemoregular.otf" | sha256sum -c -
+
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
