@@ -309,7 +309,6 @@ class MainActivity : AppCompatActivity() {
                     toggleDrawer()
                 }
             }
-            applyCyberTap(item)
             list.addView(item, LinearLayout.LayoutParams(-1, dp(64)).apply {
                 bottomMargin = dp(12)
             })
@@ -367,7 +366,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            applyCyberTap(item)
             navBar.addView(item, LinearLayout.LayoutParams(0, -1, 1f))
         }
     }
@@ -420,11 +418,34 @@ class MainActivity : AppCompatActivity() {
         }.getOrNull()
     }
 
-    private fun addCyberVioletFrame(container: FrameLayout) {
-        val frame = AnimatedVioletCyberFrameView(this)
+    private fun addCyberStaticCyanFrame(container: FrameLayout) {
+        val frame = StaticCyanCyberFrameView(this)
         frame.isClickable = false
         frame.isFocusable = false
         container.addView(frame, FrameLayout.LayoutParams(-1, -1))
+    }
+
+    private class StaticCyanCyberFrameView(context: Context) : View(context) {
+        private val density = resources.displayMetrics.density
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val path = Path()
+        override fun onDraw(canvas: Canvas) {
+            val w = width.toFloat(); val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return
+            val cyan = 0xFF00F0FF.toInt()
+            val cut = minOf(2f * density, minOf(w, h) * .035f)
+            val edge = 1.5f * density
+            path.reset()
+            path.moveTo(cut, edge); path.lineTo(w - cut, edge)
+            path.lineTo(w - edge, edge + cut); path.lineTo(w - edge, h - cut)
+            path.lineTo(w - cut, h - edge); path.lineTo(cut, h - edge)
+            path.lineTo(edge, h - cut); path.lineTo(edge, cut); path.close()
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 5f * density; paint.color = cyan; paint.alpha = 32
+            canvas.drawPath(path, paint)
+            paint.strokeWidth = 1.8f * density; paint.alpha = 235
+            canvas.drawPath(path, paint)
+        }
     }
 
     private fun cardHomeAsset(assetName: String, description: String = assetName, action: () -> Unit) = FrameLayout(this).apply {
@@ -447,7 +468,7 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(cyan); contentDescription = description
             }, FrameLayout.LayoutParams(-1, -1))
         }
-        addCyberVioletFrame(this)
+        addCyberStaticCyanFrame(this)
     }
 
     private fun cardHomeImage(assetName: String, action: () -> Unit) = FrameLayout(this).apply {
@@ -511,26 +532,6 @@ class MainActivity : AppCompatActivity() {
             textAlign = Paint.Align.LEFT
             textSize = 15f * scaledDensity
         }
-        private var phase = 0f
-        private val runner = object : Runnable {
-            override fun run() {
-                if (!isAttachedToWindow) return
-                phase = (phase + .20f) % 16f
-                postInvalidateOnAnimation()
-                postOnAnimationDelayed(this, 55L)
-            }
-        }
-
-        override fun onAttachedToWindow() {
-            super.onAttachedToWindow()
-            postOnAnimation(runner)
-        }
-
-        override fun onDetachedFromWindow() {
-            removeCallbacks(runner)
-            super.onDetachedFromWindow()
-        }
-
         override fun onDraw(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
@@ -550,20 +551,28 @@ class MainActivity : AppCompatActivity() {
             }
             canvas.drawRect(left, top, right, bottom, fill)
 
-            // Marco Cyberpunk neón animado alrededor de toda la tarjeta.
-            CyberHeaderFrameDrawable.drawFrame(
-                canvas,
-                left,
-                top,
-                right,
-                bottom,
-                cyan,
-                pink,
-                density,
-                8f * density,
-                1f,
-                phase
-            )
+            // Marco Cyberpunk neón fijo: sin animación.
+            val framePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 5f * density
+                color = cyan
+                alpha = 30
+            }
+            val framePath = Path().apply {
+                moveTo(left + 8f * density, top)
+                lineTo(right - 8f * density, top)
+                lineTo(right, top + 8f * density)
+                lineTo(right, bottom - 8f * density)
+                lineTo(right - 8f * density, bottom)
+                lineTo(left + 8f * density, bottom)
+                lineTo(left, bottom - 8f * density)
+                lineTo(left, top + 8f * density)
+                close()
+            }
+            canvas.drawPath(framePath, framePaint)
+            framePaint.strokeWidth = 1.8f * density
+            framePaint.alpha = 235
+            canvas.drawPath(framePath, framePaint)
 
             // Detalles internos para reforzar el acabado de panel tecnológico.
             val detail = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -576,10 +585,15 @@ class MainActivity : AppCompatActivity() {
             canvas.drawLine(right - 80f * density, bottom - 8f * density, right - 12f * density, bottom - 8f * density, detail)
 
             // Texto de la línea, sin código numérico secundario.
-            textPaint.color = Color.WHITE
+            textPaint.shader = android.graphics.LinearGradient(
+                0f, 0f, w * .55f, 0f,
+                cyan, pink,
+                android.graphics.Shader.TileMode.CLAMP
+            )
             textPaint.alpha = 255
             val baseline = h * .58f - (textPaint.ascent() + textPaint.descent()) * .5f
             canvas.drawText(label, 16f * density, baseline, textPaint)
+            textPaint.shader = null
         }
     }
 
@@ -1257,20 +1271,11 @@ class MainActivity : AppCompatActivity() {
             val frameR = width - 2f * density
             val frameB = height - 2f * density
 
-            // Cada botón del menú recibe su propio marco neon Canvas.
-            CyberHeaderFrameDrawable.drawFrame(
-                canvas,
-                frameL,
-                frameT,
-                frameR,
-                frameB,
-                cyan,
-                pink,
-                density,
-                9f * density,
-                if (selected) .98f else .58f,
-                phase
-            )
+            if (selected) {
+                CyberHeaderFrameDrawable.drawFrame(canvas, frameL, frameT, frameR, frameB, cyan, pink, density, 9f * density, .98f, phase)
+            } else {
+                CyberHeaderFrameDrawable.drawStaticFrame(canvas, frameL, frameT, frameR, frameB, cyan, density, 9f * density, .58f)
+            }
 
             val iconSize = 30f * density
             val iconLeft = 15f * density
@@ -1592,6 +1597,39 @@ class MainActivity : AppCompatActivity() {
         override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
 
         companion object {
+            fun drawStaticFrame(
+                canvas: Canvas,
+                left: Float,
+                top: Float,
+                right: Float,
+                bottom: Float,
+                cyan: Int,
+                density: Float,
+                cut: Float,
+                intensity: Float
+            ) {
+                if (right <= left || bottom <= top) return
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+                val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+                val w = right - left
+                val h = bottom - top
+                val c = cut.coerceAtMost(minOf(w, h) * 0.28f)
+                val path = Path().apply {
+                    moveTo(left + c, top); lineTo(right - c, top)
+                    lineTo(right, top + c); lineTo(right, bottom - c)
+                    lineTo(right - c, bottom); lineTo(left + c, bottom)
+                    lineTo(left, bottom - c); lineTo(left, top + c); close()
+                }
+                glow.strokeWidth = 5f * density
+                glow.color = cyan
+                glow.alpha = (42 * intensity).toInt()
+                canvas.drawPath(path, glow)
+                p.strokeWidth = 1.15f * density
+                p.color = cyan
+                p.alpha = (230 * intensity).toInt()
+                canvas.drawPath(path, p)
+            }
+
             fun drawFrame(
                 canvas: Canvas,
                 left: Float,
@@ -1852,18 +1890,27 @@ class MainActivity : AppCompatActivity() {
             textAlign = Paint.Align.CENTER
             textSize = 8.5f * scaledDensity
         }
-        private var phase = if (selected) 4f else 10f
+        private var phase = 0f
         private val runner = object : Runnable {
             override fun run() {
-                if (!isAttachedToWindow) return
-                phase += if (selected) .7f else .38f
+                if (!isAttachedToWindow || !selected) return
+                phase += .7f
                 postInvalidateOnAnimation()
                 postOnAnimationDelayed(this, 60L)
             }
         }
+
         init { setWillNotDraw(false); contentDescription = label }
-        override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
-        override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            if (selected) postOnAnimation(runner)
+        }
+
+        override fun onDetachedFromWindow() {
+            removeCallbacks(runner)
+            super.onDetachedFromWindow()
+        }
 
         override fun onDraw(canvas: Canvas) {
             // Fuerza la fuente en cada frame: la barra inferior usa Canvas, no TextView.
@@ -1871,10 +1918,17 @@ class MainActivity : AppCompatActivity() {
             val frameW = 66f * density
             val frameL = (width - frameW) * .5f
             val frameR = frameL + frameW
-            CyberHeaderFrameDrawable.drawFrame(
-                canvas, frameL, 3f * density, frameR, height - 3f * density,
-                cyan, pink, density, 7f * density, if (selected) .95f else .62f, phase
-            )
+            if (selected) {
+                CyberHeaderFrameDrawable.drawFrame(
+                    canvas, frameL, 3f * density, frameR, height - 3f * density,
+                    cyan, pink, density, 7f * density, .95f, phase
+                )
+            } else {
+                CyberHeaderFrameDrawable.drawStaticFrame(
+                    canvas, frameL, 3f * density, frameR, height - 3f * density,
+                    cyan, density, 7f * density, .62f
+                )
+            }
             val iconSize = 25f * density
             val iconLeft = width * .5f - iconSize * .5f
             val iconTop = 8f * density
