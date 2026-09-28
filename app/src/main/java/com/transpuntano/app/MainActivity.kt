@@ -979,7 +979,7 @@ class MainActivity : AppCompatActivity() {
             p.color=lime;p.alpha=60;c.drawCircle(cx,cy,38f,p);c.drawCircle(cx,cy,74f,p);c.drawCircle(cx,cy,126f,p)
             p.color=orange;p.alpha=65;c.drawArc(cx-170f,cy-170f,cx+170f,cy+170f,18f,95f,false,p);c.drawArc(cx-120f,cy-120f,cx+120f,cy+120f,202f,78f,false,p)
             // Data beams.
-            for(i in 0..11){val x=w*i/11f;p.color=if(i%2==0)blue:orange;p.alpha=42;c.drawLine(x,0f,cx+(x-cx)*.25f,cy,p);c.drawLine(x,h,cx+(x-cx)*.25f,cy,p)}
+            for(i in 0..11){val x=w*i/11f;p.color=if(i%2==0) blue else orange;p.alpha=42;c.drawLine(x,0f,cx+(x-cx)*.25f,cy,p);c.drawLine(x,h,cx+(x-cx)*.25f,cy,p)}
             // Floating nodes / beacons.
             p.style=Paint.Style.FILL;for(i in 1..16){val x=w*(.04f+(i*47%92)/100f);val y=h*(.06f+(i*31%88)/100f);p.color=if(i%4==0)orange else lime;p.alpha=120;c.drawCircle(x,y,1.5f+(i%3),p);p.alpha=25;c.drawCircle(x,y,10f+(i%4)*4f,p)}
             // Central radar target.
