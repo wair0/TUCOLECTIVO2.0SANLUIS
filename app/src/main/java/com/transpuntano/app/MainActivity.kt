@@ -1019,12 +1019,13 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         private val runner=object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                // Menos minutos = mayor velocidad. ARRIBANDO usa la velocidad máxima.
+                // La velocidad escala claramente con el tiempo restante:
+                // 25 MIN es lenta y 1 MIN es muy rápida. ARRIBANDO usa la máxima.
                 val m = numericMinutes ?: 0
                 val speed = when {
-                    isArriving || m <= 0 -> 18f
-                    m == 1 -> 15f
-                    else -> (15f / (m + 1f)).coerceIn(1.5f, 15f)
+                    isArriving || m <= 0 -> 32f
+                    m <= 1 -> 28f
+                    else -> (32f / m.toFloat()).coerceIn(1.8f, 28f)
                 }
                 phase=(phase+speed)%360f
                 postInvalidateOnAnimation()
