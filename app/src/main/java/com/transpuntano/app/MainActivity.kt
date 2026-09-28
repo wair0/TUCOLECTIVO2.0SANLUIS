@@ -1006,159 +1006,104 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
     private class CyberArrivalCardView(
         context: Context, private val lineLabel: String, private val destination: String, private val minutes: String,
         private val typeface: Typeface, private val cyan: Int, private val pink: Int, private val muted: Int
-    ) : View(context) {
-        private val d=resources.displayMetrics.density; private val sd=resources.displayMetrics.scaledDensity
+    ) : FrameLayout(context) {
+        private val d=resources.displayMetrics.density
+        private val sd=resources.displayMetrics.scaledDensity
         private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
-        private val circlePaint=Paint(Paint.ANTI_ALIAS_FLAG)
-        private val runnerPaint=Paint(Paint.ANTI_ALIAS_FLAG)
         private val numericMinutes = minutes.trim().toIntOrNull()
         private val isArriving = minutes.trim().equals("ARRIBANDO", true) || (numericMinutes != null && numericMinutes <= 1)
         private val displayMinutes = if (isArriving) "ARRIBANDO" else minutes.trim()
-        private var phase=0f
-
-        private val runner=object : Runnable {
-            override fun run() {
-                if (!isAttachedToWindow) return
-                // La velocidad escala claramente con el tiempo restante:
-                // 25 MIN es lenta y 1 MIN es muy rápida. ARRIBANDO usa la máxima.
-                val m = numericMinutes ?: 0
-                val speed = when {
-                    isArriving || m <= 0 -> 32f
-                    m <= 1 -> 28f
-                    else -> (32f / m.toFloat()).coerceIn(1.8f, 28f)
-                }
-                phase=(phase+speed)%360f
-                postInvalidateOnAnimation()
-                postOnAnimationDelayed(this,45L)
+        private val circleSize = 77f * d
+        private val webView = android.webkit.WebView(context)
+        private val counterOverlay = object : View(context) {
+            override fun onDraw(c: Canvas) {
+                if (isArriving) return
+                p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER
+                p.color=cyan; p.alpha=255; p.textSize=15f*sd
+                val cx=width*.5f; val cy=height*.5f
+                c.drawText(displayMinutes,cx,cy-(p.ascent()+p.descent())*.5f,p)
+                p.textSize=6.5f*sd
+                val minY=cy+17f*d; val gap=2.2f*d
+                val mw=p.measureText("M"); val iw=p.measureText("I"); val nw=p.measureText("N")
+                val total=mw+iw+nw+gap*2f; var x=cx-total*.5f
+                c.drawText("M",x+mw*.5f,minY,p); x+=mw+gap
+                c.drawText("I",x+iw*.5f,minY,p); x+=iw+gap
+                c.drawText("N",x+nw*.5f,minY,p)
             }
         }
 
-        init { setLayerType(View.LAYER_TYPE_SOFTWARE, null) }
+        init {
+            setWillNotDraw(false); setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            webView.settings.javaScriptEnabled = true
+            webView.settings.domStorageEnabled = false
+            webView.setBackgroundColor(Color.TRANSPARENT)
+            webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            webView.webViewClient = object : android.webkit.WebViewClient() {
+                override fun onPageFinished(view: android.webkit.WebView, url: String?) {
+                    super.onPageFinished(view, url)
+                    val m = numericMinutes ?: 0
+                    // El SVG original gira en 1.1 s. Menos minutos = mayor velocidad.
+                    val duration = when {
+                        isArriving || m <= 0 -> 0.22f
+                        else -> (0.25f + m.toFloat() * 0.08f).coerceIn(0.33f, 3.0f)
+                    }
+                    val js = """
+                        (function() {
+                            var a = document.querySelector('animateTransform');
+                            if (a) {
+                                a.setAttribute('dur', '\${duration}s');
+                                try { a.beginElement(); } catch(e) {}
+                            }
+                        })();
+                    """.trimIndent()
+                    view.evaluateJavascript(js, null)
+                }
+            }
+            webView.loadUrl("file:///android_asset/neon-circle.svg")
+            addView(webView, LayoutParams(circleSize.toInt(), circleSize.toInt()).apply {
+                gravity=Gravity.RIGHT or Gravity.CENTER_VERTICAL; rightMargin=dp(4)
+            })
+            addView(counterOverlay, LayoutParams(circleSize.toInt(), circleSize.toInt()).apply {
+                gravity=Gravity.RIGHT or Gravity.CENTER_VERTICAL; rightMargin=dp(4)
+            })
+        }
 
-        override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
-        override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
+        private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+            setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), dp(92))
+        }
+
+        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+            val w=circleSize.toInt(); val h=circleSize.toInt()
+            val l=right-left-w-dp(4); val t=top+(bottom-top-h)/2
+            webView.layout(l,t,l+w,t+h); counterOverlay.layout(l,t,l+w,t+h)
+        }
 
         override fun onDraw(c: Canvas) {
             val l=2f*d; val t=2f*d; val rr=width-2f*d; val b=height-2f*d
             p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=255; c.drawRect(l,t,rr,b,p)
             p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=235; c.drawRect(l,t,rr,b,p)
-
-            val textRight: Float
-            val counterCx: Float
-            val counterCy: Float
-
-            if (isArriving) {
-                // ARRIBANDO usa un marco rectangular para que la palabra tenga espacio.
-                val boxW=108f*d
-                val boxH=46f*d
-                val boxL=rr-boxW-10f*d
-                val boxT=(t+b-boxH)*.5f
-                val boxR=rr-8f*d
-                val boxB=boxT+boxH
-                textRight=boxL-12f*d
-                counterCx=(boxL+boxR)*.5f
-                counterCy=(boxT+boxB)*.5f
-
-                val rect=RectF(boxL,boxT,boxR,boxB)
-                circlePaint.style=Paint.Style.STROKE
-                circlePaint.strokeCap=Paint.Cap.ROUND
-                circlePaint.color=cyan
-
-                // Glow exterior + marco base.
-                circlePaint.setShadowLayer(11f*d,0f,0f,cyan)
-                circlePaint.strokeWidth=7f*d; circlePaint.alpha=22
-                c.drawRoundRect(rect,7f*d,7f*d,circlePaint)
-                circlePaint.clearShadowLayer()
-
-                circlePaint.strokeWidth=2f*d; circlePaint.alpha=115
-                c.drawRoundRect(rect,7f*d,7f*d,circlePaint)
-
-                // Segmento luminoso que recorre el perímetro: máximo ritmo en ARRIBANDO.
-                val path=Path().apply { addRoundRect(rect,7f*d,7f*d,Path.Direction.CW) }
-                val measure=PathMeasure(path,false)
-                val total=measure.length
-                val startDistance=(phase/360f)*total
-                val segment=total*.28f
-                val runnerPath=Path()
-                fun drawSegment(from: Float,to: Float) {
-                    runnerPath.reset()
-                    measure.getSegment(from,to,runnerPath,true)
-                    c.drawPath(runnerPath,runnerPaint)
-                }
-                runnerPaint.style=Paint.Style.STROKE
-                runnerPaint.strokeCap=Paint.Cap.ROUND
-                runnerPaint.strokeWidth=3f*d
-                runnerPaint.color=Color.BLACK
-                runnerPaint.setShadowLayer(4f*d,0f,0f,Color.BLACK)
-                if (startDistance+segment <= total) drawSegment(startDistance,startDistance+segment)
-                else {
-                    drawSegment(startDistance,total)
-                    drawSegment(0f,(startDistance+segment)-total)
-                }
-                runnerPaint.clearShadowLayer()
-
-                // ARRIBANDO queda centrado dentro del marco.
-                p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER
-                p.textSize=10f*sd; p.color=cyan; p.alpha=255
-                p.setShadowLayer(6f*d,0f,0f,cyan)
-                c.drawText("ARRIBANDO",counterCx,counterCy-(p.ascent()+p.descent())*.5f,p)
-                p.clearShadowLayer()
-            } else {
-                val circleR=27f*d
-                val circleCx=rr-circleR-12f*d
-                val circleCy=(t+b)*.5f
-                textRight=circleCx-circleR-14f*d
-                counterCx=circleCx
-                counterCy=circleCy
-
-                // Círculo exclusivamente celeste, con resplandor neon.
-                circlePaint.style=Paint.Style.STROKE
-                circlePaint.strokeCap=Paint.Cap.ROUND
-                circlePaint.color=cyan
-                circlePaint.setShadowLayer(10f*d,0f,0f,cyan)
-                circlePaint.strokeWidth=7f*d; circlePaint.alpha=22
-                c.drawCircle(circleCx,circleCy,circleR,circlePaint)
-                circlePaint.clearShadowLayer()
-
-                circlePaint.strokeWidth=4f*d; circlePaint.alpha=45
-                c.drawCircle(circleCx,circleCy,circleR,circlePaint)
-                circlePaint.strokeWidth=2f*d; circlePaint.alpha=105
-                c.drawCircle(circleCx,circleCy,circleR,circlePaint)
-
-                val oval=RectF(circleCx-circleR,circleCy-circleR,circleCx+circleR,circleCy+circleR)
-                circlePaint.strokeWidth=3f*d; circlePaint.alpha=255
-                circlePaint.color=Color.BLACK
-                circlePaint.setShadowLayer(4f*d,0f,0f,Color.BLACK)
-                c.drawArc(oval,phase,270f,false,circlePaint)
-                circlePaint.clearShadowLayer()
-            }
-
-            p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT
-            p.textSize=12f*sd
+            p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT; p.textSize=12f*sd
+            val textRight=width-circleSize-18f*d
             p.shader=android.graphics.LinearGradient(0f,0f,textRight,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
-            c.drawText(lineLabel,12f*d,34f*d,p)
-            p.shader=null; p.textSize=9f*sd; p.color=pink; p.alpha=255
-            p.setShadowLayer(5f*d,0f,0f,pink)
-            c.drawText(destination,12f*d,57f*d,p)
-            p.clearShadowLayer()
-
-            if (!isArriving) {
-                p.textAlign=Paint.Align.CENTER
-                p.color=cyan; p.alpha=255
-                p.textSize=15f*sd
-                c.drawText(displayMinutes,counterCx,counterCy-1f*d-(p.ascent()+p.descent())*.5f,p)
-                p.textSize=6.5f*sd
-                val minY=counterCy+17f*d
-                val minGap=2.2f*d
-                val mWidth=p.measureText("M")
-                val iWidth=p.measureText("I")
-                val nWidth=p.measureText("N")
-                val minTotal=mWidth+iWidth+nWidth+minGap*2f
-                var minX=counterCx-minTotal*.5f
-                c.drawText("M",minX+mWidth*.5f,minY,p); minX+=mWidth+minGap
-                c.drawText("I",minX+iWidth*.5f,minY,p); minX+=iWidth+minGap
-                c.drawText("N",minX+nWidth*.5f,minY,p)
+            c.drawText(lineLabel,12f*d,34f*d,p); p.shader=null
+            p.textSize=9f*sd; p.color=pink; p.alpha=255; p.setShadowLayer(5f*d,0f,0f,pink)
+            c.drawText(destination,12f*d,57f*d,p); p.clearShadowLayer()
+            if (isArriving) {
+                val boxW=108f*d; val boxH=46f*d; val boxL=rr-boxW-10f*d; val boxT=(t+b-boxH)*.5f
+                val boxR=rr-8f*d; val boxB=boxT+boxH; val rect=RectF(boxL,boxT,boxR,boxB)
+                p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=220
+                c.drawRoundRect(rect,7f*d,7f*d,p)
+                p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER; p.textSize=10f*sd; p.color=cyan; p.alpha=255
+                p.setShadowLayer(6f*d,0f,0f,cyan)
+                c.drawText("ARRIBANDO",(boxL+boxR)*.5f,(boxT+boxB)*.5f-(p.ascent()+p.descent())*.5f,p); p.clearShadowLayer()
             }
+        }
+
+        override fun onDetachedFromWindow() {
+            webView.stopLoading(); webView.destroy(); super.onDetachedFromWindow()
         }
     }
 
