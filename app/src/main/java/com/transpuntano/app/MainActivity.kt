@@ -1392,6 +1392,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             runCatching { api.getNearby(location.latitude, location.longitude) }
                 .onSuccess { nearby ->
                     lastMapNearbyStops = nearby
+                    lastMapLineCodes = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct().sorted()
                     val mapStops = nearby.map { stop ->
                         MapStop(
                             id = stop.code,
@@ -1408,6 +1409,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                             else "● " + mapStops.size + " PARADAS • GPS LÍNEA " + line.code
                         )
                     }
+                    refreshMapRoutes(map, line, nearby)
                     refreshMapVehicles(map, line, nearby)
                 }
                 .onFailure {
@@ -1416,6 +1418,35 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                         toast("Ubicación sincronizada, pero no se pudieron cargar las paradas cercanas.")
                     }
                 }
+        }
+    }
+
+    private fun refreshMapRoutes(
+        map: CyberMapView,
+        line: TransitLine?,
+        nearby: List<TransitStop>
+    ) {
+        val nearbyCodes = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct().sorted()
+        val routeCodes = if (line != null) {
+            if (nearbyCodes.isEmpty()) listOf(line.code) else nearbyCodes.filter { it == line.code }
+        } else {
+            nearbyCodes
+        }
+
+        if (routeCodes.isEmpty()) {
+            runOnUiThread { map.setRoutes(emptyList(), fit = false) }
+            return
+        }
+
+        executor.execute {
+            val routes = routeCodes.mapNotNull { code ->
+                runCatching { api.getRoute(code) }
+                    .getOrNull()
+                    ?.takeIf { it.size >= 2 }
+            }
+            runOnUiThread {
+                map.setRoutes(routes, fit = false)
+            }
         }
     }
 
@@ -1428,20 +1459,13 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         mapVehicleRefreshInProgress = true
 
         vehicleExecutor.execute {
+            val nearbyCodes = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct().sorted()
             val lineCodes = if (line != null) {
-                listOf(line.code)
+                // Nunca mostrar GPS de una línea que no esté asociada a las
+                // paradas cercanas actualmente sincronizadas.
+                nearbyCodes.filter { it == line.code }
             } else {
-                val fromStops = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct()
-                if (fromStops.isNotEmpty()) {
-                    lastMapLineCodes = fromStops
-                    fromStops
-                } else {
-                    val cached = lastMapLineCodes
-                    if (cached.isNotEmpty()) cached
-                    else runCatching { api.getLines().map { it.code }.distinct() }.getOrDefault(emptyList()).also {
-                        lastMapLineCodes = it
-                    }
-                }
+                nearbyCodes
             }
 
             if (lineCodes.isEmpty()) {
