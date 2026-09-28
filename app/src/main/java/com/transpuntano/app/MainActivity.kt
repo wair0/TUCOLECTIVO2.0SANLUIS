@@ -200,10 +200,12 @@ class MainActivity : AppCompatActivity() {
             p.style=Paint.Style.FILL; p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF02030B.toInt(),0xFF09051A.toInt(),0xFF02030B.toInt()),null,android.graphics.Shader.TileMode.CLAMP); c.drawRect(0f,0f,w,h,p);p.shader=null
             val cw=w/5f
             for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex) lime else blue;p.alpha=if(i==selectedIndex)30 else 12;path.reset();path.moveTo(x+4,h);path.lineTo(x+cw*.32f,0f);path.lineTo(x+cw-4,0f);path.lineTo(x+cw*.68f,h);path.close();c.drawPath(path,p)}
-            p.style=Paint.Style.STROKE;p.strokeWidth=1.5f;p.color=lime;p.alpha=190;c.drawLine(0f,1f,w*.18f,1f,p);c.drawLine(w*.82f,1f,w,1f,p)
+            // Marco exterior completo: cubre todo el perímetro de la barra inferior.
+            CyberHeaderFrameDrawable.drawFrame(c, 1.5f, 1.5f, w - 1.5f, h - 1.5f, lime, orange, resources.displayMetrics.density, 9f * resources.displayMetrics.density, 1f, 0f)
+            p.style=Paint.Style.STROKE;p.strokeWidth=1.5f;p.color=lime;p.alpha=190;c.drawLine(4f,3f,w*.18f,3f,p);c.drawLine(w*.82f,3f,w-4f,3f,p)
             for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex)lime else blue;p.alpha=150;p.strokeWidth=1f;c.drawLine(x+cw*.2f,h-5f,x+cw*.48f,5f,p);c.drawLine(x+cw*.52f,5f,x+cw*.8f,h-5f,p)}
             val x=selectedIndex.coerceIn(0,4)*cw;p.color=orange;p.alpha=240;p.strokeWidth=2f;c.drawLine(x+8f,h-5f,x+cw-8f,h-5f,p)
-            p.style=Paint.Style.FILL;p.color=lime;p.alpha=230;c.drawCircle(w*.5f,2.5f,2f,p)
+            p.style=Paint.Style.FILL;p.color=lime;p.alpha=230;c.drawCircle(w*.5f,3.5f,2f,p)
         }
         override fun setAlpha(a:Int){};override fun setColorFilter(f:ColorFilter?){}
         @Suppress("DEPRECATION")override fun getOpacity()=android.graphics.PixelFormat.TRANSLUCENT
@@ -1123,29 +1125,37 @@ class MainActivity : AppCompatActivity() {
             c.drawRect(0f, 0f, w, h, p)
             p.shader = null
 
-            // Header shell: horizontal neon rails only; no vertical side rails.
+            // Marco exterior completo: cubre todo el perímetro del header.
+            CyberHeaderFrameDrawable.drawFrame(
+                c,
+                1.5f * density,
+                1.5f * density,
+                w - 1.5f * density,
+                h - 1.5f * density,
+                cyan,
+                pink,
+                density,
+                9f * density,
+                1f,
+                0f
+            )
+
+            // Detalles interiores neon que acompañan al marco exterior.
             p.style = Paint.Style.STROKE
             p.strokeWidth = 1.4f * density
             p.color = cyan
-            p.alpha = 230
-            c.drawLine(8f * density, 2f * density, w * .34f, 2f * density, p)
-            c.drawLine(w * .66f, 2f * density, w - 8f * density, 2f * density, p)
-            c.drawLine(8f * density, h - 2f * density, w * .34f, h - 2f * density, p)
-            c.drawLine(w * .66f, h - 2f * density, w - 8f * density, h - 2f * density, p)
-
-            p.color = pink
-            p.alpha = 210
-            c.drawLine(w * .34f, 2f * density, w * .42f, 2f * density, p)
-            c.drawLine(w * .58f, 2f * density, w * .66f, 2f * density, p)
-            c.drawLine(w * .34f, h - 2f * density, w * .42f, h - 2f * density, p)
-            c.drawLine(w * .58f, h - 2f * density, w * .66f, h - 2f * density, p)
+            p.alpha = 190
+            c.drawLine(8f * density, 3f * density, w * .34f, 3f * density, p)
+            c.drawLine(w * .66f, 3f * density, w - 8f * density, 3f * density, p)
+            c.drawLine(8f * density, h - 3f * density, w * .34f, h - 3f * density, p)
+            c.drawLine(w * .66f, h - 3f * density, w - 8f * density, h - 3f * density, p)
 
             p.color = blue
             p.alpha = 160
-            c.drawLine(2f * density, 7f * density, 8f * density, 2f * density, p)
-            c.drawLine(w - 2f * density, 7f * density, w - 8f * density, 2f * density, p)
-            c.drawLine(2f * density, h - 7f * density, 8f * density, h - 2f * density, p)
-            c.drawLine(w - 2f * density, h - 7f * density, w - 8f * density, h - 2f * density, p)
+            c.drawLine(2f * density, 9f * density, 9f * density, 2f * density, p)
+            c.drawLine(w - 2f * density, 9f * density, w - 9f * density, 2f * density, p)
+            c.drawLine(2f * density, h - 9f * density, 9f * density, h - 2f * density, p)
+            c.drawLine(w - 2f * density, h - 9f * density, w - 9f * density, h - 2f * density, p)
         }
     }
 
