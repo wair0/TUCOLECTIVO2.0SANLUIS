@@ -836,19 +836,21 @@ class MainActivity : AppCompatActivity() {
     private fun showLine(line: TransitLine) {
         title.text = "LÍNEA " + line.code; updateNav(1); content.removeAllViews()
         val box = box()
-        box.addView(TextView(this).apply {
-            text = line.name.uppercase(); textSize = 25f; typeface = cyberpunkTypeface; setTextColor(cyan)
-        })
-        box.addView(panel("CALLES", "Seleccioná una calle para continuar."))
+        box.addView(cyberSectionHeader("LÍNEA " + line.name.uppercase(), "RECORRIDO · CALLES"))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         executor.execute {
             runCatching { api.getStreets(line.code) }
                 .onSuccess { streets -> runOnUiThread {
                     list.removeAllViews()
-                    streets.forEach { street -> list.addView(card(street.name, "VER INTERSECCIONES") { showIntersections(line, street) }) }
+                    streets.forEach { street ->
+                        list.addView(cyberDetailCard(street.name, "INTERSECCIONES") {
+                            showIntersections(line, street)
+                        })
+                    }
+                    if (streets.isEmpty()) list.addView(cyberInfoCard("SIN CALLES", "No se encontraron calles para esta línea."))
                 }}
-                .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "Sin datos")) } }
+                .onFailure { error -> runOnUiThread { list.addView(cyberInfoCard("ERROR", error.message ?: "Sin datos")) } }
         }
         box.addView(button("MAPA DEL RECORRIDO", pink) { showMap(line) })
         content.addView(ScrollView(this).apply { addView(box) })
@@ -857,16 +859,21 @@ class MainActivity : AppCompatActivity() {
     private fun showIntersections(line: TransitLine, street: TransitStreet) {
         content.removeAllViews(); title.text = street.name; updateNav(1)
         val box = box()
-        box.addView(panel("INTERSECCIONES", "LÍNEA " + line.code + " · " + street.name))
+        box.addView(cyberSectionHeader("INTERSECCIONES", "LÍNEA " + line.code + " · " + street.name))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         executor.execute {
             runCatching { api.getIntersections(line.code, street.code) }
                 .onSuccess { intersections -> runOnUiThread {
                     list.removeAllViews()
-                    intersections.forEach { intersection -> list.addView(card(intersection.name, "VER PARADAS") { showStops(line, street, intersection) }) }
+                    intersections.forEach { intersection ->
+                        list.addView(cyberDetailCard(intersection.name, "PARADAS") {
+                            showStops(line, street, intersection)
+                        })
+                    }
+                    if (intersections.isEmpty()) list.addView(cyberInfoCard("SIN INTERSECCIONES", "No se encontraron intersecciones."))
                 }}
-                .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "Sin datos")) } }
+                .onFailure { error -> runOnUiThread { list.addView(cyberInfoCard("ERROR", error.message ?: "Sin datos")) } }
         }
         content.addView(ScrollView(this).apply { addView(box) })
     }
@@ -874,17 +881,21 @@ class MainActivity : AppCompatActivity() {
     private fun showStops(line: TransitLine, street: TransitStreet, intersection: TransitIntersection) {
         content.removeAllViews(); title.text = "PARADAS"; updateNav(1)
         val box = box()
-        box.addView(panel("PARADAS", "LÍNEA " + line.code + " · " + intersection.name))
+        box.addView(cyberSectionHeader("PARADAS", "LÍNEA " + line.code + " · " + intersection.name))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         executor.execute {
             runCatching { api.getStops(line.code, street.code, intersection.code) }
                 .onSuccess { stops -> runOnUiThread {
                     list.removeAllViews()
-                    stops.forEach { stop -> list.addView(card("🚏 " + stop.description, stop.street + " " + stop.intersection) { showArrivals(stop, line) }) }
-                    if (stops.isEmpty()) list.addView(panel("SIN PARADAS", "No se encontraron paradas."))
+                    stops.forEach { stop ->
+                        list.addView(cyberDetailCard("🚏 " + stop.description, stop.street + " · " + stop.intersection) {
+                            showArrivals(stop, line)
+                        })
+                    }
+                    if (stops.isEmpty()) list.addView(cyberInfoCard("SIN PARADAS", "No se encontraron paradas."))
                 }}
-                .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "Sin datos")) } }
+                .onFailure { error -> runOnUiThread { list.addView(cyberInfoCard("ERROR", error.message ?: "Sin datos")) } }
         }
         content.addView(ScrollView(this).apply { addView(box) })
     }
@@ -892,7 +903,7 @@ class MainActivity : AppCompatActivity() {
     private fun showArrivals(stop: TransitStop, line: TransitLine) {
         content.removeAllViews(); title.text = "ARRIBOS"; updateNav(1)
         val box = box()
-        box.addView(panel("🚏 " + stop.description, "LÍNEA " + line.code + " · ID " + stop.identifier))
+        box.addView(cyberSectionHeader("🚏 " + stop.description, "LÍNEA " + line.code + " · ID " + stop.identifier))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         box.addView(button("ACTUALIZAR ARRIBOS", cyan) { loadArrivals(stop, line, list) })
@@ -903,7 +914,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadArrivals(stop: TransitStop, line: TransitLine, list: LinearLayout) {
         list.removeAllViews()
-        list.addView(panel("LIVE", "Consultando próximos arribos..."))
+        list.addView(cyberInfoCard("CONTADOR DE MINUTOS", "Consultando próximos arribos..."))
         executor.execute {
             runCatching { api.getArrivals(stop.identifier, line.code) }
                 .onSuccess { arrivals -> runOnUiThread {
@@ -911,13 +922,92 @@ class MainActivity : AppCompatActivity() {
                     arrivals.forEach { arrival ->
                         val lineLabel = if (arrival.line.isBlank()) "LÍNEA " + line.code else arrival.line
                         val minutes = arrival.minutes?.toString() ?: "--"
-                        list.addView(card(lineLabel + " · " + minutes + " MIN", arrival.destination) {})
+                        list.addView(cyberArrivalCard(lineLabel, arrival.destination, minutes))
                     }
-                    if (arrivals.isEmpty()) list.addView(panel("SIN ARRIBOS", "El servicio no devolvió datos."))
+                    if (arrivals.isEmpty()) list.addView(cyberInfoCard("SIN ARRIBOS", "El servicio no devolvió datos."))
                 }}
                 .onFailure { error -> runOnUiThread {
-                    list.removeAllViews(); list.addView(panel("ERROR", error.message ?: "Sin conexión"))
+                    list.removeAllViews(); list.addView(cyberInfoCard("ERROR", error.message ?: "Sin conexión"))
                 }}
+        }
+    }
+
+    private fun cyberSectionHeader(titleText: String, subtitle: String): View =
+        CyberSectionHeaderView(this, titleText, subtitle, cyberpunkTypeface, cyan, pink, muted).apply {
+            layoutParams = LinearLayout.LayoutParams(-1, dp(76)).apply { bottomMargin = dp(10) }
+        }
+
+    private fun cyberDetailCard(primary: String, secondary: String, action: () -> Unit): View =
+        CyberDetailCardView(this, primary, secondary, cyberpunkTypeface, cyan, pink, muted).apply {
+            layoutParams = LinearLayout.LayoutParams(-1, dp(64)).apply { bottomMargin = dp(8) }
+            setOnClickListener { action() }
+            isClickable = true
+            isFocusable = true
+        }
+
+    private fun cyberInfoCard(primary: String, secondary: String): View =
+        CyberDetailCardView(this, primary, secondary, cyberpunkTypeface, cyan, pink, muted).apply {
+            layoutParams = LinearLayout.LayoutParams(-1, dp(64)).apply { bottomMargin = dp(8) }
+        }
+
+    private fun cyberArrivalCard(lineLabel: String, destination: String, minutes: String): View =
+        CyberArrivalCardView(this, lineLabel, destination, minutes, cyberpunkTypeface, cyan, pink, muted).apply {
+            layoutParams = LinearLayout.LayoutParams(-1, dp(76)).apply { bottomMargin = dp(8) }
+        }
+
+    private class CyberSectionHeaderView(
+        context: Context, private val heading: String, private val subtitle: String,
+        private val typeface: Typeface, private val cyan: Int, private val pink: Int, private val muted: Int
+    ) : View(context) {
+        private val d=resources.displayMetrics.density; private val sd=resources.displayMetrics.scaledDensity
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
+        override fun onDraw(c: Canvas) {
+            val r=RectF(2f*d,2f*d,width-2f*d,height-2f*d)
+            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=248; c.drawRect(r,p)
+            p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=235; c.drawRect(r,p)
+            p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT
+            p.textSize=15f*sd; p.shader=android.graphics.LinearGradient(0f,0f,width*.65f,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
+            c.drawText(heading,12f*d,30f*d,p)
+            p.shader=null; p.textSize=9.5f*sd; p.color=muted; p.alpha=230
+            c.drawText(subtitle,12f*d,53f*d,p)
+        }
+    }
+
+    private class CyberDetailCardView(
+        context: Context, private val primary: String, private val secondary: String,
+        private val typeface: Typeface, private val cyan: Int, private val pink: Int, private val muted: Int
+    ) : View(context) {
+        private val d=resources.displayMetrics.density; private val sd=resources.displayMetrics.scaledDensity
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
+        override fun onDraw(c: Canvas) {
+            val l=2f*d; val t=2f*d; val rr=width-2f*d; val b=height-2f*d
+            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=248; c.drawRect(l,t,rr,b,p)
+            p.style=Paint.Style.STROKE; p.strokeWidth=1.8f*d; p.color=cyan; p.alpha=235; c.drawRect(l,t,rr,b,p)
+            p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT
+            p.textSize=13f*sd; p.shader=android.graphics.LinearGradient(0f,0f,width*.65f,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
+            val base=30f*d; c.drawText(primary,12f*d,base,p)
+            p.shader=null; p.textSize=9f*sd; p.color=muted; p.alpha=225
+            if (secondary.isNotBlank()) c.drawText(secondary,12f*d,51f*d,p)
+        }
+    }
+
+    private class CyberArrivalCardView(
+        context: Context, private val lineLabel: String, private val destination: String, private val minutes: String,
+        private val typeface: Typeface, private val cyan: Int, private val pink: Int, private val muted: Int
+    ) : View(context) {
+        private val d=resources.displayMetrics.density; private val sd=resources.displayMetrics.scaledDensity
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
+        override fun onDraw(c: Canvas) {
+            val l=2f*d; val t=2f*d; val rr=width-2f*d; val b=height-2f*d
+            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=248; c.drawRect(l,t,rr,b,p)
+            p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=235; c.drawRect(l,t,rr,b,p)
+            p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT
+            p.textSize=12f*sd; p.shader=android.graphics.LinearGradient(0f,0f,width*.55f,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
+            c.drawText(lineLabel,12f*d,28f*d,p)
+            p.shader=null; p.textSize=9f*sd; p.color=muted; p.alpha=230
+            c.drawText(destination,12f*d,48f*d,p)
+            p.textSize=19f*sd; p.color=cyan; p.alpha=255; p.textAlign=Paint.Align.RIGHT
+            c.drawText(minutes + " MIN",rr-12f*d,40f*d,p)
         }
     }
 
