@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         }
         headerContent.addView(headerTitle)
         // El título de sección se conserva solo para la lógica interna; no se muestra en el header.
-        title = TextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
+        title = TextView(this).apply { text = ""; textSize = 11f; typeface = cyberformDemoTypeface; setTextColor(muted) }
         headerStatus = CyberHeaderStatusView(this, cyberpunkTypeface, cyan, pink).apply {
             setStatusText("● SISTEMA LISTO")
         }
@@ -444,7 +444,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             val label = description.substringBefore(" · ").ifBlank { assetName }
             addView(TextView(this@MainActivity).apply {
-                text = label; gravity = Gravity.CENTER; textSize = 14f; typeface = Typeface.MONOSPACE
+                text = label; gravity = Gravity.CENTER; textSize = 14f; typeface = cyberformDemoTypeface
                 setTextColor(cyan); contentDescription = description
             }, FrameLayout.LayoutParams(-1, -1))
         }
@@ -485,22 +485,22 @@ class MainActivity : AppCompatActivity() {
         orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(12), dp(16), dp(12))
         setBackgroundColor(panelColor); setOnClickListener { action() }
         addView(TextView(this@MainActivity).apply {
-            text = primary; textSize = 14f; typeface = Typeface.MONOSPACE; setTextColor(Color.WHITE)
+            text = primary; textSize = 14f; typeface = cyberformDemoTypeface; setTextColor(Color.WHITE)
         })
-        addView(TextView(this@MainActivity).apply { text = secondary; textSize = 10f; setTextColor(muted) })
+        addView(TextView(this@MainActivity).apply { text = secondary; textSize = 10f; typeface = cyberformDemoTypeface; setTextColor(muted) })
     }
 
     private fun panel(primary: String, secondary: String) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
         setBackgroundColor(panelColor)
         addView(TextView(this@MainActivity).apply {
-            text = primary; textSize = 11f; typeface = Typeface.MONOSPACE; setTextColor(cyan)
+            text = primary; textSize = 11f; typeface = cyberformDemoTypeface; setTextColor(cyan)
         })
-        addView(TextView(this@MainActivity).apply { text = secondary; textSize = 13f; setTextColor(muted) })
+        addView(TextView(this@MainActivity).apply { text = secondary; textSize = 13f; typeface = cyberformDemoTypeface; setTextColor(muted) })
     }
 
     private fun button(label: String, color: Int, action: () -> Unit) = TextView(this).apply {
-        text = label; gravity = Gravity.CENTER; textSize = 13f; typeface = Typeface.MONOSPACE
+        text = label; gravity = Gravity.CENTER; textSize = 13f; typeface = cyberformDemoTypeface
         setTextColor(color); setBackgroundColor(panelColor); setPadding(dp(12), dp(14), dp(12), dp(14))
         isClickable = true; isFocusable = true; setOnClickListener { action() }
     }
@@ -716,7 +716,7 @@ class MainActivity : AppCompatActivity() {
         title.text = "LÍNEA " + line.code; updateNav(1); content.removeAllViews()
         val box = box()
         box.addView(TextView(this).apply {
-            text = line.name.uppercase(); textSize = 25f; typeface = Typeface.MONOSPACE; setTextColor(cyan)
+            text = line.name.uppercase(); textSize = 25f; typeface = cyberformDemoTypeface; setTextColor(cyan)
         })
         box.addView(panel("CALLES", "Seleccioná una calle para continuar."))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -876,7 +876,7 @@ class MainActivity : AppCompatActivity() {
         })
         val info = TextView(this).apply {
             text = "MAPA  •  UBICACIÓN Y PARADAS CERCANAS"
-            textSize = 11f; typeface = Typeface.MONOSPACE; setTextColor(cyan)
+            textSize = 11f; typeface = cyberformDemoTypeface; setTextColor(cyan)
             setPadding(dp(14), dp(10), dp(14), dp(10)); setBackgroundColor(0xCC05070C.toInt())
         }
         root.addView(info, FrameLayout.LayoutParams(-1, dp(44)).apply { gravity = Gravity.TOP })
