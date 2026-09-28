@@ -1142,6 +1142,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onDraw(canvas: Canvas) {
+            // Fuerza la fuente en cada frame: el menú desplegable usa Canvas, no TextView.
+            textPaint.typeface = typeface
             val frameL = 2f * density
             val frameT = 2f * density
             val frameR = width - 2f * density
@@ -1651,6 +1653,9 @@ class MainActivity : AppCompatActivity() {
         override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
 
         override fun onDraw(canvas: Canvas) {
+            // Fuerza la fuente en cada frame: este texto se dibuja directamente con Canvas.
+            paint.typeface = typeface
+            ghost.typeface = typeface
             val text = "TU COLECTIVO 2.0"
             val cx = width * .5f
             val baseline = height * .55f - (paint.ascent() + paint.descent()) * .5f
@@ -1703,6 +1708,8 @@ class MainActivity : AppCompatActivity() {
         override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
 
         override fun onDraw(canvas: Canvas) {
+            // Fuerza la fuente en cada frame: este texto se dibuja directamente con Canvas.
+            paint.typeface = typeface
             val baseline = height * .68f
             val textWidth = paint.measureText(value)
             val left = 0f
@@ -1751,6 +1758,8 @@ class MainActivity : AppCompatActivity() {
         override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
 
         override fun onDraw(canvas: Canvas) {
+            // Fuerza la fuente en cada frame: la barra inferior usa Canvas, no TextView.
+            textPaint.typeface = typeface
             val frameW = 66f * density
             val frameL = (width - frameW) * .5f
             val frameR = frameL + frameW
