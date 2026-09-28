@@ -121,7 +121,6 @@ class MainActivity : AppCompatActivity() {
         navBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             background = CyberBottomBarBackground()
-            foreground = CyberHeaderOuterFrameDrawable(cyan, pink, resources.displayMetrics.density)
             visibility = View.VISIBLE
         }
         root.addView(navBar, LinearLayout.LayoutParams(-1, dp(72)))
@@ -1101,6 +1100,171 @@ class MainActivity : AppCompatActivity() {
                 val px = left + w * pulse
                 canvas.drawLine(px, top, minOf(px + 8f * density, right), top, p)
             }
+        }
+    }
+
+    private class CyberHeaderOuterFrameDrawable(
+        private val cyan: Int,
+        private val pink: Int,
+        private val density: Float
+    ) : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: Canvas) {
+            val inset = 2f * density
+            CyberHeaderFrameDrawable.drawFrame(
+                canvas,
+                bounds.left + inset,
+                bounds.top + inset,
+                bounds.right - inset,
+                bounds.bottom - inset,
+                cyan,
+                pink,
+                density,
+                9f * density,
+                1f,
+                0f
+            )
+        }
+
+        override fun setAlpha(alpha: Int) {}
+        override fun setColorFilter(colorFilter: ColorFilter?) {}
+        @Suppress("DEPRECATION")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private class CyberHeaderFrameDrawable(
+        private val cyan: Int,
+        private val pink: Int,
+        private val density: Float,
+        private val cornerCut: Float,
+        private val inset: Float
+    ) : android.graphics.drawable.Drawable() {
+        override fun draw(canvas: Canvas) {
+            drawFrame(
+                canvas,
+                bounds.left + inset,
+                bounds.top + inset,
+                bounds.right - inset,
+                bounds.bottom - inset,
+                cyan,
+                pink,
+                density,
+                cornerCut,
+                1f,
+                0f
+            )
+        }
+
+        override fun setAlpha(alpha: Int) {}
+        override fun setColorFilter(colorFilter: ColorFilter?) {}
+        @Suppress("DEPRECATION")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+
+        companion object {
+            fun drawFrame(
+                canvas: Canvas,
+                left: Float,
+                top: Float,
+                right: Float,
+                bottom: Float,
+                cyan: Int,
+                pink: Int,
+                density: Float,
+                cut: Float,
+                intensity: Float,
+                phase: Float
+            ) {
+                if (right <= left || bottom <= top) return
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+                val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+                val w = right - left
+                val h = bottom - top
+                val c = cut.coerceAtMost(minOf(w, h) * 0.28f)
+                val path = Path().apply {
+                    moveTo(left + c, top)
+                    lineTo(right - c, top)
+                    lineTo(right, top + c)
+                    lineTo(right, bottom - c)
+                    lineTo(right - c, bottom)
+                    lineTo(left + c, bottom)
+                    lineTo(left, bottom - c)
+                    lineTo(left, top + c)
+                    close()
+                }
+                glow.strokeWidth = 5f * density
+                glow.color = cyan
+                glow.alpha = (48 * intensity).toInt()
+                canvas.drawPath(path, glow)
+                glow.strokeWidth = 2.5f * density
+                glow.color = pink
+                glow.alpha = (36 * intensity).toInt()
+                canvas.drawPath(path, glow)
+                p.strokeWidth = 1.15f * density
+                p.color = cyan
+                p.alpha = (230 * intensity).toInt()
+                canvas.drawPath(path, p)
+                p.strokeWidth = 1f * density
+                p.color = pink
+                p.alpha = (190 * intensity).toInt()
+                val split = left + w * 0.54f
+                canvas.drawLine(left, bottom, split, bottom, p)
+                canvas.drawLine(right, top, split, top, p)
+                p.color = cyan
+                p.alpha = (210 * intensity).toInt()
+                val notch = minOf(11f * density, w * 0.22f)
+                canvas.drawLine(left + c, top, left + c + notch, top, p)
+                canvas.drawLine(right - c - notch, bottom, right - c, bottom, p)
+                p.color = pink
+                p.alpha = (180 * intensity).toInt()
+                val pulse = ((phase % 16f) / 16f)
+                val px = left + w * pulse
+                canvas.drawLine(px, top, minOf(px + 8f * density, right), top, p)
+            }
+        }
+    }
+
+    private class CyberHeaderView(context: Context) : View(context) {
+        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val density = resources.displayMetrics.density
+
+        override fun onDraw(c: Canvas) {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            val cyan = 0xFF00F0FF.toInt()
+            val pink = 0xFFFF00FF.toInt()
+            val blue = 0xFF006CFF.toInt()
+
+            p.style = Paint.Style.FILL
+            p.shader = android.graphics.LinearGradient(
+                0f, 0f, w, 0f,
+                intArrayOf(0xFF02030B.toInt(), 0xFF08051A.toInt(), 0xFF01020A.toInt()),
+                null, android.graphics.Shader.TileMode.CLAMP
+            )
+            c.drawRect(0f, 0f, w, h, p)
+            p.shader = null
+
+            // Header shell: horizontal neon rails only; no vertical side rails.
+            p.style = Paint.Style.STROKE
+            p.strokeWidth = 1.4f * density
+            p.color = cyan
+            p.alpha = 230
+            c.drawLine(8f * density, 2f * density, w * .34f, 2f * density, p)
+            c.drawLine(w * .66f, 2f * density, w - 8f * density, 2f * density, p)
+            c.drawLine(8f * density, h - 2f * density, w * .34f, h - 2f * density, p)
+            c.drawLine(w * .66f, h - 2f * density, w - 8f * density, h - 2f * density, p)
+
+            p.color = pink
+            p.alpha = 210
+            c.drawLine(w * .34f, 2f * density, w * .42f, 2f * density, p)
+            c.drawLine(w * .58f, 2f * density, w * .66f, 2f * density, p)
+            c.drawLine(w * .34f, h - 2f * density, w * .42f, h - 2f * density, p)
+            c.drawLine(w * .58f, h - 2f * density, w * .66f, h - 2f * density, p)
+
+            p.color = blue
+            p.alpha = 160
+            c.drawLine(2f * density, 7f * density, 8f * density, 2f * density, p)
+            c.drawLine(w - 2f * density, 7f * density, w - 8f * density, 2f * density, p)
+            c.drawLine(2f * density, h - 7f * density, 8f * density, h - 2f * density, p)
+            c.drawLine(w - 2f * density, h - 7f * density, w - 8f * density, h - 2f * density, p)
         }
     }
 
