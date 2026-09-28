@@ -1351,31 +1351,34 @@ class MainActivity : AppCompatActivity() {
         override fun onDraw(canvas: Canvas) {
             val w = width.toFloat(); val h = height.toFloat()
             if (w <= 0f || h <= 0f) return
-            val cut = minOf(10f * density, minOf(w, h) * .18f)
+            // Marco reforzado: el grosor y el halo aumentan para que la animación
+            // sea claramente visible y cubra las esquinas negras de las tarjetas.
+            val cut = minOf(4.5f * density, minOf(w, h) * .08f)
+            val edge = 2.5f * density
             path.reset()
-            path.moveTo(cut, 1.5f * density)
-            path.lineTo(w - cut, 1.5f * density)
-            path.lineTo(w - 1.5f * density, 1.5f * density + cut)
-            path.lineTo(w - 1.5f * density, h - cut)
-            path.lineTo(w - cut, h - 1.5f * density)
-            path.lineTo(cut, h - 1.5f * density)
-            path.lineTo(1.5f * density, h - cut)
-            path.lineTo(1.5f * density, cut)
+            path.moveTo(cut, edge)
+            path.lineTo(w - cut, edge)
+            path.lineTo(w - edge, edge + cut)
+            path.lineTo(w - edge, h - cut)
+            path.lineTo(w - cut, h - edge)
+            path.lineTo(cut, h - edge)
+            path.lineTo(edge, h - cut)
+            path.lineTo(edge, cut)
             path.close()
             val violet = 0xFFD000FF.toInt()
             val violetBright = 0xFFFF4DFF.toInt()
             val pulse = 0.72f + 0.28f * ((kotlin.math.sin(phase * 0.55f) + 1f) * .5f)
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 6f * density; paint.color = violet; paint.alpha = (32f * pulse).toInt()
+            paint.strokeWidth = 10f * density; paint.color = violet; paint.alpha = (48f * pulse).toInt()
             canvas.drawPath(path, paint)
-            paint.strokeWidth = 2.6f * density; paint.color = violetBright; paint.alpha = (150f * pulse).toInt()
+            paint.strokeWidth = 5.2f * density; paint.color = violetBright; paint.alpha = (175f * pulse).toInt()
             canvas.drawPath(path, paint)
-            paint.strokeWidth = 1.15f * density; paint.color = violetBright; paint.alpha = 235
+            paint.strokeWidth = 2.4f * density; paint.color = violetBright; paint.alpha = 245
             canvas.drawPath(path, paint)
             val sweep = ((phase % 16f) / 16f)
-            paint.strokeWidth = 2f * density; paint.color = violetBright; paint.alpha = 230
-            val topX = 1.5f * density + (w - 3f * density) * sweep
-            canvas.drawLine(topX, 1.5f * density, minOf(topX + 16f * density, w - 1.5f * density), 1.5f * density, paint)
+            paint.strokeWidth = 4f * density; paint.color = violetBright; paint.alpha = 240
+            val topX = edge + (w - 2f * edge) * sweep
+            canvas.drawLine(topX, edge, minOf(topX + 22f * density, w - edge), edge, paint)
         }
     }
 
