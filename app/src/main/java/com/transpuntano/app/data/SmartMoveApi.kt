@@ -106,7 +106,7 @@ class SmartMoveApi {
             stringParam("localidad", PROVINCIA),
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
-        )), timeoutMs = timeoutMs)
+        ), timeoutMs = timeoutMs)
         val array = firstArray(root, "ArribosJson", "listaArribos", "arribos", "Arribo", "arribo") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
