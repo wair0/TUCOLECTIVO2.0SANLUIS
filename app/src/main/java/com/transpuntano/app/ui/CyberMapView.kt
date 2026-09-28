@@ -23,6 +23,7 @@ data class MapStop(
 class CyberMapView(context: Context) : View(context) {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cyberformDemoTypeface = Typeface.createFromAsset(context.assets, "fonts/cyberformdemoregular.otf")
 
     private val cache =
         object : LruCache<String, Bitmap>(24 * 1024 * 1024) {
@@ -697,7 +698,7 @@ private fun updateMapRect() {
         )
 
         paint.style = Paint.Style.FILL
-        paint.typeface = Typeface.MONOSPACE
+        paint.typeface = cyberformDemoTypeface
         paint.textSize = dp(25f)
         paint.textAlign = Paint.Align.CENTER
         paint.color = Color.WHITE
@@ -729,7 +730,7 @@ private fun updateMapRect() {
             paint
         )
 
-        paint.typeface = Typeface.MONOSPACE
+        paint.typeface = cyberformDemoTypeface
         paint.textSize = dp(8f)
         paint.color = Color.WHITE
 
