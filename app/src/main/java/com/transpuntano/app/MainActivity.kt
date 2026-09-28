@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity() {
         private val handler = Handler(Looper.getMainLooper())
         private val animator = object : Runnable {
             override fun run() {
-                phase = (phase + 0.8f) % 16f
+                phase = (phase + 0.20f) % 16f
                 invalidateSelf()
                 handler.postDelayed(this, 55L)
             }
@@ -1342,7 +1342,7 @@ class MainActivity : AppCompatActivity() {
         private val runner = object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                phase = (phase + 0.75f) % 16f
+                phase = (phase + 0.20f) % 16f
                 postInvalidateOnAnimation()
                 postOnAnimationDelayed(this, 55L)
             }
@@ -1378,10 +1378,9 @@ class MainActivity : AppCompatActivity() {
 
             // Animación celeste neón: halo + línea brillante que recorre el marco.
             val neonCyan = 0xFF00F0FF.toInt()
-            val pulse = 0.72f + 0.28f * ((kotlin.math.sin(phase * 0.55f) + 1f) * .5f)
             paint.strokeWidth = 9f * density
             paint.color = neonCyan
-            paint.alpha = (70f * pulse).toInt()
+            paint.alpha = 45
             canvas.drawPath(path, paint)
 
             // Segmento animado que recorre TODO el perímetro, no solamente el borde superior.
@@ -1389,7 +1388,7 @@ class MainActivity : AppCompatActivity() {
             val pathLength = perimeter.length
             if (pathLength > 0f) {
                 val sweep = ((phase % 16f) / 16f)
-                val segmentLength = minOf(28f * density, pathLength * 0.16f)
+                val segmentLength = minOf(24f * density, pathLength * 0.13f)
                 val start = pathLength * sweep
                 val end = start + segmentLength
                 val animatedPath = Path()
@@ -1418,7 +1417,7 @@ class MainActivity : AppCompatActivity() {
         private val handler = Handler(Looper.getMainLooper())
         private val runner = object : Runnable {
             override fun run() {
-                phase = (phase + 0.7f) % 16f
+                phase = (phase + 0.20f) % 16f
                 invalidateSelf()
                 handler.postDelayed(this, 55L)
             }
@@ -1522,7 +1521,7 @@ class MainActivity : AppCompatActivity() {
                 val pathLength = perimeter.length
                 if (pathLength > 0f) {
                     val pulse = ((phase % 16f) / 16f)
-                    val segmentLength = minOf(22f * density, pathLength * 0.12f)
+                    val segmentLength = minOf(20f * density, pathLength * 0.10f)
                     val start = pathLength * pulse
                     val end = start + segmentLength
                     val animatedPath = Path()
@@ -1548,7 +1547,7 @@ class MainActivity : AppCompatActivity() {
         private val runner = object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                phase = (phase + 0.7f) % 16f
+                phase = (phase + 0.20f) % 16f
                 postInvalidateOnAnimation()
                 postOnAnimationDelayed(this, 55L)
             }
