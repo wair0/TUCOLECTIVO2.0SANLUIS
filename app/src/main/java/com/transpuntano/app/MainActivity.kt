@@ -1007,6 +1007,7 @@ class MainActivity : AppCompatActivity() {
         private val d=resources.displayMetrics.density; private val sd=resources.displayMetrics.scaledDensity
         private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
         private val circlePaint=Paint(Paint.ANTI_ALIAS_FLAG)
+        private val runnerPaint=Paint(Paint.ANTI_ALIAS_FLAG)
         private val numericMinutes = minutes.trim().toIntOrNull()
         private val isArriving = minutes.trim().equals("ARRIBANDO", true) || (numericMinutes != null && numericMinutes <= 1)
         private val displayMinutes = if (isArriving) "ARRIBANDO" else minutes.trim()
@@ -1015,11 +1016,10 @@ class MainActivity : AppCompatActivity() {
         private val runner=object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                // Menos minutos = mayor velocidad. La velocidad cae progresivamente
-                // a medida que aumenta el tiempo restante.
-                val m = numericMinutes ?: 5
+                // Menos minutos = mayor velocidad. ARRIBANDO usa la velocidad máxima.
+                val m = numericMinutes ?: 0
                 val speed = when {
-                    m <= 0 -> 18f
+                    isArriving || m <= 0 -> 18f
                     m == 1 -> 15f
                     else -> (15f / (m + 1f)).coerceIn(1.5f, 15f)
                 }
@@ -1029,9 +1029,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        init {
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-        }
+        init { setLayerType(View.LAYER_TYPE_SOFTWARE, null) }
 
         override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
         override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
@@ -1041,11 +1039,94 @@ class MainActivity : AppCompatActivity() {
             p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=255; c.drawRect(l,t,rr,b,p)
             p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=235; c.drawRect(l,t,rr,b,p)
 
-            // Área de texto amplia; el contador circular queda separado a la derecha.
-            val circleR=if (isArriving) 31f*d else 27f*d
-            val circleCx=rr-circleR-12f*d
-            val circleCy=(t+b)*.5f
-            val textRight=circleCx-circleR-14f*d
+            val textRight: Float
+            val counterCx: Float
+            val counterCy: Float
+
+            if (isArriving) {
+                // ARRIBANDO usa un marco rectangular para que la palabra tenga espacio.
+                val boxW=108f*d
+                val boxH=46f*d
+                val boxL=rr-boxW-10f*d
+                val boxT=(t+b-boxH)*.5f
+                val boxR=rr-8f*d
+                val boxB=boxT+boxH
+                textRight=boxL-12f*d
+                counterCx=(boxL+boxR)*.5f
+                counterCy=(boxT+boxB)*.5f
+
+                val rect=RectF(boxL,boxT,boxR,boxB)
+                circlePaint.style=Paint.Style.STROKE
+                circlePaint.strokeCap=Paint.Cap.ROUND
+                circlePaint.color=cyan
+
+                // Glow exterior + marco base.
+                circlePaint.setShadowLayer(11f*d,0f,0f,cyan)
+                circlePaint.strokeWidth=7f*d; circlePaint.alpha=22
+                c.drawRoundRect(rect,7f*d,7f*d,circlePaint)
+                circlePaint.clearShadowLayer()
+
+                circlePaint.strokeWidth=2f*d; circlePaint.alpha=115
+                c.drawRoundRect(rect,7f*d,7f*d,circlePaint)
+
+                // Segmento luminoso que recorre el perímetro: máximo ritmo en ARRIBANDO.
+                val path=Path().apply { addRoundRect(rect,7f*d,7f*d,Path.Direction.CW) }
+                val measure=PathMeasure(path,false)
+                val total=measure.length
+                val startDistance=(phase/360f)*total
+                val segment=total*.28f
+                val runnerPath=Path()
+                fun drawSegment(from: Float,to: Float) {
+                    runnerPath.reset()
+                    measure.getSegment(from,to,runnerPath,true)
+                    c.drawPath(runnerPath,runnerPaint)
+                }
+                runnerPaint.style=Paint.Style.STROKE
+                runnerPaint.strokeCap=Paint.Cap.ROUND
+                runnerPaint.strokeWidth=3f*d
+                runnerPaint.color=cyan
+                runnerPaint.setShadowLayer(8f*d,0f,0f,cyan)
+                if (startDistance+segment <= total) drawSegment(startDistance,startDistance+segment)
+                else {
+                    drawSegment(startDistance,total)
+                    drawSegment(0f,(startDistance+segment)-total)
+                }
+                runnerPaint.clearShadowLayer()
+
+                // ARRIBANDO queda centrado dentro del marco.
+                p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER
+                p.textSize=10f*sd; p.color=cyan; p.alpha=255
+                p.setShadowLayer(6f*d,0f,0f,cyan)
+                c.drawText("ARRIBANDO",counterCx,counterCy-(p.ascent()+p.descent())*.5f,p)
+                p.clearShadowLayer()
+            } else {
+                val circleR=27f*d
+                val circleCx=rr-circleR-12f*d
+                val circleCy=(t+b)*.5f
+                textRight=circleCx-circleR-14f*d
+                counterCx=circleCx
+                counterCy=circleCy
+
+                // Círculo exclusivamente celeste, con resplandor neon.
+                circlePaint.style=Paint.Style.STROKE
+                circlePaint.strokeCap=Paint.Cap.ROUND
+                circlePaint.color=cyan
+                circlePaint.setShadowLayer(10f*d,0f,0f,cyan)
+                circlePaint.strokeWidth=7f*d; circlePaint.alpha=22
+                c.drawCircle(circleCx,circleCy,circleR,circlePaint)
+                circlePaint.clearShadowLayer()
+
+                circlePaint.strokeWidth=4f*d; circlePaint.alpha=45
+                c.drawCircle(circleCx,circleCy,circleR,circlePaint)
+                circlePaint.strokeWidth=2f*d; circlePaint.alpha=105
+                c.drawCircle(circleCx,circleCy,circleR,circlePaint)
+
+                val oval=RectF(circleCx-circleR,circleCy-circleR,circleCx+circleR,circleCy+circleR)
+                circlePaint.strokeWidth=3f*d; circlePaint.alpha=255
+                circlePaint.setShadowLayer(7f*d,0f,0f,cyan)
+                c.drawArc(oval,phase,270f,false,circlePaint)
+                circlePaint.clearShadowLayer()
+            }
 
             p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT
             p.textSize=12f*sd
@@ -1054,48 +1135,19 @@ class MainActivity : AppCompatActivity() {
             p.shader=null; p.textSize=9f*sd; p.color=muted; p.alpha=230
             c.drawText(destination,12f*d,57f*d,p)
 
-            // Círculo exclusivamente celeste, con varias capas de resplandor neon.
-            circlePaint.style=Paint.Style.STROKE
-            circlePaint.strokeCap=Paint.Cap.ROUND
-            circlePaint.color=cyan
-            circlePaint.setShadowLayer(10f*d, 0f, 0f, cyan)
-            circlePaint.strokeWidth=7f*d; circlePaint.alpha=22
-            c.drawCircle(circleCx,circleCy,circleR,circlePaint)
-            circlePaint.clearShadowLayer()
-
-            circlePaint.strokeWidth=4f*d; circlePaint.alpha=45
-            c.drawCircle(circleCx,circleCy,circleR,circlePaint)
-
-            circlePaint.strokeWidth=2f*d; circlePaint.alpha=105
-            c.drawCircle(circleCx,circleCy,circleR,circlePaint)
-
-            val oval=RectF(circleCx-circleR,circleCy-circleR,circleCx+circleR,circleCy+circleR)
-            circlePaint.strokeWidth=3f*d; circlePaint.alpha=255
-            circlePaint.setShadowLayer(7f*d, 0f, 0f, cyan)
-            c.drawArc(oval,phase,270f,false,circlePaint)
-            circlePaint.clearShadowLayer()
-
-            p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER
-            p.color=cyan; p.alpha=255
-            if (isArriving) {
-                var size=9f*sd
-                p.textSize=size
-                while (p.measureText(displayMinutes) > circleR*1.62f && size > 4.5f*sd) {
-                    size-=0.5f*sd
-                    p.textSize=size
-                }
-                c.drawText(displayMinutes,circleCx,circleCy-(p.ascent()+p.descent())*.5f,p)
-            } else {
+            if (!isArriving) {
+                p.textAlign=Paint.Align.CENTER
+                p.color=cyan; p.alpha=255
                 p.textSize=15f*sd
-                c.drawText(displayMinutes,circleCx,circleCy-1f*d-(p.ascent()+p.descent())*.5f,p)
-                p.textSize=6.5f*sd; p.alpha=255
-                val minY=circleCy+17f*d
+                c.drawText(displayMinutes,counterCx,counterCy-1f*d-(p.ascent()+p.descent())*.5f,p)
+                p.textSize=6.5f*sd
+                val minY=counterCy+17f*d
                 val minGap=2.2f*d
                 val mWidth=p.measureText("M")
                 val iWidth=p.measureText("I")
                 val nWidth=p.measureText("N")
                 val minTotal=mWidth+iWidth+nWidth+minGap*2f
-                var minX=circleCx-minTotal*.5f
+                var minX=counterCx-minTotal*.5f
                 c.drawText("M",minX+mWidth*.5f,minY,p); minX+=mWidth+minGap
                 c.drawText("I",minX+iWidth*.5f,minY,p); minX+=iWidth+minGap
                 c.drawText("N",minX+nWidth*.5f,minY,p)
