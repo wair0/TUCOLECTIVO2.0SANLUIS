@@ -1368,7 +1368,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                 delivered = true
                 manager.removeUpdates(listener)
                 if (lastKnown != null) {
-                    applyMapLocation(map, lastKnown)
+                    applyMapLocation(map, line, lastKnown)
                 } else {
                     headerStatus.setStatusText("● SIN UBICACIÓN")
                     toast("No se pudo obtener tu ubicación.")
