@@ -953,7 +953,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun cyberArrivalCard(lineLabel: String, destination: String, minutes: String): View =
         CyberArrivalCardView(this, lineLabel, destination, minutes, cyberpunkTypeface, cyan, pink, muted).apply {
-            layoutParams = LinearLayout.LayoutParams(-1, dp(76)).apply { bottomMargin = dp(8) }
+            layoutParams = LinearLayout.LayoutParams(-1, dp(92)).apply { bottomMargin = dp(8) }
         }
 
     private class CyberSectionHeaderView(
@@ -998,17 +998,62 @@ class MainActivity : AppCompatActivity() {
     ) : View(context) {
         private val d=resources.displayMetrics.density; private val sd=resources.displayMetrics.scaledDensity
         private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
+        private val circlePaint=Paint(Paint.ANTI_ALIAS_FLAG)
+        private var phase=0f
+        private val runner=object : Runnable {
+            override fun run() {
+                if (!isAttachedToWindow) return
+                phase=(phase+5f)%360f
+                postInvalidateOnAnimation()
+                postOnAnimationDelayed(this,45L)
+            }
+        }
+
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
+        override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
+
         override fun onDraw(c: Canvas) {
             val l=2f*d; val t=2f*d; val rr=width-2f*d; val b=height-2f*d
             p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=248; c.drawRect(l,t,rr,b,p)
             p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=235; c.drawRect(l,t,rr,b,p)
+
+            // Área de texto amplia; el contador circular queda separado a la derecha.
+            val circleR=27f*d
+            val circleCx=rr-circleR-12f*d
+            val circleCy=(t+b)*.5f
+            val textRight=circleCx-circleR-14f*d
+
             p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT
-            p.textSize=12f*sd; p.shader=android.graphics.LinearGradient(0f,0f,width*.55f,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
-            c.drawText(lineLabel,12f*d,28f*d,p)
+            p.textSize=12f*sd
+            p.shader=android.graphics.LinearGradient(0f,0f,textRight,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
+            c.drawText(lineLabel,12f*d,34f*d,p)
             p.shader=null; p.textSize=9f*sd; p.color=muted; p.alpha=230
-            c.drawText(destination,12f*d,48f*d,p)
-            p.textSize=19f*sd; p.color=cyan; p.alpha=255; p.textAlign=Paint.Align.RIGHT
-            c.drawText(minutes + " MIN",rr-12f*d,40f*d,p)
+            c.drawText(destination,12f*d,57f*d,p)
+
+            // Contador circular neon: aro base + arco animado que recorre el círculo.
+            circlePaint.style=Paint.Style.STROKE
+            circlePaint.strokeCap=Paint.Cap.ROUND
+            circlePaint.strokeWidth=2f*d
+            circlePaint.color=cyan
+            circlePaint.alpha=80
+            c.drawCircle(circleCx,circleCy,circleR,circlePaint)
+
+            circlePaint.strokeWidth=3f*d
+            circlePaint.color=cyan
+            circlePaint.alpha=255
+            val oval=RectF(circleCx-circleR,circleCy-circleR,circleCx+circleR,circleCy+circleR)
+            c.drawArc(oval,phase,245f,false,circlePaint)
+
+            circlePaint.strokeWidth=1.5f*d
+            circlePaint.color=pink
+            circlePaint.alpha=210
+            c.drawArc(oval,phase+245f,55f,false,circlePaint)
+
+            p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER
+            p.textSize=15f*sd; p.color=cyan; p.alpha=255
+            c.drawText(minutes,circleCx,circleCy-1f*d-(p.ascent()+p.descent())*.5f,p)
+            p.textSize=6.5f*sd; p.color=muted; p.alpha=230
+            c.drawText("MIN",circleCx,circleCy+17f*d,p)
         }
     }
 
