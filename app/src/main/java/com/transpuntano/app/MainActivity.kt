@@ -1139,9 +1139,9 @@ class MainActivity : AppCompatActivity() {
     /**
      * Fondo GIF animado real.
      *
-     * Se usa Movie directamente para evitar depender de ImageDecoder /
-     * AnimatedImageDrawable y de sus callbacks internos. La vista se dibuja
-     * en capa de software para que el renderizado de Movie sea consistente.
+     * Se carga el GIF binario directamente desde assets y se dibuja con
+     * Movie en una capa de software para evitar problemas de callbacks
+     * internos y de compatibilidad con ImageDecoder.
      */
     private class AnimatedGifBackgroundView(context: Context) : View(context) {
         private var movie: android.graphics.Movie? = null
@@ -1167,25 +1167,9 @@ class MainActivity : AppCompatActivity() {
 
         private fun loadMovie(context: Context): android.graphics.Movie? {
             return runCatching {
-                val encoded = context.assets
-                    .open("background_cyberpunk.gif.b64")
-                    .bufferedReader(Charsets.US_ASCII)
-                    .use { it.readText() }
-                    .filterNot { it.isWhitespace() }
-
-                if (encoded.isEmpty()) {
-                    loadError = true
-                    return@runCatching null
-                }
-
-                val bytes = Base64.decode(encoded, Base64.DEFAULT)
-                if (bytes.size < 10 || bytes[0] != 0x47.toByte() ||
-                    bytes[1] != 0x49.toByte() || bytes[2] != 0x46.toByte()) {
-                    loadError = true
-                    return@runCatching null
-                }
-
-                android.graphics.Movie.decodeStream(ByteArrayInputStream(bytes)).also {
+                context.assets.open("background_cyberpunk.gif").use { input ->
+                    android.graphics.Movie.decodeStream(input)
+                }.also {
                     if (it == null) loadError = true
                 }
             }.getOrElse {
