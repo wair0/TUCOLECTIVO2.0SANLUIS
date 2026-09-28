@@ -483,7 +483,7 @@ class MainActivity : AppCompatActivity() {
             contentDescription = "LÍNEAS · Recorridos y calles"
         }
         addView(image, FrameLayout.LayoutParams(-1, -1))
-        addCyberVioletFrame(this)
+        addCyberStaticCyanFrame(this)
     }
 
     private fun applyCyberpunkTypeface(view: View) {
@@ -631,7 +631,7 @@ class MainActivity : AppCompatActivity() {
             return FrameLayout(this).apply {
                 addView(button("SINCRONIZAR LÍNEAS", cyan, action).also { applyCyberTap(it) },
                     FrameLayout.LayoutParams(-1, -1))
-                addCyberVioletFrame(this)
+                addCyberStaticCyanFrame(this)
             }
         }
         return FrameLayout(this).apply {
@@ -647,7 +647,7 @@ class MainActivity : AppCompatActivity() {
             isFocusable = true
             setOnClickListener { action() }
             applyCyberTap(this)
-            addCyberVioletFrame(this)
+            addCyberStaticCyanFrame(this)
         }
     }
 
