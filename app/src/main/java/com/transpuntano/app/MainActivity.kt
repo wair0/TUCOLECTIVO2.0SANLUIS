@@ -194,165 +194,61 @@ class MainActivity : AppCompatActivity() {
 
     private class CyberBottomBarBackground : android.graphics.drawable.Drawable() {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        var selectedIndex: Int = 0
-            set(value) { field = value; invalidateSelf() }
-
-        override fun draw(canvas: Canvas) {
-            val w = bounds.width().toFloat()
-            val h = bounds.height().toFloat()
-            val cyan = 0xFF00F6FF.toInt()
-            val magenta = 0xFFFF008C.toInt()
-            val violet = 0xFF8A5CFF.toInt()
-
-            // Five independent holographic bays, not a conventional rectangular navbar.
-            paint.style = Paint.Style.FILL
-            paint.shader = android.graphics.LinearGradient(0f, 0f, w, h,
-                0xFF02040D.toInt(), 0xFF100319.toInt(),
-                android.graphics.Shader.TileMode.CLAMP)
-            canvas.drawRect(0f, 0f, w, h, paint)
-            paint.shader = null
-
-            val cellW = w / 5f
-            val selected = selectedIndex.coerceIn(0, 4)
-            for (i in 0..4) {
-                val x = i * cellW
-                paint.style = Paint.Style.FILL
-                paint.color = if (i == selected) cyan else violet
-                paint.alpha = if (i == selected) 28 else 8
-                pathCell(canvas, x + 5f, 7f, x + cellW - 5f, h - 7f, 7f, paint)
-            }
-
-            // Slanted separators and luminous command spine.
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 1f
-            for (i in 1..4) {
-                val x = i * cellW
-                paint.color = violet
-                paint.alpha = 85
-                canvas.drawLine(x - 7f, 9f, x + 7f, h - 9f, paint)
-            }
-
-            // Selected bay gets a cyan/magenta double contour.
-            val sx = selected * cellW
-            paint.color = cyan
-            paint.alpha = 235
-            paint.strokeWidth = 1.6f
-            pathCell(canvas, sx + 5f, 7f, sx + cellW - 5f, h - 7f, 7f, paint)
-            paint.color = magenta
-            paint.alpha = 220
-            paint.strokeWidth = 1f
-            canvas.drawLine(sx + 14f, 7f, sx + cellW - 14f, 7f, paint)
-            canvas.drawLine(sx + 14f, h - 7f, sx + cellW - 14f, h - 7f, paint)
-
-            // Central reactor slit.
-            paint.color = magenta
-            paint.alpha = 230
-            paint.strokeWidth = 2f
-            canvas.drawLine(w * .46f, h / 2f, w * .54f, h / 2f, paint)
-            paint.color = cyan
-            paint.alpha = 180
-            paint.strokeWidth = 1f
-            canvas.drawCircle(w / 2f, h / 2f, 5f, paint)
-            canvas.drawCircle(w / 2f, h / 2f, 1.5f, paint)
-
-            paint.color = cyan
-            paint.alpha = 230
-            paint.strokeWidth = 2f
-            canvas.drawLine(0f, 1f, w * .32f, 1f, paint)
-            canvas.drawLine(w * .68f, 1f, w, 1f, paint)
-        }
-
-        private fun pathCell(c: Canvas, l: Float, t: Float, r: Float, b: Float, cut: Float, p: Paint) {
-            path.reset()
-            path.moveTo(l + cut, t)
-            path.lineTo(r - cut, t)
-            path.lineTo(r, t + cut)
-            path.lineTo(r, b - cut)
-            path.lineTo(r - cut, b)
-            path.lineTo(l + cut, b)
-            path.lineTo(l, b - cut)
-            path.lineTo(l, t + cut)
-            path.close()
-            c.drawPath(path, p)
-        }
         private val path = Path()
-        override fun setAlpha(alpha: Int) {}
-        override fun setColorFilter(colorFilter: ColorFilter?) {}
-        @Suppress("DEPRECATION") override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+        var selectedIndex = 0
+            set(v) { field=v; invalidateSelf() }
+        override fun draw(c: Canvas) {
+            val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
+            val cyan=0xFF00F6FF.toInt(); val mag=0xFFFF008C.toInt(); val vio=0xFF7C4DFF.toInt()
+            paint.style=Paint.Style.FILL
+            paint.shader=android.graphics.LinearGradient(0f,0f,0f,h, intArrayOf(0xFF01030B.toInt(),0xFF080018.toInt(),0xFF020611.toInt()),null,android.graphics.Shader.TileMode.CLAMP)
+            c.drawRect(0f,0f,w,h,paint); paint.shader=null
+            paint.color=vio; paint.alpha=25
+            path.reset(); path.moveTo(0f,h); path.lineTo(w*.22f,0f); path.lineTo(w*.42f,0f); path.lineTo(w*.20f,h); path.close(); c.drawPath(path,paint)
+            path.reset(); path.moveTo(w,h); path.lineTo(w*.78f,0f); path.lineTo(w*.58f,0f); path.lineTo(w*.80f,h); path.close(); c.drawPath(path,paint)
+            paint.style=Paint.Style.STROKE; paint.strokeWidth=1.5f; paint.color=cyan; paint.alpha=220
+            c.drawLine(0f,1f,w*.27f,1f,paint); c.drawLine(w*.73f,1f,w,1f,paint)
+            paint.color=mag; paint.alpha=220; c.drawLine(w*.27f,1f,w*.36f,1f,paint); c.drawLine(w*.64f,1f,w*.73f,1f,paint)
+            val cw=w/5f
+            for(i in 0..4){ val x=i*cw; paint.color=if(i==selectedIndex) cyan else vio; paint.alpha=if(i==selectedIndex)150 else 55; paint.strokeWidth=1f
+                c.drawLine(x+8f,h*.22f,x+cw-8f,h*.78f,paint)
+                c.drawLine(x+cw-8f,h*.22f,x+8f,h*.78f,paint)
+            }
+            val sx=selectedIndex.coerceIn(0,4)*cw
+            paint.color=cyan; paint.alpha=240; paint.strokeWidth=2f
+            c.drawLine(sx+7f,h-7f,sx+cw-18f,h-7f,paint)
+            paint.color=mag; paint.alpha=230; paint.strokeWidth=1f
+            c.drawLine(sx+18f,h-4f,sx+cw-7f,h-4f,paint)
+            paint.color=cyan; paint.style=Paint.Style.FILL; paint.alpha=230
+            c.drawCircle(w/2f,3f,2.5f,paint); c.drawCircle(w/2f,h-5f,2f,paint)
+        }
+        override fun setAlpha(a:Int){}; override fun setColorFilter(f:ColorFilter?){}
+        @Suppress("DEPRECATION") override fun getOpacity()=android.graphics.PixelFormat.TRANSLUCENT
     }
 
     private class CyberDrawerBackground(private val context: Context) : android.graphics.drawable.Drawable() {
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val path = Path()
-
-        override fun draw(canvas: Canvas) {
-            val w = bounds.width().toFloat()
-            val h = bounds.height().toFloat()
-            val cyan = 0xFF00F6FF.toInt()
-            val magenta = 0xFFFF008C.toInt()
-            val violet = 0xFF8A5CFF.toInt()
-
-            // Vertical holographic console: dark glass + diagonal energy fields.
-            paint.style = Paint.Style.FILL
-            paint.shader = android.graphics.LinearGradient(0f, 0f, w, h,
-                intArrayOf(0xFF02040B.toInt(), 0xFF0D0318.toInt(), 0xFF030914.toInt()),
-                null, android.graphics.Shader.TileMode.CLAMP)
-            canvas.drawRect(0f, 0f, w, h, paint)
-            paint.shader = null
-
-            // Large angular "wing" shapes create a visibly new silhouette.
-            paint.color = violet
-            paint.alpha = 24
-            path.reset()
-            path.moveTo(0f, 0f); path.lineTo(w * .72f, 0f); path.lineTo(w * .38f, h * .28f); path.close()
-            canvas.drawPath(path, paint)
-            path.reset()
-            path.moveTo(w, h); path.lineTo(w * .22f, h); path.lineTo(w * .62f, h * .70f); path.close()
-            canvas.drawPath(path, paint)
-
-            // Neon spine and segmented command rails.
-            paint.style = Paint.Style.STROKE
-            paint.color = cyan
-            paint.alpha = 230
-            paint.strokeWidth = 2f
-            canvas.drawLine(w - 4f, 18f, w - 4f, h - 18f, paint)
-            paint.color = magenta
-            paint.alpha = 220
-            paint.strokeWidth = 1f
-            canvas.drawLine(6f, 18f, 6f, h - 18f, paint)
-
-            for (i in 0..9) {
-                val y = 32f + i * ((h - 64f) / 10f)
-                paint.color = if (i % 2 == 0) cyan else violet
-                paint.alpha = 110
-                paint.strokeWidth = if (i % 2 == 0) 2f else 1f
-                canvas.drawLine(16f, y, w * (.25f + (i % 3) * .18f), y, paint)
-            }
-
-            // Circuit nodes and target brackets.
-            paint.style = Paint.Style.FILL
-            paint.color = cyan
-            paint.alpha = 220
-            canvas.drawCircle(w - 14f, 16f, 2.5f, paint)
-            canvas.drawCircle(w - 14f, h - 16f, 2.5f, paint)
-            paint.color = magenta
-            canvas.drawCircle(14f, 16f, 2.5f, paint)
-            canvas.drawCircle(14f, h - 16f, 2.5f, paint)
-
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 1.5f
-            paint.color = cyan
-            paint.alpha = 190
-            canvas.drawLine(18f, 8f, 88f, 8f, paint)
-            canvas.drawLine(18f, h - 8f, 88f, h - 8f, paint)
-            paint.color = magenta
-            canvas.drawLine(w - 88f, 8f, w - 18f, 8f, paint)
-            canvas.drawLine(w - 88f, h - 8f, w - 18f, h - 8f, paint)
+        private val paint=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
+        override fun draw(c:Canvas){
+            val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
+            val cyan=0xFF00F6FF.toInt(); val mag=0xFFFF008C.toInt(); val vio=0xFF7C4DFF.toInt()
+            paint.style=Paint.Style.FILL
+            paint.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF01030B.toInt(),0xFF09001A.toInt(),0xFF020914.toInt()),null,android.graphics.Shader.TileMode.CLAMP)
+            c.drawRect(0f,0f,w,h,paint); paint.shader=null
+            paint.color=cyan; paint.alpha=18
+            for(i in 0..6){ path.reset(); path.moveTo(0f,i*h/7f); path.lineTo(w*.72f,(i+1)*h/7f); path.lineTo(w*.90f,(i+1)*h/7f); path.lineTo(w*.18f,i*h/7f); path.close(); c.drawPath(path,paint) }
+            paint.style=Paint.Style.STROKE; paint.color=cyan; paint.alpha=220; paint.strokeWidth=2f
+            c.drawLine(w-3f,0f,w-3f,h,paint); paint.color=mag; paint.alpha=210; c.drawLine(3f,0f,3f,h,paint)
+            paint.strokeWidth=1f; paint.color=vio; paint.alpha=130
+            for(i in 0..11){ val y=18f+i*h/13f; c.drawLine(16f,y,w*(.25f+(i%4)*.14f),y,paint) }
+            paint.color=cyan; paint.alpha=170
+            c.drawCircle(w-12f,22f,3f,paint); c.drawCircle(w-12f,h-22f,3f,paint)
+            paint.color=mag; c.drawCircle(12f,22f,3f,paint); c.drawCircle(12f,h-22f,3f,paint)
+            paint.style=Paint.Style.STROKE; paint.strokeWidth=1.5f
+            path.reset(); path.moveTo(20f,8f); path.lineTo(w*.55f,8f); path.lineTo(w*.42f,22f); c.drawPath(path,paint)
+            path.reset(); path.moveTo(20f,h-8f); path.lineTo(w*.55f,h-8f); path.lineTo(w*.42f,h-22f); c.drawPath(path,paint)
         }
-
-        override fun setAlpha(alpha: Int) {}
-        override fun setColorFilter(colorFilter: ColorFilter?) {}
-        @Suppress("DEPRECATION") override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+        override fun setAlpha(a:Int){}; override fun setColorFilter(f:ColorFilter?){}
+        @Suppress("DEPRECATION") override fun getOpacity()=android.graphics.PixelFormat.TRANSLUCENT
     }
 
     private fun addDrawerItems() {
@@ -1095,80 +991,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class CyberBackgroundView(context: Context) : View(context) {
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val path = Path()
-
-        override fun onDraw(canvas: Canvas) {
-            val w = width.toFloat()
-            val h = height.toFloat()
-            val cyan = 0xFF00F6FF.toInt()
-            val magenta = 0xFFFF008C.toInt()
-            val violet = 0xFF8A5CFF.toInt()
-
-            canvas.drawColor(0xFF010208.toInt())
-
-            // Deep-space volumetric glow, no conventional grid.
-            paint.style = Paint.Style.FILL
-            paint.shader = android.graphics.RadialGradient(
-                w * .50f, h * .42f, maxOf(w, h) * .70f,
-                intArrayOf(0x302A0C55, 0x18001C28, 0x00000000),
-                null, android.graphics.Shader.TileMode.CLAMP)
-            canvas.drawRect(0f, 0f, w, h, paint)
-            paint.shader = null
-
-            // Giant orbital geometry.
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 1f
-            paint.color = cyan
-            paint.alpha = 42
-            val r = maxOf(w, h) * .52f
-            canvas.drawOval(w * .50f - r, h * .50f - r * .55f, w * .50f + r, h * .50f + r * .55f, paint)
-            paint.color = magenta
-            paint.alpha = 55
-            canvas.drawArc(w * .50f - r * .82f, h * .50f - r * .42f, w * .50f + r * .82f, h * .50f + r * .42f, 195f, 105f, false, paint)
-
-            // Laser vectors / circuit branches.
-            paint.color = violet
-            paint.alpha = 48
-            for (i in 0..5) {
-                val y = h * (.12f + i * .15f)
-                path.reset()
-                path.moveTo(0f, y)
-                path.lineTo(w * .18f, y)
-                path.lineTo(w * .28f, y + 18f)
-                path.lineTo(w * .62f, y + 18f)
-                path.lineTo(w * .74f, y - 10f)
-                path.lineTo(w, y - 10f)
-                canvas.drawPath(path, paint)
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
+        override fun onDraw(c:Canvas){
+            val w=width.toFloat(); val h=height.toFloat(); val cx=w*.5f; val cy=h*.48f
+            val cyan=0xFF00F6FF.toInt(); val mag=0xFFFF008C.toInt(); val vio=0xFF7C4DFF.toInt()
+            c.drawColor(0xFF000208.toInt())
+            p.style=Paint.Style.FILL
+            p.shader=android.graphics.RadialGradient(cx,cy,maxOf(w,h)*.75f,intArrayOf(0x553D126B,0x20100536,0x00000000),null,android.graphics.Shader.TileMode.CLAMP)
+            c.drawRect(0f,0f,w,h,p); p.shader=null
+            // Volumetric neon corridors
+            for(i in 0..8){
+                val y=h*(.10f+i*.105f); p.color=if(i%2==0) cyan else mag; p.alpha=18
+                path.reset(); path.moveTo(cx-w*.06f,y); path.lineTo(cx+w*.06f,y); path.lineTo(cx+w*(.42f+i*.018f),y+h*.11f); path.lineTo(cx-w*(.42f+i*.018f),y+h*.11f); path.close(); c.drawPath(path,p)
             }
-
-            // Sparse HUD diamonds, intentionally much less like the previous square grid.
-            paint.color = cyan
-            paint.alpha = 90
-            for (i in 1..7) {
-                val x = w * i / 8f
-                val y = h * (0.15f + (i % 4) * .19f)
-                canvas.drawCircle(x, y, 1.5f, paint)
-                canvas.drawCircle(x, y, 5f, paint)
+            p.style=Paint.Style.STROKE; p.strokeWidth=1f
+            // Orbital rings with perspective
+            p.color=cyan; p.alpha=55
+            c.drawOval(cx-w*.72f,cy-h*.16f,cx+w*.72f,cy+h*.16f,p)
+            p.color=mag; p.alpha=65
+            c.drawOval(cx-w*.52f,cy-h*.32f,cx+w*.52f,cy+h*.32f,p)
+            p.color=vio; p.alpha=45
+            c.drawOval(cx-w*.34f,cy-h*.46f,cx+w*.34f,cy+h*.46f,p)
+            // Converging quantum rails
+            for(i in 0..10){ val x=i/10f; p.color=if(i%2==0) cyan else vio; p.alpha=35
+                c.drawLine(w*x,0f,cx+(w*(x-.5f)*.18f),h*.42f,p)
+                c.drawLine(w*x,h,cx+(w*(x-.5f)*.18f),h*.42f,p)
             }
-
-            // Central scan axis.
-            paint.color = cyan
-            paint.alpha = 28
-            canvas.drawLine(w / 2f, 0f, w / 2f, h, paint)
-            paint.color = magenta
-            paint.alpha = 45
-            canvas.drawLine(0f, h * .70f, w, h * .70f, paint)
-
-            // Four corner reticles.
-            paint.color = cyan
-            paint.alpha = 85
-            paint.strokeWidth = 2f
-            canvas.drawLine(12f, 12f, 52f, 12f, paint); canvas.drawLine(12f, 12f, 12f, 52f, paint)
-            canvas.drawLine(w - 12f, h - 12f, w - 52f, h - 12f, paint); canvas.drawLine(w - 12f, h - 12f, w - 12f, h - 52f, paint)
-            paint.color = magenta
-            canvas.drawLine(w - 12f, 12f, w - 52f, 12f, paint); canvas.drawLine(w - 12f, 12f, w - 12f, 52f, paint)
-            canvas.drawLine(12f, h - 12f, 52f, h - 12f, paint); canvas.drawLine(12f, h - 12f, 12f, h - 52f, paint)
+            // Data nodes / micro constellations
+            p.style=Paint.Style.FILL
+            for(i in 1..14){ val x=w*(.06f+(i*37%88)/100f); val y=h*(.08f+(i*53%82)/100f); p.color=if(i%3==0) mag else cyan; p.alpha=100; c.drawCircle(x,y,1.5f+(i%3),p); p.alpha=30; c.drawCircle(x,y,7f+(i%4)*3f,p) }
+            // Central reactor aperture
+            p.style=Paint.Style.STROKE; p.color=cyan; p.alpha=120; p.strokeWidth=1.5f
+            c.drawCircle(cx,cy,26f,p); c.drawCircle(cx,cy,34f,p)
+            p.color=mag; p.alpha=160; c.drawArc(cx-42f,cy-42f,cx+42f,cy+42f,205f,115f,false,p)
+            // Corner targeting brackets
+            p.color=cyan; p.alpha=90; p.strokeWidth=2f
+            c.drawLine(10f,10f,70f,10f,p); c.drawLine(10f,10f,10f,70f,p); c.drawLine(w-10f, h-10f,w-70f,h-10f,p); c.drawLine(w-10f,h-10f,w-10f,h-70f,p)
+            p.color=mag; c.drawLine(w-10f,10f,w-70f,10f,p); c.drawLine(w-10f,10f,w-10f,70f,p); c.drawLine(10f,h-10f,70f,h-10f,p); c.drawLine(10f,h-10f,10f,h-70f,p)
         }
     }
 
@@ -1341,95 +1200,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class CyberHeaderView(context: Context) : View(context) {
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val path = Path()
-
-        override fun onDraw(canvas: Canvas) {
-            val w = width.toFloat()
-            val h = height.toFloat()
-            val cyan = 0xFF00F6FF.toInt()
-            val magenta = 0xFFFF008C.toInt()
-            val violet = 0xFF8A5CFF.toInt()
-
-            // DARK GLASS + NEON CORE: intentionally different from the previous flat frame.
-            paint.style = Paint.Style.FILL
-            paint.shader = android.graphics.LinearGradient(
-                0f, 0f, w, 0f,
-                intArrayOf(0xFF030711.toInt(), 0xFF12051B.toInt(), 0xFF020914.toInt()),
-                null, android.graphics.Shader.TileMode.CLAMP
-            )
-            canvas.drawRect(0f, 0f, w, h, paint)
-            paint.shader = null
-
-            // Perspective light wedge.
-            paint.color = violet
-            paint.alpha = 22
-            path.reset()
-            path.moveTo(w * .30f, 0f)
-            path.lineTo(w * .72f, 0f)
-            path.lineTo(w * .60f, h)
-            path.lineTo(w * .40f, h)
-            path.close()
-            canvas.drawPath(path, paint)
-
-            // Outer energy rails.
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 2f
-            paint.color = cyan
-            paint.alpha = 230
-            canvas.drawLine(0f, 1.5f, w * .30f, 1.5f, paint)
-            canvas.drawLine(w * .70f, 1.5f, w, 1.5f, paint)
-            canvas.drawLine(0f, h - 1.5f, w * .18f, h - 1.5f, paint)
-            canvas.drawLine(w * .82f, h - 1.5f, w, h - 1.5f, paint)
-
-            paint.color = magenta
-            paint.alpha = 240
-            paint.strokeWidth = 1f
-            canvas.drawLine(w * .30f, 1.5f, w * .40f, 1.5f, paint)
-            canvas.drawLine(w * .60f, 1.5f, w * .70f, 1.5f, paint)
-            canvas.drawLine(w * .18f, h - 1.5f, w * .28f, h - 1.5f, paint)
-            canvas.drawLine(w * .72f, h - 1.5f, w * .82f, h - 1.5f, paint)
-
-            // Angular side brackets.
-            paint.color = cyan
-            paint.alpha = 220
-            paint.strokeWidth = 1.5f
-            path.reset()
-            path.moveTo(8f, 12f); path.lineTo(8f, h - 12f); path.lineTo(24f, h - 12f)
-            path.moveTo(w - 8f, 12f); path.lineTo(w - 8f, h - 12f); path.lineTo(w - 24f, h - 12f)
-            canvas.drawPath(path, paint)
-
-            // Central holographic aperture.
-            paint.color = violet
-            paint.alpha = 35
-            paint.style = Paint.Style.FILL
-            canvas.drawOval(w * .34f, 8f, w * .66f, h - 8f, paint)
-            paint.style = Paint.Style.STROKE
-            paint.color = cyan
-            paint.alpha = 90
-            canvas.drawOval(w * .37f, 11f, w * .63f, h - 11f, paint)
-            paint.color = magenta
-            paint.alpha = 130
-            canvas.drawArc(w * .38f, 12f, w * .62f, h - 12f, 205f, 130f, false, paint)
-
-            // Micro HUD telemetry.
-            paint.color = cyan
-            paint.alpha = 190
-            paint.strokeWidth = 1f
-            for (i in 0..8) {
-                val x = 16f + i * 6f
-                canvas.drawLine(x, 10f, x, 15f + (i % 2) * 3f, paint)
-            }
-            for (i in 0..8) {
-                val x = w - 16f - i * 6f
-                canvas.drawLine(x, h - 10f, x, h - 15f - (i % 2) * 3f, paint)
-            }
-
-            paint.style = Paint.Style.FILL
-            paint.color = magenta
-            paint.alpha = 230
-            canvas.drawCircle(12f, h / 2f, 2.5f, paint)
-            canvas.drawCircle(w - 12f, h / 2f, 2.5f, paint)
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
+        override fun onDraw(c:Canvas){
+            val w=width.toFloat(); val h=height.toFloat(); val cyan=0xFF00F6FF.toInt(); val mag=0xFFFF008C.toInt(); val vio=0xFF7C4DFF.toInt()
+            p.style=Paint.Style.FILL
+            p.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF00030B.toInt(),0xFF180026.toInt(),0xFF000812.toInt()),null,android.graphics.Shader.TileMode.CLAMP)
+            c.drawRect(0f,0f,w,h,p); p.shader=null
+            // Asymmetric holographic command frame
+            p.color=vio; p.alpha=38; path.reset(); path.moveTo(0f,0f); path.lineTo(w*.38f,0f); path.lineTo(w*.27f,h); path.lineTo(0f,h); path.close(); c.drawPath(path,p)
+            p.color=mag; p.alpha=28; path.reset(); path.moveTo(w,0f); path.lineTo(w*.70f,0f); path.lineTo(w*.82f,h); path.lineTo(w,h); path.close(); c.drawPath(path,p)
+            p.style=Paint.Style.STROKE; p.strokeWidth=2f; p.color=cyan; p.alpha=240
+            c.drawLine(0f,2f,w*.22f,2f,p); c.drawLine(w*.78f,2f,w,2f,p)
+            p.color=mag; p.alpha=240; p.strokeWidth=1f; c.drawLine(w*.22f,2f,w*.36f,2f,p); c.drawLine(w*.64f,2f,w*.78f,2f,p)
+            // Central holographic lens
+            p.color=cyan; p.alpha=90; p.strokeWidth=1.5f; c.drawOval(w*.33f,-9f,w*.67f,h+9f,p)
+            p.color=mag; p.alpha=130; c.drawArc(w*.35f,-5f,w*.65f,h+5f,25f,120f,false,p)
+            p.color=vio; p.alpha=80; c.drawArc(w*.31f,-8f,w*.69f,h+8f,205f,110f,false,p)
+            // segmented telemetry
+            p.color=cyan; p.alpha=180; p.strokeWidth=1f
+            for(i in 0..13){ val x=12f+i*7f; c.drawLine(x,h-10f,x,h-5f-(i%3)*2,p); val xr=w-12f-i*7f; c.drawLine(xr,10f,xr,5f+(i%3)*2,p) }
+            // side energy emitters
+            p.style=Paint.Style.FILL; p.color=mag; p.alpha=230; c.drawCircle(11f,h*.5f,2.5f,p); c.drawCircle(w-11f,h*.5f,2.5f,p)
+            p.color=cyan; p.alpha=150; c.drawCircle(11f,h*.5f,7f,p); c.drawCircle(w-11f,h*.5f,7f,p)
+            // hard HUD corner cuts
+            p.style=Paint.Style.STROKE; p.color=cyan; p.alpha=210; p.strokeWidth=1.5f
+            c.drawLine(7f,12f,7f,h-12f,p); c.drawLine(7f,h-12f,30f,h-12f,p); c.drawLine(w-7f,12f,w-7f,h-12f,p); c.drawLine(w-7f,12f,w-30f,12f,p)
         }
     }
 
