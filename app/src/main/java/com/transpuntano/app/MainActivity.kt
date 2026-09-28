@@ -200,18 +200,39 @@ class MainActivity : AppCompatActivity() {
         var selectedIndex=0; set(v){field=v;invalidateSelf()}
         override fun draw(c:Canvas){ val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
             val lime=0xFF00F0FF.toInt(); val orange=0xFFFF00FF.toInt(); val blue=0xFF006CFF.toInt()
-            p.style=Paint.Style.FILL; p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF02030B.toInt(),0xFF09051A.toInt(),0xFF02030B.toInt()),null,android.graphics.Shader.TileMode.CLAMP); c.drawRect(0f,0f,w,h,p);p.shader=null
-            val cw=w/5f
-            for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex) lime else blue;p.alpha=if(i==selectedIndex)30 else 12;path.reset();path.moveTo(x+4,h);path.lineTo(x+cw*.32f,0f);path.lineTo(x+cw-4,0f);path.lineTo(x+cw*.68f,h);path.close();c.drawPath(path,p)}
+            // Fondo completamente opaco y limpio: sin triángulos ni diagonales decorativas.
+            p.style=Paint.Style.FILL
+            p.shader=android.graphics.LinearGradient(
+                0f,0f,w,0f,
+                intArrayOf(0xFF02030B.toInt(),0xFF09051A.toInt(),0xFF02030B.toInt()),
+                null,android.graphics.Shader.TileMode.CLAMP
+            )
+            c.drawRect(0f,0f,w,h,p)
+            p.shader=null
+
             // Marco exterior completo: cubre todo el perímetro de la barra inferior.
             CyberHeaderFrameDrawable.drawFrame(c, 1.5f, 1.5f, w - 1.5f, h - 1.5f, lime, orange, density, 9f * density, 1f, 0f)
-            p.style=Paint.Style.STROKE;p.strokeWidth=1.5f;p.color=lime;p.alpha=190;c.drawLine(4f,3f,w*.18f,3f,p);c.drawLine(w*.82f,3f,w-4f,3f,p)
-            for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex)lime else blue;p.alpha=150;p.strokeWidth=1f;c.drawLine(x+cw*.2f,h-5f,x+cw*.48f,5f,p);c.drawLine(x+cw*.52f,5f,x+cw*.8f,h-5f,p)}
-            val x=selectedIndex.coerceIn(0,4)*cw;p.color=orange;p.alpha=240;p.strokeWidth=2f;c.drawLine(x+8f,h-5f,x+cw-8f,h-5f,p)
-            p.style=Paint.Style.FILL;p.color=lime;p.alpha=230;c.drawCircle(w*.5f,3.5f,2f,p)
+            p.style=Paint.Style.STROKE
+            p.strokeWidth=1.5f
+            p.color=lime
+            p.alpha=190
+            c.drawLine(4f,3f,w*.18f,3f,p)
+            c.drawLine(w*.82f,3f,w-4f,3f,p)
+
+            val cw=w/5f
+            val x=selectedIndex.coerceIn(0,4)*cw
+            p.color=orange
+            p.alpha=240
+            p.strokeWidth=2f
+            c.drawLine(x+8f,h-5f,x+cw-8f,h-5f,p)
+
+            p.style=Paint.Style.FILL
+            p.color=lime
+            p.alpha=230
+            c.drawCircle(w*.5f,3.5f,2f,p)
         }
         override fun setAlpha(a:Int){};override fun setColorFilter(f:ColorFilter?){}
-        @Suppress("DEPRECATION")override fun getOpacity()=android.graphics.PixelFormat.TRANSLUCENT
+        @Suppress("DEPRECATION")override fun getOpacity()=android.graphics.PixelFormat.OPAQUE
     }
 
     private class CyberDrawerBackground(private val context: Context) : android.graphics.drawable.Drawable(){
