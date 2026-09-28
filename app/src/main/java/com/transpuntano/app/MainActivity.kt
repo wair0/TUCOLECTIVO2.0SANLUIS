@@ -41,7 +41,8 @@ class MainActivity : AppCompatActivity() {
     )
     private val api = SmartMoveApi()
     private val executor = Executors.newFixedThreadPool(3)
-    private val vehicleExecutor = Executors.newFixedThreadPool(8)
+    private val vehicleExecutor = Executors.newSingleThreadExecutor()
+    private val vehicleQueryExecutor = Executors.newFixedThreadPool(8)
     private lateinit var content: FrameLayout
     private lateinit var title: TextView
     private lateinit var status: TextView
@@ -1438,7 +1439,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             }
 
             runCatching {
-                vehicleExecutor.invokeAll(tasks, 9, java.util.concurrent.TimeUnit.SECONDS)
+                vehicleQueryExecutor.invokeAll(tasks, 9, java.util.concurrent.TimeUnit.SECONDS)
             }.getOrNull().orEmpty().forEach { future ->
                 runCatching { future.get() }.getOrNull().orEmpty().forEach { arrival ->
                     val lat = arrival.latitude ?: return@forEach
