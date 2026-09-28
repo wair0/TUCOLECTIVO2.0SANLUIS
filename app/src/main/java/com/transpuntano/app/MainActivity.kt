@@ -967,43 +967,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class CyberBackgroundView(context: Context) : View(context) {
-        private val p=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
-        override fun onDraw(c:Canvas){
-            val w=width.toFloat(); val h=height.toFloat(); val cx=w*.5f; val cy=h*.48f
-            val cyan=0xFF00F6FF.toInt(); val mag=0xFFFF008C.toInt(); val vio=0xFF7C4DFF.toInt()
-            c.drawColor(0xFF000208.toInt())
-            p.style=Paint.Style.FILL
-            p.shader=android.graphics.RadialGradient(cx,cy,maxOf(w,h)*.75f,intArrayOf(0x553D126B,0x20100536,0x00000000),null,android.graphics.Shader.TileMode.CLAMP)
-            c.drawRect(0f,0f,w,h,p); p.shader=null
-            // Volumetric neon corridors
-            for(i in 0..8){
-                val y=h*(.10f+i*.105f); p.color=if(i%2==0) cyan else mag; p.alpha=18
-                path.reset(); path.moveTo(cx-w*.06f,y); path.lineTo(cx+w*.06f,y); path.lineTo(cx+w*(.42f+i*.018f),y+h*.11f); path.lineTo(cx-w*(.42f+i*.018f),y+h*.11f); path.close(); c.drawPath(path,p)
-            }
-            p.style=Paint.Style.STROKE; p.strokeWidth=1f
-            // Orbital rings with perspective
-            p.color=cyan; p.alpha=55
-            c.drawOval(cx-w*.72f,cy-h*.16f,cx+w*.72f,cy+h*.16f,p)
-            p.color=mag; p.alpha=65
-            c.drawOval(cx-w*.52f,cy-h*.32f,cx+w*.52f,cy+h*.32f,p)
-            p.color=vio; p.alpha=45
-            c.drawOval(cx-w*.34f,cy-h*.46f,cx+w*.34f,cy+h*.46f,p)
-            // Converging quantum rails
-            for(i in 0..10){ val x=i/10f; p.color=if(i%2==0) cyan else vio; p.alpha=35
-                c.drawLine(w*x,0f,cx+(w*(x-.5f)*.18f),h*.42f,p)
-                c.drawLine(w*x,h,cx+(w*(x-.5f)*.18f),h*.42f,p)
-            }
-            // Data nodes / micro constellations
-            p.style=Paint.Style.FILL
-            for(i in 1..14){ val x=w*(.06f+(i*37%88)/100f); val y=h*(.08f+(i*53%82)/100f); p.color=if(i%3==0) mag else cyan; p.alpha=100; c.drawCircle(x,y,1.5f+(i%3),p); p.alpha=30; c.drawCircle(x,y,7f+(i%4)*3f,p) }
-            // Central reactor aperture
-            p.style=Paint.Style.STROKE; p.color=cyan; p.alpha=120; p.strokeWidth=1.5f
-            c.drawCircle(cx,cy,26f,p); c.drawCircle(cx,cy,34f,p)
-            p.color=mag; p.alpha=160; c.drawArc(cx-42f,cy-42f,cx+42f,cy+42f,205f,115f,false,p)
-            // Corner targeting brackets
-            p.color=cyan; p.alpha=90; p.strokeWidth=2f
-            c.drawLine(10f,10f,70f,10f,p); c.drawLine(10f,10f,10f,70f,p); c.drawLine(w-10f, h-10f,w-70f,h-10f,p); c.drawLine(w-10f,h-10f,w-10f,h-70f,p)
-            p.color=mag; c.drawLine(w-10f,10f,w-70f,10f,p); c.drawLine(w-10f,10f,w-10f,70f,p); c.drawLine(10f,h-10f,70f,h-10f,p); c.drawLine(10f,h-10f,10f,h-70f,p)
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
+        override fun onDraw(c:Canvas){val w=width.toFloat();val h=height.toFloat();val cx=w*.5f;val cy=h*.48f
+            val lime=0xFFB7FF00.toInt();val orange=0xFFFF6A00.toInt();val blue=0xFF00A8FF.toInt()
+            c.drawColor(0xFF010302.toInt());p.style=Paint.Style.FILL
+            p.shader=android.graphics.RadialGradient(cx,cy,maxOf(w,h)*.78f,intArrayOf(0x403A4A00,0x20220B00,0x00000000),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
+            // New visual language: vertical light shafts + orange volumetric zones.
+            for(i in 0..7){val x=w*(.08f+i*.12f);p.color=if(i%2==0)lime else orange;p.alpha=12;path.reset();path.moveTo(x,0f);path.lineTo(x+28f,0f);path.lineTo(cx+(x-cx)*.18f,h);path.lineTo(cx+(x-cx)*.18f+12f,h);path.close();c.drawPath(path,p)}
+            p.style=Paint.Style.STROKE;p.strokeWidth=1f
+            // Radar rings, no grid.
+            p.color=lime;p.alpha=60;c.drawCircle(cx,cy,38f,p);c.drawCircle(cx,cy,74f,p);c.drawCircle(cx,cy,126f,p)
+            p.color=orange;p.alpha=65;c.drawArc(cx-170f,cy-170f,cx+170f,cy+170f,18f,95f,false,p);c.drawArc(cx-120f,cy-120f,cx+120f,cy+120f,202f,78f,false,p)
+            // Data beams.
+            for(i in 0..11){val x=w*i/11f;p.color=if(i%2==0)blue:orange;p.alpha=42;c.drawLine(x,0f,cx+(x-cx)*.25f,cy,p);c.drawLine(x,h,cx+(x-cx)*.25f,cy,p)}
+            // Floating nodes / beacons.
+            p.style=Paint.Style.FILL;for(i in 1..16){val x=w*(.04f+(i*47%92)/100f);val y=h*(.06f+(i*31%88)/100f);p.color=if(i%4==0)orange else lime;p.alpha=120;c.drawCircle(x,y,1.5f+(i%3),p);p.alpha=25;c.drawCircle(x,y,10f+(i%4)*4f,p)}
+            // Central radar target.
+            p.style=Paint.Style.STROKE;p.color=lime;p.alpha=160;p.strokeWidth=2f;c.drawCircle(cx,cy,18f,p);p.color=orange;p.alpha=210;c.drawLine(cx-28f,cy,cx+28f,cy,p);c.drawLine(cx,cy-28f,cx,cy+28f,p)
+            p.color=blue;p.alpha=110;c.drawCircle(cx,cy,5f,p)
+            // Asymmetric corner brackets.
+            p.color=lime;p.alpha=100;p.strokeWidth=2f;c.drawLine(10f,10f,78f,10f,p);c.drawLine(10f,10f,10f,55f,p);p.color=orange;c.drawLine(w-10f, h-10f,w-78f,h-10f,p);c.drawLine(w-10f,h-10f,w-10f,h-55f,p)
         }
     }
 
