@@ -24,7 +24,8 @@ data class TransitStop(
     val longitude: Double,
     val street: String = "",
     val intersection: String = "",
-    val lineCode: Int = 0
+    val lineCode: Int = 0,
+    val lineCodes: List<Int> = emptyList()
 )
 
 data class TransitArrival(
