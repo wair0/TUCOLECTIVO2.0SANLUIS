@@ -324,6 +324,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateNav(selected: Int) {
         currentSection = selected
+        // El menú contextual conserva sus vistas entre navegaciones, por lo que
+        // debemos reconstruirlo para que cada elemento reciba el nuevo estado
+        // selected y no quede INICIO visualmente seleccionado.
+        addDrawerItems()
         navBar.removeAllViews()
         (navBar.background as? CyberBottomBarBackground)?.selectedIndex = selected
         navBar.setPadding(0, dp(2), 0, dp(2))
