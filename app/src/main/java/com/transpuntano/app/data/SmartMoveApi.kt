@@ -95,7 +95,7 @@ class SmartMoveApi {
         return parseStops(firstArray(root, "ParadaJson", "paradas", "Parada", "parada"), line)
     }
 
-    fun getArrivals(identifier: String, line: Int): List<TransitArrival> {
+    fun getArrivals(identifier: String, line: Int, timeoutMs: Int = TIMEOUT_MS): List<TransitArrival> {
         // SmartMove San Luis expone los arribos mediante esta operación compatible.
         // La variante RecuperarProximosArribosW devuelve HTTP 500 en este servicio.
         // Conservamos la lectura de coordenadas GPS si el backend las incluye.
@@ -106,7 +106,7 @@ class SmartMoveApi {
             stringParam("localidad", PROVINCIA),
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
-        ))
+        )), timeoutMs = timeoutMs)
         val array = firstArray(root, "ArribosJson", "listaArribos", "arribos", "Arribo", "arribo") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
@@ -158,7 +158,7 @@ class SmartMoveApi {
         }
     }
 
-    private fun soap(operation: String, params: List<SoapParam>): JSONObject {
+    private fun soap(operation: String, params: List<SoapParam>, timeoutMs: Int = TIMEOUT_MS): JSONObject {
         val connection = (URL(SOAP_ENDPOINT).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = TIMEOUT_MS
