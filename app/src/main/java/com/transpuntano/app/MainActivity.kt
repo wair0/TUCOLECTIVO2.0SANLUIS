@@ -1353,8 +1353,10 @@ class MainActivity : AppCompatActivity() {
             if (w <= 0f || h <= 0f) return
             // Marco reforzado: el grosor y el halo aumentan para que la animación
             // sea claramente visible y cubra las esquinas negras de las tarjetas.
-            val cut = minOf(4.5f * density, minOf(w, h) * .08f)
-            val edge = 2.5f * density
+            // Marco extra grueso y casi al ras del borde para ocultar por completo
+            // las esquinas negras que pueda conservar la imagen de la tarjeta.
+            val cut = minOf(2f * density, minOf(w, h) * .035f)
+            val edge = 1.5f * density
             path.reset()
             path.moveTo(cut, edge)
             path.lineTo(w - cut, edge)
@@ -1369,14 +1371,14 @@ class MainActivity : AppCompatActivity() {
             val violetBright = 0xFFFF4DFF.toInt()
             val pulse = 0.72f + 0.28f * ((kotlin.math.sin(phase * 0.55f) + 1f) * .5f)
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 10f * density; paint.color = violet; paint.alpha = (48f * pulse).toInt()
+            paint.strokeWidth = 16f * density; paint.color = violet; paint.alpha = (62f * pulse).toInt()
             canvas.drawPath(path, paint)
-            paint.strokeWidth = 5.2f * density; paint.color = violetBright; paint.alpha = (175f * pulse).toInt()
+            paint.strokeWidth = 7.5f * density; paint.color = violetBright; paint.alpha = (195f * pulse).toInt()
             canvas.drawPath(path, paint)
-            paint.strokeWidth = 2.4f * density; paint.color = violetBright; paint.alpha = 245
+            paint.strokeWidth = 3.6f * density; paint.color = violetBright; paint.alpha = 250
             canvas.drawPath(path, paint)
             val sweep = ((phase % 16f) / 16f)
-            paint.strokeWidth = 4f * density; paint.color = violetBright; paint.alpha = 240
+            paint.strokeWidth = 6f * density; paint.color = violetBright; paint.alpha = 245
             val topX = edge + (w - 2f * edge) * sweep
             canvas.drawLine(topX, edge, minOf(topX + 22f * density, w - edge), edge, paint)
         }
