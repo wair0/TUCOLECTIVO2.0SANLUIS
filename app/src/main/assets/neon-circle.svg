@@ -21,7 +21,7 @@
   </defs>
 
   <!-- Fondo -->
-  <rect x="0" y="0" width="100" height="100" fill="#1b1326"/>
+  <!-- Fondo transparente: el contador se integra con la tarjeta -->
 
   <!-- Aro base negro -->
   <circle cx="50" cy="50" r="35" fill="none" stroke="#000000" stroke-width="4"/>
