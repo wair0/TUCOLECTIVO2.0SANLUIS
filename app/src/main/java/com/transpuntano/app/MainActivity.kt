@@ -8,6 +8,7 @@ import android.graphics.ColorFilter
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PathMeasure
 import android.graphics.Typeface
 import android.graphics.BitmapFactory
 import android.util.Base64
@@ -1383,12 +1384,26 @@ class MainActivity : AppCompatActivity() {
             paint.alpha = (70f * pulse).toInt()
             canvas.drawPath(path, paint)
 
-            val sweep = ((phase % 16f) / 16f)
-            paint.strokeWidth = 4.5f * density
-            paint.color = neonCyan
-            paint.alpha = 250
-            val topX = edge + (w - 2f * edge) * sweep
-            canvas.drawLine(topX, edge, minOf(topX + 24f * density, w - edge), edge, paint)
+            // Segmento animado que recorre TODO el perímetro, no solamente el borde superior.
+            val perimeter = PathMeasure(path, false)
+            val pathLength = perimeter.length
+            if (pathLength > 0f) {
+                val sweep = ((phase % 16f) / 16f)
+                val segmentLength = minOf(28f * density, pathLength * 0.16f)
+                val start = pathLength * sweep
+                val end = start + segmentLength
+                val animatedPath = Path()
+                if (end <= pathLength) {
+                    perimeter.getSegment(start, end, animatedPath, true)
+                } else {
+                    perimeter.getSegment(start, pathLength, animatedPath, true)
+                    perimeter.getSegment(0f, end - pathLength, animatedPath, true)
+                }
+                paint.strokeWidth = 4.5f * density
+                paint.color = neonCyan
+                paint.alpha = 255
+                canvas.drawPath(animatedPath, paint)
+            }
         }
     }
 
@@ -1502,11 +1517,26 @@ class MainActivity : AppCompatActivity() {
                 val notch = minOf(11f * density, w * 0.22f)
                 canvas.drawLine(left + c, top, left + c + notch, top, p)
                 canvas.drawLine(right - c - notch, bottom, right - c, bottom, p)
-                p.color = pink
-                p.alpha = (180 * intensity).toInt()
-                val pulse = ((phase % 16f) / 16f)
-                val px = left + w * pulse
-                canvas.drawLine(px, top, minOf(px + 8f * density, right), top, p)
+                // Recorrido animado por TODO el perímetro del marco.
+                val perimeter = PathMeasure(path, false)
+                val pathLength = perimeter.length
+                if (pathLength > 0f) {
+                    val pulse = ((phase % 16f) / 16f)
+                    val segmentLength = minOf(22f * density, pathLength * 0.12f)
+                    val start = pathLength * pulse
+                    val end = start + segmentLength
+                    val animatedPath = Path()
+                    if (end <= pathLength) {
+                        perimeter.getSegment(start, end, animatedPath, true)
+                    } else {
+                        perimeter.getSegment(start, pathLength, animatedPath, true)
+                        perimeter.getSegment(0f, end - pathLength, animatedPath, true)
+                    }
+                    p.color = cyan
+                    p.alpha = 255
+                    p.strokeWidth = 2.6f * density
+                    canvas.drawPath(animatedPath, p)
+                }
             }
         }
     }
