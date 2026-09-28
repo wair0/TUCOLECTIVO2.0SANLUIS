@@ -110,8 +110,8 @@ class MainActivity : AppCompatActivity() {
             setStatusText("● SISTEMA LISTO")
         }
         headerLayout.addView(headerContent)
-        headerLayout.addView(headerStatus, FrameLayout.LayoutParams(dp(150), dp(28)).apply {
-            leftMargin = dp(58); topMargin = dp(57); gravity = Gravity.TOP
+        headerLayout.addView(headerStatus, FrameLayout.LayoutParams(-1, dp(28)).apply {
+            leftMargin = dp(58); rightMargin = dp(58); topMargin = dp(57); gravity = Gravity.TOP
         })
         headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(50), dp(50)).apply {
             leftMargin = dp(5); topMargin = dp(11)
