@@ -486,7 +486,11 @@ class MainActivity : AppCompatActivity() {
         addView(TextView(this@MainActivity).apply {
             text = primary; textSize = 14f; typeface = cyberpunkTypeface; setTextColor(Color.WHITE)
         })
-        addView(TextView(this@MainActivity).apply { text = secondary; textSize = 10f; typeface = cyberpunkTypeface; setTextColor(muted) })
+        if (secondary.isNotBlank()) {
+            addView(TextView(this@MainActivity).apply {
+                text = secondary; textSize = 10f; typeface = cyberpunkTypeface; setTextColor(muted)
+            })
+        }
     }
 
     private fun panel(primary: String, secondary: String) = LinearLayout(this).apply {
@@ -690,13 +694,17 @@ class MainActivity : AppCompatActivity() {
     private fun showLines(initial: List<TransitLine>? = null) {
         title.text = "LÍNEAS"; updateNav(1); content.removeAllViews()
         val box = box()
-        box.addView(panel("CATÁLOGO", "Datos solicitados al servicio SmartMove."))
+        val catalogPanel = panel("CATÁLOGO", "Datos solicitados al servicio SmartMove.")
+        catalogPanel.layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
+            bottomMargin = dp(12)
+        }
+        box.addView(catalogPanel)
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         fun drawLines(items: List<TransitLine>) {
             list.removeAllViews()
             items.forEach { line ->
-                list.addView(card(line.name.uppercase(), "LÍNEA " + line.code) { showLine(line) },
+                list.addView(card(line.name.uppercase(), "") { showLine(line) },
                     LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
             }
             if (items.isEmpty()) list.addView(panel("SIN DATOS", "No se encontraron líneas."))
