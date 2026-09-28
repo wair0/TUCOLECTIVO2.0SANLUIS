@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var title: TextView
     private lateinit var status: TextView
     private lateinit var headerTitle: CyberHeaderTitleView
+    private lateinit var headerStatus: CyberHeaderStatusView
     private var currentSection = 0
     private lateinit var navBar: LinearLayout
     private val cyan = 0xFF00F0FF.toInt()
@@ -95,12 +96,11 @@ class MainActivity : AppCompatActivity() {
         headerContent.addView(headerTitle)
         // El título de sección se conserva solo para la lógica interna; no se muestra en el header.
         title = TextView(this).apply { text = ""; textSize = 11f; setTextColor(muted) }
-        status = TextView(this).apply {
-            text = "● SISTEMA LISTO"; textSize = 9f; typeface = cyberpunkTypeface
-            setTextColor(0xFF55FFB0.toInt())
+        headerStatus = CyberHeaderStatusView(this, cyberpunkTypeface, cyan, pink).apply {
+            setStatusText("● SISTEMA LISTO")
         }
         headerLayout.addView(headerContent)
-        headerLayout.addView(status, FrameLayout.LayoutParams(-2, dp(28)).apply {
+        headerLayout.addView(headerStatus, FrameLayout.LayoutParams(-2, dp(28)).apply {
             leftMargin = dp(169.0f); topMargin = dp(41.5f); gravity = Gravity.TOP
         })
         headerLayout.addView(menuBtn, FrameLayout.LayoutParams(dp(44), dp(44)).apply {
@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity() {
         }
         rootFrame.addView(drawerScrim, FrameLayout.LayoutParams(-1, -1))
         drawerPanel = FrameLayout(this).apply {
-            background = CyberDrawerBackground()
+            background = CyberDrawerBackground(this@MainActivity)
             layoutParams = FrameLayout.LayoutParams(dp(300), -1).apply { gravity = Gravity.START }
             visibility = View.GONE
         }
@@ -194,6 +194,8 @@ class MainActivity : AppCompatActivity() {
 
     private class CyberBottomBarBackground : android.graphics.drawable.Drawable() {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        var selectedIndex: Int = 0
+            set(value) { field = value; invalidateSelf() }
         override fun draw(canvas: Canvas) {
             val w = bounds.width().toFloat()
             val h = bounds.height().toFloat()
@@ -215,6 +217,22 @@ class MainActivity : AppCompatActivity() {
             paint.alpha = 230
             canvas.drawLine(0f, 2f, 14f, h * .28f, paint)
             canvas.drawLine(w, 2f, w - 14f, h * .28f, paint)
+
+            // Selected navigation cell: a restrained HUD bracket, entirely rendered by Canvas.
+            val cellW = w / 5f
+            val sx = selectedIndex.coerceIn(0, 4) * cellW
+            paint.style = Paint.Style.FILL
+            paint.color = cyan
+            paint.alpha = 12
+            canvas.drawRect(sx + 3f, 7f, sx + cellW - 3f, h - 5f, paint)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1f
+            paint.color = cyan
+            paint.alpha = 180
+            canvas.drawLine(sx + 8f, 9f, sx + 22f, 9f, paint)
+            canvas.drawLine(sx + 8f, 9f, sx + 8f, 18f, paint)
+            canvas.drawLine(sx + cellW - 8f, h - 9f, sx + cellW - 22f, h - 9f, paint)
+            canvas.drawLine(sx + cellW - 8f, h - 9f, sx + cellW - 8f, h - 18f, paint)
 
             paint.color = cyan
             paint.alpha = 30
@@ -240,7 +258,9 @@ class MainActivity : AppCompatActivity() {
         override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
     }
 
-    private class CyberDrawerBackground : android.graphics.drawable.Drawable() {
+    private class CyberDrawerBackground(private val context: Context) : android.graphics.drawable.Drawable() {
+        private val density = context.resources.displayMetrics.density
+        private val scaledDensity = context.resources.displayMetrics.scaledDensity
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         override fun draw(canvas: Canvas) {
             val w = bounds.width().toFloat()
@@ -290,6 +310,21 @@ class MainActivity : AppCompatActivity() {
             paint.alpha = 220
             canvas.drawCircle(w - 12f, 12f, 2f, paint)
             canvas.drawCircle(12f, h - 12f, 2f, paint)
+
+            // Canvas-rendered drawer HUD title using the same asset font as the header.
+            val typeface = try { Typeface.createFromAsset(context.assets, "fonts/cyberpunk.ttf") } catch (_: Exception) { Typeface.MONOSPACE }
+            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+                this.typeface = typeface
+                textSize = 12f * scaledDensity
+                textAlign = Paint.Align.LEFT
+                color = cyan
+                alpha = 235
+            }
+            canvas.drawText("NAVEGACIÓN", 18f, 34f, textPaint)
+            textPaint.textSize = 7.5f * scaledDensity
+            textPaint.color = pink
+            textPaint.alpha = 185
+            canvas.drawText("// TU COLECTIVO 2.0 //", 18f, 49f, textPaint)
         }
         override fun setAlpha(alpha: Int) {}
         override fun setColorFilter(colorFilter: ColorFilter?) {}
@@ -347,6 +382,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateNav(selected: Int) {
         currentSection = selected
         navBar.removeAllViews()
+        (navBar.background as? CyberBottomBarBackground)?.selectedIndex = selected
         navBar.setPadding(0, dp(3), 0, 0)
         navBar.clipChildren = false
         navBar.clipToPadding = false
@@ -520,15 +556,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadLines(navigateToLines: Boolean = true) {
-        status.text = "● SINCRONIZANDO..."
+        headerStatus.setStatusText("● SINCRONIZANDO...");
         executor.execute {
             runCatching { api.getLines() }
                 .onSuccess { lines -> runOnUiThread {
-                    status.text = "● " + lines.size + " LÍNEAS"
+                    headerStatus.setStatusText("● " + lines.size + " LÍNEAS");
                     if (navigateToLines) showLines(lines)
                 }}
                 .onFailure { error -> runOnUiThread {
-                    status.text = "● SIN CONEXIÓN"; toast(error.message ?: "Error")
+                    headerStatus.setStatusText("● SIN CONEXIÓN"); toast(error.message ?: "Error")
                 }}
         }
     }
@@ -603,7 +639,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             popup.dismiss()
-            status.text = "● BUSCANDO..."
+            headerStatus.setStatusText("● BUSCANDO...");
             executor.execute {
                 runCatching { api.getLines() }
                     .onSuccess { lines ->
@@ -636,16 +672,16 @@ class MainActivity : AppCompatActivity() {
 
                         runOnUiThread {
                             showLines(matches)
-                            status.text = if (matches.isEmpty()) {
+                            headerStatus.setStatusText(if (matches.isEmpty()) {
                                 "● SIN RESULTADOS"
                             } else {
                                 "● " + matches.size + " RESULTADOS"
-                            }
+                            })
                         }
                     }
                     .onFailure { error ->
                         runOnUiThread {
-                            status.text = "● SIN CONEXIÓN"
+                            headerStatus.setStatusText("● SIN CONEXIÓN");
                             toast(error.message ?: "No se pudo realizar la búsqueda")
                         }
                     }
@@ -693,7 +729,7 @@ class MainActivity : AppCompatActivity() {
         if (initial != null) drawLines(initial)
         else executor.execute {
             runCatching { api.getLines() }
-                .onSuccess { items -> runOnUiThread { drawLines(items); status.text = "● " + items.size + " LÍNEAS" } }
+                .onSuccess { items -> runOnUiThread { drawLines(items); headerStatus.setStatusText("● " + items.size + " LÍNEAS") } }
                 .onFailure { error -> runOnUiThread { list.addView(panel("ERROR", error.message ?: "No se pudo consultar.")) } }
         }
         box.addView(button("ACTUALIZAR", cyan) { loadLines(true) })
@@ -808,12 +844,12 @@ class MainActivity : AppCompatActivity() {
         val location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
         if (location == null) {
-            status.text = "● SIN UBICACIÓN"
+            headerStatus.setStatusText("● SIN UBICACIÓN");
             list.removeAllViews()
             list.addView(panel("UBICACIÓN NO DISPONIBLE", "Activá la ubicación e intentá de nuevo."))
             return
         }
-        status.text = "● BUSCANDO PARADAS"
+        headerStatus.setStatusText("● BUSCANDO PARADAS");
         list.removeAllViews()
         list.addView(panel("BUSCANDO", "Consultando paradas cercanas..."))
         executor.execute {
@@ -826,12 +862,12 @@ class MainActivity : AppCompatActivity() {
                         }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
                     }
                     if (nearby.isEmpty()) list.addView(panel("SIN PARADAS", "No se encontraron paradas cercanas."))
-                    status.text = "● " + nearby.size + " PARADAS CERCANAS"
+                    headerStatus.setStatusText("● " + nearby.size + " PARADAS CERCANAS");
                 }}
                 .onFailure { error -> runOnUiThread {
                     list.removeAllViews()
                     list.addView(panel("ERROR", error.message ?: "Sin conexión"))
-                    status.text = "● ERROR"
+                    headerStatus.setStatusText("● ERROR");
                 }}
         }
     }
@@ -1056,6 +1092,33 @@ class MainActivity : AppCompatActivity() {
             paint.color = 0x1600F0FF
             canvas.drawCircle(w * .84f, h * .26f, dpLocal(70).toFloat(), paint)
             canvas.drawCircle(w * .84f, h * .26f, dpLocal(82).toFloat(), paint)
+
+            // Low-contrast cyber grid and HUD nodes: visual identity without affecting layout.
+            paint.color = 0x1200F0FF
+            paint.strokeWidth = 1f
+            val gridStep = dpLocal(48).toFloat()
+            var gx = 0f
+            while (gx <= w) {
+                canvas.drawLine(gx, h * .12f, gx, h, paint)
+                gx += gridStep
+            }
+            var gy = h * .16f
+            while (gy <= h) {
+                canvas.drawLine(0f, gy, w, gy, paint)
+                gy += gridStep
+            }
+            paint.color = 0x2600F0FF
+            paint.style = Paint.Style.FILL
+            val nodeY = h * .18f
+            for (i in 1..4) canvas.drawCircle(w * (i / 5f), nodeY, dpLocal(1).toFloat(), paint)
+            paint.style = Paint.Style.STROKE
+            paint.color = 0x18FF2DB2
+            canvas.drawCircle(w * .16f, h * .72f, dpLocal(34).toFloat(), paint)
+            canvas.drawCircle(w * .16f, h * .72f, dpLocal(41).toFloat(), paint)
+
+            // Fine scanline near the content horizon.
+            paint.color = 0x2200F0FF
+            canvas.drawLine(0f, h * .62f, w, h * .62f, paint)
         }
         private fun dpLocal(v: Int) = (v * resources.displayMetrics.density).toInt().coerceAtLeast(1)
     }
@@ -1186,6 +1249,45 @@ class MainActivity : AppCompatActivity() {
                 scanY,
                 scanPaint
             )
+        }
+    }
+
+    private class CyberHeaderStatusView(
+        context: Context,
+        typeface: Typeface,
+        private val cyan: Int,
+        private val pink: Int
+    ) : View(context) {
+        private var value = "● SISTEMA LISTO"
+        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+            this.typeface = typeface
+            textSize = 8.5f * resources.displayMetrics.scaledDensity
+            textAlign = Paint.Align.LEFT
+        }
+        private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+
+        fun setStatusText(text: String) {
+            value = text
+            invalidate()
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val d = resources.displayMetrics.density
+            val h = height.toFloat()
+            val baseline = h * .68f
+            textPaint.color = if (value.contains("ERROR")) pink else 0xFF55FFB0.toInt()
+            textPaint.alpha = 245
+            canvas.drawText(value, 0f, baseline, textPaint)
+
+            val width = textPaint.measureText(value)
+            linePaint.color = cyan
+            linePaint.alpha = 110
+            linePaint.strokeWidth = d
+            canvas.drawLine(0f, h - 4f, minOf(width + 10f * d, this.width.toFloat()), h - 4f, linePaint)
+            linePaint.color = pink
+            linePaint.alpha = 170
+            canvas.drawLine(0f, h - 1f, minOf(width * .34f, this.width.toFloat()), h - 1f, linePaint)
         }
     }
 
