@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var headerStatus: CyberHeaderStatusView
     private var currentSection = 0
     private var mapVehicleRefreshToken = 0
+    @Volatile private var mapVehicleRefreshInProgress = false
     private var lastMapNearbyStops = emptyList<TransitStop>()
     private lateinit var navBar: LinearLayout
     private val cyan = 0xFF00F0FF.toInt()
@@ -1423,7 +1424,8 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         line: TransitLine,
         nearby: List<TransitStop>
     ) {
-        if (nearby.isEmpty()) return
+        if (nearby.isEmpty() || mapVehicleRefreshInProgress) return
+        mapVehicleRefreshInProgress = true
 
         vehicleExecutor.execute {
             val found = LinkedHashMap<String, com.transpuntano.app.ui.MapVehicle>()
@@ -1463,6 +1465,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
 
             val vehicles = found.values.toList()
             runOnUiThread {
+                mapVehicleRefreshInProgress = false
                 map.setVehicles(vehicles)
                 headerStatus.setStatusText(
                     if (vehicles.isEmpty()) "● LÍNEA " + line.code + " • SIN GPS DISPONIBLE"
