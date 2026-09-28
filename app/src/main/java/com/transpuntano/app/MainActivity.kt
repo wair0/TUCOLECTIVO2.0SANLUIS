@@ -1367,20 +1367,28 @@ class MainActivity : AppCompatActivity() {
             path.lineTo(edge, h - cut)
             path.lineTo(edge, cut)
             path.close()
-            val violet = 0xFFD000FF.toInt()
-            val violetBright = 0xFFFF4DFF.toInt()
-            val pulse = 0.72f + 0.28f * ((kotlin.math.sin(phase * 0.55f) + 1f) * .5f)
+            // Marco base negro: queda fijo y oculta las esquinas negras de la imagen.
+            val black = 0xFF000000.toInt()
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 16f * density; paint.color = violet; paint.alpha = (62f * pulse).toInt()
+            paint.strokeWidth = 16f * density
+            paint.color = black
+            paint.alpha = 255
             canvas.drawPath(path, paint)
-            paint.strokeWidth = 7.5f * density; paint.color = violetBright; paint.alpha = (195f * pulse).toInt()
+
+            // Animación celeste neón: halo + línea brillante que recorre el marco.
+            val neonCyan = 0xFF00F0FF.toInt()
+            val pulse = 0.72f + 0.28f * ((kotlin.math.sin(phase * 0.55f) + 1f) * .5f)
+            paint.strokeWidth = 9f * density
+            paint.color = neonCyan
+            paint.alpha = (70f * pulse).toInt()
             canvas.drawPath(path, paint)
-            paint.strokeWidth = 3.6f * density; paint.color = violetBright; paint.alpha = 250
-            canvas.drawPath(path, paint)
+
             val sweep = ((phase % 16f) / 16f)
-            paint.strokeWidth = 6f * density; paint.color = violetBright; paint.alpha = 245
+            paint.strokeWidth = 4.5f * density
+            paint.color = neonCyan
+            paint.alpha = 250
             val topX = edge + (w - 2f * edge) * sweep
-            canvas.drawLine(topX, edge, minOf(topX + 22f * density, w - edge), edge, paint)
+            canvas.drawLine(topX, edge, minOf(topX + 24f * density, w - edge), edge, paint)
         }
     }
 
