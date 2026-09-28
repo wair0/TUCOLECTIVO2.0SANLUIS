@@ -13,6 +13,7 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -22,6 +23,7 @@ import com.transpuntano.app.data.SmartMoveApi
 import com.transpuntano.app.model.*
 import com.transpuntano.app.ui.CyberMapView
 import com.transpuntano.app.ui.MapStop
+import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
@@ -69,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     private fun buildShell() {
         val rootFrame = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         rootFrame.addView(CyberBackgroundView(this), FrameLayout.LayoutParams(-1, -1))
+        rootFrame.addView(AnimatedGifBackgroundView(this), FrameLayout.LayoutParams(-1, -1))
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1120,6 +1123,83 @@ class MainActivity : AppCompatActivity() {
         }
 
         private val paintItem = Paint(Paint.ANTI_ALIAS_FLAG)
+    }
+
+    /**
+     * Fondo GIF animado.
+     *
+     * Prioridad:
+     * 1) assets/background_cyberpunk.gif (binario)
+     * 2) assets/background_cyberpunk.gif.b64 (Base64)
+     *
+     * Si ninguno está disponible, la app conserva el fondo Canvas existente.
+     */
+    private class AnimatedGifBackgroundView(context: Context) : View(context) {
+        private val movie: android.graphics.Movie? = loadMovie(context)
+        private var startedAt = 0L
+        private val invalidator = object : Runnable {
+            override fun run() {
+                if (!isAttachedToWindow) return
+                invalidate()
+                postOnAnimation(this)
+            }
+        }
+
+        private fun loadMovie(context: Context): android.graphics.Movie? {
+            // Preferimos el GIF binario: Base64 no es necesario para Android.
+            runCatching {
+                context.assets.open("background_cyberpunk.gif").use {
+                    android.graphics.Movie.decodeStream(it)
+                }
+            }.getOrNull()?.let { return it }
+
+            // Fallback para repositorios donde la subida binaria no está disponible.
+            return runCatching {
+                val encoded = context.assets
+                    .open("background_cyberpunk.gif.b64")
+                    .bufferedReader()
+                    .use { it.readText() }
+                    .trim()
+                if (encoded.isEmpty()) null else {
+                    val bytes = Base64.decode(encoded, Base64.DEFAULT)
+                    android.graphics.Movie.decodeStream(ByteArrayInputStream(bytes))
+                }
+            }.getOrNull()
+        }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            startedAt = SystemClock.uptimeMillis()
+            postOnAnimation(invalidator)
+        }
+
+        override fun onDetachedFromWindow() {
+            removeCallbacks(invalidator)
+            super.onDetachedFromWindow()
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            val gif = movie ?: return
+            val duration = gif.duration().takeIf { it > 0 } ?: 12000
+            val elapsed = ((SystemClock.uptimeMillis() - startedAt) % duration).toInt()
+            gif.setTime(elapsed)
+
+            val mw = gif.width().toFloat()
+            val mh = gif.height().toFloat()
+            if (mw <= 0f || mh <= 0f || width <= 0 || height <= 0) return
+
+            val scale = maxOf(width / mw, height / mh)
+            val drawW = mw * scale
+            val drawH = mh * scale
+            val left = (width - drawW) * .5f
+            val top = (height - drawH) * .5f
+
+            canvas.save()
+            canvas.translate(left, top)
+            canvas.scale(scale, scale)
+            gif.draw(canvas, 0f, 0f)
+            canvas.restore()
+        }
     }
 
     private class CyberBackgroundView(context: Context) : View(context) {
