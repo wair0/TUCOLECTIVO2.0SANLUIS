@@ -1371,16 +1371,16 @@ class MainActivity : AppCompatActivity() {
             // Marco base negro: queda fijo y oculta las esquinas negras de la imagen.
             val black = 0xFF000000.toInt()
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 16f * density
+            paint.strokeWidth = 4f * density
             paint.color = black
             paint.alpha = 255
             canvas.drawPath(path, paint)
 
             // Animación celeste neón: halo + línea brillante que recorre el marco.
             val neonCyan = 0xFF00F0FF.toInt()
-            paint.strokeWidth = 9f * density
+            paint.strokeWidth = 5f * density
             paint.color = neonCyan
-            paint.alpha = 45
+            paint.alpha = 38
             canvas.drawPath(path, paint)
 
             // Segmento animado que recorre TODO el perímetro, no solamente el borde superior.
@@ -1398,7 +1398,7 @@ class MainActivity : AppCompatActivity() {
                     perimeter.getSegment(start, pathLength, animatedPath, true)
                     perimeter.getSegment(0f, end - pathLength, animatedPath, true)
                 }
-                paint.strokeWidth = 4.5f * density
+                paint.strokeWidth = 2.5f * density
                 paint.color = neonCyan
                 paint.alpha = 255
                 canvas.drawPath(animatedPath, paint)
@@ -1640,7 +1640,7 @@ class MainActivity : AppCompatActivity() {
             val right = cx + tw * .5f + 18f * density
             val top = maxOf(2f * density, baseline + paint.ascent() - 7f * density)
             val bottom = minOf(height - 2f * density, baseline + paint.descent() + 7f * density)
-            CyberHeaderFrameDrawable.drawFrame(canvas, left, top, right, bottom, cyan, pink, density, 6f * density, .82f, frame * .55f)
+            CyberHeaderFrameDrawable.drawFrame(canvas, left, top, right, bottom, cyan, pink, density, 6f * density, .82f, frame * .15f)
 
             val glitch = frame % 16 in setOf(3, 4, 9, 10)
             ghost.color = if (frame % 2 == 0) cyan else pink
@@ -1670,7 +1670,7 @@ class MainActivity : AppCompatActivity() {
         private val runner = object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                phase += .7f
+                phase += .15f
                 postInvalidateOnAnimation()
                 postOnAnimationDelayed(this, 60L)
             }
