@@ -32,7 +32,8 @@ import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
-    private val cyberpunkTypeface by lazy { Typeface.createFromAsset(assets, "fonts/cyberpunk.ttf") }
+    private val cyberformDemoTypeface by lazy { Typeface.createFromAsset(assets, "fonts/cyberpunk.ttf") }
+    private val cyberpunkTypeface: Typeface get() = cyberformDemoTypeface
     private data class FavoriteStop(
         val lineCode: Int, val lineName: String, val stopCode: Int,
         val description: String, val identifier: String, val street: String,
@@ -395,13 +396,13 @@ class MainActivity : AppCompatActivity() {
         row2.addView(item4, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
         grid.addView(row1); grid.addView(row2); box.addView(grid)
         box.addView(cyberSyncButton { loadLines(false) }, LinearLayout.LayoutParams(-1, dp(60)).apply { topMargin = dp(20) })
-        // FUENTE CYBERPUNK: se reaplica a TODA la sección Inicio.
+        // FUENTE CYBERFORM DEMO: se reaplica a TODA la sección Inicio.
         // Esto incluye todos los TextView actuales y cualquier TextView hijo
         // generado dentro de las tarjetas, botones o textos de respaldo.
-        applyCyberpunkTypeface(box)
+        applyCyberformDemoTypeface(box)
         content.addView(ScrollView(this).apply {
             addView(box)
-            // La fuente ya fue aplicada recursivamente al contenido completo de Inicio.
+            // Cyberform Demo ya fue aplicada recursivamente al contenido completo de Inicio.
         })
     }
 
@@ -465,13 +466,13 @@ class MainActivity : AppCompatActivity() {
         addCyberVioletFrame(this)
     }
 
-    private fun applyCyberpunkTypeface(view: View) {
+    private fun applyCyberformDemoTypeface(view: View) {
         if (view is TextView) {
             view.typeface = cyberpunkTypeface
         }
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) {
-                applyCyberpunkTypeface(view.getChildAt(i))
+                applyCyberformDemoTypeface(view.getChildAt(i))
             }
         }
     }
