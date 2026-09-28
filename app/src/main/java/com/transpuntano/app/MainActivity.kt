@@ -1270,6 +1270,9 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             setBackgroundColor(panelColor); setPadding(dp(6), dp(6), dp(6), dp(6))
         }
         val map = CyberMapView(this)
+        map.setOnLocationRequest {
+            syncMapLocation(map)
+        }
         mapFrame.addView(map, FrameLayout.LayoutParams(-1, -1))
         root.addView(mapFrame, FrameLayout.LayoutParams(-1, -1).apply {
             leftMargin = dp(6); rightMargin = dp(6); topMargin = dp(6); bottomMargin = dp(6)
@@ -1287,6 +1290,98 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                     .onSuccess { route -> runOnUiThread { map.setRoute(route) } }
                     .onFailure { error -> runOnUiThread { toast(error.message ?: "No se pudo cargar el recorrido") } }
             }
+        }
+    }
+
+    private fun syncMapLocation(map: CyberMapView) {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            headerStatus.setStatusText("● SOLICITANDO UBICACIÓN")
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 42)
+            return
+        }
+
+        val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val provider = when {
+            runCatching { manager.isProviderEnabled(LocationManager.GPS_PROVIDER) }.getOrDefault(false) -> LocationManager.GPS_PROVIDER
+            runCatching { manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) }.getOrDefault(false) -> LocationManager.NETWORK_PROVIDER
+            else -> null
+        }
+
+        if (provider == null) {
+            headerStatus.setStatusText("● UBICACIÓN DESACTIVADA")
+            toast("Activá la ubicación del dispositivo.")
+            return
+        }
+
+        val lastKnown = runCatching { manager.getLastKnownLocation(provider) }.getOrNull()
+        headerStatus.setStatusText("● SINCRONIZANDO UBICACIÓN")
+
+        var delivered = false
+        val listener = object : android.location.LocationListener {
+            override fun onLocationChanged(location: android.location.Location) {
+                if (delivered) return
+                delivered = true
+                manager.removeUpdates(this)
+                applyMapLocation(map, location)
+            }
+            override fun onProviderDisabled(providerName: String) {
+                if (!delivered && lastKnown != null) {
+                    delivered = true
+                    manager.removeUpdates(this)
+                    applyMapLocation(map, lastKnown)
+                }
+            }
+        }
+
+        try {
+            manager.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper())
+        } catch (_: SecurityException) {
+            headerStatus.setStatusText("● SIN PERMISO")
+            return
+        }
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!delivered) {
+                delivered = true
+                manager.removeUpdates(listener)
+                if (lastKnown != null) {
+                    applyMapLocation(map, lastKnown)
+                } else {
+                    headerStatus.setStatusText("● SIN UBICACIÓN")
+                    toast("No se pudo obtener tu ubicación.")
+                }
+            }
+        }, 6000L)
+    }
+
+    private fun applyMapLocation(map: CyberMapView, location: android.location.Location) {
+        map.setUserLocation(location.latitude, location.longitude, center = true)
+        headerStatus.setStatusText("● UBICACIÓN SINCRONIZADA")
+        executor.execute {
+            runCatching { api.getNearby(location.latitude, location.longitude) }
+                .onSuccess { nearby ->
+                    val mapStops = nearby.map { stop ->
+                        MapStop(
+                            id = stop.code,
+                            title = stop.description,
+                            subtitle = listOf(stop.street, stop.intersection).filter { it.isNotBlank() }.joinToString(" · "),
+                            latitude = stop.latitude,
+                            longitude = stop.longitude
+                        )
+                    }
+                    runOnUiThread {
+                        map.setStops(mapStops, fit = false)
+                        headerStatus.setStatusText("● ${mapStops.size} PARADAS CERCANAS")
+                    }
+                }
+                .onFailure {
+                    runOnUiThread {
+                        headerStatus.setStatusText("● UBICACIÓN SINCRONIZADA")
+                        toast("Ubicación sincronizada, pero no se pudieron cargar las paradas cercanas.")
+                    }
+                }
         }
     }
 
