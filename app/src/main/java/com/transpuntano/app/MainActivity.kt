@@ -395,10 +395,14 @@ class MainActivity : AppCompatActivity() {
         row2.addView(item4, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
         grid.addView(row1); grid.addView(row2); box.addView(grid)
         box.addView(cyberSyncButton { loadLines(false) }, LinearLayout.LayoutParams(-1, dp(60)).apply { topMargin = dp(20) })
-        // La sección Inicio completa usa la fuente cyberpunk, incluidos textos
-        // de respaldo y cualquier TextView generado dentro de sus tarjetas/botones.
+        // FUENTE CYBERPUNK: se reaplica a TODA la sección Inicio.
+        // Esto incluye todos los TextView actuales y cualquier TextView hijo
+        // generado dentro de las tarjetas, botones o textos de respaldo.
         applyCyberpunkTypeface(box)
-        content.addView(ScrollView(this).apply { addView(box) })
+        content.addView(ScrollView(this).apply {
+            addView(box)
+            // La fuente ya fue aplicada recursivamente al contenido completo de Inicio.
+        })
     }
 
     private fun loadAssetBitmap(assetName: String): android.graphics.Bitmap? {
