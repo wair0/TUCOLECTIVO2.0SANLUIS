@@ -193,62 +193,38 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class CyberBottomBarBackground : android.graphics.drawable.Drawable() {
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val path = Path()
-        var selectedIndex = 0
-            set(v) { field=v; invalidateSelf() }
-        override fun draw(c: Canvas) {
-            val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
-            val cyan=0xFF00F6FF.toInt(); val mag=0xFFFF008C.toInt(); val vio=0xFF7C4DFF.toInt()
-            paint.style=Paint.Style.FILL
-            paint.shader=android.graphics.LinearGradient(0f,0f,0f,h, intArrayOf(0xFF01030B.toInt(),0xFF080018.toInt(),0xFF020611.toInt()),null,android.graphics.Shader.TileMode.CLAMP)
-            c.drawRect(0f,0f,w,h,paint); paint.shader=null
-            paint.color=vio; paint.alpha=25
-            path.reset(); path.moveTo(0f,h); path.lineTo(w*.22f,0f); path.lineTo(w*.42f,0f); path.lineTo(w*.20f,h); path.close(); c.drawPath(path,paint)
-            path.reset(); path.moveTo(w,h); path.lineTo(w*.78f,0f); path.lineTo(w*.58f,0f); path.lineTo(w*.80f,h); path.close(); c.drawPath(path,paint)
-            paint.style=Paint.Style.STROKE; paint.strokeWidth=1.5f; paint.color=cyan; paint.alpha=220
-            c.drawLine(0f,1f,w*.27f,1f,paint); c.drawLine(w*.73f,1f,w,1f,paint)
-            paint.color=mag; paint.alpha=220; c.drawLine(w*.27f,1f,w*.36f,1f,paint); c.drawLine(w*.64f,1f,w*.73f,1f,paint)
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
+        var selectedIndex=0; set(v){field=v;invalidateSelf()}
+        override fun draw(c:Canvas){ val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
+            val lime=0xFFB7FF00.toInt(); val orange=0xFFFF6A00.toInt(); val blue=0xFF00A8FF.toInt()
+            p.style=Paint.Style.FILL; p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF020504,0xFF101006,0xFF05020A),null,android.graphics.Shader.TileMode.CLAMP); c.drawRect(0f,0f,w,h,p);p.shader=null
             val cw=w/5f
-            for(i in 0..4){ val x=i*cw; paint.color=if(i==selectedIndex) cyan else vio; paint.alpha=if(i==selectedIndex)150 else 55; paint.strokeWidth=1f
-                c.drawLine(x+8f,h*.22f,x+cw-8f,h*.78f,paint)
-                c.drawLine(x+cw-8f,h*.22f,x+8f,h*.78f,paint)
-            }
-            val sx=selectedIndex.coerceIn(0,4)*cw
-            paint.color=cyan; paint.alpha=240; paint.strokeWidth=2f
-            c.drawLine(sx+7f,h-7f,sx+cw-18f,h-7f,paint)
-            paint.color=mag; paint.alpha=230; paint.strokeWidth=1f
-            c.drawLine(sx+18f,h-4f,sx+cw-7f,h-4f,paint)
-            paint.color=cyan; paint.style=Paint.Style.FILL; paint.alpha=230
-            c.drawCircle(w/2f,3f,2.5f,paint); c.drawCircle(w/2f,h-5f,2f,paint)
+            for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex) lime else blue;p.alpha=if(i==selectedIndex)30 else 12;path.reset();path.moveTo(x+4,h);path.lineTo(x+cw*.32f,0f);path.lineTo(x+cw-4,0f);path.lineTo(x+cw*.68f,h);path.close();c.drawPath(path,p)}
+            p.style=Paint.Style.STROKE;p.strokeWidth=1.5f;p.color=lime;p.alpha=190;c.drawLine(0f,1f,w*.18f,1f,p);c.drawLine(w*.82f,1f,w,1f,p)
+            for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex)lime else blue;p.alpha=150;p.strokeWidth=1f;c.drawLine(x+cw*.2f,h-5f,x+cw*.48f,5f,p);c.drawLine(x+cw*.52f,5f,x+cw*.8f,h-5f,p)}
+            val x=selectedIndex.coerceIn(0,4)*cw;p.color=orange;p.alpha=240;p.strokeWidth=2f;c.drawLine(x+8f,h-5f,x+cw-8f,h-5f,p)
+            p.style=Paint.Style.FILL;p.color=lime;p.alpha=230;c.drawCircle(w*.5f,2.5f,2f,p)
         }
-        override fun setAlpha(a:Int){}; override fun setColorFilter(f:ColorFilter?){}
-        @Suppress("DEPRECATION") override fun getOpacity()=android.graphics.PixelFormat.TRANSLUCENT
+        override fun setAlpha(a:Int){};override fun setColorFilter(f:ColorFilter?){}
+        @Suppress("DEPRECATION")override fun getOpacity()=android.graphics.PixelFormat.TRANSLUCENT
     }
 
-    private class CyberDrawerBackground(private val context: Context) : android.graphics.drawable.Drawable() {
-        private val paint=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
-        override fun draw(c:Canvas){
-            val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
-            val cyan=0xFF00F6FF.toInt(); val mag=0xFFFF008C.toInt(); val vio=0xFF7C4DFF.toInt()
-            paint.style=Paint.Style.FILL
-            paint.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF01030B.toInt(),0xFF09001A.toInt(),0xFF020914.toInt()),null,android.graphics.Shader.TileMode.CLAMP)
-            c.drawRect(0f,0f,w,h,paint); paint.shader=null
-            paint.color=cyan; paint.alpha=18
-            for(i in 0..6){ path.reset(); path.moveTo(0f,i*h/7f); path.lineTo(w*.72f,(i+1)*h/7f); path.lineTo(w*.90f,(i+1)*h/7f); path.lineTo(w*.18f,i*h/7f); path.close(); c.drawPath(path,paint) }
-            paint.style=Paint.Style.STROKE; paint.color=cyan; paint.alpha=220; paint.strokeWidth=2f
-            c.drawLine(w-3f,0f,w-3f,h,paint); paint.color=mag; paint.alpha=210; c.drawLine(3f,0f,3f,h,paint)
-            paint.strokeWidth=1f; paint.color=vio; paint.alpha=130
-            for(i in 0..11){ val y=18f+i*h/13f; c.drawLine(16f,y,w*(.25f+(i%4)*.14f),y,paint) }
-            paint.color=cyan; paint.alpha=170
-            c.drawCircle(w-12f,22f,3f,paint); c.drawCircle(w-12f,h-22f,3f,paint)
-            paint.color=mag; c.drawCircle(12f,22f,3f,paint); c.drawCircle(12f,h-22f,3f,paint)
-            paint.style=Paint.Style.STROKE; paint.strokeWidth=1.5f
-            path.reset(); path.moveTo(20f,8f); path.lineTo(w*.55f,8f); path.lineTo(w*.42f,22f); c.drawPath(path,paint)
-            path.reset(); path.moveTo(20f,h-8f); path.lineTo(w*.55f,h-8f); path.lineTo(w*.42f,h-22f); c.drawPath(path,paint)
+    private class CyberDrawerBackground(private val context: Context) : android.graphics.drawable.Drawable(){
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
+        override fun draw(c:Canvas){val w=bounds.width().toFloat();val h=bounds.height().toFloat()
+            val lime=0xFFB7FF00.toInt();val orange=0xFFFF6A00.toInt();val blue=0xFF00A8FF.toInt()
+            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF020403,0xFF0A1007,0xFF08030A),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
+            p.color=lime;p.alpha=20
+            for(i in 0..5){path.reset();path.moveTo(0f,i*h/6f);path.lineTo(w*.8f,(i+1)*h/6f);path.lineTo(w,(i+.75f)*h/6f);path.lineTo(w*.2f,(i-.25f)*h/6f);path.close();c.drawPath(path,p)}
+            p.style=Paint.Style.STROKE;p.color=lime;p.alpha=230;p.strokeWidth=2f;c.drawLine(w-3f,0f,w-3f,h,p)
+            p.color=orange;p.alpha=210;c.drawLine(3f,0f,3f,h,p)
+            for(i in 0..13){val y=18f+i*h/14f;p.color=if(i%3==0)orange else blue;p.alpha=130;p.strokeWidth=1f;c.drawLine(18f,y,w*(.18f+(i%5)*.13f),y,p)}
+            p.style=Paint.Style.FILL;p.color=lime;p.alpha=220;for(i in 0..5)c.drawCircle(w-14f,30f+i*(h-60f)/5f,2.5f,p)
+            p.color=orange;for(i in 0..5)c.drawCircle(14f,30f+i*(h-60f)/5f,2.5f,p)
+            p.style=Paint.Style.STROKE;p.color=blue;p.alpha=150;p.strokeWidth=1f;path.reset();path.moveTo(22f,10f);path.lineTo(w*.55f,10f);path.lineTo(w*.42f,28f);c.drawPath(path,p);path.reset();path.moveTo(22f,h-10f);path.lineTo(w*.55f,h-10f);path.lineTo(w*.42f,h-28f);c.drawPath(path,p)
         }
-        override fun setAlpha(a:Int){}; override fun setColorFilter(f:ColorFilter?){}
-        @Suppress("DEPRECATION") override fun getOpacity()=android.graphics.PixelFormat.TRANSLUCENT
+        override fun setAlpha(a:Int){};override fun setColorFilter(f:ColorFilter?){}
+        @Suppress("DEPRECATION")override fun getOpacity()=android.graphics.PixelFormat.TRANSLUCENT
     }
 
     private fun addDrawerItems() {
