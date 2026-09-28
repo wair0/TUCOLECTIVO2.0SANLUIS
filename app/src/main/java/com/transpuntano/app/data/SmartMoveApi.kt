@@ -96,9 +96,16 @@ class SmartMoveApi {
     }
 
     fun getArrivals(identifier: String, line: Int): List<TransitArrival> {
-        val root = soap("RecuperarProximosArribosW", listOf(
+        // SmartMove San Luis expone los arribos mediante esta operación compatible.
+        // La variante RecuperarProximosArribosW devuelve HTTP 500 en este servicio.
+        // Conservamos la lectura de coordenadas GPS si el backend las incluye.
+        val root = soap("RecuperarProximosArribos", listOf(
             stringParam("identificadorParada", identifier),
-            intParam("codigoLineaParada", line)
+            intParam("codigoLineaParada", line),
+            intParam("codigoAplicacion", CODIGO_APLICACION_ARRIBOS),
+            stringParam("localidad", PROVINCIA),
+            stringParam("usuario", USER),
+            stringParam("clave", PASSWORD)
         ))
         val array = firstArray(root, "ArribosJson", "listaArribos", "arribos", "Arribo", "arribo") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
@@ -106,17 +113,23 @@ class SmartMoveApi {
             val arrival = item.optStringAny("Arribo", "arribo", "Tiempo", "tiempo").orEmpty()
             TransitArrival(
                 line = item.optStringAny("DescripcionLinea", "descripcionLinea", "Linea", "linea").orEmpty().ifBlank { line.toString() },
-                destination = item.optStringAny("DescripcionCartelBandera", "descripcionCartelBandera", "DescripcionBandera", "descripcionBandera", "Bandera", "bandera", "Destino", "destino").orEmpty(),
+                destination = item.optStringAny(
+                    "DescripcionBandera", "descripcionBandera",
+                    "DescripcionCartelBandera", "descripcionCartelBandera",
+                    "Bandera", "bandera", "Destino", "destino"
+                ).orEmpty(),
                 minutes = parseMinutes(arrival),
                 status = arrival,
                 vehicleId = item.optStringAny("IdentificadorCoche", "identificadorCoche", "Coche", "coche").orEmpty(),
                 latitude = item.optStringAny("Latitud", "latitud")?.replace(',', '.')?.toDoubleOrNull(),
                 longitude = item.optStringAny("Longitud", "longitud")?.replace(',', '.')?.toDoubleOrNull(),
-                gpsTimestamp = item.optStringAny("UltimaFechaHoraGPS", "ultimaFechaHoraGPS", "FechaHoraGPS", "fechaHoraGPS").orEmpty()
+                gpsTimestamp = item.optStringAny(
+                    "UltimaFechaHoraGPS", "ultimaFechaHoraGPS",
+                    "FechaHoraGPS", "fechaHoraGPS"
+                ).orEmpty()
             )
         }
     }
-
     fun getNearby(latitude: Double, longitude: Double): List<TransitStop> {
         val root = soap("RecuperarParadasMasCercanasPorLocalidadProvinciaPais", listOf(
             stringParam("latitud", formatCoordinate(latitude)),
