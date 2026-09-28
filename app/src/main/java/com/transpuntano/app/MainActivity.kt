@@ -394,6 +394,9 @@ class MainActivity : AppCompatActivity() {
         row2.addView(item4, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
         grid.addView(row1); grid.addView(row2); box.addView(grid)
         box.addView(cyberSyncButton { loadLines(false) }, LinearLayout.LayoutParams(-1, dp(60)).apply { topMargin = dp(20) })
+        // La sección Inicio completa usa la fuente cyberpunk, incluidos textos
+        // de respaldo y cualquier TextView generado dentro de sus tarjetas/botones.
+        applyCyberpunkTypeface(box)
         content.addView(ScrollView(this).apply { addView(box) })
     }
 
@@ -455,6 +458,17 @@ class MainActivity : AppCompatActivity() {
         }
         addView(image, FrameLayout.LayoutParams(-1, -1))
         addCyberVioletFrame(this)
+    }
+
+    private fun applyCyberpunkTypeface(view: View) {
+        if (view is TextView) {
+            view.typeface = cyberpunkTypeface
+        }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                applyCyberpunkTypeface(view.getChildAt(i))
+            }
+        }
     }
 
     private fun box() = LinearLayout(this).apply {
@@ -1619,11 +1633,11 @@ class MainActivity : AppCompatActivity() {
             textAlign = Paint.Align.CENTER
         }
         private val ghost = Paint(paint)
-        private var frame = 0
+        private var phase = 0f
         private val runner = object : Runnable {
             override fun run() {
                 if (!isAttachedToWindow) return
-                frame = (frame + 1) % 48
+                phase = (phase + .15f) % 16f
                 postInvalidateOnAnimation()
                 postOnAnimationDelayed(this, 55L)
             }
@@ -1640,8 +1654,12 @@ class MainActivity : AppCompatActivity() {
             val right = cx + tw * .5f + 18f * density
             val top = maxOf(2f * density, baseline + paint.ascent() - 7f * density)
             val bottom = minOf(height - 2f * density, baseline + paint.descent() + 7f * density)
-            CyberHeaderFrameDrawable.drawFrame(canvas, left, top, right, bottom, cyan, pink, density, 6f * density, .82f, frame * .15f)
+            // La fase ahora recorre el perímetro completo antes de volver a cero.
+            // El valor es continuo, por lo que el segmento animado no queda limitado
+            // a una fracción del marco ni se reinicia prematuramente.
+            CyberHeaderFrameDrawable.drawFrame(canvas, left, top, right, bottom, cyan, pink, density, 6f * density, .82f, phase)
 
+            val frame = (phase / .15f).toInt()
             val glitch = frame % 16 in setOf(3, 4, 9, 10)
             ghost.color = if (frame % 2 == 0) cyan else pink
             ghost.alpha = if (glitch) 190 else 70
