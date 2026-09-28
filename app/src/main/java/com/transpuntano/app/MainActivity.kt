@@ -480,6 +480,109 @@ class MainActivity : AppCompatActivity() {
         orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(16), dp(18), dp(24))
     }
 
+    private fun cyberLineCard(label: String, action: () -> Unit): View {
+        return CyberLineCardView(
+            this,
+            label,
+            cyberpunkTypeface,
+            cyan,
+            pink,
+            muted
+        ).apply {
+            setOnClickListener { action() }
+            isClickable = true
+            isFocusable = true
+            applyCyberTap(this)
+        }
+    }
+
+    private class CyberLineCardView(
+        context: Context,
+        private val label: String,
+        private val typeface: Typeface,
+        private val cyan: Int,
+        private val pink: Int,
+        private val muted: Int
+    ) : View(context) {
+        private val density = resources.displayMetrics.density
+        private val scaledDensity = resources.displayMetrics.scaledDensity
+        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+            this.typeface = typeface
+            textAlign = Paint.Align.LEFT
+            textSize = 15f * scaledDensity
+        }
+        private var phase = 0f
+        private val runner = object : Runnable {
+            override fun run() {
+                if (!isAttachedToWindow) return
+                phase = (phase + .20f) % 16f
+                postInvalidateOnAnimation()
+                postOnAnimationDelayed(this, 55L)
+            }
+        }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            postOnAnimation(runner)
+        }
+
+        override fun onDetachedFromWindow() {
+            removeCallbacks(runner)
+            super.onDetachedFromWindow()
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return
+
+            textPaint.typeface = typeface
+            val left = 1.5f * density
+            val top = 1.5f * density
+            val right = w - 1.5f * density
+            val bottom = h - 1.5f * density
+
+            // Fondo oscuro de la tarjeta.
+            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0xFF050714.toInt()
+                alpha = 248
+            }
+            canvas.drawRect(left, top, right, bottom, fill)
+
+            // Marco Cyberpunk neón animado alrededor de toda la tarjeta.
+            CyberHeaderFrameDrawable.drawFrame(
+                canvas,
+                left,
+                top,
+                right,
+                bottom,
+                cyan,
+                pink,
+                density,
+                8f * density,
+                1f,
+                phase
+            )
+
+            // Detalles internos para reforzar el acabado de panel tecnológico.
+            val detail = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 1f * density
+                color = cyan
+                alpha = 95
+            }
+            canvas.drawLine(left + 12f * density, top + 8f * density, left + 80f * density, top + 8f * density, detail)
+            canvas.drawLine(right - 80f * density, bottom - 8f * density, right - 12f * density, bottom - 8f * density, detail)
+
+            // Texto de la línea, sin código numérico secundario.
+            textPaint.color = Color.WHITE
+            textPaint.alpha = 255
+            val baseline = h * .58f - (textPaint.ascent() + textPaint.descent()) * .5f
+            canvas.drawText(label, 16f * density, baseline, textPaint)
+        }
+    }
+
     private fun card(primary: String, secondary: String, action: () -> Unit) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(12), dp(16), dp(12))
         setBackgroundColor(panelColor); setOnClickListener { action() }
@@ -694,17 +797,14 @@ class MainActivity : AppCompatActivity() {
     private fun showLines(initial: List<TransitLine>? = null) {
         title.text = "LÍNEAS"; updateNav(1); content.removeAllViews()
         val box = box()
-        val catalogPanel = panel("CATÁLOGO", "Datos solicitados al servicio SmartMove.")
-        catalogPanel.layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
-            bottomMargin = dp(12)
+        val list = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
         }
-        box.addView(catalogPanel)
-        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         fun drawLines(items: List<TransitLine>) {
             list.removeAllViews()
             items.forEach { line ->
-                list.addView(card(line.name.uppercase(), "") { showLine(line) },
+                list.addView(cyberLineCard(line.name.uppercase()) { showLine(line) },
                     LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
             }
             if (items.isEmpty()) list.addView(panel("SIN DATOS", "No se encontraron líneas."))
