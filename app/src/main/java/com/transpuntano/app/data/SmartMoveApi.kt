@@ -259,23 +259,44 @@ class SmartMoveApi {
 
     private fun parseStops(array: JSONArray?, line: Int): List<TransitStop> {
         if (array == null) return emptyList()
-        return (0 until array.length()).mapNotNull { index ->
-            val item = array.optJSONObject(index) ?: return@mapNotNull null
-            val code = item.optIntAny("codigoParada", "CodigoParada", "Codigo", "codigo") ?: return@mapNotNull null
-            TransitStop(
+        // SmartMove puede devolver la misma parada varias veces, una por cada
+        // línea que la utiliza. Acumulamos TODOS los códigos de línea antes de
+        // crear un único marcador para esa parada.
+        val grouped = linkedMapOf<String, TransitStop>()
+        for (index in 0 until array.length()) {
+            val item = array.optJSONObject(index) ?: continue
+            val code = item.optIntAny("codigoParada", "CodigoParada", "Codigo", "codigo") ?: continue
+            val identifier = item.optStringAny(
+                "Identificador", "identificador", "IdentificadorParada", "identificadorParada"
+            ).orEmpty().ifBlank { code.toString() }
+            val key = "$code|$identifier"
+            val stop = TransitStop(
                 code = code,
-                description = item.optStringAny("descripcionParada", "DescripcionParada", "Descripcion", "descripcion", "Nombre", "nombre").orEmpty().ifBlank { "Parada " + code },
-                identifier = item.optStringAny("Identificador", "identificador", "IdentificadorParada", "identificadorParada").orEmpty().ifBlank { code.toString() },
+                description = item.optStringAny(
+                    "descripcionParada", "DescripcionParada", "Descripcion", "descripcion", "Nombre", "nombre"
+                ).orEmpty().ifBlank { "Parada " + code },
+                identifier = identifier,
                 latitude = item.optStringAny("Latitud", "latitud")?.replace(',', '.')?.toDoubleOrNull() ?: 0.0,
                 longitude = item.optStringAny("Longitud", "longitud")?.replace(',', '.')?.toDoubleOrNull() ?: 0.0,
                 street = item.optStringAny("nombreCalle", "CallePrincipal", "callePrincipal").orEmpty(),
-                intersection = item.optStringAny("inteserccionCalle", "interseccionCalle", "CalleInterseccion", "calleInterseccion").orEmpty(),
+                intersection = item.optStringAny(
+                    "inteserccionCalle", "interseccionCalle", "CalleInterseccion", "calleInterseccion"
+                ).orEmpty(),
                 lineCode = line,
                 lineCodes = linkedLineCodes(item, line)
             )
-        }.distinctBy { it.code to it.identifier }
+            val previous = grouped[key]
+            if (previous == null) {
+                grouped[key] = stop
+            } else {
+                grouped[key] = previous.copy(
+                    lineCodes = (previous.lineCodes + stop.lineCodes).distinct().sorted(),
+                    lineCode = previous.lineCode.takeIf { it > 0 } ?: stop.lineCode
+                )
+            }
+        }
+        return grouped.values.toList()
     }
-
     private fun linkedLineCodes(item: JSONObject, line: Int): List<Int> {
         val codes = linkedMapOf<Int, Boolean>()
         if (line > 0) codes[line] = true
