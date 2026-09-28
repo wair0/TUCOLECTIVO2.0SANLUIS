@@ -215,6 +215,8 @@ class MainActivity : AppCompatActivity() {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
         override fun draw(c:Canvas){val w=bounds.width().toFloat();val h=bounds.height().toFloat()
             val lime=0xFF00F0FF.toInt();val orange=0xFFFF00FF.toInt();val blue=0xFF006CFF.toInt()
+            // Base completamente opaca para que el menú no deje ver el contenido detrás.
+            c.drawColor(0xFF02030B.toInt())
             p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF02030B.toInt(),0xFF09051A.toInt(),0xFF030417.toInt()),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
             p.color=lime;p.alpha=20
             for(i in 0..5){path.reset();path.moveTo(0f,i*h/6f);path.lineTo(w*.8f,(i+1)*h/6f);path.lineTo(w,(i+.75f)*h/6f);path.lineTo(w*.2f,(i-.25f)*h/6f);path.close();c.drawPath(path,p)}
@@ -226,7 +228,7 @@ class MainActivity : AppCompatActivity() {
             p.style=Paint.Style.STROKE;p.color=blue;p.alpha=150;p.strokeWidth=1f;path.reset();path.moveTo(22f,10f);path.lineTo(w*.55f,10f);path.lineTo(w*.42f,28f);c.drawPath(path,p);path.reset();path.moveTo(22f,h-10f);path.lineTo(w*.55f,h-10f);path.lineTo(w*.42f,h-28f);c.drawPath(path,p)
         }
         override fun setAlpha(a:Int){};override fun setColorFilter(f:ColorFilter?){}
-        @Suppress("DEPRECATION")override fun getOpacity()=android.graphics.PixelFormat.TRANSLUCENT
+        @Suppress("DEPRECATION")override fun getOpacity()=android.graphics.PixelFormat.OPAQUE
     }
 
     private fun addDrawerItems() {
