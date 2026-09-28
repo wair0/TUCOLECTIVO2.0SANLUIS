@@ -14,6 +14,8 @@ import android.util.Base64
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.SystemClock
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -198,20 +200,16 @@ class MainActivity : AppCompatActivity() {
     private class CyberBottomBarBackground(private val density: Float) : android.graphics.drawable.Drawable() {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG)
         private var phase = 0f
+        private val handler = Handler(Looper.getMainLooper())
         private val animator = object : Runnable {
             override fun run() {
                 phase = (phase + 0.8f) % 16f
                 invalidateSelf()
-                scheduleSelf(this, SystemClock.uptimeMillis() + 55L)
+                handler.postDelayed(this, 55L)
             }
         }
+        init { handler.postDelayed(animator, 55L) }
         var selectedIndex=0; set(v){field=v;invalidateSelf()}
-
-        override fun setCallback(callback: android.graphics.drawable.Drawable.Callback?) {
-            super.setCallback(callback)
-            if (callback != null) scheduleSelf(animator, SystemClock.uptimeMillis() + 55L)
-            else unscheduleSelf(animator)
-        }
         override fun draw(c:Canvas){ val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
             val lime=0xFF00F0FF.toInt(); val orange=0xFFFF00FF.toInt(); val blue=0xFF006CFF.toInt()
             // Fondo completamente opaco y limpio: sin triángulos ni diagonales decorativas.
@@ -1385,19 +1383,15 @@ class MainActivity : AppCompatActivity() {
         private val inset: Float
     ) : CyberHeaderFrameDrawable(cyan, pink, density, cornerCut, inset) {
         private var phase = 0f
+        private val handler = Handler(Looper.getMainLooper())
         private val runner = object : Runnable {
             override fun run() {
                 phase = (phase + 0.7f) % 16f
                 invalidateSelf()
-                scheduleSelf(this, SystemClock.uptimeMillis() + 55L)
+                handler.postDelayed(this, 55L)
             }
         }
-
-        override fun setCallback(callback: android.graphics.drawable.Drawable.Callback?) {
-            super.setCallback(callback)
-            if (callback != null) scheduleSelf(runner, SystemClock.uptimeMillis() + 55L)
-            else unscheduleSelf(runner)
-        }
+        init { handler.postDelayed(runner, 55L) }
 
         override fun draw(canvas: Canvas) {
             drawFrame(
