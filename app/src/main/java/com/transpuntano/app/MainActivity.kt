@@ -860,7 +860,7 @@ class MainActivity : AppCompatActivity() {
     private fun showIntersections(line: TransitLine, street: TransitStreet) {
         content.removeAllViews(); title.text = street.name; updateNav(1)
         val box = box()
-        box.addView(cyberSectionHeader("INTERSECCIONES", "LÍNEA " + line.code + " · " + street.name))
+        box.addView(cyberSectionHeader("INTERSECCIONES", street.name))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         executor.execute {
@@ -882,7 +882,7 @@ class MainActivity : AppCompatActivity() {
     private fun showStops(line: TransitLine, street: TransitStreet, intersection: TransitIntersection) {
         content.removeAllViews(); title.text = "PARADAS"; updateNav(1)
         val box = box()
-        box.addView(cyberSectionHeader("PARADAS", "LÍNEA " + line.code + " · " + intersection.name))
+        box.addView(cyberSectionHeader("PARADAS", intersection.name))
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         box.addView(list)
         executor.execute {
@@ -933,13 +933,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun cyberSectionHeader(titleText: String, subtitle: String): View =
+    private fun cleanCardText(value: String): String =
+        value.trim().replace(Regex("\\s*[•·.]\\s*$"), "").trim()
+
+private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         CyberSectionHeaderView(this, titleText, subtitle, cyberpunkTypeface, cyan, pink, muted).apply {
             layoutParams = LinearLayout.LayoutParams(-1, dp(76)).apply { bottomMargin = dp(10) }
         }
 
     private fun cyberDetailCard(primary: String, secondary: String, action: () -> Unit): View =
-        CyberDetailCardView(this, primary, secondary, cyberpunkTypeface, cyan, pink, muted).apply {
+        CyberDetailCardView(this, cleanCardText(primary), cleanCardText(secondary), cyberpunkTypeface, cyan, pink, muted).apply {
             layoutParams = LinearLayout.LayoutParams(-1, dp(64)).apply { bottomMargin = dp(8) }
             setOnClickListener { action() }
             isClickable = true
@@ -947,7 +950,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun cyberInfoCard(primary: String, secondary: String): View =
-        CyberDetailCardView(this, primary, secondary, cyberpunkTypeface, cyan, pink, muted).apply {
+        CyberDetailCardView(this, cleanCardText(primary), cleanCardText(secondary), cyberpunkTypeface, cyan, pink, muted).apply {
             layoutParams = LinearLayout.LayoutParams(-1, dp(64)).apply { bottomMargin = dp(8) }
         }
 
@@ -1123,7 +1126,8 @@ class MainActivity : AppCompatActivity() {
 
                 val oval=RectF(circleCx-circleR,circleCy-circleR,circleCx+circleR,circleCy+circleR)
                 circlePaint.strokeWidth=3f*d; circlePaint.alpha=255
-                circlePaint.setShadowLayer(7f*d,0f,0f,cyan)
+                circlePaint.color=pink
+                circlePaint.setShadowLayer(8f*d,0f,0f,pink)
                 c.drawArc(oval,phase,270f,false,circlePaint)
                 circlePaint.clearShadowLayer()
             }
