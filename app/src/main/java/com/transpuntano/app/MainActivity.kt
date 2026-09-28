@@ -197,7 +197,7 @@ class MainActivity : AppCompatActivity() {
         var selectedIndex=0; set(v){field=v;invalidateSelf()}
         override fun draw(c:Canvas){ val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
             val lime=0xFFB7FF00.toInt(); val orange=0xFFFF6A00.toInt(); val blue=0xFF00A8FF.toInt()
-            p.style=Paint.Style.FILL; p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF020504,0xFF101006,0xFF05020A),null,android.graphics.Shader.TileMode.CLAMP); c.drawRect(0f,0f,w,h,p);p.shader=null
+            p.style=Paint.Style.FILL; p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF020504.toInt(),0xFF101006.toInt(),0xFF05020A.toInt()),null,android.graphics.Shader.TileMode.CLAMP); c.drawRect(0f,0f,w,h,p);p.shader=null
             val cw=w/5f
             for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex) lime else blue;p.alpha=if(i==selectedIndex)30 else 12;path.reset();path.moveTo(x+4,h);path.lineTo(x+cw*.32f,0f);path.lineTo(x+cw-4,0f);path.lineTo(x+cw*.68f,h);path.close();c.drawPath(path,p)}
             p.style=Paint.Style.STROKE;p.strokeWidth=1.5f;p.color=lime;p.alpha=190;c.drawLine(0f,1f,w*.18f,1f,p);c.drawLine(w*.82f,1f,w,1f,p)
@@ -213,7 +213,7 @@ class MainActivity : AppCompatActivity() {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
         override fun draw(c:Canvas){val w=bounds.width().toFloat();val h=bounds.height().toFloat()
             val lime=0xFFB7FF00.toInt();val orange=0xFFFF6A00.toInt();val blue=0xFF00A8FF.toInt()
-            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF020403,0xFF0A1007,0xFF08030A),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
+            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(0xFF020403.toInt(),0xFF0A1007.toInt(),0xFF08030A.toInt()),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
             p.color=lime;p.alpha=20
             for(i in 0..5){path.reset();path.moveTo(0f,i*h/6f);path.lineTo(w*.8f,(i+1)*h/6f);path.lineTo(w,(i+.75f)*h/6f);path.lineTo(w*.2f,(i-.25f)*h/6f);path.close();c.drawPath(path,p)}
             p.style=Paint.Style.STROKE;p.color=lime;p.alpha=230;p.strokeWidth=2f;c.drawLine(w-3f,0f,w-3f,h,p)
@@ -1161,7 +1161,7 @@ class MainActivity : AppCompatActivity() {
     private class CyberHeaderView(context: Context) : View(context) {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
         override fun onDraw(c:Canvas){val w=width.toFloat();val h=height.toFloat();val lime=0xFFB7FF00.toInt();val orange=0xFFFF6A00.toInt();val blue=0xFF00A8FF.toInt()
-            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF010503,0xFF111500,0xFF090308),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
+            p.style=Paint.Style.FILL;p.shader=android.graphics.LinearGradient(0f,0f,w,0f,intArrayOf(0xFF010503.toInt(),0xFF111500.toInt(),0xFF090308.toInt()),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
             // Command visor: horizontal HUD aperture rather than the former central oval.
             p.color=lime;p.alpha=22;path.reset();path.moveTo(0f,0f);path.lineTo(w*.32f,0f);path.lineTo(w*.24f,h);path.lineTo(0f,h);path.close();c.drawPath(path,p)
             p.color=orange;p.alpha=24;path.reset();path.moveTo(w,0f);path.lineTo(w*.68f,0f);path.lineTo(w*.78f,h);path.lineTo(w,h);path.close();c.drawPath(path,p)
