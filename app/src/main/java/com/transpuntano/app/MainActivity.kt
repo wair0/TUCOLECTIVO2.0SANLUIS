@@ -1296,7 +1296,39 @@ class MainActivity : AppCompatActivity() {
         override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
     }
 
-    private class CyberHeaderFrameDrawable(
+    private class AnimatedCyberFrameDrawable(
+        private val cyan: Int,
+        private val pink: Int,
+        private val density: Float,
+        private val cornerCut: Float,
+        private val inset: Float
+    ) : CyberHeaderFrameDrawable(cyan, pink, density, cornerCut, inset) {
+        private var phase = 0f
+        private val runner = object : Runnable {
+            override fun run() {
+                phase = (phase + 0.7f) % 16f
+                invalidateSelf()
+                scheduleSelf(this, SystemClock.uptimeMillis() + 55L)
+            }
+        }
+
+        override fun setCallback(callback: android.graphics.drawable.Drawable.Callback?) {
+            super.setCallback(callback)
+            if (callback != null) scheduleSelf(runner, SystemClock.uptimeMillis() + 55L)
+            else unscheduleSelf(runner)
+        }
+
+        override fun draw(canvas: Canvas) {
+            drawFrame(
+                canvas,
+                bounds.left + inset, bounds.top + inset,
+                bounds.right - inset, bounds.bottom - inset,
+                cyan, pink, density, cornerCut, 1f, phase
+            )
+        }
+    }
+
+    private open class CyberHeaderFrameDrawable(
         private val cyan: Int,
         private val pink: Int,
         private val density: Float,
