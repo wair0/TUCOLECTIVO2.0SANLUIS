@@ -1778,9 +1778,18 @@ class MainActivity : AppCompatActivity() {
             }
             textPaint.color = if (selected) cyan else muted
             textPaint.alpha = if (selected) 255 else 190
-            // FAVORITOS es el único rótulo que necesita un tamaño menor para
-            // quedar completamente contenido dentro de su marco.
-            textPaint.textSize = if (label == "FAVORITOS") 7.2f * scaledDensity else 8.5f * scaledDensity
+            // FAVORITOS necesita adaptarse al ancho real de su marco. En lugar de
+            // agrandar solo ese marco y romper la simetría de la barra, reducimos
+            // dinámicamente el tamaño hasta que el texto quede completamente contenido.
+            val baseTextSize = 8.5f * scaledDensity
+            textPaint.textSize = baseTextSize
+            if (label == "FAVORITOS") {
+                val maxTextWidth = frameW - 8f * density
+                val measuredWidth = textPaint.measureText(label)
+                if (measuredWidth > maxTextWidth && measuredWidth > 0f) {
+                    textPaint.textSize = baseTextSize * (maxTextWidth / measuredWidth)
+                }
+            }
             canvas.drawText(label, width * .5f, height - 10f * density, textPaint)
         }
     }
