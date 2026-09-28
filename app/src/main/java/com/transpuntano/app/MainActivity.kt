@@ -261,7 +261,7 @@ class MainActivity : AppCompatActivity() {
                 this,
                 label,
                 iconName,
-                index == 0,
+                index == currentSection,
                 cyberpunkTypeface,
                 cyan,
                 pink,
