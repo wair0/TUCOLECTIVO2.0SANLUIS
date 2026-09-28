@@ -1088,8 +1088,8 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                 runnerPaint.style=Paint.Style.STROKE
                 runnerPaint.strokeCap=Paint.Cap.ROUND
                 runnerPaint.strokeWidth=3f*d
-                runnerPaint.color=pink
-                runnerPaint.setShadowLayer(8f*d,0f,0f,pink)
+                runnerPaint.color=Color.BLACK
+                runnerPaint.setShadowLayer(4f*d,0f,0f,Color.BLACK)
                 if (startDistance+segment <= total) drawSegment(startDistance,startDistance+segment)
                 else {
                     drawSegment(startDistance,total)
@@ -1127,8 +1127,8 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
 
                 val oval=RectF(circleCx-circleR,circleCy-circleR,circleCx+circleR,circleCy+circleR)
                 circlePaint.strokeWidth=3f*d; circlePaint.alpha=255
-                circlePaint.color=pink
-                circlePaint.setShadowLayer(8f*d,0f,0f,pink)
+                circlePaint.color=Color.BLACK
+                circlePaint.setShadowLayer(4f*d,0f,0f,Color.BLACK)
                 c.drawArc(oval,phase,270f,false,circlePaint)
                 circlePaint.clearShadowLayer()
             }
