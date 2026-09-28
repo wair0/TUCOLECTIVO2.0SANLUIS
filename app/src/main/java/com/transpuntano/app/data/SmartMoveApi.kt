@@ -270,9 +270,46 @@ class SmartMoveApi {
                 longitude = item.optStringAny("Longitud", "longitud")?.replace(',', '.')?.toDoubleOrNull() ?: 0.0,
                 street = item.optStringAny("nombreCalle", "CallePrincipal", "callePrincipal").orEmpty(),
                 intersection = item.optStringAny("inteserccionCalle", "interseccionCalle", "CalleInterseccion", "calleInterseccion").orEmpty(),
-                lineCode = line
+                lineCode = line,
+                lineCodes = linkedLineCodes(item, line)
             )
         }.distinctBy { it.code to it.identifier }
+    }
+
+    private fun linkedLineCodes(item: JSONObject, line: Int): List<Int> {
+        val codes = linkedMapOf<Int, Boolean>()
+        if (line > 0) codes[line] = true
+
+        listOf(
+            "codigoLinea", "CodigoLinea",
+            "codigoLineaParada", "CodigoLineaParada",
+            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada"
+        ).forEach { key ->
+            item.optStringAny(key)?.trim()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
+        }
+
+        val arrays = listOf("lineas", "Lineas", "listaLineas", "lineasParada", "LineasParada", "lineasJson")
+        arrays.forEach { key ->
+            val array = item.optJSONArray(key) ?: return@forEach
+            for (i in 0 until array.length()) {
+                val value = array.opt(i)
+                when (value) {
+                    is JSONObject -> {
+                        listOf(
+                            "codigoLinea", "CodigoLinea",
+                            "codigoLineaParada", "CodigoLineaParada",
+                            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada"
+                        ).forEach { field ->
+                            value.optStringAny(field)?.trim()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
+                        }
+                    }
+                    is Number -> value.toInt().takeIf { it > 0 }?.let { codes[it] = true }
+                    is String -> value.trim().toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
+                }
+            }
+        }
+
+        return codes.keys.toList()
     }
 
     private fun parseMinutes(value: String): Int? {
