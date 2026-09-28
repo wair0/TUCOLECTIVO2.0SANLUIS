@@ -1006,7 +1006,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
     private class CyberArrivalCardView(
         context: Context, private val lineLabel: String, private val destination: String, private val minutes: String,
         private val typeface: Typeface, private val cyan: Int, private val pink: Int, private val muted: Int
-    ) : FrameLayout(context) {
+    ) : View(context) {
 
         private val d=resources.displayMetrics.density
         private val sd=resources.displayMetrics.scaledDensity
@@ -1015,118 +1015,32 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         private val numericMinutes = minutes.trim().toIntOrNull()
         private val isArriving = minutes.trim().equals("ARRIBANDO", true) || (numericMinutes != null && numericMinutes <= 1)
         private val displayMinutes = if (isArriving) "ARRIBANDO" else minutes.trim()
-        private val circleSize = 77f*d
+        private var phase=0f
 
-        private val ringView = object : View(context) {
-            private var phase=0f
-            private val runner=object : Runnable {
-                override fun run() {
-                    if (!isAttachedToWindow) return
-                    val m=numericMinutes ?: 0
-                    val duration=when {
-                        isArriving || m<=0 -> 0.22f
-                        else -> (0.25f + m.toFloat()*0.08f).coerceIn(0.33f,3.0f)
-                    }
-                    phase=(phase + 360f/(duration*60f))%360f
-                    postInvalidateOnAnimation()
-                    postOnAnimationDelayed(this,16L)
+        private val runner=object : Runnable {
+            override fun run() {
+                if (!isAttachedToWindow) return
+                val m=numericMinutes ?: 0
+                val duration=when {
+                    isArriving || m<=0 -> 0.22f
+                    else -> (0.25f + m.toFloat()*0.08f).coerceIn(0.33f,3.0f)
                 }
-            }
-
-            init { setLayerType(View.LAYER_TYPE_SOFTWARE,null) }
-
-            override fun onAttachedToWindow() {
-                super.onAttachedToWindow()
-                postOnAnimation(runner)
-            }
-
-            override fun onDetachedFromWindow() {
-                removeCallbacks(runner)
-                super.onDetachedFromWindow()
-            }
-
-            override fun onDraw(c: Canvas) {
-                if (isArriving) return
-
-                val cx=width*.5f
-                val cy=height*.5f
-                val r=35f*d
-
-                // Aro base celeste neón del SVG.
-                ringPaint.style=Paint.Style.STROKE
-                ringPaint.strokeWidth=4f*d
-                ringPaint.strokeCap=Paint.Cap.ROUND
-                ringPaint.color=cyan
-                ringPaint.alpha=255
-                ringPaint.setShadowLayer(8f*d,0f,0f,cyan)
-                c.drawCircle(cx,cy,r,ringPaint)
-                ringPaint.clearShadowLayer()
-
-                // Estela magenta del SVG: se desplaza alrededor del aro.
-                val oval=RectF(cx-r,cy-r,cx+r,cy+r)
-                ringPaint.strokeWidth=4f*d
-                ringPaint.color=pink
-                ringPaint.alpha=255
-                ringPaint.setShadowLayer(9f*d,0f,0f,pink)
-                c.drawArc(oval,phase,92f,false,ringPaint)
-                ringPaint.clearShadowLayer()
-
-                // Punta luminosa de la estela.
-                val tipAngle=Math.toRadians((phase+92f).toDouble())
-                val tx=cx+(r)*kotlin.math.cos(tipAngle).toFloat()
-                val ty=cy+(r)*kotlin.math.sin(tipAngle).toFloat()
-                ringPaint.style=Paint.Style.FILL
-                ringPaint.color=pink
-                ringPaint.setShadowLayer(7f*d,0f,0f,pink)
-                c.drawCircle(tx,ty,2.8f*d,ringPaint)
-                ringPaint.clearShadowLayer()
-
-                // Minutos siempre se dibujan encima del aro.
-                p.style=Paint.Style.FILL
-                p.typeface=typeface
-                p.textAlign=Paint.Align.CENTER
-                p.color=cyan
-                p.alpha=255
-                p.textSize=15f*sd
-                c.drawText(displayMinutes,cx,cy-(p.ascent()+p.descent())*.5f,p)
-
-                p.textSize=6.5f*sd
-                val minY=cy+17f*d
-                val gap=2.2f*d
-                val mw=p.measureText("M")
-                val iw=p.measureText("I")
-                val nw=p.measureText("N")
-                val total=mw+iw+nw+gap*2f
-                var x=cx-total*.5f
-                c.drawText("M",x+mw*.5f,minY,p); x+=mw+gap
-                c.drawText("I",x+iw*.5f,minY,p); x+=iw+gap
-                c.drawText("N",x+nw*.5f,minY,p)
+                phase=(phase + 360f/(duration*60f))%360f
+                postInvalidateOnAnimation()
+                postOnAnimationDelayed(this,16L)
             }
         }
 
-        init {
-            setWillNotDraw(false)
-            setLayerType(View.LAYER_TYPE_SOFTWARE,null)
+        init { setLayerType(View.LAYER_TYPE_SOFTWARE,null) }
 
-            addView(ringView,LayoutParams(circleSize.toInt(),circleSize.toInt()).apply {
-                gravity=Gravity.RIGHT or Gravity.CENTER_VERTICAL
-                rightMargin=dp(4)
-            })
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            postOnAnimation(runner)
         }
 
-        private fun dp(v:Int)= (v*resources.displayMetrics.density).toInt()
-
-        override fun onMeasure(widthMeasureSpec:Int,heightMeasureSpec:Int) {
-            super.onMeasure(widthMeasureSpec,heightMeasureSpec)
-            setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec),dp(92))
-        }
-
-        override fun onLayout(changed:Boolean,left:Int,top:Int,right:Int,bottom:Int) {
-            val w=circleSize.toInt()
-            val h=circleSize.toInt()
-            val l=right-left-w-dp(4)
-            val t=top+(bottom-top-h)/2
-            ringView.layout(l,t,l+w,t+h)
+        override fun onDetachedFromWindow() {
+            removeCallbacks(runner)
+            super.onDetachedFromWindow()
         }
 
         override fun onDraw(c:Canvas) {
@@ -1135,6 +1049,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             val rr=width-2f*d
             val b=height-2f*d
 
+            // Fondo y marco de la tarjeta.
             p.style=Paint.Style.FILL
             p.color=0xFF050714.toInt()
             p.alpha=255
@@ -1146,12 +1061,19 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             p.alpha=235
             c.drawRect(l,t,rr,b,p)
 
+            // Textos de la tarjeta.
             p.style=Paint.Style.FILL
             p.typeface=typeface
             p.textAlign=Paint.Align.LEFT
             p.textSize=12f*sd
-            val textRight=width-circleSize-18f*d
-            p.shader=android.graphics.LinearGradient(0f,0f,textRight,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
+            val circleR=35f*d
+            val circleCx=rr-circleR-12f*d
+            val circleCy=(t+b)*.5f
+            val textRight=circleCx-circleR-16f*d
+
+            p.shader=android.graphics.LinearGradient(
+                0f,0f,textRight,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP
+            )
             c.drawText(lineLabel,12f*d,34f*d,p)
             p.shader=null
 
@@ -1186,7 +1108,62 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                 p.setShadowLayer(6f*d,0f,0f,cyan)
                 c.drawText("ARRIBANDO",(boxL+boxR)*.5f,(boxT+boxB)*.5f-(p.ascent()+p.descent())*.5f,p)
                 p.clearShadowLayer()
+                return
             }
+
+            // Aro base celeste neón.
+            ringPaint.style=Paint.Style.STROKE
+            ringPaint.strokeWidth=4f*d
+            ringPaint.strokeCap=Paint.Cap.ROUND
+            ringPaint.color=cyan
+            ringPaint.alpha=255
+            ringPaint.setShadowLayer(8f*d,0f,0f,cyan)
+            c.drawCircle(circleCx,circleCy,circleR,ringPaint)
+            ringPaint.clearShadowLayer()
+
+            // Animación móvil del SVG reproducida en Canvas.
+            val oval=RectF(
+                circleCx-circleR,
+                circleCy-circleR,
+                circleCx+circleR,
+                circleCy+circleR
+            )
+            ringPaint.strokeWidth=4f*d
+            ringPaint.color=pink
+            ringPaint.alpha=255
+            ringPaint.setShadowLayer(9f*d,0f,0f,pink)
+            c.drawArc(oval,phase,92f,false,ringPaint)
+            ringPaint.clearShadowLayer()
+
+            val tipAngle=Math.toRadians((phase+92f).toDouble())
+            val tx=circleCx+circleR*kotlin.math.cos(tipAngle).toFloat()
+            val ty=circleCy+circleR*kotlin.math.sin(tipAngle).toFloat()
+            ringPaint.style=Paint.Style.FILL
+            ringPaint.color=pink
+            ringPaint.setShadowLayer(7f*d,0f,0f,pink)
+            c.drawCircle(tx,ty,2.8f*d,ringPaint)
+            ringPaint.clearShadowLayer()
+
+            // Minutos y MIN quedan siempre por encima del círculo.
+            p.style=Paint.Style.FILL
+            p.typeface=typeface
+            p.textAlign=Paint.Align.CENTER
+            p.color=cyan
+            p.alpha=255
+            p.textSize=15f*sd
+            c.drawText(displayMinutes,circleCx,circleCy-(p.ascent()+p.descent())*.5f,p)
+
+            p.textSize=6.5f*sd
+            val minY=circleCy+17f*d
+            val gap=2.2f*d
+            val mw=p.measureText("M")
+            val iw=p.measureText("I")
+            val nw=p.measureText("N")
+            val total=mw+iw+nw+gap*2f
+            var x=circleCx-total*.5f
+            c.drawText("M",x+mw*.5f,minY,p); x+=mw+gap
+            c.drawText("I",x+iw*.5f,minY,p); x+=iw+gap
+            c.drawText("N",x+nw*.5f,minY,p)
         }
     }
 
