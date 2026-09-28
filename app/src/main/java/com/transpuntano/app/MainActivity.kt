@@ -1051,7 +1051,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                         (function() {
                             var a = document.querySelector('animateTransform');
                             if (a) {
-                                a.setAttribute('dur', '\${duration}s');
+                                a.setAttribute('dur', '${duration}s');
                                 try { a.beginElement(); } catch(e) {}
                             }
                         })();
