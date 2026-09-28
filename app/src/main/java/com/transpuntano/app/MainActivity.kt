@@ -231,8 +231,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun addDrawerItems() {
         drawerPanel.removeAllViews()
-        val border = View(this).apply { setBackgroundColor(cyan) }
-        drawerPanel.addView(border, FrameLayout.LayoutParams(dp(2), -1).apply { gravity = Gravity.END })
+
+        // Marco exterior del panel: todo se dibuja con Canvas.
+        drawerPanel.addView(CyberDrawerPanelFrameView(this, cyan, pink, resources.displayMetrics.density),
+            FrameLayout.LayoutParams(-1, -1))
+
         val items = listOf(
             Triple("INICIO", "nav_home", 0),
             Triple("LÍNEAS", "nav_lineas", 1),
@@ -240,34 +243,39 @@ class MainActivity : AppCompatActivity() {
             Triple("FAVORITOS", "nav_favoritos", 3),
             Triple("PARADAS CERCANAS", "nav_cercanas", 4)
         )
+
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(22), dp(18), dp(18))
+            setPadding(dp(18), dp(34), dp(18), dp(18))
+            clipChildren = false
+            clipToPadding = false
         }
+
         items.forEach { (label, iconName, index) ->
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(16), 0, dp(10), 0); isClickable = true; isFocusable = true
+            val item = CyberDrawerItemView(
+                this,
+                label,
+                iconName,
+                index == 0,
+                cyberpunkTypeface,
+                cyan,
+                pink,
+                muted
+            ).apply {
+                isClickable = true
+                isFocusable = true
                 setOnClickListener {
                     navigateTo(index)
                     toggleDrawer()
                 }
-                applyCyberTap(this)
             }
-            val icon = ImageView(this).apply {
-                val id = resources.getIdentifier(iconName, "drawable", packageName)
-                setImageResource(id); setColorFilter(if (index == 0) cyan else 0xFF006CFF.toInt()); alpha = 0.95f; contentDescription = label
-            }
-            row.addView(icon, LinearLayout.LayoutParams(dp(40), dp(40)).apply { rightMargin = dp(16) })
-            row.addView(TextView(this@MainActivity).apply {
-                text = label; textSize = 11f; typeface = cyberpunkTypeface; setTextColor(if (index == 0) cyan else 0xFF6D9BB0.toInt())
-            }, LinearLayout.LayoutParams(0, -2, 1f))
-            list.addView(row, LinearLayout.LayoutParams(-1, dp(60)).apply { bottomMargin = dp(10) })
+            applyCyberTap(item)
+            list.addView(item, LinearLayout.LayoutParams(-1, dp(64)).apply {
+                bottomMargin = dp(12)
+            })
         }
-        drawerPanel.addView(list, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(8) })
-        drawerPanel.addView(View(this).apply { setBackgroundColor(pink) }, FrameLayout.LayoutParams(dp(2), dp(90)).apply {
-            leftMargin = dp(8); topMargin = dp(22)
-        })
+
+        drawerPanel.addView(list, FrameLayout.LayoutParams(-1, -1))
     }
 
     private fun navigateTo(index: Int) {
@@ -953,6 +961,163 @@ class MainActivity : AppCompatActivity() {
         override fun setColorFilter(colorFilter: ColorFilter?) {}
         @Suppress("DEPRECATION")
         override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
+    private class CyberDrawerPanelFrameView(
+        context: Context,
+        private val cyan: Int,
+        private val pink: Int,
+        private val density: Float
+    ) : View(context) {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        override fun onDraw(canvas: Canvas) {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return
+
+            // Marco exterior completo del menú desplegable.
+            CyberHeaderFrameDrawable.drawFrame(
+                canvas,
+                2f * density,
+                2f * density,
+                w - 2f * density,
+                h - 2f * density,
+                cyan,
+                pink,
+                density,
+                12f * density,
+                1f,
+                0f
+            )
+
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1.2f * density
+            paint.color = cyan
+            paint.alpha = 150
+            canvas.drawLine(10f * density, 20f * density, 58f * density, 20f * density, paint)
+            canvas.drawLine(10f * density, 20f * density, 10f * density, 68f * density, paint)
+
+            paint.color = pink
+            paint.alpha = 170
+            canvas.drawLine(w - 10f * density, h - 20f * density, w - 58f * density, h - 20f * density, paint)
+            canvas.drawLine(w - 10f * density, h - 20f * density, w - 10f * density, h - 68f * density, paint)
+
+            paint.style = Paint.Style.FILL
+            paint.color = cyan
+            paint.alpha = 210
+            canvas.drawCircle(w - 16f * density, 16f * density, 2f * density, paint)
+            paint.color = pink
+            canvas.drawCircle(16f * density, h - 16f * density, 2f * density, paint)
+        }
+    }
+
+    private class CyberDrawerItemView(
+        context: Context,
+        private val label: String,
+        iconName: String,
+        private val selected: Boolean,
+        private val typeface: Typeface,
+        private val cyan: Int,
+        private val pink: Int,
+        private val muted: Int
+    ) : View(context) {
+        private val density = resources.displayMetrics.density
+        private val scaledDensity = resources.displayMetrics.scaledDensity
+        private val icon: android.graphics.drawable.Drawable? = runCatching {
+            val id = resources.getIdentifier(iconName, "drawable", context.packageName)
+            if (id != 0) resources.getDrawable(id, context.theme) else null
+        }.getOrNull()
+        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+            this.typeface = typeface
+            textSize = 10.5f * scaledDensity
+            textAlign = Paint.Align.LEFT
+        }
+        private var phase = if (selected) 0f else 8f
+        private val runner = object : Runnable {
+            override fun run() {
+                if (!isAttachedToWindow) return
+                phase += if (selected) .72f else .42f
+                postInvalidateOnAnimation()
+                postOnAnimationDelayed(this, 60L)
+            }
+        }
+
+        init {
+            setWillNotDraw(false)
+            contentDescription = label
+        }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            postOnAnimation(runner)
+        }
+
+        override fun onDetachedFromWindow() {
+            removeCallbacks(runner)
+            super.onDetachedFromWindow()
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            val frameL = 2f * density
+            val frameT = 2f * density
+            val frameR = width - 2f * density
+            val frameB = height - 2f * density
+
+            // Cada botón del menú recibe su propio marco neon Canvas.
+            CyberHeaderFrameDrawable.drawFrame(
+                canvas,
+                frameL,
+                frameT,
+                frameR,
+                frameB,
+                cyan,
+                pink,
+                density,
+                9f * density,
+                if (selected) .98f else .58f,
+                phase
+            )
+
+            val iconSize = 30f * density
+            val iconLeft = 15f * density
+            val iconTop = (height - iconSize) * .5f
+            icon?.let {
+                it.setBounds(
+                    iconLeft.toInt(),
+                    iconTop.toInt(),
+                    (iconLeft + iconSize).toInt(),
+                    (iconTop + iconSize).toInt()
+                )
+                it.alpha = if (selected) 255 else 145
+                it.setTint(if (selected) cyan else muted)
+                it.draw(canvas)
+            }
+
+            textPaint.color = if (selected) cyan else muted
+            textPaint.alpha = if (selected) 255 else 215
+            canvas.drawText(
+                label,
+                58f * density,
+                height * .5f - (textPaint.ascent() + textPaint.descent()) * .5f,
+                textPaint
+            )
+
+            // Indicador lateral y punto de estado, también en Canvas.
+            val indicatorColor = if (selected) pink else cyan
+            paintItem.color = indicatorColor
+            paintItem.alpha = if (selected) 235 else 105
+            paintItem.style = Paint.Style.FILL
+            canvas.drawCircle(width - 15f * density, height * .5f, 2f * density, paintItem)
+
+            paintItem.style = Paint.Style.STROKE
+            paintItem.strokeWidth = 1f * density
+            paintItem.alpha = if (selected) 190 else 70
+            canvas.drawLine(width - 28f * density, 14f * density, width - 18f * density, 14f * density, paintItem)
+            canvas.drawLine(width - 28f * density, height - 14f * density, width - 18f * density, height - 14f * density, paintItem)
+        }
+
+        private val paintItem = Paint(Paint.ANTI_ALIAS_FLAG)
     }
 
     private class CyberBackgroundView(context: Context) : View(context) {
