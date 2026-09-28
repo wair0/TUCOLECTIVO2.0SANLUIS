@@ -149,7 +149,7 @@ class MainActivity : AppCompatActivity() {
         val id = resources.getIdentifier(iconName, "drawable", packageName)
         setImageResource(id)
         setColorFilter(cyan)
-        background = CyberHeaderFrameDrawable(cyan, pink, resources.displayMetrics.density, dp(7).toFloat(), dp(4).toFloat())
+        background = AnimatedCyberFrameDrawable(cyan, pink, resources.displayMetrics.density, dp(7).toFloat(), dp(4).toFloat())
         contentDescription = description
         scaleType = ImageView.ScaleType.CENTER
         setPadding(dp(8), dp(8), dp(8), dp(8))
@@ -196,8 +196,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class CyberBottomBarBackground(private val density: Float) : android.graphics.drawable.Drawable() {
-        private val p=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
+        private val p=Paint(Paint.ANTI_ALIAS_FLAG)
+        private var phase = 0f
+        private val animator = object : Runnable {
+            override fun run() {
+                phase = (phase + 0.8f) % 16f
+                invalidateSelf()
+                scheduleSelf(this, SystemClock.uptimeMillis() + 55L)
+            }
+        }
         var selectedIndex=0; set(v){field=v;invalidateSelf()}
+
+        override fun setCallback(callback: android.graphics.drawable.Drawable.Callback?) {
+            super.setCallback(callback)
+            if (callback != null) scheduleSelf(animator, SystemClock.uptimeMillis() + 55L)
+            else unscheduleSelf(animator)
+        }
         override fun draw(c:Canvas){ val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
             val lime=0xFF00F0FF.toInt(); val orange=0xFFFF00FF.toInt(); val blue=0xFF006CFF.toInt()
             // Fondo completamente opaco y limpio: sin triángulos ni diagonales decorativas.
@@ -211,7 +225,7 @@ class MainActivity : AppCompatActivity() {
             p.shader=null
 
             // Marco exterior completo: cubre todo el perímetro de la barra inferior.
-            CyberHeaderFrameDrawable.drawFrame(c, 1.5f, 1.5f, w - 1.5f, h - 1.5f, lime, orange, density, 9f * density, 1f, 0f)
+            CyberHeaderFrameDrawable.drawFrame(c, 1.5f, 1.5f, w - 1.5f, h - 1.5f, lime, orange, density, 9f * density, 1f, phase)
             p.style=Paint.Style.STROKE
             p.strokeWidth=1.5f
             p.color=lime
@@ -395,6 +409,13 @@ class MainActivity : AppCompatActivity() {
         }.getOrNull()
     }
 
+    private fun addCyberVioletFrame(container: FrameLayout) {
+        val frame = AnimatedVioletCyberFrameView(this)
+        frame.isClickable = false
+        frame.isFocusable = false
+        container.addView(frame, FrameLayout.LayoutParams(-1, -1))
+    }
+
     private fun cardHomeAsset(assetName: String, description: String = assetName, action: () -> Unit) = FrameLayout(this).apply {
         setBackgroundColor(panelColor)
         setOnClickListener { action() }
@@ -415,6 +436,7 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(cyan); contentDescription = description
             }, FrameLayout.LayoutParams(-1, -1))
         }
+        addCyberVioletFrame(this)
     }
 
     private fun cardHomeImage(assetName: String, action: () -> Unit) = FrameLayout(this).apply {
@@ -429,6 +451,7 @@ class MainActivity : AppCompatActivity() {
             contentDescription = "LÍNEAS · Recorridos y calles"
         }
         addView(image, FrameLayout.LayoutParams(-1, -1))
+        addCyberVioletFrame(this)
     }
 
     private fun box() = LinearLayout(this).apply {
@@ -462,14 +485,26 @@ class MainActivity : AppCompatActivity() {
     private fun cyberSyncButton(action: () -> Unit): View {
         val bitmap = loadAssetBitmap("sincronizar_lineas.webp")
         if (bitmap == null) {
-            return button("SINCRONIZAR LÍNEAS", cyan, action).also { applyCyberTap(it) }
+            return FrameLayout(this).apply {
+                addView(button("SINCRONIZAR LÍNEAS", cyan, action).also { applyCyberTap(it) },
+                    FrameLayout.LayoutParams(-1, -1))
+                addCyberVioletFrame(this)
+            }
         }
-        return ImageView(this).apply {
-            setImageBitmap(bitmap); scaleType = ImageView.ScaleType.FIT_XY
-            contentDescription = "Sincronizar líneas"; isClickable = true; isFocusable = true
-            background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+        return FrameLayout(this).apply {
+            addView(ImageView(this@MainActivity).apply {
+                setImageBitmap(bitmap)
+                scaleType = ImageView.ScaleType.FIT_XY
+                contentDescription = "Sincronizar líneas"
+                isClickable = false
+                isFocusable = false
+                background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+            }, FrameLayout.LayoutParams(-1, -1))
+            isClickable = true
+            isFocusable = true
             setOnClickListener { action() }
             applyCyberTap(this)
+            addCyberVioletFrame(this)
         }
     }
 
@@ -1296,6 +1331,52 @@ class MainActivity : AppCompatActivity() {
         override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
     }
 
+    private class AnimatedVioletCyberFrameView(context: Context) : View(context) {
+        private val density = resources.displayMetrics.density
+        private var phase = 0f
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val path = Path()
+        private val runner = object : Runnable {
+            override fun run() {
+                if (!isAttachedToWindow) return
+                phase = (phase + 0.75f) % 16f
+                postInvalidateOnAnimation()
+                postOnAnimationDelayed(this, 55L)
+            }
+        }
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
+        override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
+        override fun onDraw(canvas: Canvas) {
+            val w = width.toFloat(); val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return
+            val cut = minOf(10f * density, minOf(w, h) * .18f)
+            path.reset()
+            path.moveTo(cut, 1.5f * density)
+            path.lineTo(w - cut, 1.5f * density)
+            path.lineTo(w - 1.5f * density, 1.5f * density + cut)
+            path.lineTo(w - 1.5f * density, h - cut)
+            path.lineTo(w - cut, h - 1.5f * density)
+            path.lineTo(cut, h - 1.5f * density)
+            path.lineTo(1.5f * density, h - cut)
+            path.lineTo(1.5f * density, cut)
+            path.close()
+            val violet = 0xFFD000FF.toInt()
+            val violetBright = 0xFFFF4DFF.toInt()
+            val pulse = 0.72f + 0.28f * ((kotlin.math.sin(phase * 0.55f) + 1f) * .5f)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 6f * density; paint.color = violet; paint.alpha = (32f * pulse).toInt()
+            canvas.drawPath(path, paint)
+            paint.strokeWidth = 2.6f * density; paint.color = violetBright; paint.alpha = (150f * pulse).toInt()
+            canvas.drawPath(path, paint)
+            paint.strokeWidth = 1.15f * density; paint.color = violetBright; paint.alpha = 235
+            canvas.drawPath(path, paint)
+            val sweep = ((phase % 16f) / 16f)
+            paint.strokeWidth = 2f * density; paint.color = violetBright; paint.alpha = 230
+            val topX = 1.5f * density + (w - 3f * density) * sweep
+            canvas.drawLine(topX, 1.5f * density, minOf(topX + 16f * density, w - 1.5f * density), 1.5f * density, paint)
+        }
+    }
+
     private class AnimatedCyberFrameDrawable(
         private val cyan: Int,
         private val pink: Int,
@@ -1422,6 +1503,17 @@ class MainActivity : AppCompatActivity() {
     private class CyberHeaderView(context: Context) : View(context) {
         private val p = Paint(Paint.ANTI_ALIAS_FLAG)
         private val density = resources.displayMetrics.density
+        private var phase = 0f
+        private val runner = object : Runnable {
+            override fun run() {
+                if (!isAttachedToWindow) return
+                phase = (phase + 0.7f) % 16f
+                postInvalidateOnAnimation()
+                postOnAnimationDelayed(this, 55L)
+            }
+        }
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); postOnAnimation(runner) }
+        override fun onDetachedFromWindow() { removeCallbacks(runner); super.onDetachedFromWindow() }
 
         override fun onDraw(c: Canvas) {
             val w = width.toFloat()
@@ -1451,7 +1543,7 @@ class MainActivity : AppCompatActivity() {
                 density,
                 9f * density,
                 1f,
-                0f
+                phase
             )
 
             // Detalles interiores neon que acompañan al marco exterior.
