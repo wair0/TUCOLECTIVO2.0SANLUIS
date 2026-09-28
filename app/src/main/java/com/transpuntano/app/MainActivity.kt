@@ -1136,14 +1136,17 @@ class MainActivity : AppCompatActivity() {
      * Android 7-11:
      * - Mantiene Movie como fallback para conservar minSdk 24.
      */
+    /**
+     * Fondo GIF animado real.
+     *
+     * Se usa Movie directamente para evitar depender de ImageDecoder /
+     * AnimatedImageDrawable y de sus callbacks internos. La vista se dibuja
+     * en capa de software para que el renderizado de Movie sea consistente.
+     */
     private class AnimatedGifBackgroundView(context: Context) : View(context) {
-        private val animatedDrawable: android.graphics.drawable.AnimatedImageDrawable? =
-            if (android.os.Build.VERSION.SDK_INT >= 31) loadAnimatedDrawable(context) else null
-
-        private val movie: android.graphics.Movie? =
-            if (animatedDrawable == null) loadMovie(context) else null
-
+        private var movie: android.graphics.Movie? = null
         private var startedAt = 0L
+        private var loadError = false
 
         private val invalidator = object : Runnable {
             override fun run() {
@@ -1157,89 +1160,55 @@ class MainActivity : AppCompatActivity() {
             setWillNotDraw(false)
             isClickable = false
             isFocusable = false
-        }
-
-        private fun loadGifBytes(context: Context): ByteArray? {
-            return runCatching {
-                val encoded = context.assets
-                    .open("background_cyberpunk.gif.b64")
-                    .bufferedReader()
-                    .use { it.readText() }
-                    .trim()
-
-                if (encoded.isEmpty()) null
-                else Base64.decode(encoded, Base64.DEFAULT)
-            }.getOrNull()
-        }
-
-        private fun loadAnimatedDrawable(
-            context: Context
-        ): android.graphics.drawable.AnimatedImageDrawable? {
-            if (android.os.Build.VERSION.SDK_INT < 31) return null
-
-            return runCatching {
-                val bytes = loadGifBytes(context) ?: return@runCatching null
-                val source = android.graphics.ImageDecoder.createSource(bytes)
-                val drawable = android.graphics.ImageDecoder.decodeDrawable(source)
-
-                (drawable as? android.graphics.drawable.AnimatedImageDrawable)?.apply {
-                    setRepeatCount(
-                        android.graphics.drawable.AnimatedImageDrawable.REPEAT_INFINITE
-                    )
-                    setAutoMirrored(false)
-                    start()
-                }
-            }.getOrNull()
+            // Movie/GIF se renderiza de forma fiable mediante Canvas software.
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            movie = loadMovie(context)
         }
 
         private fun loadMovie(context: Context): android.graphics.Movie? {
             return runCatching {
                 val encoded = context.assets
                     .open("background_cyberpunk.gif.b64")
-                    .bufferedReader()
+                    .bufferedReader(Charsets.US_ASCII)
                     .use { it.readText() }
-                    .trim()
+                    .filterNot { it.isWhitespace() }
+
+                if (encoded.isEmpty()) {
+                    loadError = true
+                    return@runCatching null
+                }
 
                 val bytes = Base64.decode(encoded, Base64.DEFAULT)
-                android.graphics.Movie.decodeStream(ByteArrayInputStream(bytes))
-            }.getOrNull()
+                if (bytes.size < 10 || bytes[0] != 0x47.toByte() ||
+                    bytes[1] != 0x49.toByte() || bytes[2] != 0x46.toByte()) {
+                    loadError = true
+                    return@runCatching null
+                }
+
+                android.graphics.Movie.decodeStream(ByteArrayInputStream(bytes)).also {
+                    if (it == null) loadError = true
+                }
+            }.getOrElse {
+                loadError = true
+                null
+            }
         }
 
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
             startedAt = SystemClock.uptimeMillis()
-            animatedDrawable?.start()
             postOnAnimation(invalidator)
         }
 
         override fun onDetachedFromWindow() {
             removeCallbacks(invalidator)
-            animatedDrawable?.stop()
             super.onDetachedFromWindow()
         }
 
         override fun onDraw(canvas: Canvas) {
+            val gif = movie ?: return
             if (width <= 0 || height <= 0) return
 
-            animatedDrawable?.let { drawable ->
-                val dw = drawable.intrinsicWidth.toFloat()
-                val dh = drawable.intrinsicHeight.toFloat()
-                if (dw <= 0f || dh <= 0f) return
-
-                val scale = maxOf(width / dw, height / dh)
-                val drawW = dw * scale
-                val drawH = dh * scale
-                val left = ((width - drawW) * .5f).roundToInt()
-                val top = ((height - drawH) * .5f).roundToInt()
-                val right = (left + drawW).roundToInt()
-                val bottom = (top + drawH).roundToInt()
-
-                drawable.setBounds(left, top, right, bottom)
-                drawable.draw(canvas)
-                return
-            }
-
-            val gif = movie ?: return
             val duration = gif.duration().takeIf { it > 0 } ?: 12000
             val elapsed = ((SystemClock.uptimeMillis() - startedAt) % duration).toInt()
             gif.setTime(elapsed)
@@ -1248,6 +1217,7 @@ class MainActivity : AppCompatActivity() {
             val mh = gif.height().toFloat()
             if (mw <= 0f || mh <= 0f) return
 
+            // Cover: ocupa todo el contenedor sin deformar el GIF.
             val scale = maxOf(width / mw, height / mh)
             val drawW = mw * scale
             val drawH = mh * scale
