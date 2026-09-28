@@ -1007,25 +1007,97 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         context: Context, private val lineLabel: String, private val destination: String, private val minutes: String,
         private val typeface: Typeface, private val cyan: Int, private val pink: Int, private val muted: Int
     ) : FrameLayout(context) {
+
         private val d=resources.displayMetrics.density
         private val sd=resources.displayMetrics.scaledDensity
         private val p=Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
+        private val ringPaint=Paint(Paint.ANTI_ALIAS_FLAG)
         private val numericMinutes = minutes.trim().toIntOrNull()
         private val isArriving = minutes.trim().equals("ARRIBANDO", true) || (numericMinutes != null && numericMinutes <= 1)
         private val displayMinutes = if (isArriving) "ARRIBANDO" else minutes.trim()
-        private val circleSize = 77f * d
-        private val webView = android.webkit.WebView(context)
-        private val counterOverlay = object : View(context) {
+        private val circleSize = 77f*d
+
+        private val ringView = object : View(context) {
+            private var phase=0f
+            private val runner=object : Runnable {
+                override fun run() {
+                    if (!isAttachedToWindow) return
+                    val m=numericMinutes ?: 0
+                    val duration=when {
+                        isArriving || m<=0 -> 0.22f
+                        else -> (0.25f + m.toFloat()*0.08f).coerceIn(0.33f,3.0f)
+                    }
+                    phase=(phase + 360f/(duration*60f))%360f
+                    postInvalidateOnAnimation()
+                    postOnAnimationDelayed(this,16L)
+                }
+            }
+
+            init { setLayerType(View.LAYER_TYPE_SOFTWARE,null) }
+
+            override fun onAttachedToWindow() {
+                super.onAttachedToWindow()
+                postOnAnimation(runner)
+            }
+
+            override fun onDetachedFromWindow() {
+                removeCallbacks(runner)
+                super.onDetachedFromWindow()
+            }
+
             override fun onDraw(c: Canvas) {
                 if (isArriving) return
-                p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER
-                p.color=cyan; p.alpha=255; p.textSize=15f*sd
-                val cx=width*.5f; val cy=height*.5f
+
+                val cx=width*.5f
+                val cy=height*.5f
+                val r=35f*d
+
+                // Aro base celeste neón del SVG.
+                ringPaint.style=Paint.Style.STROKE
+                ringPaint.strokeWidth=4f*d
+                ringPaint.strokeCap=Paint.Cap.ROUND
+                ringPaint.color=cyan
+                ringPaint.alpha=255
+                ringPaint.setShadowLayer(8f*d,0f,0f,cyan)
+                c.drawCircle(cx,cy,r,ringPaint)
+                ringPaint.clearShadowLayer()
+
+                // Estela magenta del SVG: se desplaza alrededor del aro.
+                val oval=RectF(cx-r,cy-r,cx+r,cy+r)
+                ringPaint.strokeWidth=4f*d
+                ringPaint.color=pink
+                ringPaint.alpha=255
+                ringPaint.setShadowLayer(9f*d,0f,0f,pink)
+                c.drawArc(oval,phase,92f,false,ringPaint)
+                ringPaint.clearShadowLayer()
+
+                // Punta luminosa de la estela.
+                val tipAngle=Math.toRadians((phase+92f).toDouble())
+                val tx=cx+(r)*kotlin.math.cos(tipAngle).toFloat()
+                val ty=cy+(r)*kotlin.math.sin(tipAngle).toFloat()
+                ringPaint.style=Paint.Style.FILL
+                ringPaint.color=pink
+                ringPaint.setShadowLayer(7f*d,0f,0f,pink)
+                c.drawCircle(tx,ty,2.8f*d,ringPaint)
+                ringPaint.clearShadowLayer()
+
+                // Minutos siempre se dibujan encima del aro.
+                p.style=Paint.Style.FILL
+                p.typeface=typeface
+                p.textAlign=Paint.Align.CENTER
+                p.color=cyan
+                p.alpha=255
+                p.textSize=15f*sd
                 c.drawText(displayMinutes,cx,cy-(p.ascent()+p.descent())*.5f,p)
+
                 p.textSize=6.5f*sd
-                val minY=cy+17f*d; val gap=2.2f*d
-                val mw=p.measureText("M"); val iw=p.measureText("I"); val nw=p.measureText("N")
-                val total=mw+iw+nw+gap*2f; var x=cx-total*.5f
+                val minY=cy+17f*d
+                val gap=2.2f*d
+                val mw=p.measureText("M")
+                val iw=p.measureText("I")
+                val nw=p.measureText("N")
+                val total=mw+iw+nw+gap*2f
+                var x=cx-total*.5f
                 c.drawText("M",x+mw*.5f,minY,p); x+=mw+gap
                 c.drawText("I",x+iw*.5f,minY,p); x+=iw+gap
                 c.drawText("N",x+nw*.5f,minY,p)
@@ -1033,77 +1105,88 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         }
 
         init {
-            setWillNotDraw(false); setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-            webView.settings.javaScriptEnabled = true
-            webView.settings.domStorageEnabled = false
-            webView.setBackgroundColor(Color.TRANSPARENT)
-            webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-            webView.webViewClient = object : android.webkit.WebViewClient() {
-                override fun onPageFinished(view: android.webkit.WebView, url: String?) {
-                    super.onPageFinished(view, url)
-                    val m = numericMinutes ?: 0
-                    // El SVG original gira en 1.1 s. Menos minutos = mayor velocidad.
-                    val duration = when {
-                        isArriving || m <= 0 -> 0.22f
-                        else -> (0.25f + m.toFloat() * 0.08f).coerceIn(0.33f, 3.0f)
-                    }
-                    val js = """
-                        (function() {
-                            var a = document.querySelector('animateTransform');
-                            if (a) {
-                                a.setAttribute('dur', '${duration}s');
-                                try { a.beginElement(); } catch(e) {}
-                            }
-                        })();
-                    """.trimIndent()
-                    view.evaluateJavascript(js, null)
-                }
-            }
-            webView.loadUrl("file:///android_asset/neon-circle.svg")
-            addView(webView, LayoutParams(circleSize.toInt(), circleSize.toInt()).apply {
-                gravity=Gravity.RIGHT or Gravity.CENTER_VERTICAL; rightMargin=dp(4)
-            })
-            addView(counterOverlay, LayoutParams(circleSize.toInt(), circleSize.toInt()).apply {
-                gravity=Gravity.RIGHT or Gravity.CENTER_VERTICAL; rightMargin=dp(4)
+            setWillNotDraw(false)
+            setLayerType(View.LAYER_TYPE_SOFTWARE,null)
+
+            addView(ringView,LayoutParams(circleSize.toInt(),circleSize.toInt()).apply {
+                gravity=Gravity.RIGHT or Gravity.CENTER_VERTICAL
+                rightMargin=dp(4)
             })
         }
 
-        private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+        private fun dp(v:Int)= (v*resources.displayMetrics.density).toInt()
 
-        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-            setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), dp(92))
+        override fun onMeasure(widthMeasureSpec:Int,heightMeasureSpec:Int) {
+            super.onMeasure(widthMeasureSpec,heightMeasureSpec)
+            setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec),dp(92))
         }
 
-        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-            val w=circleSize.toInt(); val h=circleSize.toInt()
-            val l=right-left-w-dp(4); val t=top+(bottom-top-h)/2
-            webView.layout(l,t,l+w,t+h); counterOverlay.layout(l,t,l+w,t+h)
+        override fun onLayout(changed:Boolean,left:Int,top:Int,right:Int,bottom:Int) {
+            val w=circleSize.toInt()
+            val h=circleSize.toInt()
+            val l=right-left-w-dp(4)
+            val t=top+(bottom-top-h)/2
+            ringView.layout(l,t,l+w,t+h)
         }
 
-        override fun onDraw(c: Canvas) {
-            val l=2f*d; val t=2f*d; val rr=width-2f*d; val b=height-2f*d
-            p.style=Paint.Style.FILL; p.color=0xFF050714.toInt(); p.alpha=255; c.drawRect(l,t,rr,b,p)
-            p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=235; c.drawRect(l,t,rr,b,p)
-            p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.LEFT; p.textSize=12f*sd
+        override fun onDraw(c:Canvas) {
+            val l=2f*d
+            val t=2f*d
+            val rr=width-2f*d
+            val b=height-2f*d
+
+            p.style=Paint.Style.FILL
+            p.color=0xFF050714.toInt()
+            p.alpha=255
+            c.drawRect(l,t,rr,b,p)
+
+            p.style=Paint.Style.STROKE
+            p.strokeWidth=2f*d
+            p.color=cyan
+            p.alpha=235
+            c.drawRect(l,t,rr,b,p)
+
+            p.style=Paint.Style.FILL
+            p.typeface=typeface
+            p.textAlign=Paint.Align.LEFT
+            p.textSize=12f*sd
             val textRight=width-circleSize-18f*d
             p.shader=android.graphics.LinearGradient(0f,0f,textRight,0f,cyan,pink,android.graphics.Shader.TileMode.CLAMP)
-            c.drawText(lineLabel,12f*d,34f*d,p); p.shader=null
-            p.textSize=9f*sd; p.color=pink; p.alpha=255; p.setShadowLayer(5f*d,0f,0f,pink)
-            c.drawText(destination,12f*d,57f*d,p); p.clearShadowLayer()
-            if (isArriving) {
-                val boxW=108f*d; val boxH=46f*d; val boxL=rr-boxW-10f*d; val boxT=(t+b-boxH)*.5f
-                val boxR=rr-8f*d; val boxB=boxT+boxH; val rect=RectF(boxL,boxT,boxR,boxB)
-                p.style=Paint.Style.STROKE; p.strokeWidth=2f*d; p.color=cyan; p.alpha=220
-                c.drawRoundRect(rect,7f*d,7f*d,p)
-                p.style=Paint.Style.FILL; p.typeface=typeface; p.textAlign=Paint.Align.CENTER; p.textSize=10f*sd; p.color=cyan; p.alpha=255
-                p.setShadowLayer(6f*d,0f,0f,cyan)
-                c.drawText("ARRIBANDO",(boxL+boxR)*.5f,(boxT+boxB)*.5f-(p.ascent()+p.descent())*.5f,p); p.clearShadowLayer()
-            }
-        }
+            c.drawText(lineLabel,12f*d,34f*d,p)
+            p.shader=null
 
-        override fun onDetachedFromWindow() {
-            webView.stopLoading(); webView.destroy(); super.onDetachedFromWindow()
+            p.textSize=9f*sd
+            p.color=pink
+            p.alpha=255
+            p.setShadowLayer(5f*d,0f,0f,pink)
+            c.drawText(destination,12f*d,57f*d,p)
+            p.clearShadowLayer()
+
+            if (isArriving) {
+                val boxW=108f*d
+                val boxH=46f*d
+                val boxL=rr-boxW-10f*d
+                val boxT=(t+b-boxH)*.5f
+                val boxR=rr-8f*d
+                val boxB=boxT+boxH
+                val rect=RectF(boxL,boxT,boxR,boxB)
+
+                p.style=Paint.Style.STROKE
+                p.strokeWidth=2f*d
+                p.color=cyan
+                p.alpha=220
+                c.drawRoundRect(rect,7f*d,7f*d,p)
+
+                p.style=Paint.Style.FILL
+                p.typeface=typeface
+                p.textAlign=Paint.Align.CENTER
+                p.textSize=10f*sd
+                p.color=cyan
+                p.alpha=255
+                p.setShadowLayer(6f*d,0f,0f,cyan)
+                c.drawText("ARRIBANDO",(boxL+boxR)*.5f,(boxT+boxB)*.5f-(p.ascent()+p.descent())*.5f,p)
+                p.clearShadowLayer()
+            }
         }
     }
 
