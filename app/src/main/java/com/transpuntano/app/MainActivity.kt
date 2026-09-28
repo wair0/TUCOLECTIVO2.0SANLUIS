@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
         navBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            background = CyberBottomBarBackground()
+            background = CyberBottomBarBackground(resources.displayMetrics.density)
             visibility = View.VISIBLE
         }
         root.addView(navBar, LinearLayout.LayoutParams(-1, dp(72)))
@@ -192,7 +192,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private class CyberBottomBarBackground : android.graphics.drawable.Drawable() {
+    private class CyberBottomBarBackground(private val density: Float) : android.graphics.drawable.Drawable() {
         private val p=Paint(Paint.ANTI_ALIAS_FLAG); private val path=Path()
         var selectedIndex=0; set(v){field=v;invalidateSelf()}
         override fun draw(c:Canvas){ val w=bounds.width().toFloat(); val h=bounds.height().toFloat()
@@ -201,7 +201,7 @@ class MainActivity : AppCompatActivity() {
             val cw=w/5f
             for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex) lime else blue;p.alpha=if(i==selectedIndex)30 else 12;path.reset();path.moveTo(x+4,h);path.lineTo(x+cw*.32f,0f);path.lineTo(x+cw-4,0f);path.lineTo(x+cw*.68f,h);path.close();c.drawPath(path,p)}
             // Marco exterior completo: cubre todo el perímetro de la barra inferior.
-            CyberHeaderFrameDrawable.drawFrame(c, 1.5f, 1.5f, w - 1.5f, h - 1.5f, lime, orange, resources.displayMetrics.density, 9f * resources.displayMetrics.density, 1f, 0f)
+            CyberHeaderFrameDrawable.drawFrame(c, 1.5f, 1.5f, w - 1.5f, h - 1.5f, lime, orange, density, 9f * density, 1f, 0f)
             p.style=Paint.Style.STROKE;p.strokeWidth=1.5f;p.color=lime;p.alpha=190;c.drawLine(4f,3f,w*.18f,3f,p);c.drawLine(w*.82f,3f,w-4f,3f,p)
             for(i in 0..4){val x=i*cw;p.color=if(i==selectedIndex)lime else blue;p.alpha=150;p.strokeWidth=1f;c.drawLine(x+cw*.2f,h-5f,x+cw*.48f,5f,p);c.drawLine(x+cw*.52f,5f,x+cw*.8f,h-5f,p)}
             val x=selectedIndex.coerceIn(0,4)*cw;p.color=orange;p.alpha=240;p.strokeWidth=2f;c.drawLine(x+8f,h-5f,x+cw-8f,h-5f,p)
