@@ -161,8 +161,8 @@ class SmartMoveApi {
     private fun soap(operation: String, params: List<SoapParam>, timeoutMs: Int = TIMEOUT_MS): JSONObject {
         val connection = (URL(SOAP_ENDPOINT).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
-            connectTimeout = TIMEOUT_MS
-            readTimeout = TIMEOUT_MS
+            connectTimeout = timeoutMs
+            readTimeout = timeoutMs
             doInput = true
             doOutput = true
             useCaches = false
