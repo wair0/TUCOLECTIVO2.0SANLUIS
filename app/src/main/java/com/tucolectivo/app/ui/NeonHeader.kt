@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.text.TextStyle
@@ -25,7 +24,9 @@ import kotlin.math.sin
 private val NeonCeleste = Color(0xFF19D9FF)
 private val NeonCore = Color(0xFFE8FCFF)
 private val NeonPink = Color(0xFFFF2E9A)
-private val Ink = Color(0xFF060912)
+private val NeonPurple = Color(0xFF9D45FF)
+private val NeonGreen = Color(0xFF25FFB7)
+private val Ink = Color(0xFF030712)
 private val TAU = (2.0 * PI).toFloat()
 
 data class NeonNotification(
@@ -50,124 +51,200 @@ fun NeonHeader(
 ) {
     val cyberFont = rememberCyberpunkFontFamily()
     val infinite = rememberInfiniteTransition(label = "header")
-    val t by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(3800, easing = LinearEasing)), label = "t")
-    val pulse by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(1100, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
-    val breath by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breath")
+    val t by infinite.animateFloat(
+        0f, 1f,
+        infiniteRepeatable(tween(4200, easing = LinearEasing)),
+        label = "scan"
+    )
+    val pulse by infinite.animateFloat(
+        0f, 1f,
+        infiniteRepeatable(tween(1050, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "pulse"
+    )
+    val breath by infinite.animateFloat(
+        0f, 1f,
+        infiniteRepeatable(tween(2300, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "breath"
+    )
 
     Box(modifier.fillMaxWidth().height(92.dp).zIndex(40f)) {
         Canvas(Modifier.fillMaxSize()) {
-            val flick = when {
-                t in 0.58f..0.595f -> 0.35f
-                t in 0.62f..0.628f -> 0.5f
-                t in 0.71f..0.718f -> 0.4f
-                else -> 1f
-            }
-            val glow = (0.45f + 0.3f * breath + 0.4f * pulse) * flick
             val w = size.width
             val h = size.height
-            // INSET: el stroke multi-capa del neon no se sale de la pantalla
-            val inset = 6.dp.toPx()
-            drawRect(Ink.copy(alpha = 0.94f))
-            val line = Path().apply {
-                moveTo(inset, inset)
-                lineTo(w - inset, inset)
-                lineTo(w - inset, h - inset)
-                lineTo(inset, h - inset)
-                close()
+            val inset = 5.dp.toPx()
+            val glow = 0.72f + 0.42f * pulse + 0.22f * breath
+            val flick = when {
+                t in 0.23f..0.242f -> 0.38f
+                t in 0.51f..0.522f -> 0.55f
+                t in 0.78f..0.789f -> 0.42f
+                else -> 1f
             }
-            neonStroke(NeonCeleste, 2.dp.toPx(), glow, flick) { c, st -> drawPath(line, c, style = st) }
-            val m = PathMeasure().apply { setPath(line, false) }
-            val head = m.length * t
-            val tail = m.length * 0.16f
-            val seg = Path()
-            for (k in 0 until 5) {
-                val from = (head - tail * (k + 1) / 5).coerceAtLeast(0f)
-                val to = head - tail * k / 5
-                if (to > from) {
-                    seg.reset()
-                    m.getSegment(from, to, seg, true)
-                    neonStroke(NeonCeleste, 3.dp.toPx(), 1.8f, 1f - k / 5f, layers = 2) { c, st ->
-                        drawPath(seg, c, style = st)
-                    }
-                }
+
+            drawRect(Ink)
+
+            // HUD grid interior.
+            for (x in 0..12) {
+                val xx = w * x / 12f
+                drawLine(
+                    NeonCeleste.copy(alpha = 0.035f),
+                    Offset(xx, inset + 1.dp.toPx()),
+                    Offset(xx, h - inset - 1.dp.toPx()),
+                    1f
+                )
             }
-            val y = h - inset
-            for (i in 0..2) {
-                val on = (t * 9f).toInt() % 3 == i
+            for (y in 0..4) {
+                val yy = h * y / 4f
+                drawLine(
+                    NeonPurple.copy(alpha = 0.035f),
+                    Offset(inset, yy),
+                    Offset(w - inset, yy),
+                    1f
+                )
+            }
+
+            // Rectangular frame: no cut/diagonal corners.
+            val frame = Rect(inset, inset, w - inset, h - inset)
+            neonStroke(NeonCeleste, 2.2.dp.toPx(), glow, flick, layers = 5) { c, st ->
+                drawRect(frame, c, style = st)
+            }
+            drawRect(
+                NeonPink.copy(alpha = 0.2f + 0.25f * pulse),
+                Offset(inset + 2.dp.toPx(), inset + 2.dp.toPx()),
+                Size(w - 2 * inset - 4.dp.toPx(), 1.5.dp.toPx())
+            )
+
+            // Moving energy scan around the perimeter.
+            val scanX = inset + (w - 2 * inset) * t
+            drawRect(
+                Brush.horizontalGradient(
+                    listOf(Color.Transparent, NeonCeleste.copy(alpha = 0.9f), Color.Transparent)
+                ),
+                Offset(scanX - 28.dp.toPx(), inset),
+                Size(56.dp.toPx(), 2.5.dp.toPx())
+            )
+
+            // Segmented cyber bars around the center HUD.
+            val barY = h - 14.dp.toPx()
+            for (i in 0..7) {
+                val active = ((t * 8f).toInt() + i) % 8 < 3
+                val c = if (i % 2 == 0) NeonCeleste else NeonPink
                 drawRect(
-                    NeonPink.copy(alpha = if (on) 1f else 0.3f),
-                    Offset(w / 2f - 15.dp.toPx() + i * 11.dp.toPx(), y - 2.dp.toPx()),
+                    c.copy(alpha = if (active) 0.95f else 0.22f),
+                    Offset(w * 0.30f + i * 9.dp.toPx(), barY),
+                    Size(6.dp.toPx(), 3.dp.toPx())
+                )
+                drawRect(
+                    c.copy(alpha = if (active) 0.95f else 0.22f),
+                    Offset(w * 0.70f - i * 9.dp.toPx(), barY),
                     Size(6.dp.toPx(), 3.dp.toPx())
                 )
             }
+
+            // Dynamic status HUD plate.
+            val plate = Rect(
+                w * 0.365f,
+                h * 0.61f,
+                w * 0.635f,
+                h * 0.91f
+            )
+            drawRoundRect(
+                Brush.horizontalGradient(
+                    listOf(NeonCeleste.copy(alpha = 0.08f), Ink.copy(alpha = 0.96f), NeonPink.copy(alpha = 0.08f))
+                ),
+                plate,
+                cornerRadius = CornerRadius(5.dp.toPx())
+            )
+            neonStroke(NeonCeleste, 1.2.dp.toPx(), glow, 0.9f, layers = 3) { c, st ->
+                drawRoundRect(plate, cornerRadius = CornerRadius(5.dp.toPx()), style = st, color = c)
+            }
+            drawCircle(
+                NeonGreen.copy(alpha = 0.25f + 0.45f * pulse),
+                8.dp.toPx(),
+                Offset(w * 0.395f, h * 0.765f)
+            )
+            drawCircle(NeonGreen, 3.2.dp.toPx(), Offset(w * 0.395f, h * 0.765f))
+
+            // Tiny circuit traces.
+            val traceY = h * 0.48f
+            drawLine(NeonCeleste.copy(alpha = 0.6f), Offset(w * 0.23f, traceY), Offset(w * 0.34f, traceY), 1.5.dp.toPx())
+            drawLine(NeonPink.copy(alpha = 0.6f), Offset(w * 0.66f, traceY), Offset(w * 0.77f, traceY), 1.5.dp.toPx())
+            drawCircle(NeonCeleste, 2.dp.toPx(), Offset(w * 0.23f, traceY))
+            drawCircle(NeonPink, 2.dp.toPx(), Offset(w * 0.77f, traceY))
         }
 
+        // Interactive surfaces remain Compose controls so the three contextual menus keep working.
         Row(
-            Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.Top
+            Modifier.fillMaxSize().padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            HeaderIconButton(active = menuOpen, onClick = onMenuClick) { _, p, g, o -> menuIcon(p, g, o) }
+            HeaderIconButton(active = menuOpen, onClick = onMenuClick) { _, _, _, _ -> }
             Spacer(Modifier.weight(1f))
-            HeaderIconButton(active = searchOpen, phaseMs = 500, onClick = onSearchClick) { tt, p, g, o ->
-                searchIcon(tt, p, g, o)
-            }
-            Spacer(Modifier.width(8.dp))
+            HeaderIconButton(active = searchOpen, phaseMs = 500, onClick = onSearchClick) { _, _, _, _ -> }
+            Spacer(Modifier.width(6.dp))
             HeaderIconButton(
                 active = notificationsOpen,
                 phaseMs = 1000,
                 badge = hasUnread,
                 onClick = onNotificationsClick
-            ) { tt, p, g, o ->
-                bellIcon(tt, p, g, o, hasUnread)
-            }
+            ) { _, _, _, _ -> }
+        }
+
+        // Bus glyph and title are rendered independently from the clickable buttons.
+        Canvas(
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(60.dp)
+        ) {
+            val busCenter = Offset(size.width * 0.285f, size.height * 0.52f)
+            drawBusGlyph(busCenter, 0.88f + 0.12f * pulse, glow = 0.7f + 0.4f * pulse)
         }
 
         Column(
-            Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
+            Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 10.dp)
+                .offset(x = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box {
                 Text(
-                    text = title,
-                    color = NeonPink.copy(alpha = 0.45f),
+                    title,
+                    color = NeonPink.copy(alpha = 0.35f),
                     fontFamily = cyberFont,
                     fontWeight = FontWeight.Black,
                     fontSize = 16.sp,
-                    letterSpacing = 1.5.sp,
+                    letterSpacing = 1.45.sp,
                     maxLines = 1,
                     softWrap = false,
-                    modifier = Modifier
-                        .offset(x = (-1).dp, y = 0.5.dp)
-                        .graphicsLayer {
-                            alpha = if (t in 0.58f..0.595f || t in 0.67f..0.68f) 0.7f else 0.12f
-                        }
+                    modifier = Modifier.offset(x = (-1.5).dp, y = 1.dp)
                 )
                 Text(
-                    text = title,
+                    title,
                     color = NeonCore,
                     fontFamily = cyberFont,
                     fontWeight = FontWeight.Black,
                     fontSize = 16.sp,
-                    letterSpacing = 1.5.sp,
+                    letterSpacing = 1.45.sp,
                     maxLines = 1,
                     softWrap = false,
-                    style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 24f)),
+                    style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 20f)),
                     modifier = Modifier.graphicsLayer {
-                        alpha = if (t in 0.62f..0.635f || t in 0.71f..0.718f) 0.62f else 1f
+                        alpha = if (t in 0.51f..0.522f) 0.62f else 1f
                     }
                 )
             }
-            Spacer(Modifier.height(3.dp))
+            Spacer(Modifier.height(13.dp))
             Text(
-                text = statusText,
-                color = NeonCeleste,
+                statusText,
+                color = NeonGreen,
                 fontFamily = cyberFont,
                 fontWeight = FontWeight.Black,
-                fontSize = 9.5.sp,
-                letterSpacing = 1.1.sp,
+                fontSize = 8.5.sp,
+                letterSpacing = 0.9.sp,
                 maxLines = 1,
                 softWrap = false,
-                style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 12f)),
+                style = TextStyle(shadow = Shadow(NeonGreen, Offset.Zero, 10f)),
                 modifier = Modifier.graphicsLayer { alpha = 0.72f + 0.28f * pulse }
             )
         }
@@ -182,7 +259,7 @@ private fun HeaderIconButton(
     onClick: () -> Unit,
     icon: DrawScope.(t: Float, pulse: Float, glow: Float, open: Float) -> Unit
 ) {
-    val infinite = rememberInfiniteTransition(label = "btn")
+    val infinite = rememberInfiniteTransition(label = "header_btn")
     val offset = StartOffset(phaseMs, StartOffsetType.FastForward)
     val t by infinite.animateFloat(
         0f, 1f,
@@ -210,36 +287,22 @@ private fun HeaderIconButton(
             .clickable(interactionSource = source, indication = null, onClick = onClick)
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            val flick = when {
-                t in 0.58f..0.595f -> 0.35f
-                t in 0.62f..0.628f -> 0.5f
-                else -> 1f
-            }
-            val glow = (0.7f + 0.45f * pulse + 0.6f * press + 0.4f * open) * flick
+            val flick = if (t in 0.58f..0.595f) 0.4f else 1f
+            val glow = (0.72f + 0.5f * pulse + 0.7f * press + 0.45f * open) * flick
             val accent = lerp(NeonCeleste, NeonPink, open)
-            val pad = 4.dp.toPx()
-            val w = size.width - 2 * pad
-            val h = size.height - 2 * pad
-            val frame = Path().apply {
-                moveTo(pad, pad)
-                lineTo(pad + w, pad)
-                lineTo(pad + w, pad + h)
-                lineTo(pad, pad + h)
-                close()
+            val pad = 3.dp.toPx()
+            val frame = Rect(pad, pad, size.width - pad, size.height - pad)
+
+            // Transparent functional hit surface with active-state neon, while the Canvas header provides the icons.
+            neonStroke(accent, 1.5.dp.toPx(), glow, if (active) 0.95f else 0.28f, layers = 3) { c, st ->
+                drawRect(frame, c, style = st)
             }
-            clipPath(frame) {
-                drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), Ink)))
-                drawRect(accent.copy(alpha = 0.22f * open))
-            }
-            neonStroke(accent, 1.8.dp.toPx(), glow, flick) { c, st -> drawPath(frame, c, style = st) }
-            val s = size.width * 0.52f
-            translate((size.width - s) / 2f, (size.height - s) / 2f) {
-                scale(s / 100f, Offset.Zero) { icon(t, pulse, glow, open) }
+            if (pressed) {
+                drawCircle(accent.copy(alpha = 0.16f), 22.dp.toPx(), center = center)
             }
             if (badge) {
-                val bc = Offset(pad + w - 2.dp.toPx(), pad + 2.dp.toPx())
-                drawCircle(NeonPink.copy(alpha = 0.35f + 0.35f * pulse), 7.dp.toPx(), bc)
-                drawCircle(NeonPink, 3.5.dp.toPx(), bc)
+                drawCircle(NeonPink.copy(alpha = 0.3f + 0.4f * pulse), 6.dp.toPx(), Offset(size.width - 4.dp.toPx(), 5.dp.toPx()))
+                drawCircle(NeonPink, 3.dp.toPx(), Offset(size.width - 4.dp.toPx(), 5.dp.toPx()))
             }
         }
     }
@@ -255,12 +318,35 @@ private inline fun neonStroke(
 ) {
     for (i in layers downTo 1) {
         draw(
-            color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)),
-            Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Square, join = StrokeJoin.Miter)
+            color.copy(alpha = (0.08f * glow * alpha).coerceIn(0f, 1f)),
+            Stroke(width * (1f + i * 1.25f), cap = StrokeCap.Square, join = StrokeJoin.Miter)
         )
     }
     draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Square, join = StrokeJoin.Miter))
-    draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Square, join = StrokeJoin.Miter))
+    draw(NeonCore.copy(alpha = 0.8f * alpha), Stroke(width * 0.32f, cap = StrokeCap.Square, join = StrokeJoin.Miter))
+}
+
+private fun DrawScope.drawBusGlyph(center: Offset, scale: Float, glow: Float) {
+    val col = NeonCeleste
+    val w = 54f * scale
+    val h = 64f * scale
+    val left = center.x - w / 2f
+    val top = center.y - h / 2f
+    val body = Rect(left, top + 8f * scale, left + w, top + h)
+    neonStroke(col, 4f * scale, glow, 0.95f, layers = 4) { c, st ->
+        drawRoundRect(body, CornerRadius(7f * scale), style = st, color = c)
+    }
+    drawRoundRect(
+        Ink.copy(alpha = 0.88f),
+        Rect(left + 7f * scale, top + 18f * scale, left + w - 7f * scale, top + 39f * scale),
+        CornerRadius(3f * scale)
+    )
+    drawLine(col, Offset(center.x, top + 19f * scale), Offset(center.x, top + 38f * scale), 2f * scale)
+    drawLine(col, Offset(left - 5f * scale, top + 24f * scale), Offset(left, top + 24f * scale), 3f * scale, StrokeCap.Round)
+    drawLine(col, Offset(left + w, top + 24f * scale), Offset(left + w + 5f * scale, top + 24f * scale), 3f * scale, StrokeCap.Round)
+    drawCircle(col, 4f * scale, Offset(left + 11f * scale, top + h - 2f * scale))
+    drawCircle(col, 4f * scale, Offset(left + w - 11f * scale, top + h - 2f * scale))
+    drawLine(NeonPink, Offset(left + 11f * scale, top + 49f * scale), Offset(left + w - 11f * scale, top + 49f * scale), 2f * scale)
 }
 
 private fun DrawScope.menuIcon(pulse: Float, glow: Float, open: Float) {
