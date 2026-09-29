@@ -31,6 +31,10 @@ import com.transpuntano.app.ui.MapStop
 import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class MainActivity : AppCompatActivity() {
     private val cyberpunkTypeface by lazy { Typeface.createFromAsset(assets, "fonts/cyberpunk.ttf") }
