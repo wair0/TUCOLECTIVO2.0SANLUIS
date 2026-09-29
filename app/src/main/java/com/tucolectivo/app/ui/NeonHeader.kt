@@ -444,15 +444,14 @@ private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     drawCircle(white.copy(alpha = 0.8f), 0.75f * u, Offset(cx - 0.8f * u, top + 8.2f * u))
     drawLine(color, Offset(cx - 11f * u, bottom), Offset(cx + 11f * u, bottom), 2.2f * u, StrokeCap.Square)
 }    val unit = size.minDimension / 44f
-    val magenta = CyberColors.Magenta
-    val white = Color(0xFFE8FCFF)
+        val white = Color(0xFFE8FCFF)
     val steel = CyberColors.Steel
     val frame = Rect(2f * unit, 2f * unit, size.width - 2f * unit, size.height - 2f * unit)
     drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
     drawRect(color.copy(alpha = 0.20f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4.5f * unit))
     drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.5f * unit))
     drawRect(white.copy(alpha = 0.55f), Offset(frame.left + 4f * unit, frame.top + 4f * unit), Size(frame.width - 8f * unit, frame.height - 8f * unit), style = Stroke(0.55f * unit))
-    drawRect(magenta.copy(alpha = 0.9f), Offset(frame.left + 5f * unit, frame.top + 5f * unit), Size(7f * unit, 2f * unit))
+    drawRect(color.copy(alpha = 0.9f), Offset(frame.left + 5f * unit, frame.top + 5f * unit), Size(7f * unit, 2f * unit))
     drawRect(color.copy(alpha = 0.9f), Offset(frame.right - 12f * unit, frame.bottom - 7f * unit), Size(7f * unit, 2f * unit))
     val cx = size.width / 2f
     val top = 9f * unit
@@ -474,8 +473,8 @@ private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     drawPath(shell, color, style = Stroke(1.8f * unit))
 
     // Placas laterales transformables.
-    drawLine(magenta, Offset(cx - 12f * unit, top + 5f * unit), Offset(cx - 8f * unit, top + 8f * unit), 2f * unit, StrokeCap.Square)
-    drawLine(magenta, Offset(cx + 12f * unit, top + 5f * unit), Offset(cx + 8f * unit, top + 8f * unit), 2f * unit, StrokeCap.Square)
+    drawLine(color, Offset(cx - 12f * unit, top + 5f * unit), Offset(cx - 8f * unit, top + 8f * unit), 2f * unit, StrokeCap.Square)
+    drawLine(color, Offset(cx + 12f * unit, top + 5f * unit), Offset(cx + 8f * unit, top + 8f * unit), 2f * unit, StrokeCap.Square)
     drawRect(
         color.copy(alpha = 0.22f),
         Offset(cx - 7f * unit, bottom - 7f * unit),
@@ -484,15 +483,15 @@ private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     drawLine(white.copy(alpha = 0.8f), Offset(cx - 5f * unit, bottom - 5.5f * unit), Offset(cx + 5f * unit, bottom - 5.5f * unit), 0.8f * unit)
 
     // Sensor central: energía magenta.
-    drawCircle(magenta.copy(alpha = 0.26f), 4.4f * unit, Offset(cx, top + 9f * unit))
-    drawCircle(magenta, 2.3f * unit, Offset(cx, top + 9f * unit))
+    drawCircle(color.copy(alpha = 0.26f), 4.4f * unit, Offset(cx, top + 9f * unit))
+    drawCircle(color, 2.3f * unit, Offset(cx, top + 9f * unit))
     drawCircle(white.copy(alpha = 0.8f), 0.8f * unit, Offset(cx - 0.8f * unit, top + 8.2f * unit))
 
     // Martillo/actuador inferior.
     drawLine(color, Offset(cx - 11f * unit, bottom), Offset(cx + 11f * unit, bottom), 2.2f * unit, StrokeCap.Square)
-    drawLine(magenta, Offset(cx - 4f * unit, bottom + 3.5f * unit), Offset(cx + 4f * unit, bottom + 3.5f * unit), 1.7f * unit, StrokeCap.Square)
+    drawLine(color, Offset(cx - 4f * unit, bottom + 3.5f * unit), Offset(cx + 4f * unit, bottom + 3.5f * unit), 1.7f * unit, StrokeCap.Square)
 
     // Acento de alerta.
     val pulse = 1f + press * 0.25f
-    drawCircle(magenta.copy(alpha = 0.20f), 12f * unit * pulse, Offset(cx, top + 9f * unit), style = Stroke(1f * unit))
+    drawCircle(color.copy(alpha = 0.20f), 12f * unit * pulse, Offset(cx, top + 9f * unit), style = Stroke(1f * unit))
 }
