@@ -27,15 +27,14 @@ import kotlin.math.sin
 
 /*
  * Menú cyberpunk con 4 tarjetas dibujadas 100 % con Canvas (Jetpack Compose + Material3).
- *
- * Uso: setContent { NeonMenuScreen(onLineas = { }, onMapa = { }, onParadas = { }, onFavoritos = { }) }
+ * Fondo transparente para que se vea el GIF del shell.
  */
 
 // ───────────── Paleta ─────────────
-private val NeonCeleste = Color(0xFF19D9FF) // marco y trazos principales
-private val NeonCore = Color(0xFFE8FCFF)    // núcleo blanco del tubo de neón
-private val NeonPink = Color(0xFFFF2E9A)    // acento cyberpunk
-private val Ink = Color(0xFF060912)         // fondo
+private val NeonCeleste = Color(0xFF19D9FF)
+private val NeonCore = Color(0xFFE8FCFF)
+private val NeonPink = Color(0xFFFF2E9A)
+private val Ink = Color(0xFF060912)
 private val TAU = (2.0 * PI).toFloat()
 
 // ───────────── Pantalla ─────────────
@@ -49,7 +48,6 @@ fun NeonMenuScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Ink)
             .padding(12.dp),
         verticalArrangement = Arrangement.Center
     ) {
@@ -69,7 +67,7 @@ fun NeonMenuScreen(
 fun NeonCard(
     title: String,
     modifier: Modifier = Modifier,
-    phaseMs: Int = 0, // desfasa las animaciones para que las tarjetas no latan al unísono
+    phaseMs: Int = 0,
     onClick: () -> Unit = {},
     icon: DrawScope.(t: Float, pulse: Float, glow: Float) -> Unit
 ) {
@@ -93,16 +91,15 @@ fun NeonCard(
             .graphicsLayer { val k = 1f - 0.05f * press; scaleX = k; scaleY = k }
             .clickable(interactionSource = source, indication = null, onClick = onClick)
     ) {
-        // Los valores animados se leen solo al dibujar: no hay recomposición por frame.
         Canvas(Modifier.fillMaxSize()) {
-            val flick = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.45f else 1f // parpadeo de neón
+            val flick = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.45f else 1f
             val glow = (0.7f + 0.45f * pulse + 0.6f * press) * flick
 
             val pad = 10.dp.toPx()
             val fw = size.width - 2 * pad
             val fh = size.height - 2 * pad
             val cut = fw * 0.16f
-            val frame = Path().apply { // esquinas cortadas: arriba-izquierda y abajo-derecha
+            val frame = Path().apply {
                 moveTo(pad + cut, pad)
                 lineTo(pad + fw, pad)
                 lineTo(pad + fw, pad + fh - cut)
@@ -112,7 +109,6 @@ fun NeonCard(
                 close()
             }
 
-            // panel: degradado + scanlines + barra de escaneo
             clipPath(frame) {
                 drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), Ink)))
                 var y = pad
@@ -131,10 +127,8 @@ fun NeonCard(
                 )
             }
 
-            // marco celeste neón
             neon(NeonCeleste, 2.6.dp.toPx(), glow, flick) { c, st -> drawPath(frame, c, style = st) }
 
-            // destello con cola que recorre el borde
             val measure = PathMeasure().apply { setPath(frame, true) }
             val head = measure.length * t
             val tail = measure.length * 0.18f
@@ -147,7 +141,6 @@ fun NeonCard(
                 }
             }
 
-            // indicadores HUD (esquina superior derecha)
             for (i in 0..2) {
                 val on = (t * 9f).toInt() % 3 == i
                 drawRect(
@@ -157,7 +150,6 @@ fun NeonCard(
                 )
             }
 
-            // ícono (diseñado en una grilla de 100×100)
             val s = size.width * 0.54f
             translate((size.width - s) / 2f, size.height * 0.14f) {
                 scale(s / 100f, Offset.Zero) { icon(t, pulse, glow) }
@@ -183,9 +175,6 @@ fun NeonCard(
     }
 }
 
-// ───────────── Utilidades de neón ─────────────
-
-/** Trazo tipo tubo de neón: halo difuso (capas anchas y transparentes) + color + núcleo blanco. */
 private inline fun neon(
     color: Color,
     width: Float,
@@ -204,7 +193,6 @@ private inline fun neon(
     draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
 
-/** Tramo [from, to] de un contorno cerrado; admite valores negativos (da la vuelta al inicio). */
 private fun PathMeasure.slice(from: Float, to: Float, out: Path) {
     out.reset()
     val l = length
@@ -215,15 +203,12 @@ private fun PathMeasure.slice(from: Float, to: Float, out: Path) {
     }
 }
 
-// ───────────── Íconos (coordenadas 0..100) ─────────────
-
-/** LÍNEAS: colectivo de perfil, ruedas girando, calle en movimiento y faro con haz de luz. */
 private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float) {
-    drawLine( // calle
+    drawLine(
         NeonCeleste.copy(alpha = 0.55f), Offset(0f, 83f), Offset(100f, 83f), 1.6f,
         pathEffect = PathEffect.dashPathEffect(floatArrayOf(9f, 7f), t * 192f)
     )
-    translate(top = sin(t * TAU * 4f) * 0.8f) { // vibración leve del motor
+    translate(top = sin(t * TAU * 4f) * 0.8f) {
         val beam = Path().apply { moveTo(84f, 52f); lineTo(100f, 43f); lineTo(100f, 65f); lineTo(84f, 58f); close() }
         drawPath(
             beam,
@@ -234,26 +219,26 @@ private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float) {
         val pos = Offset(4f, 22f); val dim = Size(78f, 44f); val rad = CornerRadius(9f)
         drawRoundRect(Ink, pos, dim, rad)
         neon(NeonCeleste, 3.2f, glow) { c, st -> drawRoundRect(c, pos, dim, rad, style = st) }
-        for (x in listOf(10f, 27f, 44f)) { // ventanas
+        for (x in listOf(10f, 27f, 44f)) {
             neon(NeonCeleste, 1.9f, glow, layers = 2) { c, st ->
                 drawRoundRect(c, Offset(x, 30f), Size(13f, 15f), CornerRadius(3f), style = st)
             }
         }
-        neon(NeonCeleste, 1.9f, glow, layers = 2) { c, st -> // puerta
+        neon(NeonCeleste, 1.9f, glow, layers = 2) { c, st ->
             drawRoundRect(c, Offset(62f, 30f), Size(14f, 28f), CornerRadius(3f), style = st)
         }
         drawLine(NeonCore.copy(alpha = 0.8f), Offset(69f, 31f), Offset(69f, 57f), 1.2f)
         drawLine(NeonPink, Offset(9f, 54f), Offset(55f, 54f), 2.2f, StrokeCap.Round)
-        neon(NeonCeleste, 1.6f, glow, layers = 2) { c, st -> // cartel de destino
+        neon(NeonCeleste, 1.6f, glow, layers = 2) { c, st ->
             drawRoundRect(c, Offset(58f, 15f), Size(22f, 7f), CornerRadius(2f), style = st)
         }
-        for (i in 0..2) { // LEDs del cartel
+        for (i in 0..2) {
             val on = (t * 6f).toInt() % 3 == i
             drawCircle(NeonPink.copy(alpha = if (on) 1f else 0.25f), 1.5f, Offset(64f + i * 6f, 18.5f))
         }
-        drawCircle(NeonPink.copy(alpha = 0.25f + 0.35f * pulse), 6f, Offset(79.5f, 56f)) // faro
+        drawCircle(NeonPink.copy(alpha = 0.25f + 0.35f * pulse), 6f, Offset(79.5f, 56f))
         drawCircle(NeonPink, 2.6f, Offset(79.5f, 56f))
-        for (cx in listOf(22f, 68f)) { // ruedas
+        for (cx in listOf(22f, 68f)) {
             val ctr = Offset(cx, 68f)
             drawCircle(Ink, 8.5f, ctr)
             neon(NeonCeleste, 3.2f, glow, layers = 3) { c, st -> drawCircle(c, 8.5f, ctr, style = st) }
@@ -265,7 +250,6 @@ private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float) {
     }
 }
 
-/** MAPA: mapa plegado, ruta punteada en marcha, pin que salta y ondas de radar. */
 private fun DrawScope.mapIcon(t: Float, pulse: Float, glow: Float) {
     val map = Path().apply {
         moveTo(6f, 34f); lineTo(35f, 26f); lineTo(65f, 34f); lineTo(94f, 26f)
@@ -273,7 +257,7 @@ private fun DrawScope.mapIcon(t: Float, pulse: Float, glow: Float) {
     }
     drawPath(map, Ink)
     neon(NeonCeleste, 3.2f, glow) { c, st -> drawPath(map, c, style = st) }
-    neon(NeonCeleste, 1.5f, glow, 0.8f, 2) { c, st -> // pliegues
+    neon(NeonCeleste, 1.5f, glow, 0.8f, 2) { c, st ->
         drawLine(c, Offset(35f, 26f), Offset(35f, 72f), st.width, StrokeCap.Round)
         drawLine(c, Offset(65f, 34f), Offset(65f, 80f), st.width, StrokeCap.Round)
     }
@@ -285,7 +269,7 @@ private fun DrawScope.mapIcon(t: Float, pulse: Float, glow: Float) {
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), (1f - t) * 32f)
         )
     )
-    for (k in 0..1) { // ondas de radar
+    for (k in 0..1) {
         val p = (t + k * 0.5f) % 1f
         val rx = 5f + 24f * p
         drawOval(
@@ -293,7 +277,7 @@ private fun DrawScope.mapIcon(t: Float, pulse: Float, glow: Float) {
             Offset(50f - rx, 56f - rx * 0.35f), Size(rx * 2f, rx * 0.7f), style = Stroke(1.6f)
         )
     }
-    translate(top = -5f * pulse) { // pin que salta
+    translate(top = -5f * pulse) {
         val pin = Path().apply {
             moveTo(50f, 54f)
             cubicTo(31f, 40f, 38f, 14f, 50f, 14f)
@@ -307,9 +291,8 @@ private fun DrawScope.mapIcon(t: Float, pulse: Float, glow: Float) {
     }
 }
 
-/** PARADAS CERCANAS: cartel de parada de colectivo, otra parada tenue y tu ubicación emitiendo pulsos. */
 private fun DrawScope.stopIcon(t: Float, pulse: Float, glow: Float) {
-    neon(NeonCeleste, 1.8f, glow, 0.5f, 2) { c, st -> // parada lejana
+    neon(NeonCeleste, 1.8f, glow, 0.5f, 2) { c, st ->
         drawLine(c, Offset(80f, 44f), Offset(80f, 71f), st.width, StrokeCap.Round)
         drawLine(c, Offset(73f, 71f), Offset(87f, 71f), st.width, StrokeCap.Round)
         drawRoundRect(c, Offset(71f, 30f), Size(18f, 14f), CornerRadius(3f), style = st)
@@ -318,22 +301,21 @@ private fun DrawScope.stopIcon(t: Float, pulse: Float, glow: Float) {
 
     val sign = Offset(14f, 8f); val signSize = Size(36f, 30f)
     drawRoundRect(Ink, sign, signSize, CornerRadius(6f))
-    neon(NeonCeleste, 3.2f, glow) { c, st -> // cartel, poste y base
+    neon(NeonCeleste, 3.2f, glow) { c, st ->
         drawRoundRect(c, sign, signSize, CornerRadius(6f), style = st)
         drawLine(c, Offset(32f, 38f), Offset(32f, 84f), st.width, StrokeCap.Round)
         drawLine(c, Offset(21f, 84f), Offset(43f, 84f), st.width, StrokeCap.Round)
     }
-    // pictograma de colectivo (vista frontal) dentro del cartel
     drawRoundRect(NeonCore, Offset(23f, 14f), Size(18f, 16f), CornerRadius(3f), style = Stroke(1.6f))
     drawLine(NeonCore, Offset(25f, 20f), Offset(39f, 20f), 1.4f)
     drawCircle(NeonPink, 1.5f, Offset(27.5f, 25.5f))
     drawCircle(NeonPink, 1.5f, Offset(36.5f, 25.5f))
     drawLine(NeonCore, Offset(26f, 30f), Offset(26f, 33f), 2.4f, StrokeCap.Round)
     drawLine(NeonCore, Offset(38f, 30f), Offset(38f, 33f), 2.4f, StrokeCap.Round)
-    drawCircle(NeonPink.copy(alpha = 0.15f + 0.25f * pulse), 4.5f, Offset(32f, 3.5f)) // baliza
+    drawCircle(NeonPink.copy(alpha = 0.15f + 0.25f * pulse), 4.5f, Offset(32f, 3.5f))
     drawCircle(NeonPink.copy(alpha = 0.3f + 0.7f * pulse), 2.2f, Offset(32f, 3.5f))
 
-    val me = Offset(60f, 80f) // tu posición
+    val me = Offset(60f, 80f)
     val walk = PathEffect.dashPathEffect(floatArrayOf(1f, 5f), (1f - t) * 24f)
     drawLine(NeonPink, me, Offset(45f, 83f), 1.8f, StrokeCap.Round, walk)
     drawLine(NeonPink, me, Offset(77f, 72f), 1.8f, StrokeCap.Round, walk)
@@ -342,7 +324,6 @@ private fun DrawScope.stopIcon(t: Float, pulse: Float, glow: Float) {
     drawCircle(NeonCore, 1.3f, me)
 }
 
-/** FAVORITOS: estrella que late, con estrella interior y destellos titilantes. */
 private fun DrawScope.starIcon(t: Float, pulse: Float, glow: Float) {
     val mid = Offset(50f, 54f)
     val star = Path().apply {
