@@ -49,15 +49,7 @@ fun NeonMenuScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF0A1024), Ink)))
-            .drawBehind { // grilla sutil de fondo
-                val step = 28.dp.toPx()
-                val grid = NeonCeleste.copy(alpha = 0.05f)
-                var x = 0f
-                while (x <= size.width) { drawLine(grid, Offset(x, 0f), Offset(x, size.height)); x += step }
-                var y = 0f
-                while (y <= size.height) { drawLine(grid, Offset(0f, y), Offset(size.width, y)); y += step }
-            }
+            
             .padding(12.dp),
         verticalArrangement = Arrangement.Center
     ) {
