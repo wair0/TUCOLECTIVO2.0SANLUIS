@@ -43,10 +43,16 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.material)
     implementation(libs.androidx.activity)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Jetpack Compose: dependencias explícitas para evitar que el classpath
+    // dependa de aliases versionless del catálogo durante la compilación.
+    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.compose.runtime:runtime:1.7.6")
+    implementation("androidx.compose.animation:animation-core:1.7.6")
+    implementation("androidx.compose.foundation:foundation:1.7.6")
+    implementation("androidx.compose.ui:ui:1.7.6")
+    implementation("androidx.compose.ui:ui-graphics:1.7.6")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
+    implementation("androidx.compose.material3:material3:1.3.1")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.7.6")
 }
