@@ -48,25 +48,11 @@ jobs:
 
       - name: Verify Compose classpath
         run: |
-          set +e
-          echo "=== GIT HEAD ==="
-          git rev-parse HEAD
-          echo "=== APP BUILD GRADLE REAL ==="
-          git show HEAD:app/build.gradle.kts
-          echo "=== IMPLEMENTATION DECLARATIONS ==="
-          ./gradlew :app:dependencies --configuration implementation --no-daemon --console=plain
-          echo "=== DEBUG COMPILE CLASSPATH ==="
-          ./gradlew :app:dependencies --configuration debugCompileClasspath --no-daemon --console=plain
-          echo "=== DEBUG RUNTIME CLASSPATH COMPOSE ==="
-          ./gradlew :app:dependencies --configuration debugRuntimeClasspath --no-daemon --console=plain | grep -E "androidx.compose.(ui|runtime|foundation|material3)|androidx.activity:activity-compose" || true
-          echo "=== COMPOSE INSIGHT COMPILE ==="
-          ./gradlew :app:dependencyInsight --configuration debugCompileClasspath --dependency androidx.compose.ui:ui --no-daemon --console=plain
-          echo "=== FIN VERIFICACION ==="
-          ./gradlew :app:dependencies --configuration debugCompileClasspath --no-daemon --console=plain > compose-final.txt 2>&1
-          if ! grep -Eq "androidx.compose.(ui|runtime|foundation|material3)" compose-final.txt; then
-            echo "ERROR: COMPOSE SIGUE AUSENTE DEL CLASSPATH DE COMPILACION"
-            exit 1
-          fi
+          set -o pipefail
+          ./gradlew :app:dependencies --configuration debugCompileClasspath --no-daemon --console=plain > compose-classpath.txt 2>&1
+          echo "=== COMPOSE EN CLASSPATH ==="
+          grep -E "androidx.compose.(ui|runtime|foundation|material3)|androidx.activity:activity-compose" compose-classpath.txt
+          grep -Eq "androidx.compose.(ui|runtime|foundation|material3)" compose-classpath.txt
 
       - name: Build Debug APK
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
