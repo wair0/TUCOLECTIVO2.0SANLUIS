@@ -76,7 +76,7 @@ fun NeonHeader(
         label = "breath"
     )
     
-    Box(modifier.fillMaxWidth().height(78.dp)) {
+    Box(modifier.fillMaxWidth().height(78.dp).zIndex(20f)) {
         Canvas(Modifier.fillMaxSize()) {
             val flick = when {
                 t in 0.58f..0.595f -> 0.35f
@@ -143,31 +143,35 @@ fun NeonHeader(
             Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = title,
-                color = NeonCore,
-                fontFamily = cyberFont,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 16.sp,
-                letterSpacing = 1.5.sp,
-                maxLines = 1,
-                softWrap = false,
-                style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 20f)),
-                modifier = Modifier.graphicsLayer {
-                    alpha = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.55f else 1f
-                }
-            )
-            Text(
-                text = statusText,
-                color = NeonCeleste,
-                fontFamily = cyberFont,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 11.5.sp,
-                letterSpacing = 1.2.sp,
-                maxLines = 1,
-                softWrap = false,
-                modifier = Modifier.padding(top = 2.dp)
-            )
+            Box {
+                Text(
+                    text = title,
+                    color = NeonPink.copy(alpha = 0.45f),
+                    fontFamily = cyberFont,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 16.sp,
+                    letterSpacing = 1.5.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.offset(x = (-1).dp, y = 0.5.dp).graphicsLayer {
+                        alpha = if (t in 0.58f..0.595f || t in 0.67f..0.68f) 0.7f else 0.12f
+                    }
+                )
+                Text(
+                    text = title,
+                    color = NeonCore,
+                    fontFamily = cyberFont,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 16.sp,
+                    letterSpacing = 1.5.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                    style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 24f)),
+                    modifier = Modifier.graphicsLayer {
+                        alpha = if (t in 0.62f..0.635f || t in 0.71f..0.718f) 0.62f else 1f
+                    }
+                )
+            }
         }
 
         when (panel) {
