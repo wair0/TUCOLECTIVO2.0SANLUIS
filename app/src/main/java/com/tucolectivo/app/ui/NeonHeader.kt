@@ -411,7 +411,6 @@ private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
     val cx = size.width * 0.44f
     val cy = size.height * 0.44f
     val r = 8.5f * unit
-    val white = Color(0xFFE8FCFF)
 
     // Lente doble, con aro energético y carcasa mecánica.
     drawCircle(
@@ -478,7 +477,6 @@ private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     drawRect(magenta.copy(alpha = 0.9f), Offset(frame.left + 5f * unit, frame.top + 5f * unit), Size(7f * unit, 2f * unit))
     drawRect(color.copy(alpha = 0.9f), Offset(frame.right - 12f * unit, frame.bottom - 7f * unit), Size(7f * unit, 2f * unit))
     val cx = size.width / 2f
-    val white = Color(0xFFE8FCFF)
     val top = 9f * unit
     val bottom = 28f * unit
 
