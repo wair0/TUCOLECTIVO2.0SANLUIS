@@ -74,9 +74,72 @@ fun LinesComposeScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()
         ) {
             items(lines, key = { it.code }) { line ->
-                NeonListRow(title = line.name.uppercase(), subtitle = "",
-                    accent = NeonCeleste, onClick = { onLineClick(line) })
+                NeonLineCard(line = line, index = lines.indexOf(line), onClick = { onLineClick(line) })
             }
+        }
+    }
+}
+
+@Composable
+private fun NeonLineCard(line: TransitLine, index: Int, onClick: () -> Unit) {
+    val cyberFont = rememberCyberpunkFontFamily()
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(110), label = "linePress")
+    val infinite = rememberInfiniteTransition(label = "lineCard")
+    val scan by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2200, easing = FastOutSlowInEasing)), label = "lineScan")
+    val pulse by infinite.animateFloat(0.25f, 1f, infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "linePulse")
+    Box(
+        Modifier.fillMaxWidth().height(86.dp)
+            .graphicsLayer { val k = 1f - 0.025f * press; scaleX = k; scaleY = k }
+            .clickable(interactionSource = source, indication = null, onClick = onClick)
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            val p = 2.dp.toPx()
+            val l = p; val t = p; val r = size.width - p; val b = size.height - p
+            drawRect(Panel, Offset(l, t), Size(r - l, b - t))
+            val glow = 0.35f + 0.3f * pulse + 0.4f * press
+            drawRect(NeonCeleste.copy(alpha = 0.12f * glow), Offset(l, t), Size(r - l, b - t), style = Stroke(7.dp.toPx()))
+            drawRect(NeonCeleste.copy(alpha = 0.7f + 0.2f * pulse), Offset(l, t), Size(r - l, b - t), style = Stroke(1.7.dp.toPx()))
+            val x = l + (r - l) * scan
+            drawRect(NeonPink.copy(alpha = 0.9f), Offset(x - 28.dp.toPx(), t), Size(56.dp.toPx(), 2.5.dp.toPx()))
+            for (g in 0..3) {
+                val y = t + 20.dp.toPx() + g * 13.dp.toPx()
+                drawLine(NeonCeleste.copy(alpha = 0.055f), Offset(l + 76.dp.toPx(), y), Offset(r - 12.dp.toPx(), y), 1.dp.toPx())
+            }
+            drawRect(NeonPink.copy(alpha = 0.9f), Offset(l, t), Size(44.dp.toPx(), 3.dp.toPx()))
+            drawRect(NeonPink.copy(alpha = 0.8f), Offset(r - 28.dp.toPx(), b - 3.dp.toPx()), Size(28.dp.toPx(), 3.dp.toPx()))
+            for (d in 0..2) drawCircle(
+                if ((index + d) % 2 == 0) NeonPink else NeonCeleste,
+                (1.7f + pulse * 1.1f).dp.toPx(),
+                Offset(r - 54.dp.toPx() + d * 14.dp.toPx(), b - 12.dp.toPx())
+            )
+        }
+        Row(Modifier.fillMaxSize().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(58.dp).height(54.dp), contentAlignment = Alignment.Center) {
+                Canvas(Modifier.fillMaxSize()) {
+                    drawRect(NeonCeleste.copy(alpha = 0.08f), Offset.Zero, Size(size.width, size.height))
+                    drawRect(NeonCeleste.copy(alpha = 0.7f), Offset.Zero, Size(size.width, size.height), style = Stroke(1.dp.toPx()))
+                    drawLine(NeonPink, Offset(6.dp.toPx(), size.height - 7.dp.toPx()), Offset(size.width - 6.dp.toPx(), size.height - 7.dp.toPx()), 2.dp.toPx())
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("LÍNEA", color = NeonCeleste.copy(alpha = 0.72f), fontFamily = cyberFont, fontWeight = FontWeight.Bold, fontSize = 8.sp, letterSpacing = 1.5.sp)
+                    Text(line.code.toString(), color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Black, fontSize = 22.sp,
+                        style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(NeonCeleste, Offset.Zero, 15f)))
+                }
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(line.name.uppercase(), color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Black, fontSize = 14.sp, letterSpacing = 0.9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(5.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.width(24.dp).height(2.dp).background(NeonPink))
+                    Spacer(Modifier.width(7.dp))
+                    Text("RECORRIDO DISPONIBLE", color = NeonCeleste.copy(alpha = 0.68f), fontFamily = cyberFont, fontSize = 8.sp, letterSpacing = 1.sp)
+                }
+            }
+            Text("›", color = NeonPink, fontFamily = cyberFont, fontWeight = FontWeight.Black, fontSize = 25.sp,
+                style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(NeonPink, Offset.Zero, 14f)))
         }
     }
 }
