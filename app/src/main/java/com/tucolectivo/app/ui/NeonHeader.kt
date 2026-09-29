@@ -1,66 +1,124 @@
 package com.tucolectivo.app.ui
 
-import android.graphics.Paint
-import android.graphics.Typeface
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
-import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.*
 
-private val Cyan = Color(0xFF19D9FF)
-private val Core = Color(0xFFE8FCFF)
-private val Pink = Color(0xFFFF2E9A)
-private val Green = Color(0xFF25FFB7)
-private val Ink = Color(0xFF020308)
-private val Panel = Color(0xFF03050D)
+/**
+ * Header cyberpunk v3 "Transformers": blindaje metálico, todo recto, solo celeste y magenta.
+ * Tus botones / iconos / textos nativos van dentro de cada slot:
+ *
+ * CyberHeader(
+ *     menuSlot   = { TuBotonHamburguesa() },     // marco 48dp
+ *     statusSlot = { TuTextoDeEstado(estado) },  // el marco crece o encoge con el texto
+ *     titleSlot  = { TuTitulo() },
+ *     searchSlot = { TuBotonLupa() },            // marco 44dp
+ *     bellSlot   = { TuBotonCampanita() }        // marco 44dp
+ * )
+ */
+object CyberColors {
+    val Cyan = Color(0xFF19E3FF)
+    val Magenta = Color(0xFFFF2BD6)
+    val Steel = Color(0xFF1A2130)
+    val SteelDark = Color(0xFF0B0F19)
+    val Deep = Color(0xFF05070E)
+}
 
-data class NeonNotification(
-    val title: String,
-    val detail: String,
-    val time: String,
-    val unread: Boolean = true
-)
+/** Corchetes/abrazaderas en las cuatro esquinas (solo líneas rectas). */
+private fun corners(w: Float, h: Float, a: Float) = Path().apply {
+    moveTo(0f, a); lineTo(0f, 0f); lineTo(a, 0f)
+    moveTo(w - a, 0f); lineTo(w, 0f); lineTo(w, a)
+    moveTo(w, h - a); lineTo(w, h); lineTo(w - a, h)
+    moveTo(a, h); lineTo(0f, h); lineTo(0f, h - a)
+}
+
+/** Bisel metálico: luz arriba/izquierda, sombra abajo/derecha. */
+private fun DrawScope.bevel(w: Float, h: Float, t: Float) {
+    drawRect(Color.White.copy(alpha = 0.16f), Offset.Zero, Size(w, t))
+    drawRect(Color.White.copy(alpha = 0.10f), Offset.Zero, Size(t, h))
+    drawRect(Color.Black.copy(alpha = 0.55f), Offset(0f, h - t), Size(w, t))
+    drawRect(Color.Black.copy(alpha = 0.40f), Offset(w - t, 0f), Size(t, h))
+}
+
+/** Remaches cuadrados en las cuatro esquinas. */
+private fun DrawScope.rivets(w: Float, h: Float, o: Float, s: Float) {
+    for (x in listOf(o, w - o - s)) for (y in listOf(o, h - o - s)) {
+        drawRect(Color.White.copy(alpha = 0.35f), Offset(x, y), Size(s, s))
+    }
+}
+
+/**
+ * Placa de blindaje rectangular. Se redibuja sola al cambiar de tamaño.
+ * vents = rejilla de ventilación a la derecha (reservá padding al final); visor = banda de energon + alas.
+ */
+@Composable
+fun CyberFrame(
+    modifier: Modifier = Modifier,
+    accent: Color = CyberColors.Cyan,
+    accent2: Color = accent,
+    vents: Boolean = false,
+    visor: Boolean = false,
+    padding: PaddingValues = PaddingValues(0.dp),
+    contentAlignment: Alignment = Alignment.Center,
+    content: @Composable BoxScope.() -> Unit = {}
+) {
+    Box(
+        modifier = Modifier
+            .animateContentSize()
+            .then(modifier)
+            .drawWithCache {
+                val u = 1.dp.toPx()
+                val w = size.width
+                val h = size.height
+                val plate = Brush.verticalGradient(listOf(CyberColors.Steel, CyberColors.SteelDark))
+                val edge = Brush.horizontalGradient(listOf(accent, accent2))
+                val band = Brush.horizontalGradient(
+                    listOf(Color.Transparent, accent.copy(alpha = 0.3f), accent2.copy(alpha = 0.3f), Color.Transparent)
+                )
+                onDrawBehind {
+                    drawRect(plate)
+                    bevel(w, h, 2 * u)
+                    drawRect(Color.Black.copy(alpha = 0.6f), Offset(5 * u, 5 * u), Size(w - 10 * u, h - 10 * u), style = Stroke(u)) // línea de panel
+                    rivets(w, h, 8 * u, 3 * u)
+                    drawRect(edge, alpha = 0.22f, style = Stroke(5 * u))                                                        // glow energon
+                    drawRect(edge, style = Stroke(1.5f * u))
+                    if (vents) repeat(4) { i ->
+                        val x = w - 34 * u + i * 6 * u
+                        drawRect(Color.Black.copy(alpha = 0.75f), Offset(x, 10 * u), Size(3 * u, h - 20 * u))
+                        drawRect(accent2, Offset(x, h - 12 * u), Size(3 * u, 2 * u))
+                    }
+                    if (visor) {
+                        drawRect(band, Offset(6 * u, h / 2 - 9 * u), Size(w - 12 * u, 18 * u))
+                        drawRect(accent, Offset(-34 * u, h / 2 - u), Size(28 * u, 2 * u))
+                        drawRect(accent, Offset(-42 * u, h / 2 - 8 * u), Size(8 * u, 16 * u))
+                        drawRect(accent2, Offset(w + 6 * u, h / 2 - u), Size(28 * u, 2 * u))
+                        drawRect(accent2, Offset(w + 34 * u, h / 2 - 8 * u), Size(8 * u, 16 * u))
+                    }
+                }
+            }
+            .padding(padding),
+        contentAlignment = contentAlignment,
+        content = content
+    )
+}
+
 
 @Composable
 fun NeonHeader(
@@ -75,110 +133,123 @@ fun NeonHeader(
     onSearchClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {}
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val typeface = remember(context) {
-        runCatching {
-            Typeface.createFromAsset(context.assets, "fonts/cyberpunk.ttf")
-        }.getOrElse { Typeface.MONOSPACE }
-    }
+    val fontFamily = rememberCyberpunkFontFamily()
 
-    val anim = rememberInfiniteTransition(label = "header")
-    val scan by anim.animateFloat(
-        0f,
-        1f,
-        infiniteRepeatable(tween(3600, easing = LinearEasing)),
-        label = "scan"
-    )
-    val pulse by anim.animateFloat(
-        0f,
-        1f,
-        infiniteRepeatable(tween(950, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "pulse"
-    )
-    val flicker by anim.animateFloat(
-        0.72f,
-        1f,
-        infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "flicker"
-    )
-
-    Box(
-        modifier
+    Column(
+        modifier = modifier
             .fillMaxWidth()
-            .height(92.dp)
-            .zIndex(40f)
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
-            val inset = 4.dp.toPx()
-            val frame = Rect(inset, inset, w - inset, h - inset)
-
-            drawRect(Ink)
-            drawHudGrid(w, h)
-            drawNeonFrame(frame, 0.78f + pulse * 0.5f)
-
-            val scanX = inset + (w - inset * 2f) * scan
-            drawRect(
-                brush = Brush.horizontalGradient(
-                    listOf(Color.Transparent, Cyan.copy(alpha = 0.9f), Color.Transparent)
-                ),
-                topLeft = Offset(scanX - 24.dp.toPx(), inset),
-                size = Size(48.dp.toPx(), 2.dp.toPx())
-            )
-
-            repeat(12) { i ->
-                val active = ((scan * 12f).toInt() + i) % 6 < 3
-                val accent = if (i % 2 == 0) Cyan else Pink
-                drawRect(
-                    color = accent.copy(alpha = if (active) 0.95f else 0.2f),
-                    topLeft = Offset(w * 0.30f + i * 6.5.dp.toPx(), h - 7.dp.toPx()),
-                    size = Size(4.dp.toPx(), 2.dp.toPx())
-                )
+            .background(CyberColors.Deep)
+            .statusBarsPadding()
+            .padding(6.dp)
+            .drawWithCache {
+                val u = 1.dp.toPx()
+                val w = size.width
+                val h = size.height
+                val plate = Brush.verticalGradient(listOf(CyberColors.Steel, CyberColors.Deep))
+                val rim = Brush.horizontalGradient(listOf(CyberColors.Cyan, CyberColors.Magenta))
+                val seams = Path().apply {
+                    var x = 48 * u
+                    while (x < w) { moveTo(x, 0f); lineTo(x, h); x += 48 * u }
+                    var y = 24 * u
+                    while (y < h) { moveTo(0f, y); lineTo(w, y); y += 24 * u }
+                }
+                val clamps = corners(w, h, 22 * u)
+                onDrawBehind {
+                    drawRect(plate)
+                    drawPath(seams, Color.Black.copy(alpha = 0.5f), style = Stroke(u))
+                    translate(u, u) { drawPath(seams, Color.White.copy(alpha = 0.06f), style = Stroke(u)) }
+                    bevel(w, h, 3 * u)
+                    drawRect(Color.Black.copy(alpha = 0.6f), Offset(7 * u, 7 * u), Size(w - 14 * u, h - 14 * u), style = Stroke(u))
+                    drawRect(rim, alpha = 0.22f, style = Stroke(7 * u))
+                    drawRect(rim, style = Stroke(2 * u))
+                    drawPath(clamps, Color.White.copy(alpha = 0.32f), style = Stroke(4 * u, cap = StrokeCap.Square))
+                    rivets(w, h, 11 * u, 3 * u)
+                }
             }
-
-            drawStatusPlate(w, h, pulse)
-            drawHeaderText(typeface, title, statusText, w, h, flicker, pulse)
-        }
-
-        Row(
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 7.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            HeaderControlButton(
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CyberHeaderControl(
+                modifier = Modifier.size(48.dp),
                 active = menuOpen,
+                accent = CyberColors.Cyan,
                 onClick = onMenuClick
-            ) { accent, press, open ->
-                drawMenuIcon(accent, press, open)
+            ) { color, press, open -> drawMenuIcon(color, press, open) }
+
+            Spacer(Modifier.width(10.dp))
+
+            // El marco se dimensiona por el texto y anima su expansión/contracción.
+            CyberFrame(
+                modifier = Modifier
+                    .widthIn(min = 120.dp, max = 170.dp)
+                    .height(40.dp),
+                vents = true,
+                padding = PaddingValues(start = 14.dp, top = 6.dp, end = 40.dp, bottom = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BasicText(
+                    text = statusText,
+                    style = TextStyle(
+                        color = CyberColors.Cyan,
+                        fontFamily = fontFamily,
+                        fontSize = 8.sp,
+                        letterSpacing = 0.06.em
+                    ),
+                    maxLines = 1
+                )
             }
 
             Spacer(Modifier.weight(1f))
 
-            HeaderControlButton(
+            CyberHeaderControl(
+                modifier = Modifier.size(44.dp),
                 active = searchOpen,
+                accent = CyberColors.Magenta,
                 onClick = onSearchClick
-            ) { accent, press, _ ->
-                drawSearchIcon(accent, press)
-            }
+            ) { color, press, _ -> drawSearchIcon(color, press) }
 
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(8.dp))
 
-            HeaderControlButton(
+            CyberHeaderControl(
+                modifier = Modifier.size(44.dp),
                 active = notificationsOpen,
+                accent = CyberColors.Magenta,
                 badge = hasUnread,
                 onClick = onNotificationsClick
-            ) { accent, press, _ ->
-                drawBellIcon(accent, press)
-            }
+            ) { color, press, _ -> drawBellIcon(color, press) }
+        }
+
+        CyberFrame(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(top = 10.dp)
+                .widthIn(min = 180.dp, max = 230.dp)
+                .height(34.dp),
+            accent = CyberColors.Cyan,
+            accent2 = CyberColors.Magenta,
+            visor = true,
+            padding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            BasicText(
+                text = title,
+                style = TextStyle(
+                    color = Color(0xFFE8FCFF),
+                    fontFamily = fontFamily,
+                    fontSize = 12.sp,
+                    letterSpacing = 0.08.em
+                ),
+                maxLines = 1
+            )
         }
     }
 }
 
 @Composable
-private fun HeaderControlButton(
+private fun CyberHeaderControl(
+    modifier: Modifier,
     active: Boolean,
+    accent: Color,
     badge: Boolean = false,
     onClick: () -> Unit,
     icon: DrawScope.(Color, Float, Float) -> Unit
@@ -188,67 +259,50 @@ private fun HeaderControlButton(
     val press by animateFloatAsState(
         targetValue = if (pressed) 1f else 0f,
         animationSpec = tween(90),
-        label = "press"
+        label = "headerPress"
     )
     val open by animateFloatAsState(
         targetValue = if (active) 1f else 0f,
         animationSpec = tween(220),
-        label = "open"
+        label = "headerOpen"
     )
-    val anim = rememberInfiniteTransition(label = "control")
-    val pulse by anim.animateFloat(
-        0f,
-        1f,
+    val pulseTransition = rememberInfiniteTransition(label = "headerControlPulse")
+    val pulse by pulseTransition.animateFloat(
+        0f, 1f,
         infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "controlPulse"
+        label = "headerControlPulseValue"
     )
 
     Box(
-        Modifier
-            .size(42.dp)
+        modifier = modifier
             .graphicsLayer {
                 val scale = 1f - press * 0.08f
                 scaleX = scale
                 scaleY = scale
             }
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-                onClick = onClick
-            )
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            val accent = when {
-                active -> Pink
-                else -> Cyan
-            }
-
+            val frameAccent = if (active) CyberColors.Magenta else accent
             drawRect(
-                color = Panel,
+                color = CyberColors.SteelDark,
                 topLeft = Offset(2.dp.toPx(), 2.dp.toPx()),
                 size = Size(size.width - 4.dp.toPx(), size.height - 4.dp.toPx())
             )
-
             drawNeonFrame(
-                Rect(
-                    2.dp.toPx(),
-                    2.dp.toPx(),
-                    size.width - 2.dp.toPx(),
-                    size.height - 2.dp.toPx()
-                ),
-                0.75f + pulse * 0.4f + press
+                Rect(2.dp.toPx(), 2.dp.toPx(), size.width - 2.dp.toPx(), size.height - 2.dp.toPx()),
+                0.72f + pulse * 0.42f + press
             )
-
-            icon(accent, press, open)
+            icon(frameAccent, press, open)
 
             if (badge) {
                 drawCircle(
-                    color = Pink.copy(alpha = 0.3f + 0.45f * pulse),
+                    color = CyberColors.Magenta.copy(alpha = 0.28f + 0.5f * pulse),
                     radius = 5.dp.toPx(),
                     center = Offset(size.width - 3.dp.toPx(), 4.dp.toPx())
                 )
                 drawCircle(
-                    color = Pink,
+                    color = CyberColors.Magenta,
                     radius = 2.5.dp.toPx(),
                     center = Offset(size.width - 3.dp.toPx(), 4.dp.toPx())
                 )
@@ -257,32 +311,10 @@ private fun HeaderControlButton(
     }
 }
 
-private fun DrawScope.drawHudGrid(w: Float, h: Float) {
-    repeat(13) { i ->
-        val x = w * i / 12f
-        drawLine(
-            color = Cyan.copy(alpha = 0.025f),
-            start = Offset(x, 5.dp.toPx()),
-            end = Offset(x, h - 5.dp.toPx()),
-            strokeWidth = 1f
-        )
-    }
-
-    repeat(4) { i ->
-        val y = h * i / 3f
-        drawLine(
-            color = Pink.copy(alpha = 0.022f),
-            start = Offset(5.dp.toPx(), y),
-            end = Offset(w - 5.dp.toPx(), y),
-            strokeWidth = 1f
-        )
-    }
-}
-
 private fun DrawScope.drawNeonFrame(rect: Rect, glow: Float) {
     for (layer in 4 downTo 1) {
         drawRect(
-            color = Cyan.copy(alpha = (0.055f * glow).coerceIn(0f, 1f)),
+            color = CyberColors.Cyan.copy(alpha = (0.055f * glow).coerceIn(0f, 1f)),
             topLeft = Offset(rect.left, rect.top),
             size = Size(rect.width, rect.height),
             style = Stroke(
@@ -292,110 +324,24 @@ private fun DrawScope.drawNeonFrame(rect: Rect, glow: Float) {
             )
         )
     }
-
     drawRect(
-        color = Cyan,
+        color = CyberColors.Cyan,
         topLeft = Offset(rect.left, rect.top),
         size = Size(rect.width, rect.height),
         style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Square, join = StrokeJoin.Miter)
     )
-
     drawRect(
-        color = Core.copy(alpha = 0.7f),
+        color = Color.White.copy(alpha = 0.7f),
         topLeft = Offset(rect.left, rect.top),
         size = Size(rect.width, rect.height),
         style = Stroke(width = 0.55.dp.toPx())
     )
 }
 
-private fun DrawScope.drawStatusPlate(w: Float, h: Float, pulse: Float) {
-    val plate = Rect(
-        w * 0.35f,
-        h * 0.64f,
-        w * 0.65f,
-        h * 0.92f
-    )
-
-    drawRect(
-        brush = Brush.horizontalGradient(
-            listOf(Cyan.copy(alpha = 0.08f), Panel, Pink.copy(alpha = 0.08f))
-        ),
-        topLeft = Offset(plate.left, plate.top),
-        size = Size(plate.width, plate.height)
-    )
-
-    drawRect(
-        color = Cyan.copy(alpha = 0.55f + 0.2f * pulse),
-        topLeft = Offset(plate.left, plate.top),
-        size = Size(plate.width, plate.height),
-        style = Stroke(width = 1.dp.toPx())
-    )
-
-    drawCircle(
-        color = Green.copy(alpha = 0.22f + 0.4f * pulse),
-        radius = 7.dp.toPx(),
-        center = Offset(w * 0.382f, h * 0.78f)
-    )
-
-    drawCircle(
-        color = Green,
-        radius = 2.6.dp.toPx(),
-        center = Offset(w * 0.382f, h * 0.78f)
-    )
-}
-
-private fun DrawScope.drawHeaderText(
-    typeface: Typeface,
-    title: String,
-    status: String,
-    w: Float,
-    h: Float,
-    flicker: Float,
-    pulse: Float
-) {
-    val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        this.typeface = typeface
-        textAlign = Paint.Align.CENTER
-        textSize = 16.sp.toPx()
-        letterSpacing = 0.08f
-    }
-
-    drawIntoCanvas { canvas ->
-        val native = canvas.nativeCanvas
-
-        titlePaint.color = Pink.copy(alpha = 0.5f).toArgb()
-        native.drawText(
-            title,
-            w / 2f - 1.dp.toPx(),
-            29.dp.toPx() + 1.dp.toPx(),
-            titlePaint
-        )
-
-        titlePaint.color = Core.copy(alpha = flicker).toArgb()
-        native.drawText(title, w / 2f, 29.dp.toPx(), titlePaint)
-
-        val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            this.typeface = typeface
-            textAlign = Paint.Align.CENTER
-            textSize = 8.sp.toPx()
-            letterSpacing = 0.06f
-            color = Green.copy(alpha = 0.72f + pulse * 0.28f).toArgb()
-        }
-
-        native.drawText(
-            status,
-            w / 2f,
-            h * 0.78f + 3.dp.toPx(),
-            statusPaint
-        )
-    }
-}
-
 private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
     val cx = size.width / 2f
     val cy = size.height / 2f
     val spread = 8.dp.toPx() * (1f - open * 0.65f)
-
     for (i in -1..1) {
         val y = cy + i * spread
         drawLine(
@@ -403,7 +349,7 @@ private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
             start = Offset(cx - 11.dp.toPx(), y),
             end = Offset(cx + 11.dp.toPx(), y),
             strokeWidth = 2.5.dp.toPx() * (1f + press * 0.15f),
-            cap = StrokeCap.Round
+            cap = StrokeCap.Square
         )
     }
 }
@@ -411,20 +357,13 @@ private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
 private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
     val center = Offset(size.width * 0.43f, size.height * 0.43f)
     val radius = 8.5.dp.toPx()
-
-    drawCircle(
-        color = color,
-        radius = radius,
-        center = center,
-        style = Stroke(width = 2.4.dp.toPx() * (1f + press * 0.15f))
-    )
-
+    drawCircle(color = color, radius = radius, center = center, style = Stroke(width = 2.4.dp.toPx() * (1f + press * 0.15f)))
     drawLine(
-        color = Pink,
+        color = CyberColors.Magenta,
         start = center + Offset(radius * 0.68f, radius * 0.68f),
         end = center + Offset(13.dp.toPx(), 13.dp.toPx()),
         strokeWidth = 2.4.dp.toPx(),
-        cap = StrokeCap.Round
+        cap = StrokeCap.Square
     )
 }
 
@@ -432,41 +371,18 @@ private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     val cx = size.width / 2f
     val top = 9.dp.toPx()
     val bottom = 29.dp.toPx()
-
     val path = Path().apply {
         moveTo(cx - 9.dp.toPx(), bottom)
-        cubicTo(
-            cx - 7.dp.toPx(), bottom - 4.dp.toPx(),
-            cx - 7.dp.toPx(), top + 3.dp.toPx(),
-            cx, top
-        )
-        cubicTo(
-            cx + 7.dp.toPx(), top + 3.dp.toPx(),
-            cx + 7.dp.toPx(), bottom - 4.dp.toPx(),
-            cx + 9.dp.toPx(), bottom
-        )
+        cubicTo(cx - 7.dp.toPx(), bottom - 4.dp.toPx(), cx - 7.dp.toPx(), top + 3.dp.toPx(), cx, top)
+        cubicTo(cx + 7.dp.toPx(), top + 3.dp.toPx(), cx + 7.dp.toPx(), bottom - 4.dp.toPx(), cx + 9.dp.toPx(), bottom)
     }
-
-    drawPath(
-        path = path,
-        color = color,
-        style = Stroke(
-            width = 2.3.dp.toPx() * (1f + press * 0.15f),
-            cap = StrokeCap.Round
-        )
-    )
-
+    drawPath(path = path, color = color, style = Stroke(width = 2.3.dp.toPx() * (1f + press * 0.15f), cap = StrokeCap.Square))
     drawLine(
         color = color,
         start = Offset(cx - 11.dp.toPx(), bottom),
         end = Offset(cx + 11.dp.toPx(), bottom),
         strokeWidth = 2.3.dp.toPx(),
-        cap = StrokeCap.Round
+        cap = StrokeCap.Square
     )
-
-    drawCircle(
-        color = Pink,
-        radius = 2.dp.toPx(),
-        center = Offset(cx, bottom + 4.dp.toPx())
-    )
+    drawCircle(color = CyberColors.Magenta, radius = 2.dp.toPx(), center = Offset(cx, bottom + 4.dp.toPx()))
 }
