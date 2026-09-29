@@ -1309,7 +1309,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                     if (lastMapNearbyStops.isNotEmpty()) {
                         refreshMapVehicles(map, line, lastMapNearbyStops)
                     }
-                    Handler(Looper.getMainLooper()).postDelayed(this, 5_000L)
+                    Handler(Looper.getMainLooper()).postDelayed(this, GPS_REFRESH_INTERVAL_MS)
                 }
             }
         }
@@ -1537,7 +1537,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                 lineCodes.map { lineCode ->
                     java.util.concurrent.Callable {
                         val arrivals = runCatching {
-                            api.getArrivals(stop.identifier, lineCode, 5_000)
+                            api.getArrivals(stop.identifier, lineCode, GPS_REQUEST_TIMEOUT_MS)
                         }.getOrDefault(emptyList())
                         Triple(stop, lineCode, arrivals)
                     }
