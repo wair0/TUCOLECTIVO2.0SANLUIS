@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,13 +34,8 @@ private val NeonPink = Color(0xFFFF2E9A)
 private val Ink = Color(0xFF060912)
 private val Muted = Color(0xFF6B7A8A)
 
-/** Niveles: LÍNEAS → CALLES → INTERSECCIONES → PARADAS → ARRIBOS */
 enum class LinesLevel {
-    CATALOG,
-    STREETS,
-    INTERSECTIONS,
-    STOPS,
-    ARRIVALS
+    CATALOG, STREETS, INTERSECTIONS, STOPS, ARRIVALS
 }
 
 @Composable
@@ -78,91 +72,59 @@ fun LinesFlowScreen(
 ) {
     when (level) {
         LinesLevel.CATALOG -> LinesComposeScreen(
-            lines = lines,
-            loading = linesLoading,
-            error = linesError,
-            onRefresh = onRefreshLines,
-            onLineClick = onLineClick
+            lines = lines, loading = linesLoading, error = linesError,
+            onRefresh = onRefreshLines, onLineClick = onLineClick
         )
         LinesLevel.STREETS -> HierarchyListScreen(
             title = activeLine?.let { "LÍNEA ${it.code}" } ?: "CALLES",
             subtitle = activeLine?.name?.uppercase() ?: "RECORRIDO · CALLES",
-            loading = streetsLoading,
-            error = streetsError,
-            emptyMessage = "NO SE ENCONTRARON CALLES",
-            onBack = onBackLevel,
+            loading = streetsLoading, error = streetsError,
+            emptyMessage = "NO SE ENCONTRARON CALLES", onBack = onBackLevel,
             extraActions = {
                 if (activeLine != null) {
-                    NeonListRow(
-                        title = "MAPA DEL RECORRIDO",
-                        subtitle = "VER EN MAPA",
-                        accent = NeonPink,
-                        onClick = { onMapRoute(activeLine) }
-                    )
+                    NeonListRow(title = "MAPA DEL RECORRIDO", subtitle = "VER EN MAPA",
+                        accent = NeonPink, onClick = { onMapRoute(activeLine) })
                     Spacer(Modifier.height(8.dp))
                 }
             },
-            items = streets,
-            key = { it.code },
-            rowTitle = { it.name.uppercase() },
-            rowSubtitle = { "INTERSECCIONES" },
+            items = streets, key = { it.code },
+            rowTitle = { it.name.uppercase() }, rowSubtitle = { "INTERSECCIONES" },
             onItemClick = onStreetClick
         )
         LinesLevel.INTERSECTIONS -> HierarchyListScreen(
             title = "INTERSECCIONES",
             subtitle = activeStreet?.name?.uppercase() ?: "",
-            loading = intersectionsLoading,
-            error = intersectionsError,
-            emptyMessage = "NO SE ENCONTRARON INTERSECCIONES",
-            onBack = onBackLevel,
-            items = intersections,
-            key = { it.code },
-            rowTitle = { it.name.uppercase() },
-            rowSubtitle = { "PARADAS" },
+            loading = intersectionsLoading, error = intersectionsError,
+            emptyMessage = "NO SE ENCONTRARON INTERSECCIONES", onBack = onBackLevel,
+            items = intersections, key = { it.code },
+            rowTitle = { it.name.uppercase() }, rowSubtitle = { "PARADAS" },
             onItemClick = onIntersectionClick
         )
         LinesLevel.STOPS -> HierarchyListScreen(
             title = "PARADAS",
             subtitle = activeIntersection?.name?.uppercase() ?: "",
-            loading = stopsLoading,
-            error = stopsError,
-            emptyMessage = "NO SE ENCONTRARON PARADAS",
-            onBack = onBackLevel,
-            items = stops,
-            key = { it.code },
+            loading = stopsLoading, error = stopsError,
+            emptyMessage = "NO SE ENCONTRARON PARADAS", onBack = onBackLevel,
+            items = stops, key = { it.code },
             rowTitle = { it.description.uppercase() },
-            rowSubtitle = {
-                listOf(it.street, it.intersection).filter { s -> s.isNotBlank() }.joinToString(" · ").uppercase()
-            },
+            rowSubtitle = { listOf(it.street, it.intersection).filter { s -> s.isNotBlank() }.joinToString(" · ").uppercase() },
             onItemClick = onStopClick
         )
         LinesLevel.ARRIVALS -> ArrivalsComposeScreen(
-            stop = activeStop,
-            line = activeLine,
-            arrivals = arrivals,
-            loading = arrivalsLoading,
-            error = arrivalsError,
-            onBack = onBackLevel,
-            onRefresh = onRefreshArrivals,
-            onSaveFavorite = onSaveFavorite
+            stop = activeStop, line = activeLine, arrivals = arrivals,
+            loading = arrivalsLoading, error = arrivalsError,
+            onBack = onBackLevel, onRefresh = onRefreshArrivals, onSaveFavorite = onSaveFavorite
         )
     }
 }
 
 @Composable
 private fun <T> HierarchyListScreen(
-    title: String,
-    subtitle: String,
-    loading: Boolean,
-    error: String?,
-    emptyMessage: String,
-    onBack: () -> Unit,
+    title: String, subtitle: String, loading: Boolean, error: String?,
+    emptyMessage: String, onBack: () -> Unit,
     extraActions: @Composable () -> Unit = {},
-    items: List<T>,
-    key: (T) -> Any,
-    rowTitle: (T) -> String,
-    rowSubtitle: (T) -> String,
-    onItemClick: (T) -> Unit
+    items: List<T>, key: (T) -> Any,
+    rowTitle: (T) -> String, rowSubtitle: (T) -> String, onItemClick: (T) -> Unit
 ) {
     Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.72f))) {
         HierarchyHeader(
@@ -188,10 +150,8 @@ private fun <T> HierarchyListScreen(
                     item { extraActions() }
                     items(items, key = key) { item ->
                         NeonListRow(
-                            title = rowTitle(item),
-                            subtitle = rowSubtitle(item),
-                            accent = NeonCeleste,
-                            onClick = { onItemClick(item) }
+                            title = rowTitle(item), subtitle = rowSubtitle(item),
+                            accent = NeonCeleste, onClick = { onItemClick(item) }
                         )
                     }
                 }
@@ -202,32 +162,19 @@ private fun <T> HierarchyListScreen(
 
 @Composable
 private fun ArrivalsComposeScreen(
-    stop: TransitStop?,
-    line: TransitLine?,
-    arrivals: List<TransitArrival>,
-    loading: Boolean,
-    error: String?,
-    onBack: () -> Unit,
-    onRefresh: () -> Unit,
-    onSaveFavorite: () -> Unit
+    stop: TransitStop?, line: TransitLine?, arrivals: List<TransitArrival>,
+    loading: Boolean, error: String?, onBack: () -> Unit,
+    onRefresh: () -> Unit, onSaveFavorite: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.72f))) {
-        HierarchyHeader(
-            title = "ARRIBOS",
-            subtitle = stop?.description?.uppercase() ?: "PARADA",
-            onBack = onBack
-        )
+        HierarchyHeader(title = "ARRIBOS", subtitle = stop?.description?.uppercase() ?: "PARADA", onBack = onBack)
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            item {
-                NeonListRow(title = "ACTUALIZAR ARRIBOS", subtitle = "ACCIÓN", accent = NeonCeleste, onClick = onRefresh)
-            }
-            item {
-                NeonListRow(title = "☆ GUARDAR PARADA", subtitle = "FAVORITOS", accent = NeonCeleste, onClick = onSaveFavorite)
-            }
+            item { NeonListRow(title = "ACTUALIZAR ARRIBOS", subtitle = "ACCIÓN", accent = NeonCeleste, onClick = onRefresh) }
+            item { NeonListRow(title = "☆ GUARDAR PARADA", subtitle = "FAVORITOS", accent = NeonCeleste, onClick = onSaveFavorite) }
             when {
                 loading && arrivals.isEmpty() -> item { CenterMsg("CONSULTANDO PRÓXIMOS ARRIBOS...") }
                 error != null && arrivals.isEmpty() -> item { CenterMsg(error) }
@@ -248,50 +195,24 @@ private fun ArrivalsComposeScreen(
 
 @Composable
 private fun HierarchyHeader(title: String, subtitle: String, onBack: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        NeonListRow(
-            title = "← ATRÁS",
-            subtitle = "",
-            accent = NeonCeleste,
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth(0.32f).height(48.dp)
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+        NeonListRow(title = "← ATRÁS", subtitle = "VOLVER", accent = NeonCeleste, onClick = onBack)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = title, color = NeonCore, fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = 1.2.sp,
+            maxLines = 1, overflow = TextOverflow.Ellipsis
         )
-        Spacer(Modifier.padding(6.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = NeonCore,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                letterSpacing = 1.2.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = subtitle,
-                color = Muted,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 11.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        Text(
+            text = subtitle, color = Muted, fontFamily = FontFamily.Monospace,
+            fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
 @Composable
 private fun CenterMsg(message: String) {
     Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-        Text(
-            text = message,
-            color = Muted,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 12.sp,
-            letterSpacing = 1.sp
-        )
+        Text(text = message, color = Muted, fontFamily = FontFamily.Monospace, fontSize = 12.sp, letterSpacing = 1.sp)
     }
 }
