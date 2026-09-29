@@ -13,7 +13,6 @@ import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -23,23 +22,12 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/*
- * Botón cyberpunk "SINCRONIZAR LINEAS" dibujado 100 % con Canvas (Jetpack Compose + Material3).
- * Mismo lenguaje visual que NeonMenu.kt: marco neón con esquinas cortadas, scanlines,
- * destello que recorre el borde e ícono animado.
- *
- * Uso: NeonSyncButton(syncing = viewModel.syncing, onClick = { viewModel.sincronizar() })
- * Mientras syncing = true el color pasa de celeste a rosa, las flechas giran y aparece una barra de progreso.
- */
-
-// ───────────── Paleta ─────────────
 private val NeonCeleste = Color(0xFF19D9FF)
 private val NeonCore = Color(0xFFE8FCFF)
 private val NeonPink = Color(0xFFFF2E9A)
 private val Ink = Color(0xFF060912)
 private val TAU = (2.0 * PI).toFloat()
 
-// ───────────── Botón ─────────────
 @Composable
 fun NeonSyncButton(
     modifier: Modifier = Modifier,
@@ -48,51 +36,37 @@ fun NeonSyncButton(
     syncing: Boolean = false,
     onClick: () -> Unit = {}
 ) {
+    val cyberFont = rememberCyberpunkFontFamily()
     val infinite = rememberInfiniteTransition(label = "sync")
-    val t by infinite.animateFloat(
-        0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing)), label = "t"
-    )
-    val pulse by infinite.animateFloat(
-        0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse"
-    )
-    val spin by infinite.animateFloat(
-        0f, 360f, infiniteRepeatable(tween(1100, easing = LinearEasing)), label = "spin"
-    )
+    val t by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing)), label = "t")
+    val pulse by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
+    val spin by infinite.animateFloat(0f, 360f, infiniteRepeatable(tween(1100, easing = LinearEasing)), label = "spin")
     val mix by animateFloatAsState(if (syncing) 1f else 0f, tween(300), label = "mix")
-
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val press by animateFloatAsState(if (pressed) 1f else 0f, tween(120), label = "press")
 
     Box(
-        modifier
-            .fillMaxWidth()
-            .height(72.dp)
+        modifier.fillMaxWidth().height(72.dp)
             .graphicsLayer { val k = 1f - 0.03f * press; scaleX = k; scaleY = k }
             .clickable(interactionSource = source, indication = null, enabled = !syncing, onClick = onClick)
     ) {
-        // Los valores animados se leen solo al dibujar: no hay recomposición por frame.
         Canvas(Modifier.fillMaxSize()) {
             val flick = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.45f else 1f
             val glow = (0.7f + 0.45f * pulse + 0.6f * press) * flick
             val accent = lerp(NeonCeleste, NeonPink, mix)
-
             val pad = 8.dp.toPx()
             val fw = size.width - 2 * pad
             val fh = size.height - 2 * pad
             val cut = fh * 0.34f
-            val frame = Path().apply { // esquinas cortadas: arriba-izquierda y abajo-derecha
-                moveTo(pad + cut, pad)
-                lineTo(pad + fw, pad)
-                lineTo(pad + fw, pad + fh - cut)
-                lineTo(pad + fw - cut, pad + fh)
-                lineTo(pad, pad + fh)
-                lineTo(pad, pad + cut)
-                close()
+            val frame = Path().apply {
+                moveTo(pad + cut, pad); lineTo(pad + fw, pad); lineTo(pad + fw, pad + fh - cut)
+                lineTo(pad + fw - cut, pad + fh); lineTo(pad, pad + fh); lineTo(pad, pad + cut); close()
             }
-
             clipPath(frame) {
-                val band = 40.dp.toPx() // barra de escaneo vertical que cruza el botón
+                // Panel más opaco (+50%)
+                drawRect(Ink.copy(alpha = 0.82f), topLeft = Offset(pad, pad), size = Size(fw, fh))
+                val band = 40.dp.toPx()
                 val bx = pad + fw * t
                 drawRect(
                     Brush.horizontalGradient(
@@ -101,7 +75,7 @@ fun NeonSyncButton(
                     ),
                     topLeft = Offset(bx - band, pad), size = Size(band * 2, fh)
                 )
-                if (mix > 0f) { // barra de progreso indeterminada
+                if (mix > 0f) {
                     val w = fw * 0.3f
                     val px = pad - w + (fw + w) * ((t * 2f) % 1f)
                     drawRect(
@@ -113,23 +87,15 @@ fun NeonSyncButton(
                     )
                 }
             }
-
             neon(accent, 2.4.dp.toPx(), glow, flick) { c, st -> drawPath(frame, c, style = st) }
-
-            // destello con cola que recorre el borde
             val measure = PathMeasure().apply { setPath(frame, true) }
             val head = measure.length * t
             val tail = measure.length * 0.14f
             val seg = Path()
-            val steps = 5
-            for (k in 0 until steps) {
-                measure.slice(head - tail * (k + 1) / steps, head - tail * k / steps, seg)
-                neon(accent, 3.4.dp.toPx(), 1.8f, 1f - k / steps.toFloat(), layers = 2) { c, st ->
-                    drawPath(seg, c, style = st)
-                }
+            for (k in 0 until 5) {
+                measure.slice(head - tail * (k + 1) / 5, head - tail * k / 5, seg)
+                neon(accent, 3.4.dp.toPx(), 1.8f, 1f - k / 5f, layers = 2) { c, st -> drawPath(seg, c, style = st) }
             }
-
-            // indicadores HUD (esquina superior derecha)
             for (i in 0..2) {
                 val on = (t * 9f).toInt() % 3 == i
                 drawRect(
@@ -138,50 +104,29 @@ fun NeonSyncButton(
                     Size(6.dp.toPx(), 3.dp.toPx())
                 )
             }
-
-            // ícono (diseñado en una grilla de 100×100)
             val s = fh * 0.72f
             translate(pad + cut * 0.55f + 4.dp.toPx(), (size.height - s) / 2f) {
                 scale(s / 100f, Offset.Zero) { syncIcon(if (syncing) spin else 0f, pulse, glow, accent) }
             }
         }
-
         Text(
             text = if (syncing) syncingText else text,
-            color = NeonCore,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-            letterSpacing = 2.sp,
-            textAlign = TextAlign.Center,
+            color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Bold,
+            fontSize = 15.sp, letterSpacing = 2.sp, textAlign = TextAlign.Center,
             style = TextStyle(shadow = Shadow(if (syncing) NeonPink else NeonCeleste, Offset.Zero, 20f)),
             modifier = Modifier.align(Alignment.Center).padding(start = 44.dp, end = 12.dp)
         )
     }
 }
 
-// ───────────── Utilidades de neón ─────────────
-
-/** Trazo tipo tubo de neón: halo difuso (capas anchas y transparentes) + color + núcleo blanco. */
-private inline fun neon(
-    color: Color,
-    width: Float,
-    glow: Float = 1f,
-    alpha: Float = 1f,
-    layers: Int = 4,
-    draw: (Color, Stroke) -> Unit
-) {
+private inline fun neon(color: Color, width: Float, glow: Float = 1f, alpha: Float = 1f, layers: Int = 4, draw: (Color, Stroke) -> Unit) {
     for (i in layers downTo 1) {
-        draw(
-            color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)),
-            Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Round)
-        )
+        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
     draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
     draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
 
-/** Tramo [from, to] de un contorno cerrado; admite valores negativos (da la vuelta al inicio). */
 private fun PathMeasure.slice(from: Float, to: Float, out: Path) {
     out.reset()
     val l = length
@@ -192,9 +137,6 @@ private fun PathMeasure.slice(from: Float, to: Float, out: Path) {
     }
 }
 
-// ───────────── Ícono (coordenadas 0..100) ─────────────
-
-/** Dos flechas circulares que giran; núcleo rosa que late. */
 private fun DrawScope.syncIcon(angle: Float, pulse: Float, glow: Float, accent: Color) {
     val c = Offset(50f, 50f)
     val r = 30f
@@ -206,14 +148,12 @@ private fun DrawScope.syncIcon(angle: Float, pulse: Float, glow: Float, accent: 
             neon(accent, 5f, glow, layers = 3) { col, st ->
                 drawArc(col, start, sweep, false, Offset(c.x - r, c.y - r), Size(2 * r, 2 * r), style = st)
             }
-            val a = (start + sweep) * PI.toFloat() / 180f // punta de flecha al final del arco
+            val a = (start + sweep) * PI.toFloat() / 180f
             val nrm = Offset(cos(a), sin(a))
             val dir = Offset(-sin(a), cos(a))
             val tip = c + nrm * r
             val head = Path().apply {
-                val p1 = tip + dir * 13f
-                val p2 = tip + nrm * 10f
-                val p3 = tip - nrm * 10f
+                val p1 = tip + dir * 13f; val p2 = tip + nrm * 10f; val p3 = tip - nrm * 10f
                 moveTo(p1.x, p1.y); lineTo(p2.x, p2.y); lineTo(p3.x, p3.y); close()
             }
             drawPath(head, Ink)
