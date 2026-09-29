@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.transpuntano.transpuntano20"
+    namespace = "com.tucolectivo.app"
     compileSdk = 35
     defaultConfig {
         applicationId = "com.tucolectivo.app"
