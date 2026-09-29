@@ -48,14 +48,23 @@ jobs:
 
       - name: Verify Compose classpath
         run: |
-          set -o pipefail
-          ./gradlew :app:dependencies --configuration debugCompileClasspath --no-daemon --console=plain > compose-classpath.txt
-          echo "=== COMPOSE DEPENDENCIES ==="
-          grep -E "androidx.compose.(ui|runtime|foundation|material3)|androidx.activity:activity-compose" compose-classpath.txt | head -80
-          echo "=== COMPOSE DEPENDENCY INSIGHT ==="
+          set +e
+          ./gradlew :app:dependencies --configuration debugCompileClasspath --no-daemon --console=plain > compose-classpath.txt 2>&1
+          DEP_STATUS=$?
+          echo "=== ESTADO DEPENDENCIES: $DEP_STATUS ==="
+          echo "=== REPORTE COMPLETO debugCompileClasspath ==="
+          cat compose-classpath.txt
+          echo "=== DEPENDENCY INSIGHT androidx.compose.ui:ui ==="
           ./gradlew :app:dependencyInsight --configuration debugCompileClasspath --dependency androidx.compose.ui:ui --no-daemon --console=plain
-          test -s compose-classpath.txt
-          grep -Eq "androidx.compose.(ui|runtime|foundation|material3)" compose-classpath.txt
+          INSIGHT_STATUS=$?
+          echo "=== ESTADO DEPENDENCY INSIGHT: $INSIGHT_STATUS ==="
+          echo "=== COMPROBACION DE COMPOSE ==="
+          grep -E "androidx.compose.(ui|runtime|foundation|material3)|androidx.activity:activity-compose" compose-classpath.txt || true
+          if [ "$DEP_STATUS" -ne 0 ]; then exit "$DEP_STATUS"; fi
+          if ! grep -Eq "androidx.compose.(ui|runtime|foundation|material3)" compose-classpath.txt; then
+            echo "ERROR: COMPOSE NO ESTA EN debugCompileClasspath"
+            exit 1
+          fi
 
       - name: Build Debug APK
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
