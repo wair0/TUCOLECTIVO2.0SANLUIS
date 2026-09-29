@@ -414,35 +414,6 @@ class MainActivity : AppCompatActivity() {
         title.text = ""
         updateNav(0)
         content.removeAllViews()
-        return
-        val box = box()
-        val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val row1 = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
-        }
-        val row2 = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
-        }
-        val item1 = cardHomeImage("lineas_cyberpunk.webp") { showLines() }
-        val item2 = cardHomeAsset("mapa_cyberpunk.webp", "MAPA · Explorar el mapa") { showMap(null) }
-        val item3 = cardHomeAsset("paradas_cercanas_cyberpunk.webp", "PARADAS CERCANAS · Por tu ubicación") { showNearby() }
-        val item4 = cardHomeAsset("favoritos_cyberpunk.webp", "FAVORITOS · Paradas guardadas") { showFavorites() }
-        row1.addView(item1, LinearLayout.LayoutParams(0, dp(140), 1f).apply { rightMargin = dp(6) })
-        row1.addView(item2, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
-        row2.addView(item3, LinearLayout.LayoutParams(0, dp(140), 1f).apply { rightMargin = dp(6) })
-        row2.addView(item4, LinearLayout.LayoutParams(0, dp(140), 1f).apply { leftMargin = dp(6) })
-        grid.addView(row1); grid.addView(row2); box.addView(grid)
-        box.addView(cyberSyncButton { loadLines(false) }, LinearLayout.LayoutParams(-1, dp(60)).apply { topMargin = dp(20) })
-        // FUENTE CYBERPUNK: se reaplica a TODA la sección Inicio.
-        // Esto incluye todos los TextView actuales y cualquier TextView hijo
-        // generado dentro de las tarjetas, botones o textos de respaldo.
-        applyCyberpunkTypeface(box)
-        content.addView(ScrollView(this).apply {
-            addView(box)
-            // Cyberpunk ya fue aplicada recursivamente al contenido completo de Inicio.
-        })
     }
 
     private fun loadAssetBitmap(assetName: String): android.graphics.Bitmap? {
