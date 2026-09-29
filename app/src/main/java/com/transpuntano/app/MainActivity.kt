@@ -1283,16 +1283,6 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         root.addView(mapFrame, FrameLayout.LayoutParams(-1, -1).apply {
             leftMargin = dp(6); rightMargin = dp(6); topMargin = dp(6); bottomMargin = dp(6)
         })
-        val info = TextView(this).apply {
-            text = if (line == null) {
-                "MAPA  •  UBICACIÓN Y PARADAS CERCANAS"
-            } else {
-                "MAPA  •  LÍNEA " + line.code + "  •  GPS EN TIEMPO REAL"
-            }
-            textSize = 11f; typeface = cyberpunkTypeface; setTextColor(cyan)
-            setPadding(dp(14), dp(10), dp(14), dp(10)); setBackgroundColor(0xCC05070C.toInt())
-        }
-        root.addView(info, FrameLayout.LayoutParams(-1, dp(44)).apply { gravity = Gravity.TOP })
         content.addView(root)
         if (line != null) {
             executor.execute {
