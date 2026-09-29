@@ -405,6 +405,7 @@ private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
 
 private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
     val unit = size.minDimension / 44f
+    val magenta = CyberColors.Magenta
     val cx = size.width * 0.44f
     val cy = size.height * 0.44f
     val r = 8.5f * unit
@@ -464,6 +465,7 @@ private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
 
 private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     val unit = size.minDimension / 44f
+    val magenta = CyberColors.Magenta
     val cx = size.width / 2f
     val white = Color(0xFFE8FCFF)
     val top = 9f * unit
