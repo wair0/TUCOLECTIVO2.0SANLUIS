@@ -49,7 +49,7 @@ fun NeonMenuScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            
+            .background(Ink)
             .padding(12.dp),
         verticalArrangement = Arrangement.Center
     ) {
