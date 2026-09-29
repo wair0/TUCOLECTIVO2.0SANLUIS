@@ -74,7 +74,7 @@ fun LinesComposeScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()
         ) {
             items(lines, key = { it.code }) { line ->
-                NeonListRow(title = line.name.uppercase(), subtitle = "CÓDIGO ${line.code}",
+                NeonListRow(title = line.name.uppercase(), subtitle = "",
                     accent = NeonCeleste, onClick = { onLineClick(line) })
             }
         }
@@ -96,7 +96,7 @@ fun FavoritesComposeScreen(favorites: List<FavoriteStopUi>, onFavoriteClick: (Fa
             items(favorites, key = { "${it.lineCode}-${it.stopCode}" }) { fav ->
                 NeonListRow(
                     title = fav.description.uppercase(),
-                    subtitle = "LÍNEA ${fav.lineCode} · ${fav.street}".uppercase(),
+                    subtitle = listOf(fav.street, fav.intersection).filter { it.isNotBlank() }.joinToString(" · ").uppercase(),
                     accent = NeonPink, onClick = { onFavoriteClick(fav) }
                 )
             }
@@ -227,9 +227,11 @@ fun NeonListRow(
         ) {
             Text(text = title, color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Bold,
                 fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(3.dp))
-            Text(text = subtitle, color = Muted, fontFamily = cyberFont,
-                fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (subtitle.isNotBlank()) {
+                Spacer(Modifier.height(3.dp))
+                Text(text = subtitle, color = Muted, fontFamily = cyberFont,
+                    fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
