@@ -48,7 +48,14 @@ jobs:
 
       - name: Verify Compose classpath
         run: |
-          ./gradlew :app:dependencies --configuration debugCompileClasspath --no-daemon | grep -E "androidx.compose.(ui|runtime|foundation|material3)" | head -40
+          set -o pipefail
+          ./gradlew :app:dependencies --configuration debugCompileClasspath --no-daemon --console=plain > compose-classpath.txt
+          echo "=== COMPOSE DEPENDENCIES ==="
+          grep -E "androidx.compose.(ui|runtime|foundation|material3)|androidx.activity:activity-compose" compose-classpath.txt | head -80
+          echo "=== COMPOSE DEPENDENCY INSIGHT ==="
+          ./gradlew :app:dependencyInsight --configuration debugCompileClasspath --dependency androidx.compose.ui:ui --no-daemon --console=plain
+          test -s compose-classpath.txt
+          grep -Eq "androidx.compose.(ui|runtime|foundation|material3)" compose-classpath.txt
 
       - name: Build Debug APK
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
