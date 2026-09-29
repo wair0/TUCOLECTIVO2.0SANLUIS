@@ -1,4 +1,4 @@
-package com.transpuntano.app
+package com.tucolectivo.app
 
 import android.Manifest
 import android.content.Context
