@@ -1,12 +1,13 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android") version "2.0.21"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
 }
 
 android {
     namespace = "com.tucolectivo.app"
     compileSdk = 35
+
     defaultConfig {
         applicationId = "com.tucolectivo.app"
         minSdk = 24
@@ -14,6 +15,7 @@ android {
         versionCode = 30
         versionName = "3.0.0-native"
     }
+
     signingConfigs {
         create("release") {
             storeFile = file("../keystore/transpuntano20-release.jks")
@@ -22,18 +24,27 @@ android {
             keyPassword = "android"
         }
     }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("release")
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     buildFeatures {
         buildConfig = true
         viewBinding = true
@@ -42,13 +53,13 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.material)
-    implementation(libs.androidx.activity)
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.activity:activity-ktx:1.9.3")
 
-    // Jetpack Compose BOM: mantiene runtime, UI, foundation, animation y Material3 sincronizados.
+    // Compose BOM: versiones de todas las librerías Compose sincronizadas.
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
 
     implementation("androidx.activity:activity-compose:1.9.3")
