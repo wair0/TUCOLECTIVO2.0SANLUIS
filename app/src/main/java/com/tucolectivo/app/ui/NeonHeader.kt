@@ -37,20 +37,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/*
- * Header cyberpunk "TU COLECTIVO 2.0" dibujado con Canvas (Jetpack Compose + Material3).
- *  - Izquierda: botón hamburguesa que se convierte en X y abre el menú contextual.
- *  - Centro: título con parpadeo de neón.
- *  - Derecha: lupa (panel con barra buscadora) y campanita (panel de notificaciones).
- * Solo hay un panel abierto a la vez; tocar fuera o el botón otra vez lo cierra.
- *
- * Uso: NeonHeader(
- *          modifier = Modifier.statusBarsPadding(),
- *          notifications = lista, onMenuItem = { i -> }, onSearch = { q -> }, onNotification = { i -> }
- *      )
- */
-
-// ───────────── Paleta ─────────────
 private val NeonCeleste = Color(0xFF19D9FF)
 private val NeonCore = Color(0xFFE8FCFF)
 private val NeonPink = Color(0xFFFF2E9A)
@@ -61,45 +47,55 @@ data class NeonNotification(val title: String, val detail: String, val time: Str
 
 private enum class Panel { None, Menu, Search, Notifications }
 
-// ───────────── Header ─────────────
 @Composable
 fun NeonHeader(
     modifier: Modifier = Modifier,
     title: String = "TU COLECTIVO 2.0",
-    menuItems: List<String> = listOf("LÍNEAS", "MAPA", "PARADAS CERCANAS", "FAVORITOS", "AJUSTES"),
+    statusText: String = "● SISTEMA LISTO",
+    menuItems: List<String> = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS"),
     notifications: List<NeonNotification> = emptyList(),
     onMenuItem: (Int) -> Unit = {},
     onSearch: (String) -> Unit = {},
     onNotification: (Int) -> Unit = {}
 ) {
+    val cyberFont = rememberCyberpunkFontFamily()
     var panel by remember { mutableStateOf(Panel.None) }
     val toggle = { p: Panel -> panel = if (panel == p) Panel.None else p }
     val close = { panel = Panel.None }
     val unread = notifications.any { it.unread }
 
     val infinite = rememberInfiniteTransition(label = "header")
-    val t by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(4000, easing = LinearEasing)), label = "t")
+    val t by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(3800, easing = LinearEasing)), label = "t")
     val pulse by infinite.animateFloat(
-        0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse"
+        0f, 1f,
+        infiniteRepeatable(tween(1100, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "pulse"
+    )
+    val breath by infinite.animateFloat(
+        0f, 1f,
+        infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "breath"
     )
     val dx = with(LocalDensity.current) { 8.dp.roundToPx() }
-    val dy = with(LocalDensity.current) { 66.dp.roundToPx() }
+    val dy = with(LocalDensity.current) { 80.dp.roundToPx() }
 
-    Box(modifier.fillMaxWidth().height(64.dp)) {
-        // Los valores animados se leen solo al dibujar: no hay recomposición por frame.
+    Box(modifier.fillMaxWidth().height(78.dp)) {
         Canvas(Modifier.fillMaxSize()) {
-            val flick = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.45f else 1f
-            val glow = (0.7f + 0.45f * pulse) * flick
+            val flick = when {
+                t in 0.58f..0.595f -> 0.35f
+                t in 0.62f..0.628f -> 0.5f
+                t in 0.71f..0.718f -> 0.4f
+                else -> 1f
+            }
+            val glow = (0.45f + 0.3f * breath + 0.4f * pulse) * flick
             val w = size.width
             val h = size.height
             val cut = 16.dp.toPx()
             val y = h - 3.dp.toPx()
 
-            // línea inferior con esquinas cortadas
             val line = Path().apply { moveTo(0f, y - cut); lineTo(cut, y); lineTo(w - cut, y); lineTo(w, y - cut) }
             neon(NeonCeleste, 2.dp.toPx(), glow, flick) { c, st -> drawPath(line, c, style = st) }
 
-            // destello con cola que recorre la línea
             val m = PathMeasure().apply { setPath(line, false) }
             val head = m.length * t
             val tail = m.length * 0.16f
@@ -116,7 +112,7 @@ fun NeonHeader(
                     }
                 }
             }
-            for (i in 0..2) { // indicadores HUD sobre la línea
+            for (i in 0..2) {
                 val on = (t * 9f).toInt() % 3 == i
                 drawRect(
                     NeonPink.copy(alpha = if (on) 1f else 0.3f),
@@ -141,20 +137,35 @@ fun NeonHeader(
             }
         }
 
-        Text(
-            text = title,
-            color = NeonCore,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            fontSize = 14.sp,
-            letterSpacing = 1.5.sp,
-            maxLines = 1,
-            softWrap = false,
-            style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 20f)),
-            modifier = Modifier.align(Alignment.Center).graphicsLayer {
-                alpha = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.55f else 1f // parpadeo de neón
-            }
-        )
+        Column(
+            Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = title,
+                color = NeonCore,
+                fontFamily = cyberFont,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                letterSpacing = 1.5.sp,
+                maxLines = 1,
+                softWrap = false,
+                style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 20f)),
+                modifier = Modifier.graphicsLayer {
+                    alpha = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.55f else 1f
+                }
+            )
+            Text(
+                text = statusText,
+                color = NeonCeleste.copy(alpha = 0.85f),
+                fontFamily = cyberFont,
+                fontSize = 9.sp,
+                letterSpacing = 1.2.sp,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
 
         val props = PopupProperties(focusable = true)
         when (panel) {
@@ -176,7 +187,7 @@ fun NeonHeader(
                     PanelTitle("NOTIFICACIONES")
                     if (notifications.isEmpty()) {
                         Text(
-                            "SIN NOTIFICACIONES", color = NeonCeleste.copy(alpha = 0.6f), fontFamily = FontFamily.Monospace,
+                            "SIN NOTIFICACIONES", color = NeonCeleste.copy(alpha = 0.6f), fontFamily = cyberFont,
                             fontSize = 12.sp, modifier = Modifier.padding(vertical = 14.dp)
                         )
                     }
@@ -189,7 +200,6 @@ fun NeonHeader(
     }
 }
 
-// ───────────── Botón de ícono ─────────────
 @Composable
 private fun NeonIconButton(
     active: Boolean,
@@ -204,12 +214,12 @@ private fun NeonIconButton(
         0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing), initialStartOffset = offset), label = "t"
     )
     val pulse by infinite.animateFloat(
-        0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse, offset), label = "pulse"
+        0f, 1f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse, offset), label = "pulse"
     )
     val open by animateFloatAsState(if (active) 1f else 0f, tween(220), label = "open")
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
-    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(120), label = "press")
+    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(90), label = "press")
 
     Box(
         Modifier
@@ -218,7 +228,11 @@ private fun NeonIconButton(
             .clickable(interactionSource = source, indication = null, onClick = onClick)
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            val flick = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.45f else 1f
+            val flick = when {
+                t in 0.58f..0.595f -> 0.35f
+                t in 0.62f..0.628f -> 0.5f
+                else -> 1f
+            }
             val glow = (0.7f + 0.45f * pulse + 0.6f * press + 0.4f * open) * flick
             val accent = lerp(NeonCeleste, NeonPink, open)
 
@@ -226,7 +240,7 @@ private fun NeonIconButton(
             val w = size.width - 2 * pad
             val h = size.height - 2 * pad
             val cut = 9.dp.toPx()
-            val frame = Path().apply { // esquinas cortadas: arriba-izquierda y abajo-derecha
+            val frame = Path().apply {
                 moveTo(pad + cut, pad)
                 lineTo(pad + w, pad)
                 lineTo(pad + w, pad + h - cut)
@@ -241,7 +255,7 @@ private fun NeonIconButton(
             }
             neon(accent, 1.6.dp.toPx(), glow, flick) { c, st -> drawPath(frame, c, style = st) }
 
-            val s = size.width * 0.56f // ícono diseñado en una grilla de 100×100
+            val s = size.width * 0.56f
             translate((size.width - s) / 2f, (size.height - s) / 2f) {
                 scale(s / 100f, Offset.Zero) { icon(t, pulse, glow, open) }
             }
@@ -254,14 +268,13 @@ private fun NeonIconButton(
     }
 }
 
-// ───────────── Paneles ─────────────
 @Composable
 private fun NeonPanel(width: Dp, accent: Color, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.width(width).neonPanel(accent).padding(horizontal = 22.dp, vertical = 20.dp), content = content)
 }
 
 private fun Modifier.neonPanel(accent: Color) = drawBehind {
-    val inset = 6.dp.toPx() // deja lugar al halo del neón
+    val inset = 6.dp.toPx()
     val cut = 14.dp.toPx()
     val r = size.width - inset
     val b = size.height - inset
@@ -279,18 +292,20 @@ private fun Modifier.neonPanel(accent: Color) = drawBehind {
 
 @Composable
 private fun PanelTitle(text: String) {
-    Text(text, color = NeonPink, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp)
+    val cyberFont = rememberCyberpunkFontFamily()
+    Text(text, color = NeonPink, fontFamily = cyberFont, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp)
     Spacer(Modifier.height(6.dp))
     Box(Modifier.fillMaxWidth().height(1.dp).background(NeonCeleste.copy(alpha = 0.3f)))
 }
 
 @Composable
 private fun NeonItem(text: String, onClick: () -> Unit) {
+    val cyberFont = rememberCyberpunkFontFamily()
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(width = 6.dp, height = 3.dp).background(NeonPink))
         Spacer(Modifier.width(12.dp))
         Text(
-            text, color = NeonCore, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold,
+            text, color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Bold,
             fontSize = 13.sp, letterSpacing = 1.sp, style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 12f))
         )
     }
@@ -298,23 +313,25 @@ private fun NeonItem(text: String, onClick: () -> Unit) {
 
 @Composable
 private fun NotificationRow(n: NeonNotification, onClick: () -> Unit) {
+    val cyberFont = rememberCyberpunkFontFamily()
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp)) {
         Box(Modifier.padding(top = 3.dp).size(8.dp).background(if (n.unread) NeonPink else NeonCeleste.copy(alpha = 0.3f)))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(n.title, color = NeonCore, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            Text(n.detail, color = NeonCeleste.copy(alpha = 0.8f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-            Text(n.time, color = NeonCeleste.copy(alpha = 0.5f), fontFamily = FontFamily.Monospace, fontSize = 10.sp)
+            Text(n.title, color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text(n.detail, color = NeonCeleste.copy(alpha = 0.8f), fontFamily = cyberFont, fontSize = 11.sp)
+            Text(n.time, color = NeonCeleste.copy(alpha = 0.5f), fontFamily = cyberFont, fontSize = 10.sp)
         }
     }
 }
 
 @Composable
 private fun SearchField(onSearch: (String) -> Unit) {
+    val cyberFont = rememberCyberpunkFontFamily()
     var query by remember { mutableStateOf("") }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
-    val mono = TextStyle(color = NeonCore, fontFamily = FontFamily.Monospace, fontSize = 14.sp, letterSpacing = 1.sp)
+    val mono = TextStyle(color = NeonCore, fontFamily = cyberFont, fontSize = 14.sp, letterSpacing = 1.sp)
     Row(
         Modifier
             .padding(top = 12.dp)
@@ -356,9 +373,6 @@ private fun SearchField(onSearch: (String) -> Unit) {
     }
 }
 
-// ───────────── Utilidades de neón ─────────────
-
-/** Trazo tipo tubo de neón: halo difuso (capas anchas y transparentes) + color + núcleo blanco. */
 private inline fun neon(
     color: Color,
     width: Float,
@@ -377,9 +391,6 @@ private inline fun neon(
     draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
 
-// ───────────── Íconos (coordenadas 0..100). open: 0 = reposo, 1 = panel abierto ─────────────
-
-/** Hamburguesa que se transforma en X al abrir el menú. */
 private fun DrawScope.menuIcon(pulse: Float, glow: Float, open: Float) {
     val col = lerp(NeonCeleste, NeonPink, open)
     for (i in 0..2) {
@@ -395,7 +406,6 @@ private fun DrawScope.menuIcon(pulse: Float, glow: Float, open: Float) {
     drawRect(NeonPink.copy(alpha = (0.4f + 0.6f * pulse) * (1f - open)), Offset(78f, 47f), Size(8f, 6f))
 }
 
-/** Lupa con un barrido de radar dentro de la lente. */
 private fun DrawScope.searchIcon(t: Float, pulse: Float, glow: Float, open: Float) {
     val col = lerp(NeonCeleste, NeonPink, open)
     val c = Offset(42f, 42f)
@@ -410,7 +420,6 @@ private fun DrawScope.searchIcon(t: Float, pulse: Float, glow: Float, open: Floa
     drawCircle(NeonPink.copy(alpha = 0.3f + 0.5f * pulse), 5f, c)
 }
 
-/** Campana que suena una vez cada ciclo mientras haya notificaciones sin leer. */
 private fun DrawScope.bellIcon(t: Float, pulse: Float, glow: Float, open: Float, ringing: Boolean) {
     val col = lerp(NeonCeleste, NeonPink, open)
     val k = if (ringing && t < 0.35f) 1f - t / 0.35f else 0f
@@ -423,23 +432,14 @@ private fun DrawScope.bellIcon(t: Float, pulse: Float, glow: Float, open: Float,
             cubicTo(68f, 50f, 68f, 62f, 76f, 70f)
             close()
         }
-        drawPath(body, Ink)
-        neon(col, 7f, glow, layers = 3) { c, st ->
-            drawPath(body, c, style = st)
-            drawLine(c, Offset(50f, 12f), Offset(50f, 20f), st.width, StrokeCap.Round)
-        }
-        drawCircle(NeonPink.copy(alpha = 0.3f + 0.3f * pulse), 9f, Offset(50f, 82f)) // badajo
-        drawCircle(NeonPink, 5f, Offset(50f, 82f))
+        neon(col, 6f, glow, layers = 3) { c, st -> drawPath(body, c, style = st) }
+        drawLine(col, Offset(44f, 20f), Offset(56f, 20f), 5f, StrokeCap.Round)
+        drawArc(col, 20f, 140f, false, Offset(38f, 66f), Size(24f, 16f), style = Stroke(5f))
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF060912, widthDp = 380, heightDp = 200)
+@Preview(showBackground = true, backgroundColor = 0xFF060912)
 @Composable
 private fun NeonHeaderPreview() {
-    NeonHeader(
-        notifications = listOf(
-            NeonNotification("LÍNEA 7 DEMORADA", "Retraso de 8 min en el recorrido", "HACE 2 MIN"),
-            NeonNotification("SINCRONIZACIÓN LISTA", "Líneas actualizadas", "HACE 1 H", unread = false)
-        )
-    )
+    NeonHeader(statusText = "● 12 LÍNEAS")
 }
