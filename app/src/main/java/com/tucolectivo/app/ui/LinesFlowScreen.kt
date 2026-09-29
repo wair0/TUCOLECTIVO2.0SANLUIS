@@ -123,9 +123,20 @@ private fun <T> HierarchyListScreen(
     rowTitle: (T) -> String,
     onItemClick: (T) -> Unit
 ) {
-    val infinite = rememberInfiniteTransition(label = "hierarchy")
-    val scan by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "scan")
-    Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.88f))) {
+    val infinite = rememberInfiniteTransition(label = "hierarchyHud")
+    val scan by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "hierarchyScan")
+    val pulse by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(1000, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "hierarchyPulse")
+    Box(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.92f))) {
+        Canvas(Modifier.fillMaxSize()) {
+            val step = 28.dp.toPx()
+            var x = 0f
+            while (x < size.width) { drawLine(NeonCeleste.copy(alpha = 0.025f), Offset(x, 0f), Offset(x, size.height), 1f); x += step }
+            var y = 0f
+            while (y < size.height) { drawLine(NeonCeleste.copy(alpha = 0.018f), Offset(0f, y), Offset(size.width, y), 1f); y += step }
+            val sy = size.height * scan
+            drawLine(NeonPink.copy(alpha = 0.35f + 0.25f * pulse), Offset(0f, sy), Offset(size.width, sy), 1.2.dp.toPx())
+        }
+        Column(Modifier.fillMaxSize()) {
         HierarchyHeader(title = title, subtitle = when {
             loading -> "CARGANDO..."
             error != null -> error
@@ -155,6 +166,7 @@ private fun <T> HierarchyListScreen(
                 }
             }
         }
+        }
     }
 }
 
@@ -165,7 +177,14 @@ private fun ArrivalsComposeScreen(
     onRefresh: () -> Unit, onSaveFavorite: () -> Unit,
     onMapRoute: (TransitLine) -> Unit
 ) {
-    Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.72f))) {
+    val infinite = rememberInfiniteTransition(label = "arrivalsHud")
+    val scan by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "arrivalsScan")
+    Box(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.92f))) {
+        Canvas(Modifier.fillMaxSize()) {
+            val sy = size.height * scan
+            drawLine(NeonPink.copy(alpha = 0.28f), Offset(0f, sy), Offset(size.width, sy), 1.2.dp.toPx())
+        }
+        Column(Modifier.fillMaxSize()) {
         HierarchyHeader(
             title = "ARRIBOS",
             subtitle = stop?.description?.uppercase() ?: "PARADA",
@@ -203,6 +222,7 @@ private fun ArrivalsComposeScreen(
                 }
             }
         }
+        }
     }
 }
 
@@ -210,7 +230,7 @@ private fun ArrivalsComposeScreen(
 private fun HierarchyHeader(title: String, subtitle: String, onBack: () -> Unit) {
     val cyberFont = rememberCyberpunkFontFamily()
     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-        NeonListRow(title = "← ATRÁS", subtitle = "", accent = NeonCeleste, onClick = onBack)
+        NeonListRow(title = "◀  ATRÁS", subtitle = "VOLVER AL NIVEL ANTERIOR", accent = NeonPink, onClick = onBack)
         Spacer(Modifier.height(8.dp))
         Text(
             text = title, color = NeonCore, fontFamily = cyberFont,

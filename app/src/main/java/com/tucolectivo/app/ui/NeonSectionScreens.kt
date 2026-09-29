@@ -1,6 +1,7 @@
 package com.tucolectivo.app.ui
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -211,30 +212,43 @@ private fun SectionScaffold(
     onAction: (() -> Unit)?, actionEnabled: Boolean = true, content: @Composable () -> Unit
 ) {
     val cyberFont = rememberCyberpunkFontFamily()
-    Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.88f))) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(text = "///  $title", color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Black,
-                    fontSize = 17.sp, letterSpacing = 1.8.sp,
-                    style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(NeonCeleste, Offset.Zero, 15f)))
-                Text(text = subtitle, color = NeonCeleste.copy(alpha = 0.78f), fontFamily = cyberFont, fontSize = 10.sp, letterSpacing = 0.8.sp,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            if (actionLabel != null && onAction != null) {
-                NeonMiniButton(label = actionLabel, enabled = actionEnabled, onClick = onAction)
-            }
+    val infinite = rememberInfiniteTransition(label = "sectionHud")
+    val scan by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2300, easing = LinearEasing)), label = "sectionScan")
+    val pulse by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(1100, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "sectionPulse")
+
+    Box(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.92f))) {
+        Canvas(Modifier.fillMaxSize()) {
+            val step = 26.dp.toPx()
+            var x = 0f
+            while (x < size.width) { drawLine(NeonCeleste.copy(alpha = 0.028f), Offset(x, 0f), Offset(x, size.height), 1f); x += step }
+            var y = 0f
+            while (y < size.height) { drawLine(NeonCeleste.copy(alpha = 0.02f), Offset(0f, y), Offset(size.width, y), 1f); y += step }
+            val sy = size.height * scan
+            drawRect(
+                Brush.verticalGradient(listOf(Color.Transparent, NeonPink.copy(alpha = 0.08f + 0.06f * pulse), Color.Transparent)),
+                Offset(0f, sy - 26.dp.toPx()), Size(size.width, 52.dp.toPx())
+            )
         }
-        Canvas(Modifier.fillMaxWidth().height(5.dp)) {
-            val y = size.height / 2f
-            drawRect(NeonCeleste.copy(alpha = 0.12f), Offset(0f, y - 1.dp.toPx()), Size(size.width, 2.dp.toPx()))
-            drawLine(NeonCeleste, Offset(12.dp.toPx(), y), Offset(size.width - 12.dp.toPx(), y), 1.2.dp.toPx())
-            drawCircle(NeonPink, 2.2.dp.toPx(), Offset(14.dp.toPx(), y))
-            drawCircle(NeonPink, 2.2.dp.toPx(), Offset(size.width - 14.dp.toPx(), y))
+        Column(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("///  $title", color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Black,
+                        fontSize = 17.sp, letterSpacing = 1.8.sp,
+                        style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(NeonCeleste, Offset.Zero, 15f)))
+                    Text(subtitle, color = NeonCeleste.copy(alpha = 0.78f), fontFamily = cyberFont, fontSize = 10.sp, letterSpacing = 0.8.sp,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                if (actionLabel != null && onAction != null) NeonMiniButton(actionLabel, actionEnabled, onAction)
+            }
+            Canvas(Modifier.fillMaxWidth().height(7.dp)) {
+                val y = size.height / 2f
+                val x = size.width * scan
+                drawLine(NeonCeleste.copy(alpha = 0.22f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                drawLine(NeonPink.copy(alpha = 0.95f), Offset((x - 54.dp.toPx()).coerceAtLeast(0f), y), Offset(x, y), 2.dp.toPx())
+                drawCircle(NeonPink.copy(alpha = 0.8f + 0.2f * pulse), 2.4.dp.toPx(), Offset(x, y))
+            }
+            Box(Modifier.weight(1f)) { content() }
         }
-        Box(Modifier.weight(1f)) { content() }
     }
 }
 
@@ -266,25 +280,29 @@ fun NeonListRow(
     )
 
     Box(
-        modifier = Modifier.fillMaxWidth().height(72.dp)
+        modifier = Modifier.fillMaxWidth().height(76.dp)
             .graphicsLayer { val k = 1f - 0.02f * press; scaleX = k; scaleY = k }
             .clickable(interactionSource = source, indication = null, onClick = onClick)
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val pad = 2.dp.toPx()
             val left = pad; val top = pad; val right = size.width - pad; val bottom = size.height - pad
-            val cut = 10.dp.toPx()
             drawRect(Panel, Offset(left, top), Size(right - left, bottom - top))
-            val frame = Path().apply {
-                moveTo(left + cut, top); lineTo(right - cut, top); lineTo(right, top + cut)
-                lineTo(right, bottom - cut); lineTo(right - cut, bottom); lineTo(left + cut, bottom)
-                lineTo(left, bottom - cut); lineTo(left, top + cut); close()
-            }
-            val glow = (0.25f + 0.2f * breath + 0.35f * pulse + 0.35f * press)
+            val frame = Path().apply { moveTo(left, top); lineTo(right, top); lineTo(right, bottom); lineTo(left, bottom); close() }
+            val glow = (0.28f + 0.2f * breath + 0.42f * pulse + 0.55f * press)
             drawPath(frame, accent.copy(alpha = 0.12f * glow), style = Stroke(width = 6.dp.toPx()))
             drawPath(frame, accent.copy(alpha = 0.55f + 0.25f * press), style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round))
-            drawLine(accent.copy(alpha = 0.85f), Offset(left + 3.dp.toPx(), top + cut),
-                Offset(left + 3.dp.toPx(), bottom - cut), strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
+            drawLine(accent.copy(alpha = 0.85f), Offset(left + 4.dp.toPx(), top + 5.dp.toPx()),
+                Offset(left + 4.dp.toPx(), bottom - 5.dp.toPx()), strokeWidth = 3.dp.toPx(), cap = StrokeCap.Square)
+            val scanX = left + (right - left) * pulse
+            drawLine(NeonPink.copy(alpha = 0.72f + 0.28f * press), Offset(scanX, top + 3.dp.toPx()),
+                Offset(scanX, bottom - 3.dp.toPx()), 1.4.dp.toPx())
+            drawLine(accent.copy(alpha = 0.75f), Offset(left + 8.dp.toPx(), top + 5.dp.toPx()),
+                Offset(left + 40.dp.toPx(), top + 5.dp.toPx()), 2.dp.toPx())
+            drawLine(NeonPink.copy(alpha = 0.7f), Offset(right - 40.dp.toPx(), bottom - 5.dp.toPx()),
+                Offset(right - 8.dp.toPx(), bottom - 5.dp.toPx()), 2.dp.toPx())
+            if (press > 0.01f) drawCircle(NeonPink.copy(alpha = 0.28f * press), (10f + 28f * press).dp.toPx(),
+                Offset(size.width / 2f, size.height / 2f), style = Stroke(2.dp.toPx()))
         }
         Column(
             Modifier.fillMaxSize().padding(start = 18.dp, end = 14.dp, top = 14.dp, bottom = 12.dp),
