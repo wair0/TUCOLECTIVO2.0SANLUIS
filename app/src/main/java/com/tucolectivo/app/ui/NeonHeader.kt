@@ -43,8 +43,6 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -56,15 +54,6 @@ private val Pink = Color(0xFFFF2E9A)
 private val Green = Color(0xFF25FFB7)
 private val Ink = Color(0xFF020308)
 private val Panel = Color(0xFF03050D)
-
-fun rememberCyberpunkFontFamily(): FontFamily {
-    return FontFamily(
-        androidx.compose.ui.text.font.Font(
-            "fonts/cyberpunk.ttf",
-            weight = FontWeight.Normal
-        )
-    )
-}
 
 data class NeonNotification(
     val title: String,
