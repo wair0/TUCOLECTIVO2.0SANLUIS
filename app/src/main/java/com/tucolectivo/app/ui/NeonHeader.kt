@@ -351,48 +351,159 @@ private fun DrawScope.drawNeonFrame(rect: Rect, glow: Float) {
 private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
     val cx = size.width / 2f
     val cy = size.height / 2f
-    val spread = 8.dp.toPx() * (1f - open * 0.65f)
+    val unit = size.minDimension / 44f
+    val steel = CyberColors.Steel
+    val magenta = CyberColors.Magenta
+    val white = Color(0xFFE8FCFF)
+    val p = 1f - press * 0.08f
+    val spread = 8.2f * unit * (1f - open * 0.45f)
+
+    // Núcleo de mando mecánico: placas + tres cuchillas segmentadas.
+    drawRect(
+        color = steel,
+        topLeft = Offset(cx - 15f * unit, cy - 15f * unit),
+        size = Size(30f * unit, 30f * unit)
+    )
+    drawRect(
+        color = color.copy(alpha = 0.24f),
+        topLeft = Offset(cx - 13f * unit, cy - 13f * unit),
+        size = Size(26f * unit, 26f * unit),
+        style = Stroke(1.2f * unit)
+    )
+    drawLine(color.copy(alpha = 0.9f), Offset(cx - 13f * unit, cy - 11f * unit), Offset(cx - 7f * unit, cy - 11f * unit), 1.4f * unit)
+    drawLine(magenta.copy(alpha = 0.9f), Offset(cx + 7f * unit, cy + 11f * unit), Offset(cx + 13f * unit, cy + 11f * unit), 1.4f * unit)
+
     for (i in -1..1) {
         val y = cy + i * spread
+        val half = 11.5f * unit
+        val notch = 2.8f * unit
+        val path = Path().apply {
+            moveTo(cx - half, y)
+            lineTo(cx - half + notch, y - 2.5f * unit)
+            lineTo(cx + half - notch, y - 2.5f * unit)
+            lineTo(cx + half, y)
+            lineTo(cx + half - notch, y + 2.5f * unit)
+            lineTo(cx - half + notch, y + 2.5f * unit)
+            close()
+        }
+        drawPath(path, color.copy(alpha = 0.20f), style = Stroke(2.4f * unit))
+        drawPath(path, color, style = Stroke(1.45f * unit))
         drawLine(
-            color = color,
-            start = Offset(cx - 11.dp.toPx(), y),
-            end = Offset(cx + 11.dp.toPx(), y),
-            strokeWidth = 2.5.dp.toPx() * (1f + press * 0.15f),
-            cap = StrokeCap.Square
+            white.copy(alpha = 0.55f),
+            Offset(cx - half + 4f * unit, y - 0.7f * unit),
+            Offset(cx + half - 4f * unit, y - 0.7f * unit),
+            0.55f * unit
         )
+        drawCircle(magenta, 1.2f * unit, Offset(cx - half + 1.8f * unit, y))
+        drawCircle(color, 1.2f * unit, Offset(cx + half - 1.8f * unit, y))
     }
+
+    // Microarticulaciones tipo transformador.
+    drawRect(magenta, Offset(cx - 15f * unit, cy - 4f * unit), Size(2f * unit, 8f * unit))
+    drawRect(color, Offset(cx + 13f * unit, cy - 4f * unit), Size(2f * unit, 8f * unit))
 }
 
 private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
-    val center = Offset(size.width * 0.43f, size.height * 0.43f)
-    val radius = 8.5.dp.toPx()
-    drawCircle(color = color, radius = radius, center = center, style = Stroke(width = 2.4.dp.toPx() * (1f + press * 0.15f)))
-    drawLine(
-        color = CyberColors.Magenta,
-        start = center + Offset(radius * 0.68f, radius * 0.68f),
-        end = center + Offset(13.dp.toPx(), 13.dp.toPx()),
-        strokeWidth = 2.4.dp.toPx(),
-        cap = StrokeCap.Square
+    val unit = size.minDimension / 44f
+    val cx = size.width * 0.44f
+    val cy = size.height * 0.44f
+    val r = 8.5f * unit
+    val white = Color(0xFFE8FCFF)
+
+    // Lente doble, con aro energético y carcasa mecánica.
+    drawCircle(
+        color = color.copy(alpha = 0.16f),
+        radius = r + 4.5f * unit,
+        center = Offset(cx, cy),
+        style = Stroke(2.2f * unit)
     )
+    drawCircle(
+        color = color.copy(alpha = 0.34f),
+        radius = r + 2.2f * unit,
+        center = Offset(cx, cy),
+        style = Stroke(1.2f * unit)
+    )
+    drawCircle(
+        color = color,
+        radius = r,
+        center = Offset(cx, cy),
+        style = Stroke(2.1f * unit * (1f + press * 0.15f))
+    )
+    drawCircle(
+        color = white.copy(alpha = 0.85f),
+        radius = r - 3.1f * unit,
+        center = Offset(cx - 0.8f * unit, cy - 0.8f * unit),
+        style = Stroke(0.7f * unit)
+    )
+
+    // Núcleo de energon.
+    drawCircle(magenta.copy(alpha = 0.24f), 3.4f * unit, Offset(cx, cy))
+    drawCircle(magenta, 2.1f * unit, Offset(cx, cy))
+
+    // Empuñadura articulada de la lupa.
+    val handleStart = Offset(cx + r * 0.68f, cy + r * 0.68f)
+    val handleEnd = Offset(cx + 14.5f * unit, cy + 14.5f * unit)
+    drawLine(color.copy(alpha = 0.32f), handleStart, handleEnd, 4.4f * unit, StrokeCap.Square)
+    drawLine(color, handleStart, handleEnd, 2.2f * unit, StrokeCap.Square)
+    drawLine(magenta, Offset(handleEnd.x - 2f * unit, handleEnd.y), handleEnd, 1.5f * unit, StrokeCap.Square)
+
+    // Dientes mecánicos del aro.
+    for (angle in listOf(-42f, 12f, 66f, 120f, 174f)) {
+        val rad = Math.toRadians(angle.toDouble())
+        val a = Offset(
+            cx + kotlin.math.cos(rad).toFloat() * (r + 3.5f * unit),
+            cy + kotlin.math.sin(rad).toFloat() * (r + 3.5f * unit)
+        )
+        val b = Offset(
+            cx + kotlin.math.cos(rad).toFloat() * (r + 5.2f * unit),
+            cy + kotlin.math.sin(rad).toFloat() * (r + 5.2f * unit)
+        )
+        drawLine(color, a, b, 1.4f * unit, StrokeCap.Square)
+    }
 }
 
 private fun DrawScope.drawBellIcon(color: Color, press: Float) {
+    val unit = size.minDimension / 44f
     val cx = size.width / 2f
-    val top = 9.dp.toPx()
-    val bottom = 29.dp.toPx()
-    val path = Path().apply {
-        moveTo(cx - 9.dp.toPx(), bottom)
-        cubicTo(cx - 7.dp.toPx(), bottom - 4.dp.toPx(), cx - 7.dp.toPx(), top + 3.dp.toPx(), cx, top)
-        cubicTo(cx + 7.dp.toPx(), top + 3.dp.toPx(), cx + 7.dp.toPx(), bottom - 4.dp.toPx(), cx + 9.dp.toPx(), bottom)
+    val white = Color(0xFFE8FCFF)
+    val top = 9f * unit
+    val bottom = 28f * unit
+
+    // Carcasa de alarma robótica: hombros, cúpula y placa inferior.
+    val shell = Path().apply {
+        moveTo(cx - 10.5f * unit, bottom)
+        lineTo(cx - 8.5f * unit, bottom - 3f * unit)
+        lineTo(cx - 7.2f * unit, top + 5f * unit)
+        lineTo(cx - 3.5f * unit, top + 1.5f * unit)
+        lineTo(cx + 3.5f * unit, top + 1.5f * unit)
+        lineTo(cx + 7.2f * unit, top + 5f * unit)
+        lineTo(cx + 8.5f * unit, bottom - 3f * unit)
+        lineTo(cx + 10.5f * unit, bottom)
+        close()
     }
-    drawPath(path = path, color = color, style = Stroke(width = 2.3.dp.toPx() * (1f + press * 0.15f), cap = StrokeCap.Square))
-    drawLine(
-        color = color,
-        start = Offset(cx - 11.dp.toPx(), bottom),
-        end = Offset(cx + 11.dp.toPx(), bottom),
-        strokeWidth = 2.3.dp.toPx(),
-        cap = StrokeCap.Square
+    drawPath(shell, color.copy(alpha = 0.18f), style = Stroke(3.6f * unit))
+    drawPath(shell, color, style = Stroke(1.8f * unit))
+
+    // Placas laterales transformables.
+    drawLine(magenta, Offset(cx - 12f * unit, top + 5f * unit), Offset(cx - 8f * unit, top + 8f * unit), 2f * unit, StrokeCap.Square)
+    drawLine(magenta, Offset(cx + 12f * unit, top + 5f * unit), Offset(cx + 8f * unit, top + 8f * unit), 2f * unit, StrokeCap.Square)
+    drawRect(
+        color.copy(alpha = 0.22f),
+        Offset(cx - 7f * unit, bottom - 7f * unit),
+        Size(14f * unit, 3f * unit)
     )
-    drawCircle(color = CyberColors.Magenta, radius = 2.dp.toPx(), center = Offset(cx, bottom + 4.dp.toPx()))
+    drawLine(white.copy(alpha = 0.8f), Offset(cx - 5f * unit, bottom - 5.5f * unit), Offset(cx + 5f * unit, bottom - 5.5f * unit), 0.8f * unit)
+
+    // Sensor central: energía magenta.
+    drawCircle(magenta.copy(alpha = 0.26f), 4.4f * unit, Offset(cx, top + 9f * unit))
+    drawCircle(magenta, 2.3f * unit, Offset(cx, top + 9f * unit))
+    drawCircle(white.copy(alpha = 0.8f), 0.8f * unit, Offset(cx - 0.8f * unit, top + 8.2f * unit))
+
+    // Martillo/actuador inferior.
+    drawLine(color, Offset(cx - 11f * unit, bottom), Offset(cx + 11f * unit, bottom), 2.2f * unit, StrokeCap.Square)
+    drawLine(magenta, Offset(cx - 4f * unit, bottom + 3.5f * unit), Offset(cx + 4f * unit, bottom + 3.5f * unit), 1.7f * unit, StrokeCap.Square)
+
+    // Acento de alerta.
+    val pulse = 1f + press * 0.25f
+    drawCircle(magenta.copy(alpha = 0.20f), 12f * unit * pulse, Offset(cx, top + 9f * unit), style = Stroke(1f * unit))
 }
