@@ -90,10 +90,8 @@ fun NeonHeader(
             val glow = (0.45f + 0.3f * breath + 0.4f * pulse) * flick
             val w = size.width
             val h = size.height
-            val cut = 16.dp.toPx()
-            val y = h - 3.dp.toPx()
-
-            val line = Path().apply { moveTo(0f, y - cut); lineTo(cut, y); lineTo(w - cut, y); lineTo(w, y - cut) }
+            val y = h - 2.dp.toPx()
+            val line = Path().apply { moveTo(0f, 1.dp.toPx()); lineTo(w, 1.dp.toPx()); lineTo(w, y); lineTo(0f, y); close() }
             neon(NeonCeleste, 2.dp.toPx(), glow, flick) { c, st -> drawPath(line, c, style = st) }
 
             val m = PathMeasure().apply { setPath(line, false) }
@@ -145,8 +143,8 @@ fun NeonHeader(
                 text = title,
                 color = NeonCore,
                 fontFamily = cyberFont,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 14.sp,
                 letterSpacing = 1.5.sp,
                 maxLines = 1,
                 softWrap = false,
@@ -157,9 +155,10 @@ fun NeonHeader(
             )
             Text(
                 text = statusText,
-                color = NeonCeleste.copy(alpha = 0.85f),
+                color = NeonCeleste,
                 fontFamily = cyberFont,
-                fontSize = 9.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 10.sp,
                 letterSpacing = 1.2.sp,
                 maxLines = 1,
                 softWrap = false,
@@ -239,16 +238,7 @@ private fun NeonIconButton(
             val pad = 3.dp.toPx()
             val w = size.width - 2 * pad
             val h = size.height - 2 * pad
-            val cut = 9.dp.toPx()
-            val frame = Path().apply {
-                moveTo(pad + cut, pad)
-                lineTo(pad + w, pad)
-                lineTo(pad + w, pad + h - cut)
-                lineTo(pad + w - cut, pad + h)
-                lineTo(pad, pad + h)
-                lineTo(pad, pad + cut)
-                close()
-            }
+            val frame = Path().apply { moveTo(pad, pad); lineTo(pad + w, pad); lineTo(pad + w, pad + h); lineTo(pad, pad + h); close() }
             clipPath(frame) {
                 drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), Ink)))
                 drawRect(accent.copy(alpha = 0.16f * open))
@@ -275,13 +265,9 @@ private fun NeonPanel(width: Dp, accent: Color, content: @Composable ColumnScope
 
 private fun Modifier.neonPanel(accent: Color) = drawBehind {
     val inset = 6.dp.toPx()
-    val cut = 14.dp.toPx()
     val r = size.width - inset
     val b = size.height - inset
-    val frame = Path().apply {
-        moveTo(inset + cut, inset); lineTo(r, inset); lineTo(r, b - cut)
-        lineTo(r - cut, b); lineTo(inset, b); lineTo(inset, inset + cut); close()
-    }
+    val frame = Path().apply { moveTo(inset, inset); lineTo(r, inset); lineTo(r, b); lineTo(inset, b); close() }
     clipPath(frame) {
         drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), Ink)))
         var y = inset
@@ -338,11 +324,7 @@ private fun SearchField(onSearch: (String) -> Unit) {
             .fillMaxWidth()
             .height(44.dp)
             .drawBehind {
-                val cut = 8.dp.toPx()
-                val f = Path().apply {
-                    moveTo(cut, 0f); lineTo(size.width, 0f); lineTo(size.width, size.height - cut)
-                    lineTo(size.width - cut, size.height); lineTo(0f, size.height); lineTo(0f, cut); close()
-                }
+                val f = Path().apply { moveTo(0f, 0f); lineTo(size.width, 0f); lineTo(size.width, size.height); lineTo(0f, size.height); close() }
                 drawPath(f, Ink)
                 neon(NeonCeleste, 1.4.dp.toPx(), 1f, layers = 3) { c, st -> drawPath(f, c, style = st) }
             }
@@ -384,11 +366,11 @@ private inline fun neon(
     for (i in layers downTo 1) {
         draw(
             color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)),
-            Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Square, join = StrokeJoin.Miter)
         )
     }
-    draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
-    draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Square, join = StrokeJoin.Miter))
+    draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Square, join = StrokeJoin.Miter))
 }
 
 private fun DrawScope.menuIcon(pulse: Float, glow: Float, open: Float) {

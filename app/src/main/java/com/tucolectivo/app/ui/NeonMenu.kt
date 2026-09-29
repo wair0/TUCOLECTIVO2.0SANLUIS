@@ -86,11 +86,7 @@ fun NeonCard(
             val pad = 10.dp.toPx()
             val fw = size.width - 2 * pad
             val fh = size.height - 2 * pad
-            val cut = fw * 0.16f
-            val frame = Path().apply {
-                moveTo(pad + cut, pad); lineTo(pad + fw, pad); lineTo(pad + fw, pad + fh - cut)
-                lineTo(pad + fw - cut, pad + fh); lineTo(pad, pad + fh); lineTo(pad, pad + cut); close()
-            }
+            val frame = Path().apply { moveTo(pad, pad); lineTo(pad + fw, pad); lineTo(pad + fw, pad + fh); lineTo(pad, pad + fh); close() }
             clipPath(frame) {
                 drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), Ink)))
                 var y = pad
@@ -142,7 +138,7 @@ fun NeonCard(
 
 private inline fun neon(color: Color, width: Float, glow: Float = 1f, alpha: Float = 1f, layers: Int = 4, draw: (Color, Stroke) -> Unit) {
     for (i in layers downTo 1) {
-        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Square, join = StrokeJoin.Miter))
     }
     draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
     draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
@@ -150,9 +146,9 @@ private inline fun neon(color: Color, width: Float, glow: Float = 1f, alpha: Flo
 
 private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float) {
     val a = 0.9f * glow
-    neon(NeonCeleste, 5f, glow, a, 3) { c, st -> drawRoundRect(c, Offset(8f, 22f), Size(84f, 46f), CornerRadius(10f), style = st) }
+    neon(NeonCeleste, 5f, glow, a, 3) { c, st -> drawRoundRect(c, Offset(8f, 22f), Size(84f, 46f), CornerRadius(0f), style = st) }
     neon(NeonCeleste, 3.4f, glow, a, 2) { c, st ->
-        for (x in listOf(16f, 39f, 62f)) drawRoundRect(c, Offset(x, 32f), Size(17f, 15f), CornerRadius(3f), style = st)
+        for (x in listOf(16f, 39f, 62f)) drawRoundRect(c, Offset(x, 32f), Size(17f, 15f), CornerRadius(0f), style = st)
     }
     drawLine(NeonPink.copy(alpha = a), Offset(16f, 58f), Offset(58f, 58f), 3.4f, StrokeCap.Round)
     for (cx in listOf(28f, 72f)) {

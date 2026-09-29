@@ -58,11 +58,7 @@ fun NeonSyncButton(
             val pad = 8.dp.toPx()
             val fw = size.width - 2 * pad
             val fh = size.height - 2 * pad
-            val cut = fh * 0.34f
-            val frame = Path().apply {
-                moveTo(pad + cut, pad); lineTo(pad + fw, pad); lineTo(pad + fw, pad + fh - cut)
-                lineTo(pad + fw - cut, pad + fh); lineTo(pad, pad + fh); lineTo(pad, pad + cut); close()
-            }
+            val frame = Path().apply { moveTo(pad, pad); lineTo(pad + fw, pad); lineTo(pad + fw, pad + fh); lineTo(pad, pad + fh); close() }
             clipPath(frame) {
                 // Panel más opaco (+50%)
                 drawRect(Ink.copy(alpha = 0.82f), topLeft = Offset(pad, pad), size = Size(fw, fh))
@@ -121,7 +117,7 @@ fun NeonSyncButton(
 
 private inline fun neon(color: Color, width: Float, glow: Float = 1f, alpha: Float = 1f, layers: Int = 4, draw: (Color, Stroke) -> Unit) {
     for (i in layers downTo 1) {
-        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Square, join = StrokeJoin.Miter))
     }
     draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
     draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))

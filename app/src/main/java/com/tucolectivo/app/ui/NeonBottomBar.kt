@@ -47,11 +47,10 @@ fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = M
             val glow = (0.7f + 0.45f * pulse.value) * flick
             val w = size.width
             val h = size.height
-            val cut = 16.dp.toPx()
-            val y = 3.dp.toPx()
+            val y = 2.dp.toPx()
 
             // Fondo más opaco (+50%)
-            drawRect(Ink.copy(alpha = 0.82f))
+            drawRect(Ink.copy(alpha = 1f))
 
             val itemW = w / Tabs.size
             val cx = (pos + 0.5f) * itemW
@@ -60,7 +59,7 @@ fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = M
                 Brush.verticalGradient(listOf(NeonCeleste.copy(alpha = 0.22f), Color.Transparent), startY = y, endY = h),
                 topLeft = Offset(cx - bw / 2f, y), size = Size(bw, h - y)
             )
-            val line = Path().apply { moveTo(0f, y + cut); lineTo(cut, y); lineTo(w - cut, y); lineTo(w, y + cut) }
+            val line = Path().apply { moveTo(0f, y); lineTo(w, y); lineTo(w, h - 2.dp.toPx()); lineTo(0f, h - 2.dp.toPx()); close() }
             neon(NeonCeleste, 2.dp.toPx(), glow, flick) { c, st -> drawPath(line, c, style = st) }
             val m = PathMeasure().apply { setPath(line, false) }
             val head = m.length * tt
@@ -75,7 +74,7 @@ fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = M
                 }
             }
             neon(NeonPink, 3.dp.toPx(), 1.6f, layers = 3) { c, st ->
-                drawLine(c, Offset(cx - bw * 0.32f, y), Offset(cx + bw * 0.32f, y), st.width, StrokeCap.Round)
+                drawLine(c, Offset(cx - bw * 0.32f, y), Offset(cx + bw * 0.32f, y), st.width, StrokeCap.Square)
             }
         }
         Row(Modifier.fillMaxSize().padding(top = 6.dp)) {
@@ -122,7 +121,7 @@ private fun BarItem(
 
 private inline fun neon(color: Color, width: Float, glow: Float = 1f, alpha: Float = 1f, layers: Int = 4, draw: (Color, Stroke) -> Unit) {
     for (i in layers downTo 1) {
-        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Miter))
     }
     draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
     draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
@@ -137,15 +136,15 @@ private fun DrawScope.homeIcon(t: Float, pulse: Float, glow: Float, sel: Float) 
         moveTo(22f, 42f); lineTo(22f, 84f); lineTo(78f, 84f); lineTo(78f, 42f)
     }
     neon(NeonCeleste, 6f, glow, a, 3) { c, st -> drawPath(house, c, style = st) }
-    neon(NeonCeleste, 4f, glow, a, 2) { c, st -> drawRoundRect(c, Offset(42f, 58f), Size(16f, 26f), CornerRadius(3f), style = st) }
+    neon(NeonCeleste, 4f, glow, a, 2) { c, st -> drawRect(c, Offset(42f, 58f), Size(16f, 26f), style = st) }
     drawCircle(NeonPink.copy(alpha = (0.35f + 0.65f * pulse) * a), 4.5f, Offset(50f, 40f))
 }
 
 private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float, sel: Float) {
     val a = dim(sel)
-    neon(NeonCeleste, 5f, glow, a, 3) { c, st -> drawRoundRect(c, Offset(8f, 22f), Size(84f, 46f), CornerRadius(10f), style = st) }
+    neon(NeonCeleste, 5f, glow, a, 3) { c, st -> drawRect(c, Offset(8f, 22f), Size(84f, 46f), style = st) }
     neon(NeonCeleste, 3.4f, glow, a, 2) { c, st ->
-        for (x in listOf(16f, 39f, 62f)) drawRoundRect(c, Offset(x, 32f), Size(17f, 15f), CornerRadius(3f), style = st)
+        for (x in listOf(16f, 39f, 62f)) drawRect(c, Offset(x, 32f), Size(17f, 15f), style = st)
     }
     drawLine(NeonPink.copy(alpha = a), Offset(16f, 58f), Offset(58f, 58f), 3.4f, StrokeCap.Round)
     for (cx in listOf(28f, 72f)) {
