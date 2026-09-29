@@ -105,7 +105,7 @@ fun NeonHeader(
             // Rectangular frame: no cut/diagonal corners.
             val frame = Rect(inset, inset, w - inset, h - inset)
             neonStroke(NeonCeleste, 2.2.dp.toPx(), glow, flick, layers = 5) { c, st ->
-                drawRect(frame, c, style = st)
+                drawRect(c, topLeft = Offset(frame.left, frame.top), size = Size(frame.width, frame.height), style = st)
             }
             drawRect(
                 NeonPink.copy(alpha = 0.2f + 0.25f * pulse),
@@ -155,7 +155,7 @@ fun NeonHeader(
                 cornerRadius = CornerRadius(5.dp.toPx())
             )
             neonStroke(NeonCeleste, 1.2.dp.toPx(), glow, 0.9f, layers = 3) { c, st ->
-                drawRoundRect(plate, cornerRadius = CornerRadius(5.dp.toPx()), style = st, color = c)
+                drawRoundRect(c, topLeft = Offset(plate.left, plate.top), size = Size(plate.width, plate.height), cornerRadius = CornerRadius(5.dp.toPx()), style = st)
             }
             drawCircle(
                 NeonGreen.copy(alpha = 0.25f + 0.45f * pulse),
@@ -334,7 +334,7 @@ private fun DrawScope.drawBusGlyph(center: Offset, scale: Float, glow: Float) {
     val top = center.y - h / 2f
     val body = Rect(left, top + 8f * scale, left + w, top + h)
     neonStroke(col, 4f * scale, glow, 0.95f, layers = 4) { c, st ->
-        drawRoundRect(body, CornerRadius(7f * scale), style = st, color = c)
+        drawRoundRect(c, topLeft = Offset(body.left, body.top), size = Size(body.width, body.height), cornerRadius = CornerRadius(7f * scale), style = st)
     }
     drawRoundRect(
         Ink.copy(alpha = 0.88f),
