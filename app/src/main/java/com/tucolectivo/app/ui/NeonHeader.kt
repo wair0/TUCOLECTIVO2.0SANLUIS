@@ -77,6 +77,16 @@ private val Dim = Color(0xFF5E7385)
 
 private enum class HeaderPanel { None, Menu, Search, Notifications }
 
+private fun rememberCyberpunkFontFamily(): FontFamily {
+    return FontFamily(
+        androidx.compose.ui.text.font.Font(
+            "fonts/cyberpunk.ttf",
+            weight = FontWeight.Normal
+        )
+    )
+}
+
+
 data class NeonNotification(
     val title: String,
     val detail: String,
