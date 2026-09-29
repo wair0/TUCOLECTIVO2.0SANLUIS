@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
@@ -283,18 +284,21 @@ private fun DrawScope.drawHeaderText(
         letterSpacing = 0.08f
     }
     titlePaint.color = Pink.copy(alpha = 0.5f).toArgb()
-    nativeCanvas.drawText(title, w / 2f - 1.dp.toPx(), 29.dp.toPx() + 1.dp.toPx(), titlePaint)
-    titlePaint.color = Core.copy(alpha = flicker).toArgb()
-    nativeCanvas.drawText(title, w / 2f, 29.dp.toPx(), titlePaint)
+    drawIntoCanvas { canvas ->
+        val native = canvas.nativeCanvas
+        native.drawText(title, w / 2f - 1.dp.toPx(), 29.dp.toPx() + 1.dp.toPx(), titlePaint)
+        titlePaint.color = Core.copy(alpha = flicker).toArgb()
+        native.drawText(title, w / 2f, 29.dp.toPx(), titlePaint)
 
-    val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        this.typeface = typeface
-        textAlign = Paint.Align.CENTER
-        textSize = 8.sp.toPx()
-        letterSpacing = 0.06f
-        color = Green.copy(alpha = 0.72f + pulse * 0.28f).toArgb()
+        val statusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.typeface = typeface
+            textAlign = Paint.Align.CENTER
+            textSize = 8.sp.toPx()
+            letterSpacing = 0.06f
+            color = Green.copy(alpha = 0.72f + pulse * 0.28f).toArgb()
+        }
+        native.drawText(status, w / 2f, h * 0.78f + 3.dp.toPx(), statusPaint)
     }
-    nativeCanvas.drawText(status, w / 2f, h * 0.78f + 3.dp.toPx(), statusPaint)
 }
 
 private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
