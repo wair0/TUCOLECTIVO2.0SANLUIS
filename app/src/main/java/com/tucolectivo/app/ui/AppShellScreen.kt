@@ -7,7 +7,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.transpuntano.app.model.TransitArrival
@@ -65,6 +69,14 @@ fun AppShellScreen(
     mapKey: Any? = null
 ) {
     val gifActive = section != 2
+    var panel by remember { mutableStateOf(HeaderPanel.None) }
+    val menuItems = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS")
+    val notifications = remember {
+        listOf(
+            NeonNotification("Sistema listo", "Datos sincronizados", "AHORA", true),
+            NeonNotification("Líneas activas", "Red operativa", "HOY", false)
+        )
+    }
 
     MaterialTheme {
         Box(Modifier.fillMaxSize()) {
@@ -73,9 +85,19 @@ fun AppShellScreen(
             Column(Modifier.fillMaxSize()) {
                 NeonHeader(
                     statusText = statusText,
-                    menuItems = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS"),
-                    onMenuItem = { index -> onNavigate(index) },
-                    onSearch = onSearch
+                    menuOpen = panel == HeaderPanel.Menu,
+                    searchOpen = panel == HeaderPanel.Search,
+                    notificationsOpen = panel == HeaderPanel.Notifications,
+                    hasUnread = notifications.any { it.unread },
+                    onMenuClick = {
+                        panel = if (panel == HeaderPanel.Menu) HeaderPanel.None else HeaderPanel.Menu
+                    },
+                    onSearchClick = {
+                        panel = if (panel == HeaderPanel.Search) HeaderPanel.None else HeaderPanel.Search
+                    },
+                    onNotificationsClick = {
+                        panel = if (panel == HeaderPanel.Notifications) HeaderPanel.None else HeaderPanel.Notifications
+                    }
                 )
 
                 Box(modifier = Modifier.weight(1f)) {
@@ -144,6 +166,22 @@ fun AppShellScreen(
 
                 NeonBottomBar(selected = section.coerceIn(0, 4), onSelect = onNavigate)
             }
+
+            CyberContextOverlays(
+                panel = panel,
+                menuItems = menuItems,
+                notifications = notifications,
+                onClose = { panel = HeaderPanel.None },
+                onMenuItem = { index ->
+                    panel = HeaderPanel.None
+                    onNavigate(index)
+                },
+                onSearch = { query ->
+                    panel = HeaderPanel.None
+                    onSearch(query)
+                },
+                onNotification = { panel = HeaderPanel.None }
+            )
         }
     }
 }
