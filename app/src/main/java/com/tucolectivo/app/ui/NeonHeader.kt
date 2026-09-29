@@ -346,126 +346,104 @@ private fun DrawScope.drawNeonFrame(rect: Rect, glow: Float) {
 }
 
 private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
-    val cx = size.width / 2f
-    val cy = size.height / 2f
-    val unit = size.minDimension / 44f
-    val steel = CyberColors.Steel
-    val magenta = CyberColors.Magenta
+    val u = size.minDimension / 44f
     val white = Color(0xFFE8FCFF)
-    val p = 1f - press * 0.08f
-    val spread = 8.2f * unit * (1f - open * 0.45f)
+    val steel = CyberColors.Steel
+    val frame = Rect(2f * u, 2f * u, size.width - 2f * u, size.height - 2f * u)
 
-    // Único marco Transformer del botón.
-    val frame = Rect(2f * unit, 2f * unit, size.width - 2f * unit, size.height - 2f * unit)
+    // Diseño Canva: módulo mecánico Transformer, exclusivamente cyan/blanco.
     drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
-    drawRect(color.copy(alpha = 0.20f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4.5f * unit))
-    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.5f * unit))
-    drawRect(white.copy(alpha = 0.55f), Offset(frame.left + 4f * unit, frame.top + 4f * unit), Size(frame.width - 8f * unit, frame.height - 8f * unit), style = Stroke(0.55f * unit))
-    drawRect(magenta.copy(alpha = 0.9f), Offset(frame.left + 5f * unit, frame.top + 5f * unit), Size(7f * unit, 2f * unit))
-    drawRect(color.copy(alpha = 0.9f), Offset(frame.right - 12f * unit, frame.bottom - 7f * unit), Size(7f * unit, 2f * unit))
-    drawLine(color.copy(alpha = 0.9f), Offset(cx - 13f * unit, cy - 11f * unit), Offset(cx - 7f * unit, cy - 11f * unit), 1.4f * unit)
-    drawLine(magenta.copy(alpha = 0.9f), Offset(cx + 7f * unit, cy + 11f * unit), Offset(cx + 13f * unit, cy + 11f * unit), 1.4f * unit)
+    drawRect(color.copy(alpha = 0.34f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4f * u))
+    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.4f * u))
+    drawRect(white.copy(alpha = 0.65f), Offset(frame.left + 4f * u, frame.top + 4f * u),
+        Size(frame.width - 8f * u, frame.height - 8f * u), style = Stroke(0.6f * u))
 
+    val cy = size.height / 2f
+    val gap = 8f * u
     for (i in -1..1) {
-        val y = cy + i * spread
-        val half = 11.5f * unit
-        val notch = 2.8f * unit
-        val path = Path().apply {
-            moveTo(cx - half, y)
-            lineTo(cx - half + notch, y - 2.5f * unit)
-            lineTo(cx + half - notch, y - 2.5f * unit)
-            lineTo(cx + half, y)
-            lineTo(cx + half - notch, y + 2.5f * unit)
-            lineTo(cx - half + notch, y + 2.5f * unit)
+        val y = cy + i * gap
+        val p = Path().apply {
+            moveTo(9f * u, y - 2.8f * u)
+            lineTo(13f * u, y - 4.2f * u)
+            lineTo(size.width - 13f * u, y - 4.2f * u)
+            lineTo(size.width - 9f * u, y)
+            lineTo(size.width - 13f * u, y + 4.2f * u)
+            lineTo(13f * u, y + 4.2f * u)
             close()
         }
-        drawPath(path, color.copy(alpha = 0.20f), style = Stroke(2.4f * unit))
-        drawPath(path, color, style = Stroke(1.45f * unit))
-        drawLine(
-            white.copy(alpha = 0.55f),
-            Offset(cx - half + 4f * unit, y - 0.7f * unit),
-            Offset(cx + half - 4f * unit, y - 0.7f * unit),
-            0.55f * unit
-        )
-        drawCircle(magenta, 1.2f * unit, Offset(cx - half + 1.8f * unit, y))
-        drawCircle(color, 1.2f * unit, Offset(cx + half - 1.8f * unit, y))
+        drawPath(p, color.copy(alpha = 0.22f), style = Stroke(2.8f * u))
+        drawPath(p, color, style = Stroke(1.5f * u))
+        drawLine(white.copy(alpha = 0.75f), Offset(14f * u, y - 0.8f * u),
+            Offset(size.width - 14f * u, y - 0.8f * u), 0.55f * u)
     }
-
-    // Microarticulaciones tipo transformador.
-    drawRect(magenta, Offset(cx - 15f * unit, cy - 4f * unit), Size(2f * unit, 8f * unit))
-    drawRect(color, Offset(cx + 13f * unit, cy - 4f * unit), Size(2f * unit, 8f * unit))
+    drawCircle(color.copy(alpha = 0.35f), 3f * u, Offset(7f * u, 7f * u))
+    drawCircle(white.copy(alpha = 0.55f), 1.1f * u, Offset(size.width - 7f * u, size.height - 7f * u))
 }
 
 private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
-    val unit = size.minDimension / 44f
-    val magenta = CyberColors.Magenta
+    val u = size.minDimension / 44f
     val white = Color(0xFFE8FCFF)
     val steel = CyberColors.Steel
-    val frame = Rect(2f * unit, 2f * unit, size.width - 2f * unit, size.height - 2f * unit)
+    val frame = Rect(2f * u, 2f * u, size.width - 2f * u, size.height - 2f * u)
+
+    // Diseño Canva: visor mecánico/energético, sin magenta ni geometría Figma.
     drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
-    drawRect(color.copy(alpha = 0.20f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4.5f * unit))
-    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.5f * unit))
-    drawRect(white.copy(alpha = 0.55f), Offset(frame.left + 4f * unit, frame.top + 4f * unit), Size(frame.width - 8f * unit, frame.height - 8f * unit), style = Stroke(0.55f * unit))
-    drawRect(magenta.copy(alpha = 0.9f), Offset(frame.left + 5f * unit, frame.top + 5f * unit), Size(7f * unit, 2f * unit))
-    drawRect(color.copy(alpha = 0.9f), Offset(frame.right - 12f * unit, frame.bottom - 7f * unit), Size(7f * unit, 2f * unit))
-    val cx = size.width * 0.44f
-    val cy = size.height * 0.44f
-    val r = 8.5f * unit
+    drawRect(color.copy(alpha = 0.34f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4f * u))
+    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.4f * u))
+    drawRect(white.copy(alpha = 0.65f), Offset(frame.left + 4f * u, frame.top + 4f * u),
+        Size(frame.width - 8f * u, frame.height - 8f * u), style = Stroke(0.6f * u))
 
-    // Lente doble, con aro energético y carcasa mecánica.
-    drawCircle(
-        color = color.copy(alpha = 0.16f),
-        radius = r + 4.5f * unit,
-        center = Offset(cx, cy),
-        style = Stroke(2.2f * unit)
-    )
-    drawCircle(
-        color = color.copy(alpha = 0.34f),
-        radius = r + 2.2f * unit,
-        center = Offset(cx, cy),
-        style = Stroke(1.2f * unit)
-    )
-    drawCircle(
-        color = color,
-        radius = r,
-        center = Offset(cx, cy),
-        style = Stroke(2.1f * unit * (1f + press * 0.15f))
-    )
-    drawCircle(
-        color = white.copy(alpha = 0.85f),
-        radius = r - 3.1f * unit,
-        center = Offset(cx - 0.8f * unit, cy - 0.8f * unit),
-        style = Stroke(0.7f * unit)
-    )
-
-    // Núcleo de energon.
-    drawCircle(magenta.copy(alpha = 0.24f), 3.4f * unit, Offset(cx, cy))
-    drawCircle(magenta, 2.1f * unit, Offset(cx, cy))
-
-    // Empuñadura articulada de la lupa.
-    val handleStart = Offset(cx + r * 0.68f, cy + r * 0.68f)
-    val handleEnd = Offset(cx + 14.5f * unit, cy + 14.5f * unit)
-    drawLine(color.copy(alpha = 0.32f), handleStart, handleEnd, 4.4f * unit, StrokeCap.Square)
-    drawLine(color, handleStart, handleEnd, 2.2f * unit, StrokeCap.Square)
-    drawLine(magenta, Offset(handleEnd.x - 2f * unit, handleEnd.y), handleEnd, 1.5f * unit, StrokeCap.Square)
-
-    // Dientes mecánicos del aro.
-    for (angle in listOf(-42f, 12f, 66f, 120f, 174f)) {
-        val rad = Math.toRadians(angle.toDouble())
-        val a = Offset(
-            cx + kotlin.math.cos(rad).toFloat() * (r + 3.5f * unit),
-            cy + kotlin.math.sin(rad).toFloat() * (r + 3.5f * unit)
-        )
-        val b = Offset(
-            cx + kotlin.math.cos(rad).toFloat() * (r + 5.2f * unit),
-            cy + kotlin.math.sin(rad).toFloat() * (r + 5.2f * unit)
-        )
-        drawLine(color, a, b, 1.4f * unit, StrokeCap.Square)
-    }
+    val cx = size.width * 0.43f
+    val cy = size.height * 0.43f
+    val r = 8.5f * u
+    drawCircle(color.copy(alpha = 0.18f), r + 4.5f * u, Offset(cx, cy), style = Stroke(2.8f * u))
+    drawCircle(color.copy(alpha = 0.38f), r + 2.1f * u, Offset(cx, cy), style = Stroke(1.2f * u))
+    drawCircle(color, r, Offset(cx, cy), style = Stroke(2.2f * u))
+    drawCircle(white.copy(alpha = 0.85f), r - 3f * u, Offset(cx - 0.8f * u, cy - 0.8f * u), style = Stroke(0.7f * u))
+    drawLine(color.copy(alpha = 0.35f), Offset(cx + r * .68f, cy + r * .68f),
+        Offset(cx + 15f * u, cy + 15f * u), 4.5f * u, StrokeCap.Square)
+    drawLine(color, Offset(cx + r * .68f, cy + r * .68f),
+        Offset(cx + 15f * u, cy + 15f * u), 2.1f * u, StrokeCap.Square)
+    drawLine(white.copy(alpha = 0.75f), Offset(cx + 12f * u, cy + 13f * u),
+        Offset(cx + 15f * u, cy + 15f * u), 0.8f * u)
 }
 
 private fun DrawScope.drawBellIcon(color: Color, press: Float) {
-    val unit = size.minDimension / 44f
+    val u = size.minDimension / 44f
+    val white = Color(0xFFE8FCFF)
+    val steel = CyberColors.Steel
+    val frame = Rect(2f * u, 2f * u, size.width - 2f * u, size.height - 2f * u)
+
+    // Diseño Canva: módulo de alerta Transformer, exclusivamente cyan/blanco.
+    drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
+    drawRect(color.copy(alpha = 0.34f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4f * u))
+    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.4f * u))
+    drawRect(white.copy(alpha = 0.65f), Offset(frame.left + 4f * u, frame.top + 4f * u),
+        Size(frame.width - 8f * u, frame.height - 8f * u), style = Stroke(0.6f * u))
+
+    val cx = size.width / 2f
+    val top = 9f * u
+    val bottom = 29f * u
+    val shell = Path().apply {
+        moveTo(cx - 11f * u, bottom)
+        lineTo(cx - 8.2f * u, bottom - 3f * u)
+        lineTo(cx - 7f * u, top + 5f * u)
+        lineTo(cx - 3.5f * u, top + 1.5f * u)
+        lineTo(cx + 3.5f * u, top + 1.5f * u)
+        lineTo(cx + 7f * u, top + 5f * u)
+        lineTo(cx + 8.2f * u, bottom - 3f * u)
+        lineTo(cx + 11f * u, bottom)
+        close()
+    }
+    drawPath(shell, color.copy(alpha = 0.20f), style = Stroke(3.8f * u))
+    drawPath(shell, color, style = Stroke(1.8f * u))
+    drawLine(white.copy(alpha = 0.8f), Offset(cx - 5f * u, bottom - 5f * u),
+        Offset(cx + 5f * u, bottom - 5f * u), 0.8f * u)
+    drawCircle(color.copy(alpha = 0.25f), 4.2f * u, Offset(cx, top + 9f * u))
+    drawCircle(color, 2.3f * u, Offset(cx, top + 9f * u))
+    drawCircle(white.copy(alpha = 0.8f), 0.75f * u, Offset(cx - 0.8f * u, top + 8.2f * u))
+    drawLine(color, Offset(cx - 11f * u, bottom), Offset(cx + 11f * u, bottom), 2.2f * u, StrokeCap.Square)
+}    val unit = size.minDimension / 44f
     val magenta = CyberColors.Magenta
     val white = Color(0xFFE8FCFF)
     val steel = CyberColors.Steel
