@@ -1,6 +1,5 @@
 package com.tucolectivo.app.ui
 
-import androidx.compose.animation.core.withFrameNanos
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -37,11 +37,8 @@ private val NeonPink = Color(0xFFFF2E9A)
 /**
  * Círculo animado de minutos.
  *
- * CAUSA DEL BUG: el ángulo se leía solo dentro del lambda de Canvas (fase draw).
- * Compose no registraba la lectura de estado y no invalidaba frames.
- *
- * SOLUCIÓN: ángulo en mutableFloatStateOf + bucle withFrameNanos.
- * La lectura ocurre EN composición (antes del Canvas) → cada frame redibuja.
+ * Ángulo en mutableFloatStateOf + bucle withFrameNanos (runtime).
+ * Lectura en composición → cada frame redibuja.
  * Velocidad: pocos minutos → más rápido; más minutos → más lento.
  */
 @Composable
