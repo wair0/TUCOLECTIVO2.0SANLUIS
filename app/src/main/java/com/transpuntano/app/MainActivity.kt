@@ -49,10 +49,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var headerTitle: CyberHeaderTitleView
     private lateinit var headerStatus: CyberHeaderStatusView
     private var currentSection = 0
+    private companion object {
+        const val GPS_REFRESH_INTERVAL_MS = 12_000L
+        const val GPS_REQUEST_TIMEOUT_MS = 6_000
+    }
     private var mapVehicleRefreshToken = 0
     @Volatile private var mapVehicleRefreshInProgress = false
     private var lastMapNearbyStops = emptyList<TransitStop>()
     private var lastMapLineCodes = emptyList<Int>()
+    private var mapStopInfoPanel: CyberMapStopInfoView? = null
     private lateinit var navBar: LinearLayout
     private val cyan = 0xFF00F0FF.toInt()
     private val pink = 0xFFFF00FF.toInt()
@@ -1319,7 +1324,12 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             stop?.lineCodes.orEmpty().filter { it > 0 }.distinct().sorted()
         }
 
-        val panel = CyberMapStopInfoView(
+        mapStopInfoPanel?.let {
+            if (it.parent === root) root.removeView(it)
+        }
+
+        lateinit var panel: CyberMapStopInfoView
+        panel = CyberMapStopInfoView(
             this,
             mapStop,
             lineCodes,
@@ -1334,7 +1344,8 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                     .firstOrNull { it.code == code }
                 runOnUiThread {
                     if (chosen != null) {
-                        root.removeView(panel)
+                        if (panel.parent === root) root.removeView(panel)
+                        if (mapStopInfoPanel === panel) mapStopInfoPanel = null
                         showMap(chosen)
                     } else {
                         toast("No se pudo cargar la línea $code")
@@ -1343,7 +1354,8 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             }
         }
 
-        root.removeViewAt(root.childCount - 1)
+        mapStopInfoPanel = panel
+
         root.addView(
             panel,
             FrameLayout.LayoutParams(-1, dp(190)).apply {
