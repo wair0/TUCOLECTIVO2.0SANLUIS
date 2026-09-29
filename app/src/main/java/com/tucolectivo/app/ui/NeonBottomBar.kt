@@ -66,11 +66,6 @@ fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = M
             val cut = 16.dp.toPx()
             val y = 3.dp.toPx()
 
-            drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), Ink)))
-            val grid = NeonCeleste.copy(alpha = 0.05f)
-            var gx = 0f
-            while (gx <= w) { drawLine(grid, Offset(gx, 0f), Offset(gx, h)); gx += 28.dp.toPx() }
-
             // haz de luz que baja desde la línea hasta la pestaña activa
             val itemW = w / Tabs.size
             val cx = (pos + 0.5f) * itemW
