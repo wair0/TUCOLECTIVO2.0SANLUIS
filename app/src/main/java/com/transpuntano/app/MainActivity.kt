@@ -2534,7 +2534,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                 paint.textSize = 9f * scaledDensity; paint.color = cyan
                 var x = 16f * density; var y = 124f * density
                 lines.take(6).forEach { line ->
-                    val label = line.code.toString() + "  " + line.description.take(20)
+                    val label = line.code.toString() + "  " + line.name.take(20)
                     val widthNeeded = paint.measureText(label) + 22f * density
                     if (x + widthNeeded > w - 12f * density) { x = 16f * density; y += 28f * density }
                     paint.style = Paint.Style.STROKE; paint.strokeWidth = 1f * density
