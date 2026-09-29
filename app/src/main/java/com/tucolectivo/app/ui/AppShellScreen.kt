@@ -23,6 +23,8 @@ fun AppShellScreen(
     onNavigate: (Int) -> Unit,
     syncing: Boolean,
     onSync: () -> Unit,
+    statusText: String = "● SISTEMA LISTO",
+    onSearch: (String) -> Unit = {},
     linesLevel: LinesLevel,
     lines: List<TransitLine>,
     linesLoading: Boolean,
@@ -70,9 +72,10 @@ fun AppShellScreen(
 
             Column(Modifier.fillMaxSize()) {
                 NeonHeader(
+                    statusText = statusText,
                     menuItems = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS"),
                     onMenuItem = { index -> onNavigate(index) },
-                    onSearch = { }
+                    onSearch = onSearch
                 )
 
                 Box(modifier = Modifier.weight(1f)) {
