@@ -62,6 +62,11 @@ fun NeonHeader(
     val toggle = { p: Panel -> panel = if (panel == p) Panel.None else p }
     val close = { panel = Panel.None }
     val unread = notifications.any { it.unread }
+    val headerHeight = when (panel) {
+        Panel.Menu -> 360.dp
+        Panel.Search, Panel.Notifications -> 260.dp
+        Panel.None -> 92.dp
+    }
 
     val infinite = rememberInfiniteTransition(label = "header")
     val t by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(3800, easing = LinearEasing)), label = "t")
@@ -76,7 +81,7 @@ fun NeonHeader(
         label = "breath"
     )
     
-    Box(modifier.fillMaxWidth().height(78.dp).zIndex(20f)) {
+    Box(modifier.fillMaxWidth().height(headerHeight).zIndex(50f)) {
         Canvas(Modifier.fillMaxSize()) {
             val flick = when {
                 t in 0.58f..0.595f -> 0.35f
@@ -118,17 +123,10 @@ fun NeonHeader(
         }
 
         Row(
-            Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.Top
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.zIndex(2f)) {
-                NeonIconButton(panel == Panel.Menu, onClick = { toggle(Panel.Menu) }) { _, p, g, o -> menuIcon(p, g, o) }
-                Spacer(Modifier.width(7.dp))
-                Text(text = statusText, color = NeonCeleste, fontFamily = cyberFont,
-                    fontWeight = FontWeight.Black, fontSize = 11.5.sp, letterSpacing = 0.9.sp,
-                    maxLines = 1, softWrap = false,
-                    style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 14f)))
-            }
+            NeonIconButton(panel == Panel.Menu, onClick = { toggle(Panel.Menu) }) { _, p, g, o -> menuIcon(p, g, o) }
             Spacer(Modifier.weight(1f))
             NeonIconButton(panel == Panel.Search, phaseMs = 500, onClick = { toggle(Panel.Search) }) { tt, p, g, o ->
                 searchIcon(tt, p, g, o)
@@ -140,7 +138,7 @@ fun NeonHeader(
         }
 
         Column(
-            Modifier.align(Alignment.Center),
+            Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box {
@@ -172,17 +170,32 @@ fun NeonHeader(
                     }
                 )
             }
+            Spacer(Modifier.height(3.dp))
+            Text(
+                text = statusText,
+                color = NeonCeleste,
+                fontFamily = cyberFont,
+                fontWeight = FontWeight.Black,
+                fontSize = 9.5.sp,
+                letterSpacing = 1.1.sp,
+                maxLines = 1,
+                softWrap = false,
+                style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 12f)),
+                modifier = Modifier.graphicsLayer {
+                    alpha = 0.72f + 0.28f * pulse
+                }
+            )
         }
 
         when (panel) {
             Panel.None -> Unit
-            Panel.Menu -> Box(Modifier.align(Alignment.TopStart).offset(x = 8.dp, y = 74.dp).zIndex(20f)) {
+            Panel.Menu -> Box(Modifier.align(Alignment.TopStart).offset(x = 8.dp, y = 88.dp).zIndex(60f)) {
                 NeonPanel(248.dp, NeonCeleste) {
                     PanelTitle("MENÚ PRINCIPAL")
                     menuItems.forEachIndexed { i, label -> NeonItem(label) { close(); onMenuItem(i) } }
                 }
             }
-            Panel.Search -> Box(Modifier.align(Alignment.TopEnd).offset(x = (-8).dp, y = 74.dp).zIndex(20f)) {
+            Panel.Search -> Box(Modifier.align(Alignment.TopEnd).offset(x = (-8).dp, y = 88.dp).zIndex(60f)) {
                 NeonPanel(300.dp, NeonPink) {
                     PanelTitle("BUSCAR")
                     SearchField { close(); onSearch(it) }
