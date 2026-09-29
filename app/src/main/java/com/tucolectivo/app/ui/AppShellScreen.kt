@@ -10,28 +10,48 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import com.transpuntano.app.model.TransitArrival
+import com.transpuntano.app.model.TransitIntersection
 import com.transpuntano.app.model.TransitLine
 import com.transpuntano.app.model.TransitStop
+import com.transpuntano.app.model.TransitStreet
 import com.transpuntano.app.ui.CyberMapView
 
-/**
- * Shell Compose unificado: GIF de fondo + NeonHeader + contenido + NeonBottomBar.
- * El mapa se embebe con AndroidView sin modificar CyberMapView.
- *
- * GIF: AnimatedImageDrawable (API 28+) para no tildear; se pausa en MAPA
- * donde el contenido es opaco y no hace falta animar detrás.
- */
 @Composable
 fun AppShellScreen(
     section: Int,
     onNavigate: (Int) -> Unit,
     syncing: Boolean,
     onSync: () -> Unit,
+    linesLevel: LinesLevel,
     lines: List<TransitLine>,
     linesLoading: Boolean,
     linesError: String?,
     onRefreshLines: () -> Unit,
     onLineClick: (TransitLine) -> Unit,
+    activeLine: TransitLine?,
+    streets: List<TransitStreet>,
+    streetsLoading: Boolean,
+    streetsError: String?,
+    onStreetClick: (TransitStreet) -> Unit,
+    onMapRoute: (TransitLine) -> Unit,
+    activeStreet: TransitStreet?,
+    intersections: List<TransitIntersection>,
+    intersectionsLoading: Boolean,
+    intersectionsError: String?,
+    onIntersectionClick: (TransitIntersection) -> Unit,
+    activeIntersection: TransitIntersection?,
+    stops: List<TransitStop>,
+    stopsLoading: Boolean,
+    stopsError: String?,
+    onStopClick: (TransitStop) -> Unit,
+    activeStop: TransitStop?,
+    arrivals: List<TransitArrival>,
+    arrivalsLoading: Boolean,
+    arrivalsError: String?,
+    onRefreshArrivals: () -> Unit,
+    onSaveFavorite: () -> Unit,
+    onLinesBack: () -> Unit,
     favorites: List<FavoriteStopUi>,
     onFavoriteClick: (FavoriteStopUi) -> Unit,
     nearby: List<TransitStop>,
@@ -42,15 +62,11 @@ fun AppShellScreen(
     mapFactory: () -> CyberMapView,
     mapKey: Any? = null
 ) {
-    // En MAPA el GIF no se ve (contenido opaco): pausar ahorra CPU/GPU.
     val gifActive = section != 2
 
     MaterialTheme {
         Box(Modifier.fillMaxSize()) {
-            GifBackground(
-                modifier = Modifier.fillMaxSize(),
-                active = gifActive
-            )
+            GifBackground(modifier = Modifier.fillMaxSize(), active = gifActive)
 
             Column(Modifier.fillMaxSize()) {
                 NeonHeader(
@@ -71,27 +87,42 @@ fun AppShellScreen(
                                         onFavoritos = { onNavigate(3) }
                                     )
                                 }
-                                NeonSyncButton(
-                                    syncing = syncing,
-                                    onClick = onSync
-                                )
+                                NeonSyncButton(syncing = syncing, onClick = onSync)
                             }
                         }
-                        1 -> LinesComposeScreen(
+                        1 -> LinesFlowScreen(
+                            level = linesLevel,
                             lines = lines,
-                            loading = linesLoading,
-                            error = linesError,
-                            onRefresh = onRefreshLines,
-                            onLineClick = onLineClick
+                            linesLoading = linesLoading,
+                            linesError = linesError,
+                            onRefreshLines = onRefreshLines,
+                            onLineClick = onLineClick,
+                            activeLine = activeLine,
+                            streets = streets,
+                            streetsLoading = streetsLoading,
+                            streetsError = streetsError,
+                            onStreetClick = onStreetClick,
+                            onMapRoute = onMapRoute,
+                            activeStreet = activeStreet,
+                            intersections = intersections,
+                            intersectionsLoading = intersectionsLoading,
+                            intersectionsError = intersectionsError,
+                            onIntersectionClick = onIntersectionClick,
+                            activeIntersection = activeIntersection,
+                            stops = stops,
+                            stopsLoading = stopsLoading,
+                            stopsError = stopsError,
+                            onStopClick = onStopClick,
+                            activeStop = activeStop,
+                            arrivals = arrivals,
+                            arrivalsLoading = arrivalsLoading,
+                            arrivalsError = arrivalsError,
+                            onRefreshArrivals = onRefreshArrivals,
+                            onSaveFavorite = onSaveFavorite,
+                            onBackLevel = onLinesBack
                         )
-                        2 -> MapComposeHost(
-                            factory = mapFactory,
-                            mapKey = mapKey
-                        )
-                        3 -> FavoritesComposeScreen(
-                            favorites = favorites,
-                            onFavoriteClick = onFavoriteClick
-                        )
+                        2 -> MapComposeHost(factory = mapFactory, mapKey = mapKey)
+                        3 -> FavoritesComposeScreen(favorites = favorites, onFavoriteClick = onFavoriteClick)
                         4 -> NearbyComposeScreen(
                             stops = nearby,
                             loading = nearbyLoading,
@@ -108,20 +139,14 @@ fun AppShellScreen(
                     }
                 }
 
-                NeonBottomBar(
-                    selected = section.coerceIn(0, 4),
-                    onSelect = onNavigate
-                )
+                NeonBottomBar(selected = section.coerceIn(0, 4), onSelect = onNavigate)
             }
         }
     }
 }
 
 @Composable
-private fun MapComposeHost(
-    factory: () -> CyberMapView,
-    mapKey: Any?
-) {
+private fun MapComposeHost(factory: () -> CyberMapView, mapKey: Any?) {
     key(mapKey) {
         AndroidView(
             factory = { context ->
@@ -148,7 +173,6 @@ private fun MapComposeHost(
     }
 }
 
-/** Modelo UI liviano para favoritos (evita acoplar data class privada de MainActivity). */
 data class FavoriteStopUi(
     val lineCode: Int,
     val lineName: String,
