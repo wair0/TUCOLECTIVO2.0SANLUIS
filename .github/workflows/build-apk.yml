@@ -46,6 +46,10 @@ jobs:
           java -version
           ./gradlew --version
 
+      - name: Verify Compose classpath
+        run: |
+          ./gradlew :app:dependencies --configuration debugCompileClasspath --no-daemon | grep -E "androidx.compose.(ui|runtime|foundation|material3)" | head -40
+
       - name: Build Debug APK
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
