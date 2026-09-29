@@ -1279,6 +1279,9 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         map.setOnLocationRequest {
             syncMapLocation(map, line)
         }
+        map.setOnStopTap { stop ->
+            showMapStopInfo(root, stop, line)
+        }
         mapFrame.addView(map, FrameLayout.LayoutParams(-1, -1))
         root.addView(mapFrame, FrameLayout.LayoutParams(-1, -1).apply {
             leftMargin = dp(6); rightMargin = dp(6); topMargin = dp(6); bottomMargin = dp(6)
@@ -1306,6 +1309,55 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             }
         }
         Handler(Looper.getMainLooper()).post(refresh)
+    }
+
+    private fun showMapStopInfo(root: FrameLayout, mapStop: MapStop, selectedLine: TransitLine?) {
+        val stop = lastMapNearbyStops.firstOrNull { it.code == mapStop.id }
+        val lineCodes = if (selectedLine != null) {
+            listOf(selectedLine.code)
+        } else {
+            stop?.lineCodes.orEmpty().filter { it > 0 }.distinct().sorted()
+        }
+
+        val panel = CyberMapStopInfoView(
+            this,
+            mapStop,
+            lineCodes,
+            cyberpunkTypeface,
+            cyan,
+            pink,
+            muted
+        ) { code ->
+            executor.execute {
+                val chosen = runCatching { api.getLines() }
+                    .getOrDefault(emptyList())
+                    .firstOrNull { it.code == code }
+                runOnUiThread {
+                    if (chosen != null) {
+                        root.removeView(panel)
+                        showMap(chosen)
+                    } else {
+                        toast("No se pudo cargar la línea $code")
+                    }
+                }
+            }
+        }
+
+        root.removeViewAt(root.childCount - 1)
+        root.addView(
+            panel,
+            FrameLayout.LayoutParams(-1, dp(190)).apply {
+                gravity = Gravity.BOTTOM
+                leftMargin = dp(12)
+                rightMargin = dp(12)
+                bottomMargin = dp(12)
+            }
+        )
+
+        headerStatus.setStatusText(
+            if (lineCodes.isEmpty()) "● PARADA " + mapStop.id + " • SIN LÍNEAS ASOCIADAS"
+            else "● PARADA " + mapStop.id + " • " + lineCodes.size + " LÍNEAS"
+        )
     }
 
     private fun syncMapLocation(map: CyberMapView, line: TransitLine? = null) {
@@ -1515,6 +1567,113 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             }
         }
     }
+    private class CyberMapStopInfoView(
+        context: Context,
+        private val stop: MapStop,
+        private val lineCodes: List<Int>,
+        private val typeface: Typeface,
+        private val cyan: Int,
+        private val pink: Int,
+        private val muted: Int,
+        private val onLineSelected: (Int) -> Unit
+    ) : View(context) {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val density = resources.displayMetrics.density
+        private val buttons = mutableListOf<Pair<RectF, Int>>()
+
+        init {
+            isClickable = true
+        }
+
+        override fun onDraw(c: Canvas) {
+            super.onDraw(c)
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return
+
+            paint.shader = android.graphics.LinearGradient(
+                0f, 0f, w, h,
+                intArrayOf(0xFF030712.toInt(), 0xFF09051A.toInt(), 0xFF02030B.toInt()),
+                null,
+                android.graphics.Shader.TileMode.CLAMP
+            )
+            paint.style = Paint.Style.FILL
+            c.drawRoundRect(RectF(0f, 0f, w, h), 12f * density, 12f * density, paint)
+            paint.shader = null
+
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 2f * density
+            paint.color = cyan
+            paint.alpha = 235
+            c.drawRoundRect(RectF(1f, 1f, w - 1f, h - 1f), 12f * density, 12f * density, paint)
+
+            paint.color = pink
+            paint.strokeWidth = 1f * density
+            c.drawLine(14f * density, 42f * density, w - 14f * density, 42f * density, paint)
+
+            paint.style = Paint.Style.FILL
+            paint.typeface = typeface
+            paint.color = cyan
+            paint.textSize = 13f * density
+            c.drawText("PARADA // " + stop.id, 16f * density, 25f * density, paint)
+
+            paint.color = Color.WHITE
+            paint.textSize = 11f * density
+            c.drawText(stop.title.take(42), 16f * density, 58f * density, paint)
+
+            paint.color = muted
+            paint.textSize = 9f * density
+            c.drawText(stop.subtitle.ifBlank { "UBICACIÓN REGISTRADA" }.take(58), 16f * density, 76f * density, paint)
+
+            paint.color = pink
+            paint.textSize = 9f * density
+            c.drawText(
+                if (lineCodes.isEmpty()) "LÍNEAS // NO DISPONIBLES" else "LÍNEAS // TOCÁ PARA SELECCIONAR",
+                16f * density,
+                98f * density,
+                paint
+            )
+
+            buttons.clear()
+            var x = 16f * density
+            val y = 112f * density
+            val gap = 8f * density
+
+            lineCodes.take(8).forEach { code ->
+                val label = "LÍNEA " + code
+                paint.textSize = 9f * density
+                val widthText = paint.measureText(label) + 22f * density
+                if (x + widthText > w - 16f * density) return@forEach
+                val rect = RectF(x, y, x + widthText, y + 30f * density)
+                paint.style = Paint.Style.FILL
+                paint.color = 0xFF07131D.toInt()
+                paint.alpha = 245
+                c.drawRoundRect(rect, 7f * density, 7f * density, paint)
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 1.5f * density
+                paint.color = cyan
+                paint.alpha = 230
+                c.drawRoundRect(rect, 7f * density, 7f * density, paint)
+                paint.style = Paint.Style.FILL
+                paint.color = cyan
+                paint.textSize = 9f * density
+                c.drawText(label, rect.left + 11f * density, rect.top + 19f * density, paint)
+                buttons += rect to code
+                x += widthText + gap
+            }
+        }
+
+        override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+            if (event.actionMasked == android.view.MotionEvent.ACTION_UP) {
+                val hit = buttons.firstOrNull { it.first.contains(event.x, event.y) }
+                if (hit != null) {
+                    onLineSelected(hit.second)
+                }
+            }
+            return true
+        }
+    }
+
     private fun saveFavorite(stop: TransitStop, line: TransitLine) {
         val prefs = getSharedPreferences("favorites", MODE_PRIVATE)
         val key = stop.identifier
