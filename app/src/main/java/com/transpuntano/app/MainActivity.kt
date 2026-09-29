@@ -11,8 +11,6 @@ import android.graphics.Path
 import android.graphics.PathMeasure
 import android.graphics.RectF
 import android.graphics.Typeface
-import android.graphics.BitmapFactory
-import android.util.Base64
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.SystemClock
@@ -34,7 +32,6 @@ import com.transpuntano.app.data.SmartMoveApi
 import com.transpuntano.app.model.*
 import com.transpuntano.app.ui.CyberMapView
 import com.transpuntano.app.ui.MapStop
-import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
@@ -416,89 +413,6 @@ class MainActivity : AppCompatActivity() {
         content.removeAllViews()
     }
 
-    private fun loadAssetBitmap(assetName: String): android.graphics.Bitmap? {
-        val base = assetName.removeSuffix(".webp").removeSuffix(".b64")
-        // Prefer the canonical WEBP asset so a stale legacy B64 cannot override it.
-        runCatching {
-            assets.open("$base.webp").use { BitmapFactory.decodeStream(it) }
-        }.getOrNull()?.let { return it }
-        return runCatching {
-            val b64 = assets.open("$base.b64").bufferedReader().use { it.readText() }.trim()
-            if (b64.isNotEmpty()) {
-                val bytes = Base64.decode(b64, Base64.DEFAULT)
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-            } else null
-        }.getOrNull()
-    }
-
-    private fun addCyberStaticCyanFrame(container: FrameLayout) {
-        val frame = StaticCyanCyberFrameView(this)
-        frame.isClickable = false
-        frame.isFocusable = false
-        container.addView(frame, FrameLayout.LayoutParams(-1, -1))
-    }
-
-    private class StaticCyanCyberFrameView(context: Context) : View(context) {
-        private val density = resources.displayMetrics.density
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val path = Path()
-        override fun onDraw(canvas: Canvas) {
-            val w = width.toFloat(); val h = height.toFloat()
-            if (w <= 0f || h <= 0f) return
-            val cyan = 0xFF00F0FF.toInt()
-            val cut = minOf(2f * density, minOf(w, h) * .035f)
-            val edge = 1.5f * density
-            path.reset()
-            path.moveTo(cut, edge); path.lineTo(w - cut, edge)
-            path.lineTo(w - edge, edge + cut); path.lineTo(w - edge, h - cut)
-            path.lineTo(w - cut, h - edge); path.lineTo(cut, h - edge)
-            path.lineTo(edge, h - cut); path.lineTo(edge, cut); path.close()
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 5f * density; paint.color = cyan; paint.alpha = 32
-            canvas.drawPath(path, paint)
-            paint.strokeWidth = 1.8f * density; paint.alpha = 235
-            canvas.drawPath(path, paint)
-        }
-    }
-
-    private fun cardHomeAsset(assetName: String, description: String = assetName, action: () -> Unit) = FrameLayout(this).apply {
-        setBackgroundColor(panelColor)
-        setOnClickListener { action() }
-        applyCyberTap(this)
-        isClickable = true; isFocusable = true
-        val bitmap = loadAssetBitmap(assetName)
-        if (bitmap != null) {
-            addView(ImageView(this@MainActivity).apply {
-                setImageBitmap(bitmap)
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setBackgroundColor(bg)
-                contentDescription = description
-            }, FrameLayout.LayoutParams(-1, -1))
-        } else {
-            val label = description.substringBefore(" · ").ifBlank { assetName }
-            addView(TextView(this@MainActivity).apply {
-                text = label; gravity = Gravity.CENTER; textSize = 14f; typeface = cyberpunkTypeface
-                setTextColor(cyan); contentDescription = description
-            }, FrameLayout.LayoutParams(-1, -1))
-        }
-        addCyberStaticCyanFrame(this)
-    }
-
-    private fun cardHomeImage(assetName: String, action: () -> Unit) = FrameLayout(this).apply {
-        setBackgroundColor(panelColor)
-        setOnClickListener { action() }
-        applyCyberTap(this)
-        isClickable = true; isFocusable = true
-        val image = ImageView(this@MainActivity).apply {
-            val bitmap = loadAssetBitmap(assetName)
-            if (bitmap != null) setImageBitmap(bitmap)
-            scaleType = ImageView.ScaleType.CENTER_CROP; setBackgroundColor(bg)
-            contentDescription = "LÍNEAS · Recorridos y calles"
-        }
-        addView(image, FrameLayout.LayoutParams(-1, -1))
-        addCyberStaticCyanFrame(this)
-    }
-
     private fun applyCyberpunkTypeface(view: View) {
         if (view is TextView) {
             view.typeface = cyberpunkTypeface
@@ -636,32 +550,6 @@ class MainActivity : AppCompatActivity() {
         text = label; gravity = Gravity.CENTER; textSize = 13f; typeface = cyberpunkTypeface
         setTextColor(color); setBackgroundColor(panelColor); setPadding(dp(12), dp(14), dp(12), dp(14))
         isClickable = true; isFocusable = true; setOnClickListener { action() }
-    }
-
-    private fun cyberSyncButton(action: () -> Unit): View {
-        val bitmap = loadAssetBitmap("sincronizar_lineas.webp")
-        if (bitmap == null) {
-            return FrameLayout(this).apply {
-                addView(button("SINCRONIZAR LÍNEAS", cyan, action).also { applyCyberTap(it) },
-                    FrameLayout.LayoutParams(-1, -1))
-                addCyberStaticCyanFrame(this)
-            }
-        }
-        return FrameLayout(this).apply {
-            addView(ImageView(this@MainActivity).apply {
-                setImageBitmap(bitmap)
-                scaleType = ImageView.ScaleType.FIT_XY
-                contentDescription = "Sincronizar líneas"
-                isClickable = false
-                isFocusable = false
-                background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
-            }, FrameLayout.LayoutParams(-1, -1))
-            isClickable = true
-            isFocusable = true
-            setOnClickListener { action() }
-            applyCyberTap(this)
-            addCyberStaticCyanFrame(this)
-        }
     }
 
     private fun loadLines(navigateToLines: Boolean = true) {
