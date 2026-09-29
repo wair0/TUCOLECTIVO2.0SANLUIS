@@ -1294,16 +1294,6 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             gravity = Gravity.BOTTOM
             leftMargin = dp(14); rightMargin = dp(14); bottomMargin = dp(12)
         })
-        val info = TextView(this).apply {
-            text = if (line == null) {
-                "MAPA  •  UBICACIÓN Y PARADAS CERCANAS"
-            } else {
-                "MAPA  •  LÍNEA " + line.code + "  •  GPS EN TIEMPO REAL"
-            }
-            textSize = 11f; typeface = cyberpunkTypeface; setTextColor(cyan)
-            setPadding(dp(14), dp(10), dp(14), dp(10)); setBackgroundColor(0xCC05070C.toInt())
-        }
-        root.addView(info, FrameLayout.LayoutParams(-1, dp(44)).apply { gravity = Gravity.TOP })
         content.addView(root)
         if (line != null) {
             executor.execute {
@@ -1345,23 +1335,41 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
     }
 
     private fun findLinesForMapStop(stop: MapStop): List<TransitLine> {
+        // La cercanía geométrica al recorrido del mapa no identifica de forma fiable
+        // qué línea atiende una parada. Para esta pantalla usamos la misma fuente que
+        // alimenta los arribos/GPS: si SmartMove devuelve arribos para el identificador
+        // de la parada y el código de línea, esa línea efectivamente está asociada a ella.
         val lines = runCatching { api.getLines() }.getOrDefault(emptyList())
         if (lines.isEmpty()) return emptyList()
+
         val tasks = lines.map { line ->
             java.util.concurrent.Callable {
-                val route = mapRouteCache[line.code] ?: runCatching { api.getRoute(line.code) }
-                    .getOrDefault(emptyList()).also { mapRouteCache[line.code] = it }
-                val distance = route.minOfOrNull { point ->
-                    distanceMeters(stop.latitude, stop.longitude, point.first, point.second)
-                } ?: Double.MAX_VALUE
-                line to distance
+                val arrivals = runCatching {
+                    api.getArrivals(stop.identifier, line.code, 8_000)
+                }.getOrDefault(emptyList())
+
+                if (arrivals.isNotEmpty()) {
+                    line to true
+                } else {
+                    // Fallback: algunos registros pueden no devolver arribos en tiempo
+                    // real. En ese caso conservamos la comprobación geométrica, con una
+                    // tolerancia mayor para absorber diferencias entre coordenadas de
+                    // parada y puntos del recorrido publicados por SmartMove.
+                    val route = mapRouteCache[line.code] ?: runCatching { api.getRoute(line.code) }
+                        .getOrDefault(emptyList()).also { mapRouteCache[line.code] = it }
+                    val distance = route.minOfOrNull { point ->
+                        distanceMeters(stop.latitude, stop.longitude, point.first, point.second)
+                    } ?: Double.MAX_VALUE
+                    line to (distance <= 300.0)
+                }
             }
         }
-        return runCatching { vehicleQueryExecutor.invokeAll(tasks, 10, java.util.concurrent.TimeUnit.SECONDS) }
-            .getOrDefault(emptyList())
+
+        return runCatching {
+            vehicleQueryExecutor.invokeAll(tasks, 12, java.util.concurrent.TimeUnit.SECONDS)
+        }.getOrDefault(emptyList())
             .mapNotNull { future -> runCatching { future.get() }.getOrNull() }
-            .filter { it.second <= 120.0 }
-            .sortedBy { it.second }
+            .filter { it.second }
             .map { it.first }
             .distinctBy { it.code }
             .take(8)
