@@ -92,7 +92,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildShell() {
         val rootFrame = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
-        rootFrame.addView(CyberBackgroundView(this), FrameLayout.LayoutParams(-1, -1))
         rootFrame.addView(AnimatedGifBackgroundView(this), FrameLayout.LayoutParams(-1, -1))
 
         legacyRoot = LinearLayout(this).apply {
