@@ -92,12 +92,6 @@ fun NeonSyncButton(
             }
 
             clipPath(frame) {
-                drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), Ink)))
-                var y = pad
-                while (y < pad + fh) {
-                    drawLine(accent.copy(alpha = 0.05f), Offset(pad, y), Offset(pad + fw, y), 1f)
-                    y += 5.dp.toPx()
-                }
                 val band = 40.dp.toPx() // barra de escaneo vertical que cruza el botón
                 val bx = pad + fw * t
                 drawRect(
