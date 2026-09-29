@@ -31,8 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.zIndex
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -76,9 +75,7 @@ fun NeonHeader(
         infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "breath"
     )
-    val dx = with(LocalDensity.current) { 8.dp.roundToPx() }
-    val dy = with(LocalDensity.current) { 80.dp.roundToPx() }
-
+    
     Box(modifier.fillMaxWidth().height(78.dp)) {
         Canvas(Modifier.fillMaxSize()) {
             val flick = when {
@@ -124,7 +121,14 @@ fun NeonHeader(
             Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            NeonIconButton(panel == Panel.Menu, onClick = { toggle(Panel.Menu) }) { _, p, g, o -> menuIcon(p, g, o) }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.zIndex(2f)) {
+                NeonIconButton(panel == Panel.Menu, onClick = { toggle(Panel.Menu) }) { _, p, g, o -> menuIcon(p, g, o) }
+                Spacer(Modifier.width(7.dp))
+                Text(text = statusText, color = NeonCeleste, fontFamily = cyberFont,
+                    fontWeight = FontWeight.Black, fontSize = 11.5.sp, letterSpacing = 0.9.sp,
+                    maxLines = 1, softWrap = false,
+                    style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 14f)))
+            }
             Spacer(Modifier.weight(1f))
             NeonIconButton(panel == Panel.Search, phaseMs = 500, onClick = { toggle(Panel.Search) }) { tt, p, g, o ->
                 searchIcon(tt, p, g, o)
@@ -144,7 +148,7 @@ fun NeonHeader(
                 color = NeonCore,
                 fontFamily = cyberFont,
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 letterSpacing = 1.5.sp,
                 maxLines = 1,
                 softWrap = false,
@@ -158,7 +162,7 @@ fun NeonHeader(
                 color = NeonCeleste,
                 fontFamily = cyberFont,
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 10.sp,
+                fontSize = 11.5.sp,
                 letterSpacing = 1.2.sp,
                 maxLines = 1,
                 softWrap = false,
@@ -166,30 +170,25 @@ fun NeonHeader(
             )
         }
 
-        val props = PopupProperties(focusable = true)
         when (panel) {
             Panel.None -> Unit
-            Panel.Menu -> Popup(alignment = Alignment.TopStart, offset = IntOffset(dx, dy), onDismissRequest = close, properties = props) {
-                NeonPanel(240.dp, NeonCeleste) {
-                    PanelTitle("MENÚ")
+            Panel.Menu -> Box(Modifier.align(Alignment.TopStart).offset(x = 8.dp, y = 74.dp).zIndex(20f)) {
+                NeonPanel(248.dp, NeonCeleste) {
+                    PanelTitle("MENÚ PRINCIPAL")
                     menuItems.forEachIndexed { i, label -> NeonItem(label) { close(); onMenuItem(i) } }
                 }
             }
-            Panel.Search -> Popup(alignment = Alignment.TopEnd, offset = IntOffset(-dx, dy), onDismissRequest = close, properties = props) {
+            Panel.Search -> Box(Modifier.align(Alignment.TopEnd).offset(x = (-8).dp, y = 74.dp).zIndex(20f)) {
                 NeonPanel(300.dp, NeonPink) {
                     PanelTitle("BUSCAR")
                     SearchField { close(); onSearch(it) }
                 }
             }
-            Panel.Notifications -> Popup(alignment = Alignment.TopEnd, offset = IntOffset(-dx, dy), onDismissRequest = close, properties = props) {
+            Panel.Notifications -> Box(Modifier.align(Alignment.TopEnd).offset(x = (-8).dp, y = 74.dp).zIndex(20f)) {
                 NeonPanel(300.dp, NeonCeleste) {
                     PanelTitle("NOTIFICACIONES")
-                    if (notifications.isEmpty()) {
-                        Text(
-                            "SIN NOTIFICACIONES", color = NeonCeleste.copy(alpha = 0.6f), fontFamily = cyberFont,
-                            fontSize = 12.sp, modifier = Modifier.padding(vertical = 14.dp)
-                        )
-                    }
+                    if (notifications.isEmpty()) Text("SIN NOTIFICACIONES", color = NeonCeleste.copy(alpha = 0.6f),
+                        fontFamily = cyberFont, fontSize = 12.sp, modifier = Modifier.padding(vertical = 14.dp))
                     Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) {
                         notifications.forEachIndexed { i, n -> NotificationRow(n) { close(); onNotification(i) } }
                     }

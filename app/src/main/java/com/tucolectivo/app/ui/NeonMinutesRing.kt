@@ -45,7 +45,7 @@ private val NeonPink = Color(0xFFFF2E9A)
 fun NeonMinutesRing(
     minutes: Int?,
     modifier: Modifier = Modifier,
-    size: Dp = 72.dp,
+    size: Dp = 82.dp,
     isArriving: Boolean = minutes != null && minutes <= 1
 ) {
     val cyberFont = rememberCyberpunkFontFamily()
@@ -94,12 +94,6 @@ fun NeonMinutesRing(
             val topLeft = Offset(cx - r, cy - r)
             val arcSize = Size(r * 2f, r * 2f)
 
-            drawCircle(
-                NeonCeleste.copy(alpha = 0.12f * drawPulse),
-                radius = r + stroke * 2.5f,
-                center = Offset(cx, cy),
-                style = Stroke(width = stroke * 2.8f)
-            )
             drawCircle(
                 NeonCeleste.copy(alpha = 0.45f + 0.35f * drawPulse),
                 radius = r,

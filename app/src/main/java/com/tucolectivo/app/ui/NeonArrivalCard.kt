@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.core.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,42 +48,26 @@ fun NeonArrivalCard(
     modifier: Modifier = Modifier,
     isArriving: Boolean = minutes != null && minutes <= 1
 ) {
-    Box(
-        modifier
-            .fillMaxWidth()
-            .height(92.dp)
-    ) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(90), label = "arrivalPress")
+    val pulse by rememberInfiniteTransition(label = "arrivalPulse").animateFloat(
+        0.25f, 1f, infiniteRepeatable(tween(1300, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "arrivalGlow"
+    )
+    Box(modifier.fillMaxWidth().height(104.dp).graphicsLayer {
+        val s = 1f - 0.018f * press; scaleX = s; scaleY = s
+    }) {
         Canvas(Modifier.fillMaxSize()) {
             val pad = 2.dp.toPx()
             val left = pad
             val top = pad
             val right = size.width - pad
             val bottom = size.height - pad
-            val cut = 8.dp.toPx()
-
             drawRect(Panel, Offset(left, top), Size(right - left, bottom - top))
-
-            val frame = Path().apply {
-                moveTo(left + cut, top)
-                lineTo(right - cut, top)
-                lineTo(right, top + cut)
-                lineTo(right, bottom - cut)
-                lineTo(right - cut, bottom)
-                lineTo(left + cut, bottom)
-                lineTo(left, bottom - cut)
-                lineTo(left, top + cut)
-                close()
-            }
-            drawPath(
-                frame,
-                NeonCeleste.copy(alpha = 0.15f),
-                style = Stroke(width = 5.dp.toPx())
-            )
-            drawPath(
-                frame,
-                NeonCeleste.copy(alpha = 0.9f),
-                style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round)
-            )
+            drawRect(NeonCeleste.copy(alpha = 0.10f + 0.12f * pulse), Offset(left, top), Size(right - left, bottom - top), style = Stroke(width = 6.dp.toPx()))
+            drawRect(NeonCeleste.copy(alpha = 0.75f + 0.2f * pulse), Offset(left, top), Size(right - left, bottom - top), style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Square))
+            drawRect(NeonPink.copy(alpha = 0.7f), Offset(left + 2.dp.toPx(), top + 2.dp.toPx()), Size(34.dp.toPx(), 2.dp.toPx()))
+            drawRect(NeonPink.copy(alpha = 0.7f), Offset(right - 36.dp.toPx(), bottom - 4.dp.toPx()), Size(34.dp.toPx(), 2.dp.toPx()))
         }
 
         Row(
@@ -116,7 +104,7 @@ fun NeonArrivalCard(
             NeonMinutesRing(
                 minutes = minutes,
                 isArriving = isArriving,
-                size = 70.dp
+                size = 82.dp
             )
         }
     }

@@ -147,27 +147,28 @@ private fun SectionScaffold(
     onAction: (() -> Unit)?, actionEnabled: Boolean = true, content: @Composable () -> Unit
 ) {
     val cyberFont = rememberCyberpunkFontFamily()
-    Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.72f))) {
+    Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.88f))) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
-                Text(text = title, color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp, letterSpacing = 1.5.sp)
-                Text(text = subtitle, color = Muted, fontFamily = cyberFont, fontSize = 11.sp,
+                Text(text = "///  $title", color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Black,
+                    fontSize = 17.sp, letterSpacing = 1.8.sp,
+                    style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(NeonCeleste, Offset.Zero, 15f)))
+                Text(text = subtitle, color = NeonCeleste.copy(alpha = 0.78f), fontFamily = cyberFont, fontSize = 10.sp, letterSpacing = 0.8.sp,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             if (actionLabel != null && onAction != null) {
                 NeonMiniButton(label = actionLabel, enabled = actionEnabled, onClick = onAction)
             }
         }
-        Canvas(Modifier.fillMaxWidth().height(2.dp)) {
+        Canvas(Modifier.fillMaxWidth().height(5.dp)) {
             val y = size.height / 2f
-            drawLine(
-                brush = Brush.horizontalGradient(listOf(Color.Transparent, NeonCeleste.copy(alpha = 0.9f), Color.Transparent)),
-                start = Offset(0f, y), end = Offset(size.width, y), strokeWidth = size.height
-            )
+            drawRect(NeonCeleste.copy(alpha = 0.12f), Offset(0f, y - 1.dp.toPx()), Size(size.width, 2.dp.toPx()))
+            drawLine(NeonCeleste, Offset(12.dp.toPx(), y), Offset(size.width - 12.dp.toPx(), y), 1.2.dp.toPx())
+            drawCircle(NeonPink, 2.2.dp.toPx(), Offset(14.dp.toPx(), y))
+            drawCircle(NeonPink, 2.2.dp.toPx(), Offset(size.width - 14.dp.toPx(), y))
         }
         Box(Modifier.weight(1f)) { content() }
     }

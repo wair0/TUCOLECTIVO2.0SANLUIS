@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.*
+import androidx.compose.runtime.getValue
 import com.transpuntano.app.model.TransitArrival
 import com.transpuntano.app.model.TransitIntersection
 import com.transpuntano.app.model.TransitLine
@@ -119,17 +121,21 @@ private fun <T> HierarchyListScreen(
     rowTitle: (T) -> String,
     onItemClick: (T) -> Unit
 ) {
-    Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.72f))) {
-        HierarchyHeader(
-            title = title,
-            subtitle = when {
-                loading -> "CARGANDO..."
-                error != null -> error
-                items.isEmpty() -> emptyMessage
-                else -> subtitle.ifBlank { "${items.size} ÍTEMS" }
-            },
-            onBack = onBack
-        )
+    val infinite = rememberInfiniteTransition(label = "hierarchy")
+    val scan by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "scan")
+    Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.88f))) {
+        HierarchyHeader(title = title, subtitle = when {
+            loading -> "CARGANDO..."
+            error != null -> error
+            items.isEmpty() -> emptyMessage
+            else -> subtitle.ifBlank { "${items.size} ÍTEMS" }
+        }, onBack = onBack)
+        Canvas(Modifier.fillMaxWidth().height(2.dp)) {
+            val y = size.height / 2f
+            val x = size.width * scan
+            drawLine(NeonCeleste.copy(alpha = 0.22f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+            drawLine(NeonPink.copy(alpha = 0.9f), Offset((x - 42.dp.toPx()).coerceAtLeast(0f), y), Offset(x, y), 2.dp.toPx())
+        }
         Box(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             when {
                 loading && items.isEmpty() -> CenterMsg("CARGANDO...")
@@ -137,16 +143,12 @@ private fun <T> HierarchyListScreen(
                 items.isEmpty() -> CenterMsg(emptyMessage)
                 else -> LazyColumn(
                     contentPadding = PaddingValues(vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(items, key = key) { item ->
-                        NeonListRow(
-                            title = rowTitle(item),
-                            subtitle = "",
-                            accent = NeonCeleste,
-                            onClick = { onItemClick(item) }
-                        )
+                        NeonListRow(title = rowTitle(item), subtitle = "", accent = NeonCeleste,
+                            onClick = { onItemClick(item) })
                     }
                 }
             }
