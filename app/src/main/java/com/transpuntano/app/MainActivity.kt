@@ -15,18 +15,18 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import com.tucolectivo.app.ui.AppShellScreen
 import com.tucolectivo.app.ui.FavoriteStopUi
+import com.tucolectivo.app.ui.LinesLevel
 import com.transpuntano.app.data.SmartMoveApi
+import com.transpuntano.app.model.TransitArrival
+import com.transpuntano.app.model.TransitIntersection
 import com.transpuntano.app.model.TransitLine
 import com.transpuntano.app.model.TransitStop
+import com.transpuntano.app.model.TransitStreet
 import com.transpuntano.app.ui.CyberMapView
 import com.transpuntano.app.ui.MapStop
 import java.util.concurrent.Executors
 
-/**
- * Shell Compose unificado (NeonHeader + secciones + NeonBottomBar).
- * El mapa se embebe con AndroidView sin modificar CyberMapView.
- * Lag de INICIO: sin GIF a 60fps debajo del Canvas Compose.
- */
+/** Shell Compose + flujo LÍNEAS → CALLES → INTERSECCIONES → PARADAS → ARRIBOS */
 class MainActivity : AppCompatActivity() {
     private val api = SmartMoveApi()
     private val executor = Executors.newFixedThreadPool(3)
@@ -37,6 +37,26 @@ class MainActivity : AppCompatActivity() {
     private var composeLines by mutableStateOf<List<TransitLine>>(emptyList())
     private var composeLinesLoading by mutableStateOf(false)
     private var composeLinesError by mutableStateOf<String?>(null)
+
+    private var linesLevel by mutableStateOf(LinesLevel.CATALOG)
+    private var activeLine by mutableStateOf<TransitLine?>(null)
+    private var activeStreet by mutableStateOf<TransitStreet?>(null)
+    private var activeIntersection by mutableStateOf<TransitIntersection?>(null)
+    private var activeStop by mutableStateOf<TransitStop?>(null)
+
+    private var streets by mutableStateOf<List<TransitStreet>>(emptyList())
+    private var streetsLoading by mutableStateOf(false)
+    private var streetsError by mutableStateOf<String?>(null)
+    private var intersections by mutableStateOf<List<TransitIntersection>>(emptyList())
+    private var intersectionsLoading by mutableStateOf(false)
+    private var intersectionsError by mutableStateOf<String?>(null)
+    private var stops by mutableStateOf<List<TransitStop>>(emptyList())
+    private var stopsLoading by mutableStateOf(false)
+    private var stopsError by mutableStateOf<String?>(null)
+    private var arrivals by mutableStateOf<List<TransitArrival>>(emptyList())
+    private var arrivalsLoading by mutableStateOf(false)
+    private var arrivalsError by mutableStateOf<String?>(null)
+
     private var composeNearby by mutableStateOf<List<TransitStop>>(emptyList())
     private var composeNearbyLoading by mutableStateOf(false)
     private var composeNearbyError by mutableStateOf<String?>(null)
@@ -55,15 +75,45 @@ class MainActivity : AppCompatActivity() {
                     onNavigate = { index -> navigateTo(index) },
                     syncing = homeSyncing,
                     onSync = { loadLines(false) },
+                    linesLevel = linesLevel,
                     lines = composeLines,
                     linesLoading = composeLinesLoading,
                     linesError = composeLinesError,
                     onRefreshLines = { refreshComposeLines() },
-                    onLineClick = { line ->
+                    onLineClick = { line -> openLineStreets(line) },
+                    activeLine = activeLine,
+                    streets = streets,
+                    streetsLoading = streetsLoading,
+                    streetsError = streetsError,
+                    onStreetClick = { street -> openIntersections(street) },
+                    onMapRoute = { line ->
                         mapLineFilter = line
                         mapHostKey += 1
                         navigateTo(2)
                     },
+                    activeStreet = activeStreet,
+                    intersections = intersections,
+                    intersectionsLoading = intersectionsLoading,
+                    intersectionsError = intersectionsError,
+                    onIntersectionClick = { intersection -> openStops(intersection) },
+                    activeIntersection = activeIntersection,
+                    stops = stops,
+                    stopsLoading = stopsLoading,
+                    stopsError = stopsError,
+                    onStopClick = { stop -> openArrivals(stop) },
+                    activeStop = activeStop,
+                    arrivals = arrivals,
+                    arrivalsLoading = arrivalsLoading,
+                    arrivalsError = arrivalsError,
+                    onRefreshArrivals = {
+                        val s = activeStop; val l = activeLine
+                        if (s != null && l != null) loadArrivals(s, l)
+                    },
+                    onSaveFavorite = {
+                        val s = activeStop; val l = activeLine
+                        if (s != null && l != null) { saveFavorite(s, l); toast("Parada guardada") }
+                    },
+                    onLinesBack = { linesGoBack() },
                     favorites = composeFavorites,
                     onFavoriteClick = { fav -> toast(fav.description) },
                     nearby = composeNearby,
@@ -79,7 +129,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(composeHomeView)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (composeSection != 0) navigateTo(0) else finish()
+                when {
+                    composeSection == 1 && linesLevel != LinesLevel.CATALOG -> linesGoBack()
+                    composeSection != 0 -> navigateTo(0)
+                    else -> finish()
+                }
             }
         })
         navigateTo(0)
@@ -88,109 +142,129 @@ class MainActivity : AppCompatActivity() {
     private fun navigateTo(index: Int) {
         composeSection = index
         when (index) {
-            1 -> refreshComposeLines()
-            2 -> { mapHostKey += 1 }
-            3 -> { composeFavorites = loadFavorites() }
+            1 -> { linesLevel = LinesLevel.CATALOG; refreshComposeLines() }
+            2 -> mapHostKey += 1
+            3 -> composeFavorites = loadFavorites()
             4 -> refreshComposeNearby()
         }
+    }
+
+    private fun openLineStreets(line: TransitLine) {
+        activeLine = line; activeStreet = null; activeIntersection = null; activeStop = null
+        streets = emptyList(); streetsError = null; streetsLoading = true
+        linesLevel = LinesLevel.STREETS
+        executor.execute {
+            runCatching { api.getStreets(line.code) }
+                .onSuccess { list -> runOnUiThread { streets = list; streetsLoading = false; streetsError = null } }
+                .onFailure { e -> runOnUiThread { streetsLoading = false; streetsError = e.message ?: "Sin datos" } }
+        }
+    }
+
+    private fun openIntersections(street: TransitStreet) {
+        val line = activeLine ?: return
+        activeStreet = street; activeIntersection = null; activeStop = null
+        intersections = emptyList(); intersectionsError = null; intersectionsLoading = true
+        linesLevel = LinesLevel.INTERSECTIONS
+        executor.execute {
+            runCatching { api.getIntersections(line.code, street.code) }
+                .onSuccess { list -> runOnUiThread { intersections = list; intersectionsLoading = false; intersectionsError = null } }
+                .onFailure { e -> runOnUiThread { intersectionsLoading = false; intersectionsError = e.message ?: "Sin datos" } }
+        }
+    }
+
+    private fun openStops(intersection: TransitIntersection) {
+        val line = activeLine ?: return
+        val street = activeStreet ?: return
+        activeIntersection = intersection; activeStop = null
+        stops = emptyList(); stopsError = null; stopsLoading = true
+        linesLevel = LinesLevel.STOPS
+        executor.execute {
+            runCatching { api.getStops(line.code, street.code, intersection.code) }
+                .onSuccess { list -> runOnUiThread { stops = list; stopsLoading = false; stopsError = null } }
+                .onFailure { e -> runOnUiThread { stopsLoading = false; stopsError = e.message ?: "Sin datos" } }
+        }
+    }
+
+    private fun openArrivals(stop: TransitStop) {
+        val line = activeLine ?: return
+        activeStop = stop; arrivals = emptyList(); arrivalsError = null
+        linesLevel = LinesLevel.ARRIVALS
+        loadArrivals(stop, line)
+    }
+
+    private fun loadArrivals(stop: TransitStop, line: TransitLine) {
+        arrivalsLoading = true; arrivalsError = null
+        executor.execute {
+            runCatching { api.getArrivals(stop.identifier, line.code) }
+                .onSuccess { list -> runOnUiThread { arrivals = list; arrivalsLoading = false; arrivalsError = null } }
+                .onFailure { e -> runOnUiThread { arrivalsLoading = false; arrivalsError = e.message ?: "Sin conexión" } }
+        }
+    }
+
+    private fun linesGoBack() {
+        when (linesLevel) {
+            LinesLevel.ARRIVALS -> { linesLevel = LinesLevel.STOPS; arrivals = emptyList(); activeStop = null }
+            LinesLevel.STOPS -> { linesLevel = LinesLevel.INTERSECTIONS; stops = emptyList(); activeIntersection = null }
+            LinesLevel.INTERSECTIONS -> { linesLevel = LinesLevel.STREETS; intersections = emptyList(); activeStreet = null }
+            LinesLevel.STREETS -> { linesLevel = LinesLevel.CATALOG; streets = emptyList(); activeLine = null }
+            LinesLevel.CATALOG -> navigateTo(0)
+        }
+    }
+
+    private fun saveFavorite(stop: TransitStop, line: TransitLine) {
+        val prefs = getSharedPreferences("favorites", MODE_PRIVATE)
+        val key = "${line.code}_${stop.code}"
+        val value = listOf(line.code, line.name, stop.code, stop.description, stop.identifier, stop.street, stop.intersection, stop.latitude, stop.longitude).joinToString("|")
+        prefs.edit().putString(key, value).apply()
     }
 
     private fun loadLines(navigateToLines: Boolean) {
         homeSyncing = true
         executor.execute {
             runCatching { api.getLines() }
-                .onSuccess { lines ->
-                    runOnUiThread {
-                        homeSyncing = false
-                        composeLines = lines
-                        composeLinesLoading = false
-                        composeLinesError = null
-                        if (navigateToLines) navigateTo(1)
-                    }
-                }
-                .onFailure { error ->
-                    runOnUiThread {
-                        homeSyncing = false
-                        composeLinesError = error.message ?: "Error"
-                        toast(error.message ?: "Error")
-                    }
-                }
+                .onSuccess { lines -> runOnUiThread {
+                    homeSyncing = false; composeLines = lines; composeLinesLoading = false; composeLinesError = null
+                    if (navigateToLines) navigateTo(1)
+                }}
+                .onFailure { error -> runOnUiThread {
+                    homeSyncing = false; composeLinesError = error.message ?: "Error"; toast(error.message ?: "Error")
+                }}
         }
     }
 
     private fun refreshComposeLines() {
-        composeLinesLoading = true
-        composeLinesError = null
+        composeLinesLoading = true; composeLinesError = null
         executor.execute {
             runCatching { api.getLines() }
-                .onSuccess { items ->
-                    runOnUiThread {
-                        composeLines = items
-                        composeLinesLoading = false
-                        composeLinesError = null
-                    }
-                }
-                .onFailure { error ->
-                    runOnUiThread {
-                        composeLinesLoading = false
-                        composeLinesError = error.message ?: "No se pudo consultar."
-                    }
-                }
+                .onSuccess { items -> runOnUiThread { composeLines = items; composeLinesLoading = false; composeLinesError = null } }
+                .onFailure { error -> runOnUiThread { composeLinesLoading = false; composeLinesError = error.message ?: "No se pudo consultar." } }
         }
     }
 
     private fun refreshComposeNearby() {
-        composeNearbyLoading = true
-        composeNearbyError = null
+        composeNearbyLoading = true; composeNearbyError = null
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-        ) {
-            composeNearbyLoading = false
-            composeNearbyError = "PERMISOS DE UBICACIÓN REQUERIDOS"
-            requestPermissions(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
-                42
-            )
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            composeNearbyLoading = false; composeNearbyError = "PERMISOS DE UBICACIÓN REQUERIDOS"
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 42)
             return
         }
         val location = currentLocationOrNull()
-        if (location == null) {
-            composeNearbyLoading = false
-            composeNearbyError = "UBICACIÓN NO DISPONIBLE"
-            return
-        }
+        if (location == null) { composeNearbyLoading = false; composeNearbyError = "UBICACIÓN NO DISPONIBLE"; return }
         executor.execute {
             runCatching { api.getNearby(location.latitude, location.longitude) }
-                .onSuccess { nearby ->
-                    runOnUiThread {
-                        composeNearby = nearby
-                        lastMapNearbyStops = nearby
-                        composeNearbyLoading = false
-                        composeNearbyError = null
-                    }
-                }
-                .onFailure { error ->
-                    runOnUiThread {
-                        composeNearbyLoading = false
-                        composeNearbyError = error.message ?: "Sin conexión"
-                    }
-                }
+                .onSuccess { nearby -> runOnUiThread { composeNearby = nearby; lastMapNearbyStops = nearby; composeNearbyLoading = false; composeNearbyError = null } }
+                .onFailure { error -> runOnUiThread { composeNearbyLoading = false; composeNearbyError = error.message ?: "Sin conexión" } }
         }
     }
 
     private fun currentLocationOrNull(): android.location.Location? {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-        ) return null
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) return null
         val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val providers = listOf(
-            LocationManager.GPS_PROVIDER,
-            LocationManager.NETWORK_PROVIDER,
-            LocationManager.PASSIVE_PROVIDER
-        )
-        return providers.mapNotNull { p ->
-            runCatching { manager.getLastKnownLocation(p) }.getOrNull()
-        }.maxByOrNull { it.time }
+        return listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)
+            .mapNotNull { p -> runCatching { manager.getLastKnownLocation(p) }.getOrNull() }
+            .maxByOrNull { it.time }
     }
 
     private fun createConfiguredMapView(line: TransitLine?): CyberMapView {
@@ -203,18 +277,12 @@ class MainActivity : AppCompatActivity() {
                     runCatching { api.getNearby(loc.latitude, loc.longitude) }
                         .onSuccess { nearby ->
                             lastMapNearbyStops = nearby
-                            val stops = nearby.map {
-                                MapStop(
-                                    id = it.code,
-                                    title = it.description,
-                                    subtitle = listOf(it.street, it.intersection)
-                                        .filter { s -> s.isNotBlank() }
-                                        .joinToString(" · "),
-                                    latitude = it.latitude,
-                                    longitude = it.longitude
-                                )
+                            val mapStops = nearby.map {
+                                MapStop(id = it.code, title = it.description,
+                                    subtitle = listOf(it.street, it.intersection).filter { s -> s.isNotBlank() }.joinToString(" · "),
+                                    latitude = it.latitude, longitude = it.longitude)
                             }
-                            runOnUiThread { map.setStops(stops, fit = false) }
+                            runOnUiThread { map.setStops(mapStops, fit = false) }
                         }
                 }
             }
@@ -224,17 +292,10 @@ class MainActivity : AppCompatActivity() {
             executor.execute {
                 runCatching { api.getRoute(line.code) }
                     .onSuccess { route -> runOnUiThread { map.setRoute(route) } }
-                    .onFailure { error ->
-                        runOnUiThread { toast(error.message ?: "No se pudo cargar el recorrido") }
-                    }
+                    .onFailure { error -> runOnUiThread { toast(error.message ?: "No se pudo cargar el recorrido") } }
             }
         }
-        map.post {
-            val loc = currentLocationOrNull()
-            if (loc != null) {
-                map.setUserLocation(loc.latitude, loc.longitude, center = true)
-            }
-        }
+        map.post { currentLocationOrNull()?.let { map.setUserLocation(it.latitude, it.longitude, center = true) } }
         return map
     }
 
@@ -243,18 +304,11 @@ class MainActivity : AppCompatActivity() {
         return prefs.all.mapNotNull { (_, v) ->
             val parts = (v as? String)?.split("|") ?: return@mapNotNull null
             if (parts.size < 7) return@mapNotNull null
-            FavoriteStopUi(
-                lineCode = parts[0].toIntOrNull() ?: 0,
-                lineName = parts.getOrElse(1) { "" },
-                stopCode = parts[2].toIntOrNull() ?: 0,
-                description = parts.getOrElse(3) { "" },
-                street = parts.getOrElse(5) { "" },
-                intersection = parts.getOrElse(6) { "" }
-            )
+            FavoriteStopUi(lineCode = parts[0].toIntOrNull() ?: 0, lineName = parts.getOrElse(1) { "" },
+                stopCode = parts[2].toIntOrNull() ?: 0, description = parts.getOrElse(3) { "" },
+                street = parts.getOrElse(5) { "" }, intersection = parts.getOrElse(6) { "" })
         }
     }
 
-    private fun toast(msg: String) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-    }
+    private fun toast(msg: String) { Toast.makeText(this, msg, Toast.LENGTH_SHORT).show() }
 }
