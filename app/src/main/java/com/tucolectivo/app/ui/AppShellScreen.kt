@@ -2,27 +2,24 @@ package com.tucolectivo.app.ui
 
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.transpuntano.app.model.TransitLine
 import com.transpuntano.app.model.TransitStop
 import com.transpuntano.app.ui.CyberMapView
 
-private val ShellInk = Color(0xFF060912)
-
 /**
- * Shell Compose unificado: NeonHeader + contenido de sección + NeonBottomBar.
+ * Shell Compose unificado: GIF de fondo + NeonHeader + contenido + NeonBottomBar.
  * El mapa se embebe con AndroidView sin modificar CyberMapView.
+ *
+ * GIF: AnimatedImageDrawable (API 28+) para no tildear; se pausa en MAPA
+ * donde el contenido es opaco y no hace falta animar detrás.
  */
 @Composable
 fun AppShellScreen(
@@ -30,90 +27,92 @@ fun AppShellScreen(
     onNavigate: (Int) -> Unit,
     syncing: Boolean,
     onSync: () -> Unit,
-    // LÍNEAS
     lines: List<TransitLine>,
     linesLoading: Boolean,
     linesError: String?,
     onRefreshLines: () -> Unit,
     onLineClick: (TransitLine) -> Unit,
-    // FAVORITOS
     favorites: List<FavoriteStopUi>,
     onFavoriteClick: (FavoriteStopUi) -> Unit,
-    // PARADAS CERCANAS
     nearby: List<TransitStop>,
     nearbyLoading: Boolean,
     nearbyError: String?,
     onRefreshNearby: () -> Unit,
     onNearbyClick: (TransitStop) -> Unit,
-    // MAPA (factory desde MainActivity para no tocar CyberMapView)
     mapFactory: () -> CyberMapView,
     mapKey: Any? = null
 ) {
+    // En MAPA el GIF no se ve (contenido opaco): pausar ahorra CPU/GPU.
+    val gifActive = section != 2
+
     MaterialTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(ShellInk)
-        ) {
-            NeonHeader(
-                menuItems = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS"),
-                onMenuItem = { index -> onNavigate(index) },
-                onSearch = { }
+        Box(Modifier.fillMaxSize()) {
+            GifBackground(
+                modifier = Modifier.fillMaxSize(),
+                active = gifActive
             )
 
-            Box(modifier = Modifier.weight(1f)) {
-                when (section) {
-                    0 -> {
-                        Column(Modifier.fillMaxSize()) {
-                            Box(Modifier.weight(1f)) {
-                                NeonMenuScreen(
-                                    onLineas = { onNavigate(1) },
-                                    onMapa = { onNavigate(2) },
-                                    onParadas = { onNavigate(4) },
-                                    onFavoritos = { onNavigate(3) }
+            Column(Modifier.fillMaxSize()) {
+                NeonHeader(
+                    menuItems = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS"),
+                    onMenuItem = { index -> onNavigate(index) },
+                    onSearch = { }
+                )
+
+                Box(modifier = Modifier.weight(1f)) {
+                    when (section) {
+                        0 -> {
+                            Column(Modifier.fillMaxSize()) {
+                                Box(Modifier.weight(1f)) {
+                                    NeonMenuScreen(
+                                        onLineas = { onNavigate(1) },
+                                        onMapa = { onNavigate(2) },
+                                        onParadas = { onNavigate(4) },
+                                        onFavoritos = { onNavigate(3) }
+                                    )
+                                }
+                                NeonSyncButton(
+                                    syncing = syncing,
+                                    onClick = onSync
                                 )
                             }
-                            NeonSyncButton(
-                                syncing = syncing,
-                                onClick = onSync
-                            )
                         }
+                        1 -> LinesComposeScreen(
+                            lines = lines,
+                            loading = linesLoading,
+                            error = linesError,
+                            onRefresh = onRefreshLines,
+                            onLineClick = onLineClick
+                        )
+                        2 -> MapComposeHost(
+                            factory = mapFactory,
+                            mapKey = mapKey
+                        )
+                        3 -> FavoritesComposeScreen(
+                            favorites = favorites,
+                            onFavoriteClick = onFavoriteClick
+                        )
+                        4 -> NearbyComposeScreen(
+                            stops = nearby,
+                            loading = nearbyLoading,
+                            error = nearbyError,
+                            onRefresh = onRefreshNearby,
+                            onStopClick = onNearbyClick
+                        )
+                        else -> NeonMenuScreen(
+                            onLineas = { onNavigate(1) },
+                            onMapa = { onNavigate(2) },
+                            onParadas = { onNavigate(4) },
+                            onFavoritos = { onNavigate(3) }
+                        )
                     }
-                    1 -> LinesComposeScreen(
-                        lines = lines,
-                        loading = linesLoading,
-                        error = linesError,
-                        onRefresh = onRefreshLines,
-                        onLineClick = onLineClick
-                    )
-                    2 -> MapComposeHost(
-                        factory = mapFactory,
-                        mapKey = mapKey
-                    )
-                    3 -> FavoritesComposeScreen(
-                        favorites = favorites,
-                        onFavoriteClick = onFavoriteClick
-                    )
-                    4 -> NearbyComposeScreen(
-                        stops = nearby,
-                        loading = nearbyLoading,
-                        error = nearbyError,
-                        onRefresh = onRefreshNearby,
-                        onStopClick = onNearbyClick
-                    )
-                    else -> NeonMenuScreen(
-                        onLineas = { onNavigate(1) },
-                        onMapa = { onNavigate(2) },
-                        onParadas = { onNavigate(4) },
-                        onFavoritos = { onNavigate(3) }
-                    )
                 }
-            }
 
-            NeonBottomBar(
-                selected = section.coerceIn(0, 4),
-                onSelect = onNavigate
-            )
+                NeonBottomBar(
+                    selected = section.coerceIn(0, 4),
+                    onSelect = onNavigate
+                )
+            }
         }
     }
 }
