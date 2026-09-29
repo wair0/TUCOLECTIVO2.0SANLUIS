@@ -10,6 +10,23 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -63,15 +80,16 @@ fun NeonHeader(
     modifier: Modifier = Modifier,
     title: String = "TU COLECTIVO 2.0",
     statusText: String = "● SISTEMA LISTO",
-    menuOpen: Boolean = false,
-    searchOpen: Boolean = false,
-    notificationsOpen: Boolean = false,
-    hasUnread: Boolean = false,
-    onMenuClick: () -> Unit = {},
-    onSearchClick: () -> Unit = {},
-    onNotificationsClick: () -> Unit = {}
+    menuItems: List<String> = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS"),
+    notifications: List<NeonNotification> = emptyList(),
+    onMenuItem: (Int) -> Unit = {},
+    onSearch: (String) -> Unit = {},
+    onNotification: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val cyberFont = rememberCyberpunkFontFamily()
+    var panel by remember { mutableStateOf(HeaderPanel.None) }
+    val unread = notifications.any { it.unread }
     val typeface = remember(context) {
         runCatching { Typeface.createFromAsset(context.assets, "fonts/cyberpunk.ttf") }
             .getOrElse { Typeface.MONOSPACE }
@@ -129,26 +147,111 @@ fun NeonHeader(
             Modifier.fillMaxSize().padding(horizontal = 7.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            HeaderControlButton(HeaderControl.MENU, menuOpen, onMenuClick)
-            Spacer(Modifier.weight(1f))
-            HeaderControlButton(HeaderControl.SEARCH, searchOpen, onSearchClick)
-            Spacer(Modifier.width(4.dp))
             HeaderControlButton(
-                HeaderControl.NOTIFICATIONS,
-                notificationsOpen,
-                onNotificationsClick,
-                badge = hasUnread
-            )
+                active = panel == HeaderPanel.Menu,
+                onClick = {
+                    panel = if (panel == HeaderPanel.Menu) HeaderPanel.None else HeaderPanel.Menu
+                }
+            ) { accent, press, open -> drawMenuIcon(accent, press, open) }
+
+            Spacer(Modifier.weight(1f))
+
+            HeaderControlButton(
+                active = panel == HeaderPanel.Search,
+                onClick = {
+                    panel = if (panel == HeaderPanel.Search) HeaderPanel.None else HeaderPanel.Search
+                }
+            ) { accent, press, _ -> drawSearchIcon(accent, press) }
+
+            Spacer(Modifier.width(4.dp))
+
+            HeaderControlButton(
+                active = panel == HeaderPanel.Notifications,
+                badge = unread,
+                onClick = {
+                    panel = if (panel == HeaderPanel.Notifications) HeaderPanel.None else HeaderPanel.Notifications
+                }
+            ) { accent, press, _ -> drawBellIcon(accent, press) }
+        }
+
+        when (panel) {
+            HeaderPanel.None -> Unit
+            HeaderPanel.Menu -> Popup(
+                alignment = Alignment.TopStart,
+                offset = IntOffset(8, 92),
+                onDismissRequest = { panel = HeaderPanel.None },
+                properties = PopupProperties(focusable = true, dismissOnBackPress = true, dismissOnClickOutside = true)
+            ) {
+                NeonPanel(286.dp, Cyan) {
+                    PanelTitle("MENU GENERAL")
+                    menuItems.forEachIndexed { index, label ->
+                        NeonItem(label) {
+                            panel = HeaderPanel.None
+                            onMenuItem(index)
+                        }
+                    }
+                }
+            }
+            HeaderPanel.Search -> Popup(
+                alignment = Alignment.TopEnd,
+                offset = IntOffset(-8, 92),
+                onDismissRequest = { panel = HeaderPanel.None },
+                properties = PopupProperties(focusable = true, dismissOnBackPress = true, dismissOnClickOutside = true)
+            ) {
+                NeonPanel(316.dp, Pink) {
+                    PanelTitle("BUSCADOR / HUD")
+                    SearchField { query ->
+                        panel = HeaderPanel.None
+                        onSearch(query)
+                    }
+                }
+            }
+            HeaderPanel.Notifications -> Popup(
+                alignment = Alignment.TopEnd,
+                offset = IntOffset(-8, 92),
+                onDismissRequest = { panel = HeaderPanel.None },
+                properties = PopupProperties(focusable = true, dismissOnBackPress = true, dismissOnClickOutside = true)
+            ) {
+                NeonPanel(316.dp, Green) {
+                    PanelTitle("ALERTAS / HUD")
+                    Text(
+                        "● " + notifications.count { it.unread } + " NUEVAS",
+                        color = Green,
+                        fontFamily = cyberFont,
+                        fontSize = 9.sp,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    if (notifications.isEmpty()) {
+                        Text(
+                            "SIN NOTIFICACIONES",
+                            color = Dim,
+                            fontFamily = cyberFont,
+                            fontSize = 10.sp,
+                            modifier = Modifier.padding(vertical = 10.dp)
+                        )
+                    } else {
+                        Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                            notifications.forEachIndexed { index, notification ->
+                                NotificationRow(notification) {
+                                    panel = HeaderPanel.None
+                                    onNotification(index)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun HeaderControlButton(
-    control: HeaderControl,
     active: Boolean,
+    badge: Boolean = false,
     onClick: () -> Unit,
-    badge: Boolean = false
+    icon: DrawScope.(Color, Float, Float) -> Unit
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -174,26 +277,20 @@ private fun HeaderControlButton(
         Canvas(Modifier.fillMaxSize()) {
             val accent = if (open > 0.5f) Pink else Cyan
             drawRect(
-                Panel,
-                androidx.compose.ui.geometry.Offset(2.dp.toPx(), 2.dp.toPx()),
-                androidx.compose.ui.geometry.Size(size.width - 4.dp.toPx(), size.height - 4.dp.toPx())
+                PanelInk,
+                Offset(2.dp.toPx(), 2.dp.toPx()),
+                Size(size.width - 4.dp.toPx(), size.height - 4.dp.toPx())
             )
             drawNeonFrame(
-                androidx.compose.ui.geometry.Rect(
-                    2.dp.toPx(), 2.dp.toPx(), size.width - 2.dp.toPx(), size.height - 2.dp.toPx()
-                ),
+                Rect(2.dp.toPx(), 2.dp.toPx(), size.width - 2.dp.toPx(), size.height - 2.dp.toPx()),
                 0.75f + pulse * 0.4f + press
             )
-            when (control) {
-                HeaderControl.MENU -> drawMenuIcon(accent, press, open)
-                HeaderControl.SEARCH -> drawSearchIcon(accent, press)
-                HeaderControl.NOTIFICATIONS -> drawBellIcon(accent, press)
-            }
+            icon(accent, press, open)
             if (badge) {
                 drawCircle(Pink.copy(alpha = 0.3f + 0.45f * pulse), 5.dp.toPx(),
-                    androidx.compose.ui.geometry.Offset(size.width - 3.dp.toPx(), 4.dp.toPx()))
+                    Offset(size.width - 3.dp.toPx(), 4.dp.toPx()))
                 drawCircle(Pink, 2.5.dp.toPx(),
-                    androidx.compose.ui.geometry.Offset(size.width - 3.dp.toPx(), 4.dp.toPx()))
+                    Offset(size.width - 3.dp.toPx(), 4.dp.toPx()))
             }
         }
     }
@@ -340,4 +437,118 @@ private fun DrawScope.drawBellIcon(color: Color, press: Float) {
         2.3.dp.toPx(), StrokeCap.Round)
     drawCircle(Pink, 2.dp.toPx(),
         androidx.compose.ui.geometry.Offset(cx, bottom + 4.dp.toPx()))
+}
+
+
+@Composable
+private fun NeonPanel(width: Dp, accent: Color, content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.width(width).neonPanel(accent).padding(horizontal = 22.dp, vertical = 20.dp), content = content)
+}
+
+private fun Modifier.neonPanel(accent: Color) = drawBehind {
+    val inset = 6.dp.toPx()
+    val r = size.width - inset
+    val b = size.height - inset
+    val frame = Path().apply { moveTo(inset, inset); lineTo(r, inset); lineTo(r, b); lineTo(inset, b); close() }
+    clipPath(frame) {
+        drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), PanelInk)))
+        var y = inset
+        while (y < b) { drawLine(accent.copy(alpha = 0.05f), Offset(inset, y), Offset(r, y), 1f); y += 5.dp.toPx() }
+    }
+    neonPopup(accent, 1.8.dp.toPx(), 1f) { c, st -> drawPath(frame, c, style = st) }
+}
+
+@Composable
+private fun PanelTitle(text: String) {
+    val cyberFont = rememberCyberpunkFontFamily()
+    Text(text, color = Pink, fontFamily = cyberFont, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp)
+    Spacer(Modifier.height(6.dp))
+    Box(Modifier.fillMaxWidth().height(1.dp).background(Cyan.copy(alpha = 0.3f)))
+}
+
+@Composable
+private fun NeonItem(text: String, onClick: () -> Unit) {
+    val cyberFont = rememberCyberpunkFontFamily()
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(width = 6.dp, height = 3.dp).background(Pink))
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text, color = Core, fontFamily = cyberFont, fontWeight = FontWeight.Bold,
+            fontSize = 13.sp, letterSpacing = 1.sp, style = TextStyle(shadow = Shadow(Cyan, Offset.Zero, 12f))
+        )
+    }
+}
+
+@Composable
+private fun NotificationRow(n: NeonNotification, onClick: () -> Unit) {
+    val cyberFont = rememberCyberpunkFontFamily()
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp)) {
+        Box(Modifier.padding(top = 3.dp).size(8.dp).background(if (n.unread) Pink else Cyan.copy(alpha = 0.3f)))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(n.title, color = Core, fontFamily = cyberFont, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text(n.detail, color = Cyan.copy(alpha = 0.8f), fontFamily = cyberFont, fontSize = 11.sp)
+            Text(n.time, color = Cyan.copy(alpha = 0.5f), fontFamily = cyberFont, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+private fun SearchField(onSearch: (String) -> Unit) {
+    val cyberFont = rememberCyberpunkFontFamily()
+    var query by remember { mutableStateOf("") }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    val mono = TextStyle(color = Core, fontFamily = cyberFont, fontSize = 14.sp, letterSpacing = 1.sp)
+    Row(
+        Modifier
+            .padding(top = 12.dp)
+            .fillMaxWidth()
+            .height(44.dp)
+            .drawBehind {
+                val f = Path().apply { moveTo(0f, 0f); lineTo(size.width, 0f); lineTo(size.width, size.height); lineTo(0f, size.height); close() }
+                drawPath(f, PanelInk)
+                neonPopup(Cyan, 1.4.dp.toPx(), 1f, layers = 3) { c, st -> drawPath(f, c, style = st) }
+            }
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Canvas(Modifier.size(20.dp)) { scale(size.width / 100f, Offset.Zero) { searchIcon(0f, 0.5f, 1f, 0f) } }
+        Spacer(Modifier.width(10.dp))
+        BasicTextField(
+            value = query,
+            onValueChange = { query = it },
+            singleLine = true,
+            textStyle = mono,
+            cursorBrush = SolidColor(Pink),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
+            modifier = Modifier.weight(1f).focusRequester(focus),
+            decorationBox = { inner ->
+                Box {
+                    if (query.isEmpty()) Text("BUSCAR LÍNEA O PARADA", style = mono.copy(color = Cyan.copy(alpha = 0.45f)))
+                    inner()
+                }
+            }
+        )
+        if (query.isNotEmpty()) {
+            Text("✕", color = Pink, fontSize = 16.sp, modifier = Modifier.clickable { query = "" }.padding(4.dp))
+        }
+    }
+}
+
+
+private inline fun neonPopup(
+    color: Color,
+    width: Float,
+    glow: Float = 1f,
+    alpha: Float = 1f,
+    layers: Int = 4,
+    draw: (Color, Stroke) -> Unit
+) {
+    for (i in layers downTo 1) {
+        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Square, join = StrokeJoin.Miter))
+    }
+    draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Square, join = StrokeJoin.Miter))
+    draw(Core.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Square, join = StrokeJoin.Miter))
 }
