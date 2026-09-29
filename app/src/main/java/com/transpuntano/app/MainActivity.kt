@@ -1344,8 +1344,11 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
 
         val tasks = lines.map { line ->
             java.util.concurrent.Callable {
+                val stopIdentifier = lastMapNearbyStops.firstOrNull { it.code == stop.id }?.identifier
+                    ?.takeIf { it.isNotBlank() }
+                    ?: stop.id.toString()
                 val arrivals = runCatching {
-                    api.getArrivals(stop.identifier, line.code, 8_000)
+                    api.getArrivals(stopIdentifier, line.code, 8_000)
                 }.getOrDefault(emptyList())
 
                 if (arrivals.isNotEmpty()) {
