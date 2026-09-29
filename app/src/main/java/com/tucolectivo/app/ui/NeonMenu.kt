@@ -35,18 +35,55 @@ fun NeonMenuScreen(
     onParadas: () -> Unit = {},
     onFavoritos: () -> Unit = {}
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.Top
-    ) {
-        Spacer(Modifier.height(6.dp))
-        Row(Modifier.fillMaxWidth()) {
-            NeonCard("LÍNEAS", Modifier.weight(1f), 0, onLineas, DrawScope::busIcon)
-            NeonCard("MAPA", Modifier.weight(1f), 750, onMapa, DrawScope::mapIcon)
+    val infinite = rememberInfiniteTransition(label = "homeHud")
+    val sweep by infinite.animateFloat(
+        0f, 1f, infiniteRepeatable(tween(3200, easing = LinearEasing)), label = "homeSweep"
+    )
+    val pulse by infinite.animateFloat(
+        0f, 1f, infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "homePulse"
+    )
+
+    Box(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawRect(Ink.copy(alpha = 0.16f))
+            val step = 28.dp.toPx()
+            var x = 0f
+            while (x < size.width) {
+                drawLine(NeonCeleste.copy(alpha = 0.035f), Offset(x, 0f), Offset(x, size.height), 1f)
+                x += step
+            }
+            var y = 0f
+            while (y < size.height) {
+                drawLine(NeonCeleste.copy(alpha = 0.025f), Offset(0f, y), Offset(size.width, y), 1f)
+                y += step
+            }
+            val sy = size.height * sweep
+            drawRect(
+                Brush.verticalGradient(
+                    listOf(Color.Transparent, NeonPink.copy(alpha = 0.10f + 0.08f * pulse), Color.Transparent)
+                ),
+                Offset(0f, sy - 32.dp.toPx()),
+                Size(size.width, 64.dp.toPx())
+            )
+            for (i in 0..5) {
+                val px = (size.width * ((sweep + i * 0.17f) % 1f))
+                drawCircle(NeonCeleste.copy(alpha = 0.15f + 0.1f * pulse), 1.5.dp.toPx(), Offset(px, 18.dp.toPx() + i * 22.dp.toPx()))
+            }
         }
-        Row(Modifier.fillMaxWidth()) {
-            NeonCard("PARADAS\nCERCANAS", Modifier.weight(1f), 1500, onParadas, DrawScope::stopIcon)
-            NeonCard("FAVORITOS", Modifier.weight(1f), 2250, onFavoritos, DrawScope::starIcon)
+
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(Modifier.height(6.dp))
+            Row(Modifier.fillMaxWidth()) {
+                NeonCard("LÍNEAS", Modifier.weight(1f), 0, onLineas, DrawScope::busIcon)
+                NeonCard("MAPA", Modifier.weight(1f), 750, onMapa, DrawScope::mapIcon)
+            }
+            Row(Modifier.fillMaxWidth()) {
+                NeonCard("PARADAS\nCERCANAS", Modifier.weight(1f), 1500, onParadas, DrawScope::stopIcon)
+                NeonCard("FAVORITOS", Modifier.weight(1f), 2250, onFavoritos, DrawScope::starIcon)
+            }
         }
     }
 }
@@ -104,6 +141,31 @@ fun NeonCard(
                 )
             }
             neon(NeonCeleste, 2.2.dp.toPx(), glow, flick) { c, st -> drawPath(frame, c, style = st) }
+
+            val scanX = pad + fw * t
+            drawLine(
+                NeonPink.copy(alpha = 0.78f + 0.22f * pulse),
+                Offset(scanX, pad),
+                Offset(scanX, pad + fh),
+                1.5.dp.toPx()
+            )
+            if (press > 0.01f) {
+                val ripple = (1f - press) * 34.dp.toPx()
+                drawCircle(
+                    NeonPink.copy(alpha = 0.28f * press),
+                    ripple,
+                    Offset(size.width / 2f, size.height / 2f),
+                    style = Stroke(width = 2.dp.toPx())
+                )
+                drawCircle(
+                    NeonCeleste.copy(alpha = 0.18f * press),
+                    ripple * 0.62f,
+                    Offset(size.width / 2f, size.height / 2f),
+                    style = Stroke(width = 1.dp.toPx())
+                )
+            }
+            drawLine(NeonPink.copy(alpha = 0.65f + 0.35f * pulse), Offset(pad + 8.dp.toPx(), pad + 5.dp.toPx()), Offset(pad + 42.dp.toPx(), pad + 5.dp.toPx()), 2.dp.toPx())
+            drawLine(NeonCeleste.copy(alpha = 0.65f), Offset(pad + fw - 42.dp.toPx(), pad + fh - 5.dp.toPx()), Offset(pad + fw - 8.dp.toPx(), pad + fh - 5.dp.toPx()), 2.dp.toPx())
             val measure = PathMeasure().apply { setPath(frame, true) }
             val head = measure.length * t
             val tail = measure.length * 0.14f
