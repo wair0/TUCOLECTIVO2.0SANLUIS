@@ -299,10 +299,7 @@ private fun CyberHeaderControl(
                 topLeft = Offset(2.dp.toPx(), 2.dp.toPx()),
                 size = Size(size.width - 4.dp.toPx(), size.height - 4.dp.toPx())
             )
-            drawNeonFrame(
-                Rect(2.dp.toPx(), 2.dp.toPx(), size.width - 2.dp.toPx(), size.height - 2.dp.toPx()),
-                0.72f + pulse * 0.42f + press
-            )
+            // El icono dibuja su propio marco Transformer: no se superpone un marco antiguo.
             icon(frameAccent, press, open)
 
             if (badge) {
@@ -358,18 +355,14 @@ private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
     val p = 1f - press * 0.08f
     val spread = 8.2f * unit * (1f - open * 0.45f)
 
-    // Núcleo de mando mecánico: placas + tres cuchillas segmentadas.
-    drawRect(
-        color = steel,
-        topLeft = Offset(cx - 15f * unit, cy - 15f * unit),
-        size = Size(30f * unit, 30f * unit)
-    )
-    drawRect(
-        color = color.copy(alpha = 0.24f),
-        topLeft = Offset(cx - 13f * unit, cy - 13f * unit),
-        size = Size(26f * unit, 26f * unit),
-        style = Stroke(1.2f * unit)
-    )
+    // Único marco Transformer del botón.
+    val frame = Rect(2f * unit, 2f * unit, size.width - 2f * unit, size.height - 2f * unit)
+    drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
+    drawRect(color.copy(alpha = 0.20f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4.5f * unit))
+    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.5f * unit))
+    drawRect(white.copy(alpha = 0.55f), Offset(frame.left + 4f * unit, frame.top + 4f * unit), Size(frame.width - 8f * unit, frame.height - 8f * unit), style = Stroke(0.55f * unit))
+    drawRect(magenta.copy(alpha = 0.9f), Offset(frame.left + 5f * unit, frame.top + 5f * unit), Size(7f * unit, 2f * unit))
+    drawRect(color.copy(alpha = 0.9f), Offset(frame.right - 12f * unit, frame.bottom - 7f * unit), Size(7f * unit, 2f * unit))
     drawLine(color.copy(alpha = 0.9f), Offset(cx - 13f * unit, cy - 11f * unit), Offset(cx - 7f * unit, cy - 11f * unit), 1.4f * unit)
     drawLine(magenta.copy(alpha = 0.9f), Offset(cx + 7f * unit, cy + 11f * unit), Offset(cx + 13f * unit, cy + 11f * unit), 1.4f * unit)
 
@@ -406,6 +399,15 @@ private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
 private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
     val unit = size.minDimension / 44f
     val magenta = CyberColors.Magenta
+    val white = Color(0xFFE8FCFF)
+    val steel = CyberColors.Steel
+    val frame = Rect(2f * unit, 2f * unit, size.width - 2f * unit, size.height - 2f * unit)
+    drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
+    drawRect(color.copy(alpha = 0.20f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4.5f * unit))
+    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.5f * unit))
+    drawRect(white.copy(alpha = 0.55f), Offset(frame.left + 4f * unit, frame.top + 4f * unit), Size(frame.width - 8f * unit, frame.height - 8f * unit), style = Stroke(0.55f * unit))
+    drawRect(magenta.copy(alpha = 0.9f), Offset(frame.left + 5f * unit, frame.top + 5f * unit), Size(7f * unit, 2f * unit))
+    drawRect(color.copy(alpha = 0.9f), Offset(frame.right - 12f * unit, frame.bottom - 7f * unit), Size(7f * unit, 2f * unit))
     val cx = size.width * 0.44f
     val cy = size.height * 0.44f
     val r = 8.5f * unit
@@ -466,6 +468,15 @@ private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
 private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     val unit = size.minDimension / 44f
     val magenta = CyberColors.Magenta
+    val white = Color(0xFFE8FCFF)
+    val steel = CyberColors.Steel
+    val frame = Rect(2f * unit, 2f * unit, size.width - 2f * unit, size.height - 2f * unit)
+    drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
+    drawRect(color.copy(alpha = 0.20f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4.5f * unit))
+    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.5f * unit))
+    drawRect(white.copy(alpha = 0.55f), Offset(frame.left + 4f * unit, frame.top + 4f * unit), Size(frame.width - 8f * unit, frame.height - 8f * unit), style = Stroke(0.55f * unit))
+    drawRect(magenta.copy(alpha = 0.9f), Offset(frame.left + 5f * unit, frame.top + 5f * unit), Size(7f * unit, 2f * unit))
+    drawRect(color.copy(alpha = 0.9f), Offset(frame.right - 12f * unit, frame.bottom - 7f * unit), Size(7f * unit, 2f * unit))
     val cx = size.width / 2f
     val white = Color(0xFFE8FCFF)
     val top = 9f * unit
