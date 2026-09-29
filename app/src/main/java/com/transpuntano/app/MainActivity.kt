@@ -24,6 +24,12 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import com.tucolectivo.app.ui.InicioComposeScreen
 import com.transpuntano.app.data.SmartMoveApi
 import com.transpuntano.app.model.*
 import com.transpuntano.app.ui.CyberMapView
@@ -68,6 +74,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var drawerScrim: View
     private var drawerOpen = false
     private var drawerHotspotsReady = false
+    private lateinit var legacyRoot: LinearLayout
+    private lateinit var composeHomeView: ComposeView
+    private var homeSyncing by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,7 +98,7 @@ class MainActivity : AppCompatActivity() {
         rootFrame.addView(CyberBackgroundView(this), FrameLayout.LayoutParams(-1, -1))
         rootFrame.addView(AnimatedGifBackgroundView(this), FrameLayout.LayoutParams(-1, -1))
 
-        val root = LinearLayout(this).apply {
+        legacyRoot = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.TRANSPARENT)
         }
@@ -134,16 +143,29 @@ class MainActivity : AppCompatActivity() {
         headerLayout.addView(actions, FrameLayout.LayoutParams(dp(96), dp(50)).apply {
             rightMargin = dp(4); topMargin = dp(11); gravity = Gravity.END
         })
-        root.addView(headerLayout, LinearLayout.LayoutParams(-1, dp(92)))
+        legacyRoot.addView(headerLayout, LinearLayout.LayoutParams(-1, dp(92)))
         content = FrameLayout(this)
-        root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
+        legacyRoot.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
         navBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             background = CyberBottomBarBackground(resources.displayMetrics.density)
             visibility = View.VISIBLE
         }
-        root.addView(navBar, LinearLayout.LayoutParams(-1, dp(72)))
-        rootFrame.addView(root)
+        legacyRoot.addView(navBar, LinearLayout.LayoutParams(-1, dp(72)))
+        rootFrame.addView(legacyRoot)
+
+        composeHomeView = ComposeView(this).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            visibility = View.GONE
+            setContent {
+                InicioComposeScreen(
+                    onNavigate = { index -> navigateTo(index) },
+                    syncing = homeSyncing,
+                    onSync = { loadLines(false) }
+                )
+            }
+        }
+        rootFrame.addView(composeHomeView, FrameLayout.LayoutParams(-1, -1))
 
         drawerScrim = View(this).apply {
             setBackgroundColor(0x99000000.toInt()); visibility = View.GONE
@@ -337,6 +359,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateNav(selected: Int) {
         currentSection = selected
+        if (selected == 0) {
+            legacyRoot.visibility = View.GONE
+            composeHomeView.visibility = View.VISIBLE
+        } else {
+            composeHomeView.visibility = View.GONE
+            legacyRoot.visibility = View.VISIBLE
+        }
         // El menú contextual conserva sus vistas entre navegaciones, por lo que
         // debemos reconstruirlo para que cada elemento reciba el nuevo estado
         // selected y no quede INICIO visualmente seleccionado.
@@ -385,6 +414,7 @@ class MainActivity : AppCompatActivity() {
         title.text = ""
         updateNav(0)
         content.removeAllViews()
+        return
         val box = box()
         val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val row1 = LinearLayout(this).apply {
@@ -664,15 +694,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadLines(navigateToLines: Boolean = true) {
+        homeSyncing = true
         headerStatus.setStatusText("● SINCRONIZANDO...");
         executor.execute {
             runCatching { api.getLines() }
                 .onSuccess { lines -> runOnUiThread {
                     headerStatus.setStatusText("● " + lines.size + " LÍNEAS");
+                    homeSyncing = false
                     if (navigateToLines) showLines(lines)
                 }}
                 .onFailure { error -> runOnUiThread {
-                    headerStatus.setStatusText("● SIN CONEXIÓN"); toast(error.message ?: "Error")
+                    headerStatus.setStatusText("● SIN CONEXIÓN"); homeSyncing = false; toast(error.message ?: "Error")
                 }}
         }
     }
