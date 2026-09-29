@@ -1,55 +1,32 @@
 package com.tucolectivo.app.ui
-
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.StartOffset
-import androidx.compose.animation.core.StartOffsetType
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.*
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.*
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.sin
 
 private val NeonCeleste = Color(0xFF19D9FF)
 private val NeonCore = Color(0xFFE8FCFF)
 private val NeonPink = Color(0xFFFF2E9A)
-private val Panel = Color(0xFF050714)
+private val Ink = Color(0xFF060912)
+private val TAU = (2.0 * PI).toFloat()
 
 @Composable
 fun NeonMenuScreen(
@@ -59,18 +36,17 @@ fun NeonMenuScreen(
     onFavoritos: () -> Unit = {}
 ) {
     Column(
-        Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 6.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.Top
     ) {
-        Spacer(Modifier.height(4.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            NeonCard("LÍNEAS", Modifier.weight(1f).height(112.dp), 0, onLineas, DrawScope::busIcon)
-            NeonCard("MAPA", Modifier.weight(1f).height(112.dp), 750, onMapa, DrawScope::mapIcon)
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth()) {
+            NeonCard("LÍNEAS", Modifier.weight(1f), 0, onLineas, DrawScope::busIcon)
+            NeonCard("MAPA", Modifier.weight(1f), 750, onMapa, DrawScope::mapIcon)
         }
-        Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            NeonCard("PARADAS\nCERCANAS", Modifier.weight(1f).height(112.dp), 1500, onParadas, DrawScope::stopIcon)
-            NeonCard("FAVORITOS", Modifier.weight(1f).height(112.dp), 2250, onFavoritos, DrawScope::starIcon)
+        Row(Modifier.fillMaxWidth()) {
+            NeonCard("PARADAS\nCERCANAS", Modifier.weight(1f), 1500, onParadas, DrawScope::stopIcon)
+            NeonCard("FAVORITOS", Modifier.weight(1f), 2250, onFavoritos, DrawScope::starIcon)
         }
     }
 }
@@ -83,139 +59,153 @@ fun NeonCard(
     onClick: () -> Unit = {},
     icon: DrawScope.(t: Float, pulse: Float, glow: Float) -> Unit
 ) {
+    val cyberFont = rememberCyberpunkFontFamily()
     val infinite = rememberInfiniteTransition(label = "neon")
     val offset = StartOffset(phaseMs, StartOffsetType.FastForward)
-    val breath by infinite.animateFloat(
-        0f, 1f, label = "breath",
-        animationSpec = infiniteRepeatable(tween(2200, easing = FastOutSlowInEasing), RepeatMode.Reverse, offset)
+    val t by infinite.animateFloat(
+        0f, 1f, label = "t",
+        animationSpec = infiniteRepeatable(tween(3000, easing = LinearEasing), initialStartOffset = offset)
     )
     val pulse by infinite.animateFloat(
         0f, 1f, label = "pulse",
-        animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse, offset)
-    )
-    val t by infinite.animateFloat(
-        0f, 1f, label = "t",
-        animationSpec = infiniteRepeatable(tween(3200, easing = LinearEasing), initialStartOffset = offset)
+        animationSpec = infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse, offset)
     )
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
-    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(90), label = "press")
-    val font = rememberCyberpunkFontFamily()
+    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(120), label = "press")
 
     Box(
         modifier
-            .graphicsLayer { val k = 1f - 0.04f * press; scaleX = k; scaleY = k }
+            .aspectRatio(1.25f)
+            .graphicsLayer { val k = 1f - 0.05f * press; scaleX = k; scaleY = k }
             .clickable(interactionSource = source, indication = null, onClick = onClick)
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            val flick = when {
-                t in 0.58f..0.595f -> 0.35f
-                t in 0.62f..0.628f -> 0.55f
-                t in 0.71f..0.718f -> 0.4f
-                else -> 1f
-            }
-            val slow = 0.55f + 0.45f * breath
-            val fast = 0.4f + 0.6f * pulse
-            val glow = (0.35f * slow + 0.65f * fast + 0.55f * press) * flick
-
-            val pad = 6.dp.toPx()
-            val left = pad; val top = pad
-            val right = size.width - pad; val bottom = size.height - pad
-            val cut = 9.dp.toPx()
-
-            drawRect(Panel.copy(alpha = 0.88f), Offset(left, top), Size(right - left, bottom - top))
-
+            val flick = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.45f else 1f
+            val glow = (0.7f + 0.45f * pulse + 0.6f * press) * flick
+            val pad = 10.dp.toPx()
+            val fw = size.width - 2 * pad
+            val fh = size.height - 2 * pad
+            val cut = fw * 0.16f
             val frame = Path().apply {
-                moveTo(left + cut, top); lineTo(right - cut, top); lineTo(right, top + cut)
-                lineTo(right, bottom - cut); lineTo(right - cut, bottom); lineTo(left + cut, bottom)
-                lineTo(left, bottom - cut); lineTo(left, top + cut); close()
+                moveTo(pad + cut, pad); lineTo(pad + fw, pad); lineTo(pad + fw, pad + fh - cut)
+                lineTo(pad + fw - cut, pad + fh); lineTo(pad, pad + fh); lineTo(pad, pad + cut); close()
             }
-            drawPath(frame, NeonCeleste.copy(alpha = 0.08f * glow), style = Stroke(width = 10.dp.toPx()))
-            drawPath(frame, NeonCeleste.copy(alpha = 0.18f * glow), style = Stroke(width = 5.dp.toPx()))
-            drawPath(frame, NeonCeleste.copy(alpha = 0.55f + 0.35f * pulse * flick), style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round))
-
-            val bLen = 12.dp.toPx() * (0.85f + 0.15f * pulse)
-            val bW = 2.2.dp.toPx()
-            listOf(
-                Offset(left, top) to listOf(Offset(bLen, 0f), Offset(0f, bLen)),
-                Offset(right, top) to listOf(Offset(-bLen, 0f), Offset(0f, bLen)),
-                Offset(left, bottom) to listOf(Offset(bLen, 0f), Offset(0f, -bLen)),
-                Offset(right, bottom) to listOf(Offset(-bLen, 0f), Offset(0f, -bLen))
-            ).forEach { (origin, dirs) ->
-                dirs.forEach { d ->
-                    drawLine(NeonPink.copy(alpha = 0.55f + 0.4f * pulse), origin, origin + d, strokeWidth = bW, cap = StrokeCap.Round)
+            clipPath(frame) {
+                drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), Ink)))
+                var y = pad
+                while (y < pad + fh) {
+                    drawLine(NeonCeleste.copy(alpha = 0.05f), Offset(pad, y), Offset(pad + fw, y), 1f)
+                    y += 5.dp.toPx()
                 }
+                val band = 26.dp.toPx()
+                val by = pad + fh * t
+                drawRect(
+                    Brush.verticalGradient(
+                        listOf(NeonCeleste.copy(alpha = 0f), NeonCeleste.copy(alpha = 0.22f), NeonCeleste.copy(alpha = 0f))
+                    ),
+                    topLeft = Offset(pad, by - band), size = Size(fw, band * 2)
+                )
             }
-
-            val scanY = top + (bottom - top) * ((t + 0.3f * sin(t * 6.28f).toFloat()) % 1f)
-            drawLine(
-                Brush.horizontalGradient(listOf(Color.Transparent, NeonCeleste.copy(alpha = 0.25f * glow), Color.Transparent)),
-                Offset(left, scanY), Offset(right, scanY), strokeWidth = 1.2.dp.toPx()
-            )
-
-            val s = size.minDimension * 0.42f
-            translate((size.width - s) / 2f, size.height * 0.10f) {
+            neon(NeonCeleste, 2.2.dp.toPx(), glow, flick) { c, st -> drawPath(frame, c, style = st) }
+            val measure = PathMeasure().apply { setPath(frame, true) }
+            val head = measure.length * t
+            val tail = measure.length * 0.14f
+            val seg = Path()
+            for (k in 0 until 5) {
+                val from = head - tail * (k + 1) / 5f
+                val to = head - tail * k / 5f
+                seg.reset()
+                when {
+                    to <= 0f -> measure.getSegment(measure.length + from, measure.length + to, seg, true)
+                    from >= 0f -> measure.getSegment(from, to, seg, true)
+                    else -> {
+                        measure.getSegment(measure.length + from, measure.length, seg, true)
+                        measure.getSegment(0f, to, seg, true)
+                    }
+                }
+                neon(NeonCeleste, 3.2.dp.toPx(), 1.8f, 1f - k / 5f, layers = 2) { c, st -> drawPath(seg, c, style = st) }
+            }
+            val s = fh * 0.42f
+            translate((size.width - s) / 2f, pad + fh * 0.12f) {
                 scale(s / 100f, Offset.Zero) { icon(t, pulse, glow) }
             }
         }
-
         Text(
-            text = title, color = NeonCore, fontFamily = font, fontWeight = FontWeight.Bold,
-            fontSize = 11.sp, letterSpacing = 1.1.sp, textAlign = TextAlign.Center, lineHeight = 13.sp,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp, start = 6.dp, end = 6.dp)
+            text = title, color = NeonCore, fontFamily = cyberFont, fontWeight = FontWeight.Bold,
+            fontSize = 12.sp, letterSpacing = 1.2.sp, textAlign = TextAlign.Center, lineHeight = 14.sp,
+            style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 14f)),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp, start = 8.dp, end = 8.dp)
         )
     }
 }
 
-private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float) {
-    val c = NeonCeleste.copy(alpha = 0.9f * glow)
-    val body = Path().apply {
-        moveTo(18f, 38f); lineTo(82f, 38f); lineTo(88f, 48f); lineTo(88f, 70f); lineTo(78f, 70f); lineTo(78f, 78f)
-        lineTo(68f, 78f); lineTo(68f, 70f); lineTo(32f, 70f); lineTo(32f, 78f); lineTo(22f, 78f); lineTo(22f, 70f)
-        lineTo(12f, 70f); lineTo(12f, 48f); close()
+private inline fun neon(color: Color, width: Float, glow: Float = 1f, alpha: Float = 1f, layers: Int = 4, draw: (Color, Stroke) -> Unit) {
+    for (i in layers downTo 1) {
+        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
-    drawPath(body, c, style = Stroke(2.2f, cap = StrokeCap.Round))
-    drawLine(c, Offset(18f, 52f), Offset(82f, 52f), 1.6f)
-    drawCircle(NeonPink.copy(alpha = 0.7f + 0.3f * pulse), 3.5f, Offset(28f, 62f))
-    drawCircle(NeonPink.copy(alpha = 0.7f + 0.3f * pulse), 3.5f, Offset(72f, 62f))
-    drawLine(NeonCeleste.copy(alpha = 0.55f), Offset(0f, 83f), Offset(100f, 83f), 1.6f)
+    draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+}
+
+private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float) {
+    val a = 0.9f * glow
+    neon(NeonCeleste, 5f, glow, a, 3) { c, st -> drawRoundRect(c, Offset(8f, 22f), Size(84f, 46f), CornerRadius(10f), style = st) }
+    neon(NeonCeleste, 3.4f, glow, a, 2) { c, st ->
+        for (x in listOf(16f, 39f, 62f)) drawRoundRect(c, Offset(x, 32f), Size(17f, 15f), CornerRadius(3f), style = st)
+    }
+    drawLine(NeonPink.copy(alpha = a), Offset(16f, 58f), Offset(58f, 58f), 3.4f, StrokeCap.Round)
+    for (cx in listOf(28f, 72f)) {
+        val ctr = Offset(cx, 72f)
+        drawCircle(Ink, 9f, ctr)
+        neon(NeonCeleste, 5f, glow, a, 2) { c, st -> drawCircle(c, 9f, ctr, style = st) }
+    }
+    drawCircle(NeonPink.copy(alpha = 0.4f + 0.6f * pulse), 3.4f, Offset(84f, 56f))
 }
 
 private fun DrawScope.mapIcon(t: Float, pulse: Float, glow: Float) {
-    val c = NeonCeleste.copy(alpha = 0.9f * glow)
+    val a = 0.9f * glow
     val map = Path().apply {
-        moveTo(12f, 22f); lineTo(38f, 16f); lineTo(62f, 24f); lineTo(88f, 16f)
-        lineTo(88f, 78f); lineTo(62f, 86f); lineTo(38f, 78f); lineTo(12f, 86f); close()
+        moveTo(8f, 32f); lineTo(36f, 24f); lineTo(64f, 32f); lineTo(92f, 24f)
+        lineTo(92f, 74f); lineTo(64f, 82f); lineTo(36f, 74f); lineTo(8f, 82f); close()
     }
-    drawPath(map, c, style = Stroke(2f, cap = StrokeCap.Round))
-    drawLine(c, Offset(38f, 16f), Offset(38f, 78f), 1.4f)
-    drawLine(c, Offset(62f, 24f), Offset(62f, 86f), 1.4f)
-    drawCircle(NeonPink.copy(alpha = 0.85f + 0.15f * pulse), 6f + 2f * pulse, Offset(55f, 48f))
-    drawCircle(NeonCore, 2.5f, Offset(55f, 48f))
+    neon(NeonCeleste, 5f, glow, a, 3) { c, st -> drawPath(map, c, style = st) }
+    neon(NeonCeleste, 3f, glow, a * 0.8f, 2) { c, st ->
+        drawLine(c, Offset(36f, 24f), Offset(36f, 74f), st.width, StrokeCap.Round)
+        drawLine(c, Offset(64f, 32f), Offset(64f, 82f), st.width, StrokeCap.Round)
+    }
+    drawCircle(NeonPink.copy(alpha = 0.85f + 0.15f * pulse), 6f + 2f * pulse, Offset(50f, 54f))
+    drawCircle(NeonCore, 2.5f, Offset(50f, 54f))
 }
 
 private fun DrawScope.stopIcon(t: Float, pulse: Float, glow: Float) {
-    val c = NeonCeleste.copy(alpha = 0.9f * glow)
-    drawCircle(c, 22f, Offset(50f, 42f), style = Stroke(2.2f))
+    val a = 0.9f * glow
+    neon(NeonCeleste, 5f, glow, a, 3) { c, st -> drawCircle(c, 22f, Offset(50f, 42f), style = st) }
     drawCircle(NeonPink.copy(alpha = 0.5f + 0.4f * pulse), 6f + 3f * pulse, Offset(50f, 42f))
-    drawLine(c, Offset(50f, 64f), Offset(50f, 86f), 2.2f, StrokeCap.Round)
-    drawLine(c, Offset(38f, 86f), Offset(62f, 86f), 2f, StrokeCap.Round)
+    neon(NeonCeleste, 4f, glow, a, 2) { c, st ->
+        drawLine(c, Offset(50f, 64f), Offset(50f, 86f), st.width, StrokeCap.Round)
+        drawLine(c, Offset(38f, 86f), Offset(62f, 86f), st.width, StrokeCap.Round)
+    }
 }
 
 private fun DrawScope.starIcon(t: Float, pulse: Float, glow: Float) {
-    val c = NeonPink.copy(alpha = 0.85f * glow + 0.15f * pulse)
+    val a = 0.85f * glow + 0.15f * pulse
+    val mid = Offset(50f, 48f)
     val star = Path().apply {
-        val cx = 50f; val cy = 48f
-        val outer = 28f * (0.92f + 0.08f * pulse); val inner = 12f
         for (i in 0 until 10) {
-            val ang = Math.toRadians((-90 + i * 36).toDouble())
-            val r = if (i % 2 == 0) outer else inner
-            val x = cx + (r * kotlin.math.cos(ang)).toFloat()
-            val y = cy + (r * kotlin.math.sin(ang)).toFloat()
+            val r = if (i % 2 == 0) 28f * (0.92f + 0.08f * pulse) else 12f
+            val ang = -TAU / 4f + i * TAU / 10f
+            val x = mid.x + r * cos(ang); val y = mid.y + r * sin(ang)
             if (i == 0) moveTo(x, y) else lineTo(x, y)
         }
         close()
     }
-    drawPath(star, c, style = Stroke(2f, cap = StrokeCap.Round))
-    drawPath(star, c.copy(alpha = 0.15f * glow))
+    drawPath(star, NeonPink.copy(alpha = 0.15f * glow))
+    neon(NeonPink, 4f, glow, a, 3) { c, st -> drawPath(star, c, style = st) }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF060912, widthDp = 380, heightDp = 700)
+@Composable
+private fun NeonMenuPreview() {
+    NeonMenuScreen()
 }
