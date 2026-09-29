@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,17 +22,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/*
- * Barra inferior cyberpunk dibujada con Canvas (Jetpack Compose + Material3).
- * Pestañas: INICIO · LINEAS · MAPA · FAVORITO · CERCANAS.
- * Un haz de luz con marcador rosa se desliza (con resorte) hasta la pestaña activa; el ícono activo
- * se enciende con halo de neón y animación propia, y los inactivos quedan atenuados.
- *
- * Uso: var tab by remember { mutableIntStateOf(0) }
- *      Scaffold(bottomBar = { NeonBottomBar(tab, { tab = it }, Modifier.navigationBarsPadding()) })
- */
-
-// ───────────── Paleta ─────────────
 private val NeonCeleste = Color(0xFF19D9FF)
 private val NeonCore = Color(0xFFE8FCFF)
 private val NeonPink = Color(0xFFFF2E9A)
@@ -45,18 +33,14 @@ private val TabIcons: List<DrawScope.(Float, Float, Float, Float) -> Unit> = lis
     DrawScope::homeIcon, DrawScope::busIcon, DrawScope::mapIcon, DrawScope::starIcon, DrawScope::nearIcon
 )
 
-// ───────────── Barra ─────────────
 @Composable
 fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val infinite = rememberInfiniteTransition(label = "bottom")
     val t = infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(4000, easing = LinearEasing)), label = "t")
-    val pulse = infinite.animateFloat(
-        0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse"
-    )
+    val pulse = infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
     val pos by animateFloatAsState(selected.toFloat(), spring(dampingRatio = 0.7f, stiffness = 300f), label = "pos")
 
     Box(modifier.fillMaxWidth().height(76.dp)) {
-        // Los valores animados se leen solo al dibujar: no hay recomposición por frame.
         Canvas(Modifier.fillMaxSize()) {
             val tt = t.value
             val flick = if (tt in 0.62f..0.635f || tt in 0.67f..0.68f) 0.45f else 1f
@@ -66,7 +50,9 @@ fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = M
             val cut = 16.dp.toPx()
             val y = 3.dp.toPx()
 
-            // haz de luz que baja desde la línea hasta la pestaña activa
+            // Fondo más opaco (+50%)
+            drawRect(Ink.copy(alpha = 0.82f))
+
             val itemW = w / Tabs.size
             val cx = (pos + 0.5f) * itemW
             val bw = itemW * 0.86f
@@ -74,35 +60,24 @@ fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = M
                 Brush.verticalGradient(listOf(NeonCeleste.copy(alpha = 0.22f), Color.Transparent), startY = y, endY = h),
                 topLeft = Offset(cx - bw / 2f, y), size = Size(bw, h - y)
             )
-
-            // línea superior con esquinas cortadas
             val line = Path().apply { moveTo(0f, y + cut); lineTo(cut, y); lineTo(w - cut, y); lineTo(w, y + cut) }
             neon(NeonCeleste, 2.dp.toPx(), glow, flick) { c, st -> drawPath(line, c, style = st) }
-
-            // destello con cola que recorre la línea
             val m = PathMeasure().apply { setPath(line, false) }
             val head = m.length * tt
             val tail = m.length * 0.16f
             val seg = Path()
-            val steps = 5
-            for (k in 0 until steps) {
-                val from = (head - tail * (k + 1) / steps).coerceAtLeast(0f)
-                val to = head - tail * k / steps
+            for (k in 0 until 5) {
+                val from = (head - tail * (k + 1) / 5).coerceAtLeast(0f)
+                val to = head - tail * k / 5
                 if (to > from) {
-                    seg.reset()
-                    m.getSegment(from, to, seg, true)
-                    neon(NeonCeleste, 3.dp.toPx(), 1.8f, 1f - k / steps.toFloat(), layers = 2) { c, st ->
-                        drawPath(seg, c, style = st)
-                    }
+                    seg.reset(); m.getSegment(from, to, seg, true)
+                    neon(NeonCeleste, 3.dp.toPx(), 1.8f, 1f - k / 5f, layers = 2) { c, st -> drawPath(seg, c, style = st) }
                 }
             }
-
-            // marcador rosa de la pestaña activa
             neon(NeonPink, 3.dp.toPx(), 1.6f, layers = 3) { c, st ->
                 drawLine(c, Offset(cx - bw * 0.32f, y), Offset(cx + bw * 0.32f, y), st.width, StrokeCap.Round)
             }
         }
-
         Row(Modifier.fillMaxSize().padding(top = 6.dp)) {
             Tabs.forEachIndexed { i, label ->
                 BarItem(label, i == selected, t, pulse, Modifier.weight(1f), { onSelect(i) }, TabIcons[i])
@@ -113,22 +88,18 @@ fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = M
 
 @Composable
 private fun BarItem(
-    label: String,
-    selected: Boolean,
-    t: State<Float>,
-    pulse: State<Float>,
-    modifier: Modifier,
-    onClick: () -> Unit,
+    label: String, selected: Boolean, t: State<Float>, pulse: State<Float>,
+    modifier: Modifier, onClick: () -> Unit,
     icon: DrawScope.(t: Float, pulse: Float, glow: Float, sel: Float) -> Unit
 ) {
+    val cyberFont = rememberCyberpunkFontFamily()
     val sel by animateFloatAsState(if (selected) 1f else 0f, tween(250), label = "sel")
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val press by animateFloatAsState(if (pressed) 1f else 0f, tween(120), label = "press")
 
     Column(
-        modifier
-            .fillMaxHeight()
+        modifier.fillMaxHeight()
             .graphicsLayer { val k = 1f - 0.08f * press; scaleX = k; scaleY = k }
             .selectable(selected = selected, interactionSource = source, indication = null, role = Role.Tab, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -142,43 +113,23 @@ private fun BarItem(
         Text(
             text = label,
             color = lerp(NeonCeleste.copy(alpha = 0.55f), NeonCore, sel),
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            fontSize = 10.sp,
-            letterSpacing = 0.5.sp,
-            maxLines = 1,
+            fontFamily = cyberFont, fontWeight = FontWeight.Bold,
+            fontSize = 10.sp, letterSpacing = 0.5.sp, maxLines = 1,
             style = TextStyle(shadow = Shadow(NeonCeleste.copy(alpha = sel), Offset.Zero, 16f * sel))
         )
     }
 }
 
-// ───────────── Utilidades de neón ─────────────
-
-/** Trazo tipo tubo de neón: halo difuso (capas anchas y transparentes) + color + núcleo blanco. */
-private inline fun neon(
-    color: Color,
-    width: Float,
-    glow: Float = 1f,
-    alpha: Float = 1f,
-    layers: Int = 4,
-    draw: (Color, Stroke) -> Unit
-) {
+private inline fun neon(color: Color, width: Float, glow: Float = 1f, alpha: Float = 1f, layers: Int = 4, draw: (Color, Stroke) -> Unit) {
     for (i in layers downTo 1) {
-        draw(
-            color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)),
-            Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Round)
-        )
+        draw(color.copy(alpha = (0.09f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.2f), cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
     draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
     draw(NeonCore.copy(alpha = 0.85f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
 
-/** Opacidad base del trazo: atenuada en reposo, plena al seleccionar (sel: 0..1). */
 private fun dim(sel: Float) = 0.55f + 0.45f * sel
 
-// ───────────── Íconos (coordenadas 0..100) ─────────────
-
-/** INICIO: casa con luz rosa que late. */
 private fun DrawScope.homeIcon(t: Float, pulse: Float, glow: Float, sel: Float) {
     val a = dim(sel)
     val house = Path().apply {
@@ -190,7 +141,6 @@ private fun DrawScope.homeIcon(t: Float, pulse: Float, glow: Float, sel: Float) 
     drawCircle(NeonPink.copy(alpha = (0.35f + 0.65f * pulse) * a), 4.5f, Offset(50f, 40f))
 }
 
-/** LINEAS: colectivo de perfil con ruedas que giran al estar activo. */
 private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float, sel: Float) {
     val a = dim(sel)
     neon(NeonCeleste, 5f, glow, a, 3) { c, st -> drawRoundRect(c, Offset(8f, 22f), Size(84f, 46f), CornerRadius(10f), style = st) }
@@ -208,7 +158,6 @@ private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float, sel: Float) {
     drawCircle(NeonPink.copy(alpha = (0.4f + 0.6f * pulse) * a), 3.4f, Offset(84f, 56f))
 }
 
-/** MAPA: mapa plegado con punto rosa y ondas de radar. */
 private fun DrawScope.mapIcon(t: Float, pulse: Float, glow: Float, sel: Float) {
     val a = dim(sel)
     val map = Path().apply {
@@ -226,7 +175,6 @@ private fun DrawScope.mapIcon(t: Float, pulse: Float, glow: Float, sel: Float) {
     drawCircle(NeonCore.copy(alpha = a), 2f, Offset(50f, 54f))
 }
 
-/** FAVORITO: estrella que late y se balancea al estar activa. */
 private fun DrawScope.starIcon(t: Float, pulse: Float, glow: Float, sel: Float) {
     val a = dim(sel)
     val mid = Offset(50f, 54f)
@@ -234,8 +182,7 @@ private fun DrawScope.starIcon(t: Float, pulse: Float, glow: Float, sel: Float) 
         for (i in 0 until 10) {
             val r = if (i % 2 == 0) 42f else 18f
             val ang = -TAU / 4f + i * TAU / 10f
-            val x = mid.x + r * cos(ang)
-            val y = mid.y + r * sin(ang)
+            val x = mid.x + r * cos(ang); val y = mid.y + r * sin(ang)
             if (i == 0) moveTo(x, y) else lineTo(x, y)
         }
         close()
@@ -249,16 +196,12 @@ private fun DrawScope.starIcon(t: Float, pulse: Float, glow: Float, sel: Float) 
     }
 }
 
-/** CERCANAS: pin de ubicación que salta sobre ondas de radar. */
 private fun DrawScope.nearIcon(t: Float, pulse: Float, glow: Float, sel: Float) {
     val a = dim(sel)
     for (k in 0..1) {
         val p = (t * 2f + k * 0.5f) % 1f
         val rx = 10f + 30f * p
-        drawOval(
-            NeonPink.copy(alpha = 0.7f * (1f - p) * sel),
-            Offset(50f - rx, 86f - rx * 0.3f), Size(rx * 2f, rx * 0.6f), style = Stroke(2.4f)
-        )
+        drawOval(NeonPink.copy(alpha = 0.7f * (1f - p) * sel), Offset(50f - rx, 86f - rx * 0.3f), Size(rx * 2f, rx * 0.6f), style = Stroke(2.4f))
     }
     translate(top = -3f * pulse * sel) {
         val pin = Path().apply {
