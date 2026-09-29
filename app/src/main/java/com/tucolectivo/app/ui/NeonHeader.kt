@@ -95,11 +95,6 @@ fun NeonHeader(
             val cut = 16.dp.toPx()
             val y = h - 3.dp.toPx()
 
-            drawRect(Brush.verticalGradient(listOf(Color(0xFF0B2236), Ink)))
-            val grid = NeonCeleste.copy(alpha = 0.05f)
-            var gx = 0f
-            while (gx <= w) { drawLine(grid, Offset(gx, 0f), Offset(gx, h)); gx += 28.dp.toPx() }
-
             // línea inferior con esquinas cortadas
             val line = Path().apply { moveTo(0f, y - cut); lineTo(cut, y); lineTo(w - cut, y); lineTo(w, y - cut) }
             neon(NeonCeleste, 2.dp.toPx(), glow, flick) { c, st -> drawPath(line, c, style = st) }
