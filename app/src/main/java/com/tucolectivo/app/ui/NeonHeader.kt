@@ -18,8 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 private val NeonCeleste = Color(0xFF19D9FF)
 private val NeonCore = Color(0xFFE8FCFF)
