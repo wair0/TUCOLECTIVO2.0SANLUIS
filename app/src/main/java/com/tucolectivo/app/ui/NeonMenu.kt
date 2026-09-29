@@ -39,48 +39,35 @@ fun NeonMenuScreen(
     val infinite = rememberInfiniteTransition(label = "homeHud")
     val sweep by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "homeSweep")
     val pulse by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "homePulse")
-    val gridShift by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(4000, easing = LinearEasing)), label = "gridShift")
 
     Box(Modifier.fillMaxSize()) {
+        // Velo ligero: el CyberBackground ya anima grid/scan debajo
         Canvas(Modifier.fillMaxSize()) {
-            drawRect(Ink.copy(alpha = 0.50f))
-            val step = 20.dp.toPx()
-            val shift = gridShift * step
-            val gridA = 0.18f + 0.10f * pulse
-            var x = -step + shift
-            while (x < size.width + step) {
-                drawLine(NeonCeleste.copy(alpha = gridA), Offset(x, 0f), Offset(x, size.height), 1.6f)
-                x += step
-            }
-            var y = -step + shift * 0.6f
-            while (y < size.height + step) {
-                drawLine(NeonCeleste.copy(alpha = gridA * 0.65f), Offset(0f, y), Offset(size.width, y), 1.4f)
-                y += step
-            }
-            val bandH = 56.dp.toPx()
+            drawRect(Ink.copy(alpha = 0.12f))
+            val bandH = 48.dp.toPx()
             val sy = size.height * sweep
             drawRect(
-                Brush.verticalGradient(listOf(Color.Transparent, NeonPink.copy(alpha = 0.35f + 0.20f * pulse), NeonCeleste.copy(alpha = 0.28f), Color.Transparent)),
+                Brush.verticalGradient(
+                    listOf(
+                        Color.Transparent,
+                        NeonPink.copy(alpha = 0.22f + 0.15f * pulse),
+                        NeonCeleste.copy(alpha = 0.15f),
+                        Color.Transparent
+                    )
+                ),
                 Offset(0f, sy - bandH),
                 Size(size.width, bandH * 2)
             )
-            drawLine(NeonPink.copy(alpha = 0.90f), Offset(0f, sy), Offset(size.width, sy), 2.5.dp.toPx())
-            for (i in 0..12) {
+            drawLine(NeonPink.copy(alpha = 0.75f), Offset(0f, sy), Offset(size.width, sy), 2.dp.toPx())
+            for (i in 0..10) {
                 val px = size.width * ((sweep * 0.55f + i * 0.09f) % 1f)
                 val py = 10.dp.toPx() + i * 24.dp.toPx()
-                drawCircle(NeonCeleste.copy(alpha = 0.45f + 0.30f * pulse), 3.dp.toPx() + pulse * 2.5.dp.toPx(), Offset(px, py))
+                drawCircle(
+                    NeonCeleste.copy(alpha = 0.40f + 0.25f * pulse),
+                    2.5.dp.toPx() + pulse * 2.dp.toPx(),
+                    Offset(px, py)
+                )
             }
-            val br = 24.dp.toPx()
-            val thick = 3.dp.toPx()
-            val col = NeonPink.copy(alpha = 0.80f + 0.20f * pulse)
-            drawLine(col, Offset(8f, 8f), Offset(8f + br, 8f), thick)
-            drawLine(col, Offset(8f, 8f), Offset(8f, 8f + br), thick)
-            drawLine(col, Offset(size.width - 8f - br, 8f), Offset(size.width - 8f, 8f), thick)
-            drawLine(col, Offset(size.width - 8f, 8f), Offset(size.width - 8f, 8f + br), thick)
-            drawLine(col, Offset(8f, size.height - 8f), Offset(8f + br, size.height - 8f), thick)
-            drawLine(col, Offset(8f, size.height - 8f - br), Offset(8f, size.height - 8f), thick)
-            drawLine(col, Offset(size.width - 8f - br, size.height - 8f), Offset(size.width - 8f, size.height - 8f), thick)
-            drawLine(col, Offset(size.width - 8f, size.height - 8f - br), Offset(size.width - 8f, size.height - 8f), thick)
         }
 
         Column(
@@ -111,20 +98,33 @@ fun NeonCard(
     val cyberFont = rememberCyberpunkFontFamily()
     val infinite = rememberInfiniteTransition(label = "neon")
     val offset = StartOffset(phaseMs, StartOffsetType.FastForward)
-    val t by infinite.animateFloat(0f, 1f, label = "t", animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing), initialStartOffset = offset))
-    val pulse by infinite.animateFloat(0f, 1f, label = "pulse", animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse, offset))
+    val t by infinite.animateFloat(
+        0f, 1f, label = "t",
+        animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing), initialStartOffset = offset)
+    )
+    val pulse by infinite.animateFloat(
+        0f, 1f, label = "pulse",
+        animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse, offset)
+    )
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val press by animateFloatAsState(if (pressed) 1f else 0f, tween(90), label = "press")
     val appear = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { appear.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 260f)) }
+    LaunchedEffect(Unit) {
+        appear.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 260f))
+    }
     val scaleIn = 0.82f + 0.18f * appear.value
 
     Box(
-        modifier.aspectRatio(1.18f).graphicsLayer {
-            val k = (1f - 0.07f * press) * scaleIn
-            scaleX = k; scaleY = k; alpha = appear.value
-        }.clickable(interactionSource = source, indication = null, onClick = onClick)
+        modifier
+            .aspectRatio(1.18f)
+            .graphicsLayer {
+                val k = (1f - 0.07f * press) * scaleIn
+                scaleX = k
+                scaleY = k
+                alpha = appear.value
+            }
+            .clickable(interactionSource = source, indication = null, onClick = onClick)
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val flick = if (t in 0.62f..0.635f || t in 0.67f..0.68f) 0.5f else 1f
@@ -133,20 +133,36 @@ fun NeonCard(
             val fw = size.width - 2 * pad
             val fh = size.height - 2 * pad
             val frame = Path().apply {
-                moveTo(pad, pad); lineTo(pad + fw, pad); lineTo(pad + fw, pad + fh); lineTo(pad, pad + fh); close()
+                moveTo(pad, pad)
+                lineTo(pad + fw, pad)
+                lineTo(pad + fw, pad + fh)
+                lineTo(pad, pad + fh)
+                close()
             }
             clipPath(frame) {
                 drawRect(CardFill)
                 drawRect(Brush.verticalGradient(listOf(Color(0xFF123048), CardFill)))
                 var y = pad
                 while (y < pad + fh) {
-                    drawLine(NeonCeleste.copy(alpha = 0.14f + 0.08f * pulse), Offset(pad, y), Offset(pad + fw, y), 1.2f)
+                    drawLine(
+                        NeonCeleste.copy(alpha = 0.14f + 0.08f * pulse),
+                        Offset(pad, y),
+                        Offset(pad + fw, y),
+                        1.2f
+                    )
                     y += 4.dp.toPx()
                 }
                 val band = 36.dp.toPx()
                 val by = pad + fh * t
                 drawRect(
-                    Brush.verticalGradient(listOf(NeonCeleste.copy(alpha = 0f), NeonCeleste.copy(alpha = 0.45f), NeonPink.copy(alpha = 0.28f), NeonCeleste.copy(alpha = 0f))),
+                    Brush.verticalGradient(
+                        listOf(
+                            NeonCeleste.copy(alpha = 0f),
+                            NeonCeleste.copy(alpha = 0.45f),
+                            NeonPink.copy(alpha = 0.28f),
+                            NeonCeleste.copy(alpha = 0f)
+                        )
+                    ),
                     topLeft = Offset(pad, by - band),
                     size = Size(fw, band * 2)
                 )
@@ -157,10 +173,25 @@ fun NeonCard(
             drawLine(NeonPink.copy(alpha = 0.40f), Offset(scanX, pad), Offset(scanX, pad + fh), 10.dp.toPx())
             if (press > 0.01f) {
                 val ripple = (1f - press) * 52.dp.toPx()
-                drawCircle(NeonPink.copy(alpha = 0.5f * press), ripple, Offset(size.width / 2f, size.height / 2f), style = Stroke(width = 3.5.dp.toPx()))
+                drawCircle(
+                    NeonPink.copy(alpha = 0.5f * press),
+                    ripple,
+                    Offset(size.width / 2f, size.height / 2f),
+                    style = Stroke(width = 3.5.dp.toPx())
+                )
             }
-            drawLine(NeonPink.copy(alpha = 0.90f + 0.10f * pulse), Offset(pad + 6.dp.toPx(), pad + 5.dp.toPx()), Offset(pad + 42.dp.toPx(), pad + 5.dp.toPx()), 3.dp.toPx())
-            drawLine(NeonCeleste.copy(alpha = 0.90f), Offset(pad + fw - 42.dp.toPx(), pad + fh - 5.dp.toPx()), Offset(pad + fw - 6.dp.toPx(), pad + fh - 5.dp.toPx()), 3.dp.toPx())
+            drawLine(
+                NeonPink.copy(alpha = 0.90f + 0.10f * pulse),
+                Offset(pad + 6.dp.toPx(), pad + 5.dp.toPx()),
+                Offset(pad + 42.dp.toPx(), pad + 5.dp.toPx()),
+                3.dp.toPx()
+            )
+            drawLine(
+                NeonCeleste.copy(alpha = 0.90f),
+                Offset(pad + fw - 42.dp.toPx(), pad + fh - 5.dp.toPx()),
+                Offset(pad + fw - 6.dp.toPx(), pad + fh - 5.dp.toPx()),
+                3.dp.toPx()
+            )
             val measure = PathMeasure().apply { setPath(frame, true) }
             val head = measure.length * t
             val tail = measure.length * 0.22f
@@ -177,7 +208,9 @@ fun NeonCard(
                         measure.getSegment(0f, to, seg, true)
                     }
                 }
-                neon(NeonCeleste, 4.dp.toPx(), 2.2f, 1f - k / 6f, layers = 2) { c, st -> drawPath(seg, c, style = st) }
+                neon(NeonCeleste, 4.dp.toPx(), 2.2f, 1f - k / 6f, layers = 2) { c, st ->
+                    drawPath(seg, c, style = st)
+                }
             }
             val s = fh * 0.40f
             translate((size.width - s) / 2f, pad + fh * 0.10f) {
@@ -194,14 +227,26 @@ fun NeonCard(
             textAlign = TextAlign.Center,
             lineHeight = 14.sp,
             style = TextStyle(shadow = Shadow(NeonCeleste, Offset.Zero, 18f)),
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp, start = 8.dp, end = 8.dp)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 12.dp, start = 8.dp, end = 8.dp)
         )
     }
 }
 
-private inline fun neon(color: Color, width: Float, glow: Float = 1f, alpha: Float = 1f, layers: Int = 4, draw: (Color, Stroke) -> Unit) {
+private inline fun neon(
+    color: Color,
+    width: Float,
+    glow: Float = 1f,
+    alpha: Float = 1f,
+    layers: Int = 4,
+    draw: (Color, Stroke) -> Unit
+) {
     for (i in layers downTo 1) {
-        draw(color.copy(alpha = (0.12f * glow * alpha).coerceIn(0f, 1f)), Stroke(width * (1f + i * 1.3f), cap = StrokeCap.Square, join = StrokeJoin.Miter))
+        draw(
+            color.copy(alpha = (0.12f * glow * alpha).coerceIn(0f, 1f)),
+            Stroke(width * (1f + i * 1.3f), cap = StrokeCap.Square, join = StrokeJoin.Miter)
+        )
     }
     draw(color.copy(alpha = alpha), Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
     draw(NeonCore.copy(alpha = 0.9f * alpha), Stroke(width * 0.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
@@ -209,8 +254,14 @@ private inline fun neon(color: Color, width: Float, glow: Float = 1f, alpha: Flo
 
 private fun DrawScope.busIcon(t: Float, pulse: Float, glow: Float) {
     val a = 0.95f * glow
-    neon(NeonCeleste, 5f, glow, a, 3) { c, st -> drawRoundRect(c, Offset(8f, 22f), Size(84f, 46f), CornerRadius(0f), style = st) }
-    neon(NeonCeleste, 3.4f, glow, a, 2) { c, st -> for (x in listOf(16f, 39f, 62f)) drawRoundRect(c, Offset(x, 32f), Size(17f, 15f), CornerRadius(0f), style = st) }
+    neon(NeonCeleste, 5f, glow, a, 3) { c, st ->
+        drawRoundRect(c, Offset(8f, 22f), Size(84f, 46f), CornerRadius(0f), style = st)
+    }
+    neon(NeonCeleste, 3.4f, glow, a, 2) { c, st ->
+        for (x in listOf(16f, 39f, 62f)) {
+            drawRoundRect(c, Offset(x, 32f), Size(17f, 15f), CornerRadius(0f), style = st)
+        }
+    }
     drawLine(NeonPink.copy(alpha = a), Offset(16f, 58f), Offset(58f, 58f), 3.4f, StrokeCap.Round)
     for (cx in listOf(28f, 72f)) {
         val ctr = Offset(cx, 72f)
