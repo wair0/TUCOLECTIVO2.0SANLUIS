@@ -52,6 +52,8 @@ class MainActivity : AppCompatActivity() {
     private var mapVehicleRefreshToken = 0
     @Volatile private var mapVehicleRefreshInProgress = false
     private var lastMapNearbyStops = emptyList<TransitStop>()
+    private var activeMapStopInfo: CyberMapStopInfoView? = null
+    private val mapRouteCache = java.util.concurrent.ConcurrentHashMap<Int, List<Pair<Double, Double>>>()
     private lateinit var navBar: LinearLayout
     private val cyan = 0xFF00F0FF.toInt()
     private val pink = 0xFFFF00FF.toInt()
@@ -1271,17 +1273,22 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
 
     private fun showMap(line: TransitLine?) {
         title.text = "MAPA"; updateNav(2); content.removeAllViews()
-        val root = FrameLayout(this)
-        val mapFrame = FrameLayout(this).apply {
-            setBackgroundColor(panelColor); setPadding(dp(6), dp(6), dp(6), dp(6))
-        }
+        val root = FrameLayout(this).apply { setBackgroundColor(Color.TRANSPARENT) }
+        val mapFrame = FrameLayout(this).apply { setBackgroundColor(Color.TRANSPARENT) }
         val map = CyberMapView(this)
-        map.setOnLocationRequest {
-            syncMapLocation(map, line)
+        map.setOnLocationRequest { syncMapLocation(map, line) }
+        val stopInfo = CyberMapStopInfoView(this, cyberpunkTypeface, cyan, pink, muted).apply {
+            visibility = View.GONE
         }
+        activeMapStopInfo = stopInfo
+        map.setOnStopTap { stop -> showMapStopInfo(stopInfo, stop, line) }
         mapFrame.addView(map, FrameLayout.LayoutParams(-1, -1))
         root.addView(mapFrame, FrameLayout.LayoutParams(-1, -1).apply {
-            leftMargin = dp(6); rightMargin = dp(6); topMargin = dp(6); bottomMargin = dp(6)
+            leftMargin = dp(2); rightMargin = dp(2); topMargin = dp(2); bottomMargin = dp(2)
+        })
+        root.addView(stopInfo, FrameLayout.LayoutParams(-1, dp(196)).apply {
+            gravity = Gravity.BOTTOM
+            leftMargin = dp(14); rightMargin = dp(14); bottomMargin = dp(12)
         })
         val info = TextView(this).apply {
             text = if (line == null) {
@@ -1315,6 +1322,55 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         } else {
             mapVehicleRefreshToken++
         }
+    }
+
+    private fun showMapStopInfo(info: CyberMapStopInfoView, stop: MapStop, selectedLine: TransitLine?) {
+        info.setStop(stop, emptyList(), loading = true)
+        info.visibility = View.VISIBLE
+        headerStatus.setStatusText("● ANALIZANDO PARADA " + stop.id)
+        executor.execute {
+            val lines = if (selectedLine != null) listOf(selectedLine) else findLinesForMapStop(stop)
+            runOnUiThread {
+                info.setStop(stop, lines, loading = false)
+                headerStatus.setStatusText(
+                    if (lines.isEmpty()) "● PARADA " + stop.id + " • SIN LÍNEAS DETECTADAS"
+                    else "● PARADA " + stop.id + " • " + lines.size + " LÍNEAS"
+                )
+            }
+        }
+    }
+
+    private fun findLinesForMapStop(stop: MapStop): List<TransitLine> {
+        val lines = runCatching { api.getLines() }.getOrDefault(emptyList())
+        if (lines.isEmpty()) return emptyList()
+        val tasks = lines.map { line ->
+            java.util.concurrent.Callable {
+                val route = mapRouteCache[line.code] ?: runCatching { api.getRoute(line.code) }
+                    .getOrDefault(emptyList()).also { mapRouteCache[line.code] = it }
+                val distance = route.minOfOrNull { point ->
+                    distanceMeters(stop.latitude, stop.longitude, point.first, point.second)
+                } ?: Double.MAX_VALUE
+                line to distance
+            }
+        }
+        return runCatching { vehicleQueryExecutor.invokeAll(tasks, 10, java.util.concurrent.TimeUnit.SECONDS) }
+            .getOrDefault(emptyList())
+            .mapNotNull { future -> runCatching { future.get() }.getOrNull() }
+            .filter { it.second <= 120.0 }
+            .sortedBy { it.second }
+            .map { it.first }
+            .distinctBy { it.code }
+            .take(8)
+    }
+
+    private fun distanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earth = 6371000.0
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = sin(dLat / 2.0) * sin(dLat / 2.0) +
+            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+            sin(dLon / 2.0) * sin(dLon / 2.0)
+        return earth * 2.0 * atan2(sqrt(a), sqrt(1.0 - a))
     }
 
     private fun syncMapLocation(map: CyberMapView, line: TransitLine? = null) {
@@ -2417,6 +2473,78 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                 }
             }
             canvas.drawText(label, width * .5f, height - 10f * density, textPaint)
+        }
+    }
+
+    private class CyberMapStopInfoView(
+        context: Context,
+        private val typeface: Typeface,
+        private val cyan: Int,
+        private val pink: Int,
+        private val muted: Int
+    ) : View(context) {
+        private val density = resources.displayMetrics.density
+        private val scaledDensity = resources.displayMetrics.scaledDensity
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
+        private val path = Path()
+        private var stop: MapStop? = null
+        private var lines: List<TransitLine> = emptyList()
+        private var loading = false
+        init {
+            isClickable = true
+            setOnClickListener { visibility = GONE }
+        }
+        fun setStop(value: MapStop, valueLines: List<TransitLine>, loading: Boolean) {
+            stop = value; lines = valueLines; this.loading = loading; invalidate()
+        }
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val w = width.toFloat(); val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return
+            val cut = 12f * density
+            path.reset()
+            path.moveTo(cut, 0f); path.lineTo(w - cut, 0f); path.lineTo(w, cut)
+            path.lineTo(w, h - cut); path.lineTo(w - cut, h); path.lineTo(cut, h)
+            path.lineTo(0f, h - cut); path.lineTo(0f, cut); path.close()
+            paint.style = Paint.Style.FILL; paint.color = Color.argb(242, 3, 7, 15); canvas.drawPath(path, paint)
+            paint.style = Paint.Style.STROKE; paint.strokeWidth = 5f * density
+            paint.color = Color.argb(48, 0, 240, 255); canvas.drawPath(path, paint)
+            paint.strokeWidth = 1.6f * density; paint.color = cyan; paint.alpha = 235; canvas.drawPath(path, paint)
+            paint.strokeWidth = 1f * density; paint.color = pink; paint.alpha = 190
+            canvas.drawLine(w * .52f, 1f, w - cut, 1f, paint)
+            paint.style = Paint.Style.FILL; paint.typeface = typeface; paint.textAlign = Paint.Align.LEFT
+            val s = stop ?: return
+            paint.textSize = 11f * scaledDensity; paint.color = cyan; paint.alpha = 255
+            canvas.drawText("PARADA " + s.id, 16f * density, 27f * density, paint)
+            paint.textSize = 10f * scaledDensity; paint.color = Color.WHITE
+            canvas.drawText(s.title.ifBlank { "PARADA SIN DESCRIPCIÓN" }.take(42), 16f * density, 51f * density, paint)
+            paint.textSize = 8.5f * scaledDensity; paint.color = muted
+            canvas.drawText(s.subtitle.ifBlank { "UBICACIÓN DISPONIBLE" }.take(58), 16f * density, 70f * density, paint)
+            paint.textSize = 9.5f * scaledDensity; paint.color = pink
+            if (loading) {
+                canvas.drawText("LÍNEAS // ANALIZANDO RECORRIDOS...", 16f * density, 98f * density, paint)
+            } else if (lines.isEmpty()) {
+                canvas.drawText("LÍNEAS // NO DETECTADAS EN EL RECORRIDO", 16f * density, 98f * density, paint)
+            } else {
+                canvas.drawText("LÍNEAS QUE PASAN POR ESTA PARADA", 16f * density, 98f * density, paint)
+                paint.textSize = 9f * scaledDensity; paint.color = cyan
+                var x = 16f * density; var y = 124f * density
+                lines.take(6).forEach { line ->
+                    val label = line.code.toString() + "  " + line.description.take(20)
+                    val widthNeeded = paint.measureText(label) + 22f * density
+                    if (x + widthNeeded > w - 12f * density) { x = 16f * density; y += 28f * density }
+                    paint.style = Paint.Style.STROKE; paint.strokeWidth = 1f * density
+                    paint.color = Color.argb(190, 0, 240, 255)
+                    canvas.drawRoundRect(RectF(x, y - 15f * density, minOf(x + widthNeeded, w - 12f * density), y + 7f * density), 4f * density, 4f * density, paint)
+                    paint.style = Paint.Style.FILL; paint.color = cyan
+                    canvas.drawText(label, x + 8f * density, y, paint)
+                    x += widthNeeded + 6f * density
+                }
+            }
+            paint.style = Paint.Style.FILL; paint.textAlign = Paint.Align.RIGHT
+            paint.textSize = 8f * scaledDensity; paint.color = muted
+            canvas.drawText("TOCAR PARA CERRAR", w - 14f * density, h - 10f * density, paint)
+            paint.textAlign = Paint.Align.LEFT
         }
     }
 

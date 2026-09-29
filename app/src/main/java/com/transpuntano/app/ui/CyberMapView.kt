@@ -230,11 +230,13 @@ class CyberMapView(context: Context) : View(context) {
     override fun onDraw(c: Canvas) {
         super.onDraw(c)
 
-        c.drawColor(Color.rgb(5, 7, 12))
+        c.drawColor(Color.rgb(2, 3, 11))
 
         updateMapRect()
 
         if (mapRect.width() <= 0 || mapRect.height() <= 0) return
+
+        drawCardChrome(c)
 
         c.save()
         c.clipRect(mapRect)
@@ -671,33 +673,53 @@ private fun updateMapRect() {
         )
     }
 
+    private fun cyberCardPath(rect: RectF): Path {
+        val cut = dp(12f).coerceAtMost(min(rect.width(), rect.height()) * .16f)
+        return Path().apply {
+            moveTo(rect.left + cut, rect.top); lineTo(rect.right - cut, rect.top)
+            lineTo(rect.right, rect.top + cut); lineTo(rect.right, rect.bottom - cut)
+            lineTo(rect.right - cut, rect.bottom); lineTo(rect.left + cut, rect.bottom)
+            lineTo(rect.left, rect.bottom - cut); lineTo(rect.left, rect.top + cut); close()
+        }
+    }
+
+    private fun drawCardChrome(c: Canvas) {
+        val outer = RectF(mapRect.left - dp(10f), dp(10f), mapRect.right + dp(10f), mapRect.bottom + dp(10f))
+        val path = cyberCardPath(outer)
+        paint.style = Paint.Style.FILL
+        paint.shader = LinearGradient(outer.left, outer.top, outer.right, outer.bottom,
+            intArrayOf(Color.rgb(4, 9, 18), Color.rgb(8, 5, 20), Color.rgb(2, 5, 13)),
+            null, Shader.TileMode.CLAMP)
+        c.drawPath(path, paint); paint.shader = null
+        paint.style = Paint.Style.STROKE; paint.strokeWidth = dp(7f); paint.color = Color.argb(38, 0, 240, 255); c.drawPath(path, paint)
+        paint.strokeWidth = dp(2f); paint.color = Color.rgb(0, 240, 255); c.drawPath(path, paint)
+        paint.strokeWidth = dp(1f); paint.color = Color.argb(190, 255, 0, 255)
+        c.drawLine(outer.left + dp(18f), outer.top, outer.left + outer.width() * .48f, outer.top, paint)
+        c.drawLine(outer.right - outer.width() * .48f, outer.bottom, outer.right - dp(18f), outer.bottom, paint)
+        paint.style = Paint.Style.FILL; paint.typeface = cyberpunkTypeface; paint.textSize = dp(9f); paint.color = Color.rgb(0, 240, 255); paint.textAlign = Paint.Align.LEFT
+        c.drawText("MAPA // RADAR URBANO", outer.left + dp(18f), outer.top + dp(28f), paint)
+        paint.textSize = dp(7f); paint.color = Color.rgb(255, 0, 255); paint.textAlign = Paint.Align.RIGHT
+        c.drawText("LIVE / GPS", outer.right - dp(18f), outer.top + dp(28f), paint); paint.textAlign = Paint.Align.LEFT
+    }
+
     private fun drawFrame(c: Canvas) {
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = dp(2f)
-        paint.color = Color.rgb(0, 240, 255)
-
-        c.drawRoundRect(
-            mapRect,
-            dp(8f),
-            dp(8f),
-            paint
-        )
-
-        paint.strokeWidth = dp(1f)
-        paint.color =
-            Color.argb(80, 255, 45, 178)
-
-        c.drawRoundRect(
-            RectF(
-                mapRect.left + dp(4f),
-                mapRect.top + dp(4f),
-                mapRect.right - dp(4f),
-                mapRect.bottom - dp(4f)
-            ),
-            dp(6f),
-            dp(6f),
-            paint
-        )
+        val outer = RectF(mapRect.left - dp(10f), dp(10f), mapRect.right + dp(10f), mapRect.bottom + dp(10f))
+        val path = cyberCardPath(outer)
+        paint.style = Paint.Style.STROKE; paint.strokeWidth = dp(5f); paint.color = Color.argb(45, 0, 240, 255); c.drawPath(path, paint)
+        paint.strokeWidth = dp(1.8f); paint.color = Color.rgb(0, 240, 255); c.drawPath(path, paint)
+        paint.strokeWidth = dp(1f); paint.color = Color.argb(210, 255, 0, 255)
+        val cut = dp(12f)
+        c.drawLine(outer.left + cut, outer.top, outer.left + cut + dp(28f), outer.top, paint)
+        c.drawLine(outer.right - cut - dp(28f), outer.bottom, outer.right - cut, outer.bottom, paint)
+        val perimeter = PathMeasure(path, false); val length = perimeter.length
+        if (length > 0f) {
+            val start = (vehiclePhase % 16f) / 16f * length
+            val segment = minOf(dp(34f), length * .08f); val end = start + segment
+            val animated = Path()
+            if (end <= length) perimeter.getSegment(start, end, animated, true)
+            else { perimeter.getSegment(start, length, animated, true); perimeter.getSegment(0f, end - length, animated, true) }
+            paint.strokeWidth = dp(2.8f); paint.color = Color.rgb(0, 240, 255); c.drawPath(animated, paint)
+        }
     }
 
     private fun drawControls(c: Canvas) {
