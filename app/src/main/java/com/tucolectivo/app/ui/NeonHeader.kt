@@ -2,6 +2,7 @@ package com.tucolectivo.app.ui
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -12,7 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -33,6 +36,13 @@ import androidx.compose.ui.unit.*
  *     bellSlot   = { TuBotonCampanita() }        // marco 44dp
  * )
  */
+data class NeonNotification(
+    val title: String,
+    val detail: String,
+    val time: String,
+    val unread: Boolean = true
+)
+
 object CyberColors {
     val Cyan = Color(0xFF19E3FF)
     val Magenta = Color(0xFFFF2BD6)
