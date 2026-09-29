@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -62,11 +64,7 @@ fun NeonHeader(
     val toggle = { p: Panel -> panel = if (panel == p) Panel.None else p }
     val close = { panel = Panel.None }
     val unread = notifications.any { it.unread }
-    val headerHeight = when (panel) {
-        Panel.Menu -> 360.dp
-        Panel.Search, Panel.Notifications -> 260.dp
-        Panel.None -> 92.dp
-    }
+    val headerHeight = 92.dp
 
     val infinite = rememberInfiniteTransition(label = "header")
     val t by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(3800, easing = LinearEasing)), label = "t")
@@ -189,25 +187,51 @@ fun NeonHeader(
 
         when (panel) {
             Panel.None -> Unit
-            Panel.Menu -> Box(Modifier.align(Alignment.TopStart).offset(x = 8.dp, y = 88.dp).zIndex(60f)) {
+            Panel.Menu -> Popup(
+                alignment = Alignment.TopStart,
+                offset = IntOffset(8, 92),
+                onDismissRequest = { close() },
+                properties = PopupProperties(focusable = true, dismissOnBackPress = true, dismissOnClickOutside = true)
+            ) {
                 NeonPanel(248.dp, NeonCeleste) {
                     PanelTitle("MENÚ PRINCIPAL")
-                    menuItems.forEachIndexed { i, label -> NeonItem(label) { close(); onMenuItem(i) } }
+                    menuItems.forEachIndexed { i, label ->
+                        NeonItem(label) { close(); onMenuItem(i) }
+                    }
                 }
             }
-            Panel.Search -> Box(Modifier.align(Alignment.TopEnd).offset(x = (-8).dp, y = 88.dp).zIndex(60f)) {
+            Panel.Search -> Popup(
+                alignment = Alignment.TopEnd,
+                offset = IntOffset(-8, 92),
+                onDismissRequest = { close() },
+                properties = PopupProperties(focusable = true, dismissOnBackPress = true, dismissOnClickOutside = true)
+            ) {
                 NeonPanel(300.dp, NeonPink) {
                     PanelTitle("BUSCAR")
-                    SearchField { close(); onSearch(it) }
+                    SearchField { query -> close(); onSearch(query) }
                 }
             }
-            Panel.Notifications -> Box(Modifier.align(Alignment.TopEnd).offset(x = (-8).dp, y = 74.dp).zIndex(20f)) {
+            Panel.Notifications -> Popup(
+                alignment = Alignment.TopEnd,
+                offset = IntOffset(-8, 92),
+                onDismissRequest = { close() },
+                properties = PopupProperties(focusable = true, dismissOnBackPress = true, dismissOnClickOutside = true)
+            ) {
                 NeonPanel(300.dp, NeonCeleste) {
                     PanelTitle("NOTIFICACIONES")
-                    if (notifications.isEmpty()) Text("SIN NOTIFICACIONES", color = NeonCeleste.copy(alpha = 0.6f),
-                        fontFamily = cyberFont, fontSize = 12.sp, modifier = Modifier.padding(vertical = 14.dp))
+                    if (notifications.isEmpty()) {
+                        Text(
+                            "SIN NOTIFICACIONES",
+                            color = NeonCeleste.copy(alpha = 0.6f),
+                            fontFamily = cyberFont,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(vertical = 14.dp)
+                        )
+                    }
                     Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) {
-                        notifications.forEachIndexed { i, n -> NotificationRow(n) { close(); onNotification(i) } }
+                        notifications.forEachIndexed { i, n ->
+                            NotificationRow(n) { close(); onNotification(i) }
+                        }
                     }
                 }
             }
