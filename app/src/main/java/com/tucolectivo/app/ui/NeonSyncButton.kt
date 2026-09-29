@@ -101,7 +101,7 @@ fun NeonSyncButton(
                 )
             }
             val s = fh * 0.72f
-            translate(pad + cut * 0.55f + 4.dp.toPx(), (size.height - s) / 2f) {
+            translate(pad + 4.dp.toPx(), (size.height - s) / 2f) {
                 scale(s / 100f, Offset.Zero) { syncIcon(if (syncing) spin else 0f, pulse, glow, accent) }
             }
         }
