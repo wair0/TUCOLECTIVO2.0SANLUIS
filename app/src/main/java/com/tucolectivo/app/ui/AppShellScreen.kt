@@ -68,7 +68,7 @@ fun AppShellScreen(
     mapFactory: () -> CyberMapView,
     mapKey: Any? = null
 ) {
-    val gifActive = section != 2
+    val bgActive = section != 2
     var panel by remember { mutableStateOf(HeaderPanel.None) }
     val menuItems = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS")
     val notifications = remember {
@@ -80,7 +80,8 @@ fun AppShellScreen(
 
     MaterialTheme {
         Box(Modifier.fillMaxSize()) {
-            GifBackground(modifier = Modifier.fillMaxSize(), active = gifActive)
+            // 100% Compose Canvas — sin AndroidView/GIF que bloqueaba animaciones
+            CyberBackground(modifier = Modifier.fillMaxSize(), active = bgActive)
 
             Column(Modifier.fillMaxSize()) {
                 NeonHeader(
