@@ -26,13 +26,13 @@ import com.transpuntano.app.ui.CyberMapView
 import com.transpuntano.app.ui.MapStop
 import java.util.concurrent.Executors
 
-/** Shell Compose + flujo LÍNEAS → CALLES → INTERSECCIONES → PARADAS → ARRIBOS */
 class MainActivity : AppCompatActivity() {
     private val api = SmartMoveApi()
     private val executor = Executors.newFixedThreadPool(3)
     private lateinit var composeHomeView: ComposeView
 
     private var homeSyncing by mutableStateOf(false)
+    private var headerStatus by mutableStateOf("● SISTEMA LISTO")
     private var composeSection by mutableStateOf(0)
     private var composeLines by mutableStateOf<List<TransitLine>>(emptyList())
     private var composeLinesLoading by mutableStateOf(false)
@@ -75,6 +75,8 @@ class MainActivity : AppCompatActivity() {
                     onNavigate = { index -> navigateTo(index) },
                     syncing = homeSyncing,
                     onSync = { loadLines(false) },
+                    statusText = headerStatus,
+                    onSearch = { query -> performSearch(query) },
                     linesLevel = linesLevel,
                     lines = composeLines,
                     linesLoading = composeLinesLoading,
@@ -142,9 +144,13 @@ class MainActivity : AppCompatActivity() {
     private fun navigateTo(index: Int) {
         composeSection = index
         when (index) {
+            0 -> headerStatus = "● SISTEMA LISTO"
             1 -> { linesLevel = LinesLevel.CATALOG; refreshComposeLines() }
-            2 -> mapHostKey += 1
-            3 -> composeFavorites = loadFavorites()
+            2 -> { mapHostKey += 1; headerStatus = "● MAPA" }
+            3 -> {
+                composeFavorites = loadFavorites()
+                headerStatus = "● ${composeFavorites.size} FAVORITOS"
+            }
             4 -> refreshComposeNearby()
         }
     }
@@ -153,6 +159,7 @@ class MainActivity : AppCompatActivity() {
         activeLine = line; activeStreet = null; activeIntersection = null; activeStop = null
         streets = emptyList(); streetsError = null; streetsLoading = true
         linesLevel = LinesLevel.STREETS
+        headerStatus = "● LÍNEA ${line.code}"
         executor.execute {
             runCatching { api.getStreets(line.code) }
                 .onSuccess { list -> runOnUiThread { streets = list; streetsLoading = false; streetsError = null } }
@@ -165,6 +172,7 @@ class MainActivity : AppCompatActivity() {
         activeStreet = street; activeIntersection = null; activeStop = null
         intersections = emptyList(); intersectionsError = null; intersectionsLoading = true
         linesLevel = LinesLevel.INTERSECTIONS
+        headerStatus = "● INTERSECCIONES"
         executor.execute {
             runCatching { api.getIntersections(line.code, street.code) }
                 .onSuccess { list -> runOnUiThread { intersections = list; intersectionsLoading = false; intersectionsError = null } }
@@ -178,6 +186,7 @@ class MainActivity : AppCompatActivity() {
         activeIntersection = intersection; activeStop = null
         stops = emptyList(); stopsError = null; stopsLoading = true
         linesLevel = LinesLevel.STOPS
+        headerStatus = "● PARADAS"
         executor.execute {
             runCatching { api.getStops(line.code, street.code, intersection.code) }
                 .onSuccess { list -> runOnUiThread { stops = list; stopsLoading = false; stopsError = null } }
@@ -189,6 +198,7 @@ class MainActivity : AppCompatActivity() {
         val line = activeLine ?: return
         activeStop = stop; arrivals = emptyList(); arrivalsError = null
         linesLevel = LinesLevel.ARRIVALS
+        headerStatus = "● ARRIBOS"
         loadArrivals(stop, line)
     }
 
@@ -203,10 +213,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun linesGoBack() {
         when (linesLevel) {
-            LinesLevel.ARRIVALS -> { linesLevel = LinesLevel.STOPS; arrivals = emptyList(); activeStop = null }
-            LinesLevel.STOPS -> { linesLevel = LinesLevel.INTERSECTIONS; stops = emptyList(); activeIntersection = null }
-            LinesLevel.INTERSECTIONS -> { linesLevel = LinesLevel.STREETS; intersections = emptyList(); activeStreet = null }
-            LinesLevel.STREETS -> { linesLevel = LinesLevel.CATALOG; streets = emptyList(); activeLine = null }
+            LinesLevel.ARRIVALS -> { linesLevel = LinesLevel.STOPS; arrivals = emptyList(); activeStop = null; headerStatus = "● PARADAS" }
+            LinesLevel.STOPS -> { linesLevel = LinesLevel.INTERSECTIONS; stops = emptyList(); activeIntersection = null; headerStatus = "● INTERSECCIONES" }
+            LinesLevel.INTERSECTIONS -> { linesLevel = LinesLevel.STREETS; intersections = emptyList(); activeStreet = null; headerStatus = "● LÍNEA ${activeLine?.code ?: ""}" }
+            LinesLevel.STREETS -> { linesLevel = LinesLevel.CATALOG; streets = emptyList(); activeLine = null; headerStatus = "● LÍNEAS" }
             LinesLevel.CATALOG -> navigateTo(0)
         }
     }
@@ -220,41 +230,95 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadLines(navigateToLines: Boolean) {
         homeSyncing = true
+        headerStatus = "● SINCRONIZANDO..."
         executor.execute {
             runCatching { api.getLines() }
                 .onSuccess { lines -> runOnUiThread {
                     homeSyncing = false; composeLines = lines; composeLinesLoading = false; composeLinesError = null
+                    headerStatus = "● ${lines.size} LÍNEAS"
                     if (navigateToLines) navigateTo(1)
                 }}
                 .onFailure { error -> runOnUiThread {
-                    homeSyncing = false; composeLinesError = error.message ?: "Error"; toast(error.message ?: "Error")
+                    homeSyncing = false; composeLinesError = error.message ?: "Error"
+                    headerStatus = "● SIN CONEXIÓN"; toast(error.message ?: "Error")
                 }}
         }
     }
 
     private fun refreshComposeLines() {
         composeLinesLoading = true; composeLinesError = null
+        headerStatus = "● SINCRONIZANDO..."
         executor.execute {
             runCatching { api.getLines() }
-                .onSuccess { items -> runOnUiThread { composeLines = items; composeLinesLoading = false; composeLinesError = null } }
-                .onFailure { error -> runOnUiThread { composeLinesLoading = false; composeLinesError = error.message ?: "No se pudo consultar." } }
+                .onSuccess { items -> runOnUiThread {
+                    composeLines = items; composeLinesLoading = false; composeLinesError = null
+                    headerStatus = "● ${items.size} LÍNEAS"
+                }}
+                .onFailure { error -> runOnUiThread {
+                    composeLinesLoading = false; composeLinesError = error.message ?: "No se pudo consultar."
+                    headerStatus = "● SIN CONEXIÓN"
+                }}
         }
     }
 
     private fun refreshComposeNearby() {
         composeNearbyLoading = true; composeNearbyError = null
+        headerStatus = "● BUSCANDO PARADAS"
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             composeNearbyLoading = false; composeNearbyError = "PERMISOS DE UBICACIÓN REQUERIDOS"
+            headerStatus = "● SIN PERMISO"
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 42)
             return
         }
         val location = currentLocationOrNull()
-        if (location == null) { composeNearbyLoading = false; composeNearbyError = "UBICACIÓN NO DISPONIBLE"; return }
+        if (location == null) {
+            composeNearbyLoading = false; composeNearbyError = "UBICACIÓN NO DISPONIBLE"
+            headerStatus = "● SIN UBICACIÓN"
+            return
+        }
         executor.execute {
             runCatching { api.getNearby(location.latitude, location.longitude) }
-                .onSuccess { nearby -> runOnUiThread { composeNearby = nearby; lastMapNearbyStops = nearby; composeNearbyLoading = false; composeNearbyError = null } }
-                .onFailure { error -> runOnUiThread { composeNearbyLoading = false; composeNearbyError = error.message ?: "Sin conexión" } }
+                .onSuccess { nearby -> runOnUiThread {
+                    composeNearby = nearby; lastMapNearbyStops = nearby
+                    composeNearbyLoading = false; composeNearbyError = null
+                    headerStatus = "● ${nearby.size} PARADAS CERCANAS"
+                }}
+                .onFailure { error -> runOnUiThread {
+                    composeNearbyLoading = false; composeNearbyError = error.message ?: "Sin conexión"
+                    headerStatus = "● ERROR"
+                }}
+        }
+    }
+
+    private fun performSearch(rawQuery: String) {
+        val q = rawQuery.trim()
+        if (q.isBlank()) { toast("Ingresá un número o nombre de línea"); return }
+        headerStatus = "● BUSCANDO..."
+        executor.execute {
+            runCatching { api.getLines() }
+                .onSuccess { lines ->
+                    val normalized = q.lowercase()
+                        .replace("línea", "").replace("linea", "").replace("line", "").replace("#", "")
+                        .trim().replace(Regex("\\s+"), " ")
+                    val matches = if (normalized.isBlank()) emptyList() else lines.filter { line ->
+                        val name = line.name.lowercase()
+                            .replace("línea", "").replace("linea", "").trim().replace(Regex("\\s+"), " ")
+                        name == normalized || name.contains(normalized)
+                    }
+                    runOnUiThread {
+                        composeLines = matches
+                        composeLinesLoading = false
+                        composeLinesError = null
+                        linesLevel = LinesLevel.CATALOG
+                        composeSection = 1
+                        headerStatus = if (matches.isEmpty()) "● SIN RESULTADOS" else "● ${matches.size} RESULTADOS"
+                    }
+                }
+                .onFailure { error -> runOnUiThread {
+                    headerStatus = "● SIN CONEXIÓN"
+                    toast(error.message ?: "Sin conexión")
+                }}
         }
     }
 
