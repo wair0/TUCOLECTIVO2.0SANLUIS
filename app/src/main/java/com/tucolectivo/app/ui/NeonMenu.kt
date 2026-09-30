@@ -209,11 +209,10 @@ private fun DrawScope.neon(
     for (layer in layers downTo 1) {
         val spread = width * (1f + layer * 0.9f)
         val a = (alpha * safeGlow * (0.035f + layer * 0.025f)).coerceIn(0f, 1f)
-        draw(color.copy(alpha = a), Stroke(width = spread, cap = StrokeCap.Square, join = StrokeJoin.Miter), draw)
+        draw(color.copy(alpha = a), Stroke(width = spread, cap = StrokeCap.Square, join = StrokeJoin.Miter))
     }
     draw(
         color.copy(alpha = alpha.coerceIn(0f, 1f)),
-        Stroke(width = width, cap = StrokeCap.Square, join = StrokeJoin.Miter),
-        draw
+        Stroke(width = width, cap = StrokeCap.Square, join = StrokeJoin.Miter)
     )
 }
