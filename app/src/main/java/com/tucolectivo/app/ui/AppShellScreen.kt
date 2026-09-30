@@ -179,20 +179,11 @@ private fun LinesBase(
   )
   when (level) {
    LinesLevel.CATALOG -> {
-    CyberLinesRefreshPanel(
-     loading = linesLoading,
-     error = linesError,
-     onRefresh = onRefreshLines
-    )
+    CyberLinesRefreshPanel(loading = linesLoading, error = linesError, onRefresh = onRefreshLines)
     LazyColumn(
      modifier = Modifier.fillMaxWidth(),
      verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
-     contentPadding = androidx.compose.foundation.layout.PaddingValues(
-      start = 12.dp,
-      end = 12.dp,
-      top = 10.dp,
-      bottom = 24.dp
-     )
+     contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 24.dp)
     ) {
      items(lines) { line ->
       CyberLineCard(
@@ -205,17 +196,85 @@ private fun LinesBase(
     }
    }
    LinesLevel.STREETS -> {
-    Text(activeLine?.name ?: ""); if (streetsLoading) Text("CARGANDO..."); streetsError?.let { Text(it) }
-    LazyColumn { items(streets) { item -> Button(onClick = { onStreetClick(item) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.name) } } }
-    activeLine?.let { line -> Button(onClick = { onMapRoute(line) }) { Text("VER RECORRIDO EN MAPA") } }
+    CyberRouteListHeader(
+     eyebrow = "07 // TRAYECTO ACTIVO",
+     title = activeLine?.name ?: "LÍNEA ACTIVA",
+     context = if (streetsLoading) "SINCRONIZANDO CALLES..." else if (streets.isEmpty()) "SIN CALLES DISPONIBLES" else "${streets.size} CALLES DETECTADAS",
+     error = streetsError
+    )
+    LazyColumn(
+     modifier = Modifier.fillMaxWidth(),
+     verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+     contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp)
+    ) {
+     items(streets) { item ->
+      CyberRouteNodeCard(
+       index = streets.indexOf(item),
+       eyebrow = "CALLE // ${streets.indexOf(item) + 1}",
+       title = item.name,
+       subtitle = "SEGMENTO DEL RECORRIDO // LÍNEA ${activeLine?.code ?: "--"}",
+       accent = CyberColors.Primary,
+       onClick = { onStreetClick(item) }
+      )
+     }
+     if (activeLine != null) {
+      item {
+       CyberRouteActionCard(
+        title = "VER RECORRIDO EN MAPA",
+        subtitle = "ABRIR NAVEGACIÓN ESPACIAL // RUTA COMPLETA",
+        onClick = { onMapRoute(activeLine) }
+       )
+      }
+     }
+    }
    }
    LinesLevel.INTERSECTIONS -> {
-    Text(activeStreet?.name ?: ""); if (intersectionsLoading) Text("CARGANDO..."); intersectionsError?.let { Text(it) }
-    LazyColumn { items(intersections) { item -> Button(onClick = { onIntersectionClick(item) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.name) } } }
+    CyberRouteListHeader(
+     eyebrow = "08 // NODOS DE RED",
+     title = activeStreet?.name ?: "CALLE ACTIVA",
+     context = if (intersectionsLoading) "SINCRONIZANDO INTERSECCIONES..." else if (intersections.isEmpty()) "SIN INTERSECCIONES DISPONIBLES" else "${intersections.size} NODOS DETECTADOS",
+     error = intersectionsError
+    )
+    LazyColumn(
+     modifier = Modifier.fillMaxWidth(),
+     verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+     contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp)
+    ) {
+     items(intersections) { item ->
+      CyberRouteNodeCard(
+       index = intersections.indexOf(item),
+       eyebrow = "NODO // ${intersections.indexOf(item) + 1}",
+       title = item.name,
+       subtitle = "INTERSECCIÓN ACTIVA // CONEXIÓN DE RED",
+       accent = CyberColors.Secondary,
+       onClick = { onIntersectionClick(item) }
+      )
+     }
+    }
    }
    LinesLevel.STOPS -> {
-    Text(activeIntersection?.name ?: ""); if (stopsLoading) Text("CARGANDO..."); stopsError?.let { Text(it) }
-    LazyColumn { items(stops) { item -> Button(onClick = { onStopClick(item) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.description) } } }
+    CyberRouteListHeader(
+     eyebrow = "09 // PUNTOS DE ACCESO",
+     title = activeIntersection?.name ?: "INTERSECCIÓN ACTIVA",
+     context = if (stopsLoading) "SINCRONIZANDO PARADAS..." else if (stops.isEmpty()) "SIN PARADAS DISPONIBLES" else "${stops.size} PARADAS DETECTADAS",
+     error = stopsError
+    )
+    LazyColumn(
+     modifier = Modifier.fillMaxWidth(),
+     verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+     contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp)
+    ) {
+     items(stops) { item ->
+      CyberRouteNodeCard(
+       index = stops.indexOf(item),
+       eyebrow = "PARADA // ${stops.indexOf(item) + 1}",
+       title = item.description,
+       subtitle = "PUNTO DE ACCESO // TRANSPORTE URBANO",
+       accent = CyberColors.Tertiary,
+       onClick = { onStopClick(item) }
+      )
+     }
+    }
    }
    LinesLevel.ARRIVALS -> {
     Text(activeStop?.description ?: "")
