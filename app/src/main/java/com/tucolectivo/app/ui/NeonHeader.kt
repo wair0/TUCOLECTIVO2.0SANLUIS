@@ -143,7 +143,7 @@ private fun NeonCyberText(
 ) {
     val transition = rememberInfiniteTransition(label = "neon_text")
     val pulse by transition.animateFloat(
-        initialValue = 0.72f,
+        initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(900, easing = FastOutSlowInEasing),
@@ -152,27 +152,25 @@ private fun NeonCyberText(
         label = "neon_text_pulse"
     )
 
+    val glowAlpha = 0.35f + 0.65f * pulse
+    val glowBlur = 4f + 10f * pulse
+
     BasicText(
         text = text,
-        modifier = modifier
-            .graphicsLayer {
-                compositingStrategy = CompositingStrategy.Offscreen
-                alpha = 0.92f + 0.08f * pulse
-            },
+        modifier = modifier,
         style = TextStyle(
             color = CyberColors.Cyan,
             fontFamily = fontFamily,
             fontSize = fontSize,
             letterSpacing = letterSpacing,
             shadow = Shadow(
-                color = CyberColors.Cyan.copy(alpha = 0.85f),
-                blurRadius = 9f
+                color = CyberColors.Cyan.copy(alpha = glowAlpha),
+                blurRadius = glowBlur
             )
         ),
         maxLines = 1
     )
 }
-
 @Composable
 fun NeonHeader(
     modifier: Modifier = Modifier,
