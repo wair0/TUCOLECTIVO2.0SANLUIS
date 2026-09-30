@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -217,15 +216,6 @@ private fun LinesBase(
        onClick = { onStreetClick(item) }
       )
      }
-     if (activeLine != null) {
-      item {
-       CyberRouteActionCard(
-        title = "VER RECORRIDO EN MAPA",
-        subtitle = "ABRIR NAVEGACIÓN ESPACIAL // RUTA COMPLETA",
-        onClick = { onMapRoute(activeLine) }
-       )
-      }
-     }
     }
    }
    LinesLevel.INTERSECTIONS -> {
@@ -277,15 +267,16 @@ private fun LinesBase(
     }
    }
    LinesLevel.ARRIVALS -> {
-    Text(activeStop?.description ?: "")
-    Button(onClick = onRefreshArrivals, enabled = !arrivalsLoading) { Text(if (arrivalsLoading) "CARGANDO..." else "ACTUALIZAR ARRIBOS") }
-    Button(onClick = onSaveFavorite) { Text("GUARDAR FAVORITO") }
-    Button(onClick = { activeLine?.let { line -> onMapRoute(line) } }, enabled = activeLine != null) { Text("VER RECORRIDO EN MAPA") }
-    arrivalsError?.let { Text(it) }
-    LazyColumn { items(arrivals) { arrival -> NeonArrivalCard(
-      lineLabel = if (arrival.line.isBlank()) "LÍNEA " + (activeLine?.code ?: "") else arrival.line,
-      destination = arrival.destination.ifBlank { "DESTINO" }, minutes = arrival.minutes, modifier = Modifier.padding(vertical = 4.dp)
-    ) } }
+    CyberArrivalsPanel(
+     stopName = activeStop?.description ?: "PARADA ACTIVA",
+     activeLineCode = activeLine?.code,
+     arrivals = arrivals,
+     loading = arrivalsLoading,
+     error = arrivalsError,
+     onRefresh = onRefreshArrivals,
+     onSaveFavorite = onSaveFavorite,
+     onMapRoute = { activeLine?.let { onMapRoute(it) } }
+    )
    }
   }
  }
