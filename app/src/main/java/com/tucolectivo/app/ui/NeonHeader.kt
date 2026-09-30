@@ -262,7 +262,6 @@ fun NeonHeader(
                 onClick = onNotificationsClick
             ) { color, press, _ -> drawBellIcon(color, press) }
         }
-        }
     }
 }
 
