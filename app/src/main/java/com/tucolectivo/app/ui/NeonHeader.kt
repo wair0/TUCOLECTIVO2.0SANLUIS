@@ -139,39 +139,58 @@ private fun NeonCyberText(
     letterSpacing: TextUnit,
     modifier: Modifier = Modifier
 ) {
+    // Animación visible y aislada: el barrido se aplica solo a los píxeles del texto.
+    // InfiniteTransition actualiza el valor continuamente mientras el texto está en composición.
     val transition = rememberInfiniteTransition(label = "neon_text")
     val sweep by transition.animateFloat(
-        initialValue = -0.35f,
-        targetValue = 1.35f,
+        initialValue = -0.45f,
+        targetValue = 1.45f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2600, easing = LinearEasing),
+            animation = tween(2200, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "neon_sweep"
+    )
+    val pulse by transition.animateFloat(
+        initialValue = 0.72f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "neon_text_pulse"
     )
 
     BasicText(
         text = text,
         modifier = modifier
             .graphicsLayer {
-                // SrcIn debe operar sobre una capa aislada para no teñir el marco.
+                // SrcIn necesita una capa aislada para no afectar el marco.
                 compositingStrategy = CompositingStrategy.Offscreen
+                alpha = 0.92f + 0.08f * pulse
             }
-            .drawWithCache {
-                val glow = Brush.linearGradient(
-                    listOf(
+            .drawWithContent {
+                drawContent()
+
+                // Banda estrecha de luz que cruza realmente las letras.
+                val bandCenter = size.width * sweep
+                val bandWidth = (size.width * 0.42f).coerceAtLeast(24f)
+                val band = Brush.linearGradient(
+                    colors = listOf(
                         Color(0xFF19D9FF),
-                        Color(0xFF8E7BFF),
+                        Color(0xFF19D9FF),
+                        Color(0xFFE8FCFF),
+                        Color(0xFFB66CFF),
                         Color(0xFFFF2E9A)
                     ),
-                    start = Offset(size.width * (sweep - 0.55f), 0f),
-                    end = Offset(size.width * (sweep + 0.55f), size.height)
+                    start = Offset(bandCenter - bandWidth, 0f),
+                    end = Offset(bandCenter + bandWidth, size.height)
                 )
-                onDrawWithContent {
-                    drawContent()
-                    // El gradiente se recorta exclusivamente a los píxeles del texto.
-                    drawRect(glow, blendMode = BlendMode.SrcIn)
-                }
+
+                drawRect(
+                    brush = band,
+                    blendMode = BlendMode.SrcIn
+                )
             },
         style = TextStyle(
             color = Color.White,
@@ -179,7 +198,7 @@ private fun NeonCyberText(
             fontSize = fontSize,
             letterSpacing = letterSpacing,
             shadow = Shadow(
-                color = Color(0xFF19D9FF).copy(alpha = 0.72f),
+                color = Color(0xFF19D9FF).copy(alpha = 0.78f),
                 blurRadius = 9f
             )
         ),
