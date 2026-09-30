@@ -62,7 +62,7 @@ fun NeonCard(
     onClick: () -> Unit = {},
     icon: DrawScope.(t: Float, pulse: Float, glow: Float) -> Unit
 ) {
-    val cyberFont = rememberCyberpunkFontFamily()
+    val cyberFont = rememberMenuCyberpunkFontFamily()
     val source = remember { MutableInteractionSource() }
 
     Box(
@@ -222,7 +222,7 @@ private fun DrawScope.neon(
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-private fun rememberCyberpunkFontFamily(): androidx.compose.ui.text.font.FontFamily {
+private fun rememberMenuCyberpunkFontFamily(): androidx.compose.ui.text.font.FontFamily {
     val assets = LocalContext.current.assets
     return androidx.compose.ui.text.font.FontFamily(
         androidx.compose.ui.text.font.Font(
