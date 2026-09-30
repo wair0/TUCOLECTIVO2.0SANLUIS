@@ -16,6 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.ExperimentalTextApi
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -218,10 +220,14 @@ private fun DrawScope.neon(
 }
 
 
+@OptIn(ExperimentalTextApi::class)
+@Composable
 private fun rememberCyberpunkFontFamily(): androidx.compose.ui.text.font.FontFamily {
+    val assets = LocalContext.current.assets
     return androidx.compose.ui.text.font.FontFamily(
         androidx.compose.ui.text.font.Font(
-            "fonts/cyberpunk.ttf",
+            path = "fonts/cyberpunk.ttf",
+            assetManager = assets,
             weight = androidx.compose.ui.text.font.FontWeight.Normal
         )
     )
