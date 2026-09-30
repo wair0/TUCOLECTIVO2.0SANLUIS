@@ -195,3 +195,25 @@ private fun DrawScope.starIcon(t: Float, pulse: Float, glow: Float) {
     drawPath(star, NeonPink.copy(alpha = 0.25f * glow))
     neon(NeonPink, 4f, glow, a, 3) { c, st -> drawPath(star, c, style = st) }
 }
+
+
+private fun DrawScope.neon(
+    color: Color,
+    width: Float,
+    glow: Float,
+    alpha: Float,
+    layers: Int,
+    draw: DrawScope.(Color, Stroke) -> Unit
+) {
+    val safeGlow = glow.coerceIn(0f, 1f)
+    for (layer in layers downTo 1) {
+        val spread = width * (1f + layer * 0.9f)
+        val a = (alpha * safeGlow * (0.035f + layer * 0.025f)).coerceIn(0f, 1f)
+        draw(color.copy(alpha = a), Stroke(width = spread, cap = StrokeCap.Square, join = StrokeJoin.Miter), draw)
+    }
+    draw(
+        color.copy(alpha = alpha.coerceIn(0f, 1f)),
+        Stroke(width = width, cap = StrokeCap.Square, join = StrokeJoin.Miter),
+        draw
+    )
+}
