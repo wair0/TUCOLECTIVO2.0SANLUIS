@@ -178,7 +178,10 @@ fun NeonHeader(
             }
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             CyberHeaderControl(
                 modifier = Modifier.size(48.dp),
                 active = menuOpen,
@@ -188,33 +191,64 @@ fun NeonHeader(
 
             Spacer(Modifier.width(10.dp))
 
-            // El marco se dimensiona por el texto y anima su expansión/contracción.
-            CyberFrame(
-                modifier = Modifier
-                    .widthIn(min = 120.dp, max = 170.dp)
-                    .height(40.dp),
-                vents = true,
-                padding = PaddingValues(start = 14.dp, top = 6.dp, end = 40.dp, bottom = 6.dp),
-                contentAlignment = Alignment.Center
+            // Centro del header: título arriba y estado debajo.
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                BasicText(
-                    text = statusText,
-                    style = TextStyle(
-                        color = CyberColors.Cyan,
-                        fontFamily = fontFamily,
-                        fontSize = 8.sp,
-                        letterSpacing = 0.06.em
-                    ),
-                    maxLines = 1
-                )
+                CyberFrame(
+                    modifier = Modifier
+                        .widthIn(min = 180.dp, max = 230.dp)
+                        .height(34.dp),
+                    accent = CyberColors.Cyan,
+                    accent2 = CyberColors.Magenta,
+                    visor = true,
+                    padding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    BasicText(
+                        text = title,
+                        style = TextStyle(
+                            color = Color(0xFFE8FCFF),
+                            fontFamily = fontFamily,
+                            fontSize = 12.sp,
+                            letterSpacing = 0.08.em
+                        ),
+                        maxLines = 1
+                    )
+                }
+
+                Spacer(Modifier.height(3.dp))
+
+                CyberFrame(
+                    modifier = Modifier
+                        .widthIn(min = 120.dp, max = 170.dp)
+                        .height(30.dp)
+                        .animateContentSize(),
+                    vents = true,
+                    padding = PaddingValues(horizontal = 10.dp, vertical = 3.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    BasicText(
+                        text = statusText,
+                        style = TextStyle(
+                            color = CyberColors.Cyan,
+                            fontFamily = fontFamily,
+                            fontSize = 8.sp,
+                            letterSpacing = 0.06.em
+                        ),
+                        maxLines = 1
+                    )
+                }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.width(10.dp))
 
             CyberHeaderControl(
                 modifier = Modifier.size(44.dp),
                 active = searchOpen,
-                accent = CyberColors.Magenta,
+                accent = CyberColors.Cyan,
                 onClick = onSearchClick
             ) { color, press, _ -> drawSearchIcon(color, press) }
 
@@ -223,34 +257,11 @@ fun NeonHeader(
             CyberHeaderControl(
                 modifier = Modifier.size(44.dp),
                 active = notificationsOpen,
-                accent = CyberColors.Magenta,
+                accent = CyberColors.Cyan,
                 badge = hasUnread,
                 onClick = onNotificationsClick
             ) { color, press, _ -> drawBellIcon(color, press) }
         }
-
-        CyberFrame(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 10.dp)
-                .widthIn(min = 180.dp, max = 230.dp)
-                .height(34.dp),
-            accent = CyberColors.Cyan,
-            accent2 = CyberColors.Magenta,
-            visor = true,
-            padding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            BasicText(
-                text = title,
-                style = TextStyle(
-                    color = Color(0xFFE8FCFF),
-                    fontFamily = fontFamily,
-                    fontSize = 12.sp,
-                    letterSpacing = 0.08.em
-                ),
-                maxLines = 1
-            )
         }
     }
 }
