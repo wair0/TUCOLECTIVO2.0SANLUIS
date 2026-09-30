@@ -85,10 +85,13 @@ private fun InicioBase(
                 onClick = { onNavigate(2) },
                 modifier = Modifier.padding(top = 12.dp)
             )
+            CyberNearbyCard(
+                onClick = { onNavigate(4) },
+                modifier = Modifier.padding(top = 12.dp)
+            )
             Spacer(Modifier.height(8.dp))
-            Text("MÓDULOS RESTANTES", color = CyberColors.Muted)
+            Text("MÓDULO RESTANTE", color = CyberColors.Muted)
             Button(onClick = { onNavigate(3) }) { Text("FAVORITOS") }
-            Button(onClick = { onNavigate(4) }) { Text("PARADAS CERCANAS") }
         }
     }
 }
