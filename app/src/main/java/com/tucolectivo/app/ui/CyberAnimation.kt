@@ -35,18 +35,14 @@ object CyberAnimation {
         min: Float = 0.35f,
         max: Float = 1f
     ): State<Float> {
-        val transition = rememberInfiniteTransition(label = "cyber_pulse")
+        val transition = rememberInfiniteTransition()
         return transition.animateFloat(
             initialValue = min,
             targetValue = max,
             animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = durationMillis,
-                    easing = FastOutSlowInEasing
-                ),
+                animation = tween(durationMillis, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Reverse
-            ),
-            label = "cyber_pulse_value"
+            )
         )
     }
 
@@ -54,18 +50,14 @@ object CyberAnimation {
     fun sweep(
         durationMillis: Int = SweepDuration
     ): State<Float> {
-        val transition = rememberInfiniteTransition(label = "cyber_sweep")
+        val transition = rememberInfiniteTransition()
         return transition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
             animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = durationMillis,
-                    easing = FastOutSlowInEasing
-                ),
+                animation = tween(durationMillis, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Restart
-            ),
-            label = "cyber_sweep_value"
+            )
         )
     }
 
@@ -75,18 +67,14 @@ object CyberAnimation {
         min: Float = 0.55f,
         max: Float = 1f
     ): State<Float> {
-        val transition = rememberInfiniteTransition(label = "cyber_glow")
+        val transition = rememberInfiniteTransition()
         return transition.animateFloat(
             initialValue = min,
             targetValue = max,
             animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = durationMillis,
-                    easing = FastOutSlowInEasing
-                ),
+                animation = tween(durationMillis, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Reverse
-            ),
-            label = "cyber_glow_value"
+            )
         )
     }
 
@@ -95,12 +83,12 @@ object CyberAnimation {
         amplitude: Float = 2f,
         durationMillis: Int = GlitchDuration
     ): State<Float> {
-        val transition = rememberInfiniteTransition(label = "cyber_glitch")
+        val transition = rememberInfiniteTransition()
         return transition.animateFloat(
             initialValue = 0f,
-            targetValue = amplitude,
+            targetValue = 0f,
             animationSpec = infiniteRepeatable(
-                animation = keyframes<Float> {
+                animation = keyframes {
                     durationMillis = durationMillis
                     0f at 0
                     amplitude at durationMillis / 8
@@ -109,8 +97,7 @@ object CyberAnimation {
                     0f at durationMillis
                 },
                 repeatMode = RepeatMode.Restart
-            ),
-            label = "cyber_glitch_value"
+            )
         )
     }
 
@@ -118,18 +105,14 @@ object CyberAnimation {
     fun scan(
         durationMillis: Int = ScanDuration
     ): State<Float> {
-        val transition = rememberInfiniteTransition(label = "cyber_scan")
+        val transition = rememberInfiniteTransition()
         return transition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
             animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = durationMillis,
-                    easing = FastOutSlowInEasing
-                ),
+                animation = tween(durationMillis, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Restart
-            ),
-            label = "cyber_scan_value"
+            )
         )
     }
 
@@ -143,8 +126,7 @@ object CyberAnimation {
     ): State<Float> {
         return animateFloatAsState(
             targetValue = targetValue,
-            animationSpec = animationSpec,
-            label = "cyber_transition"
+            animationSpec = animationSpec
         )
     }
 }
