@@ -71,29 +71,89 @@ fun AppShellScreen(
 private fun InicioBase(
     syncing: Boolean, statusText: String, onSync: () -> Unit, onNavigate: (Int) -> Unit, onSearch: (String) -> Unit
 ) {
-    Column(Modifier.fillMaxSize()) {
-        CyberHeader(statusText = statusText, onNavigate = onNavigate, onSearch = onSearch)
-        Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-            Spacer(Modifier.height(8.dp))
-            Text("INICIO", style = MaterialTheme.typography.headlineSmall)
-            CyberSyncPanel(syncing, statusText, onSync, Modifier.padding(top = 10.dp))
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 0.dp,
+            bottom = 24.dp
+        )
+    ) {
+        item {
+            CyberHeader(statusText = statusText, onNavigate = onNavigate, onSearch = onSearch)
+        }
+
+        item {
+            RowDashboardStatus(statusText = statusText)
+        }
+
+        item {
+            CyberSyncPanel(
+                syncing = syncing,
+                statusText = statusText,
+                onSync = onSync,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+        }
+
+        item {
             CyberLinesCard(
                 onClick = { onNavigate(1) },
                 modifier = Modifier.padding(top = 12.dp)
             )
+        }
+
+        item {
             CyberMapCard(
                 onClick = { onNavigate(2) },
                 modifier = Modifier.padding(top = 12.dp)
             )
+        }
+
+        item {
             CyberNearbyCard(
                 onClick = { onNavigate(4) },
                 modifier = Modifier.padding(top = 12.dp)
             )
+        }
+
+        item {
             CyberFavoritesCard(
                 onClick = { onNavigate(3) },
                 modifier = Modifier.padding(top = 12.dp)
             )
         }
+
+        item {
+            Text(
+                "TRANSPUNTANO // SISTEMA DE MOVILIDAD URBANA",
+                color = CyberColors.Muted,
+                modifier = Modifier.padding(top = 14.dp),
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowDashboardStatus(statusText: String) {
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+    ) {
+        Text(
+            "01–04 // NÚCLEO DE MOVILIDAD",
+            color = CyberColors.Primary,
+            style = MaterialTheme.typography.labelSmall
+        )
+        Text(
+            statusText.uppercase(),
+            color = CyberColors.Tertiary,
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }
 
