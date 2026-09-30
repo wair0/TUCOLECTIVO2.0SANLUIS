@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -395,40 +393,6 @@ private fun CyberFavoriteStopNode(
 }
 
 @Composable
-fun NearbyComposeScreen(
-    stops: List<TransitStop>,
-    loading: Boolean,
-    error: String?,
-    onRefresh: () -> Unit,
-    onStopClick: (TransitStop) -> Unit
-) {
-    Column(Modifier.fillMaxSize().padding(12.dp)) {
-        Text("PARADAS CERCANAS")
-        Button(
-            onClick = onRefresh,
-            enabled = !loading
-        ) {
-            Text(if (loading) "BUSCANDO..." else "ACTUALIZAR")
-        }
-        error?.let { Text(it) }
-        if (!loading && stops.isEmpty() && error == null) {
-            Text("SIN PARADAS CERCANAS", Modifier.padding(12.dp))
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(stops) { stop ->
-                    Button(
-                        onClick = { onStopClick(stop) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stop.description)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun FavoritesEmptyState(
     pulse: Float,
     glow: Float
@@ -476,6 +440,580 @@ private fun FavoritesEmptyState(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.7.sp,
                 lineHeight = 15.sp
+            )
+        }
+    }
+}
+
+// ─── FASE 8 — PARADAS CERCANAS ───────────────────────────────────────────────
+
+@Composable
+fun NearbyComposeScreen(
+    stops: List<TransitStop>,
+    loading: Boolean,
+    error: String?,
+    onRefresh: () -> Unit,
+    onStopClick: (TransitStop) -> Unit
+) {
+    val pulse = CyberAnimation.pulse(min = 0.28f, max = 1f)
+    val sweep = CyberAnimation.sweep(durationMillis = 2100)
+    val glow = CyberAnimation.glow(min = 0.42f, max = 1f)
+    val scan = CyberAnimation.scan(durationMillis = 3000)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CyberColors.Background)
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            val grid = 28.dp.toPx()
+            var x = 0f
+            while (x < size.width) {
+                drawLine(
+                    color = CyberColors.Tertiary.copy(alpha = 0.03f),
+                    start = androidx.compose.ui.geometry.Offset(x, 0f),
+                    end = androidx.compose.ui.geometry.Offset(x, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+                x += grid
+            }
+            var y = 0f
+            while (y < size.height) {
+                drawLine(
+                    color = CyberColors.Primary.copy(alpha = 0.025f),
+                    start = androidx.compose.ui.geometry.Offset(0f, y),
+                    end = androidx.compose.ui.geometry.Offset(size.width, y),
+                    strokeWidth = 1.dp.toPx()
+                )
+                y += grid
+            }
+
+            val scanY = size.height * scan.value
+            drawLine(
+                color = CyberColors.Tertiary.copy(alpha = 0.14f),
+                start = androidx.compose.ui.geometry.Offset(0f, scanY),
+                end = androidx.compose.ui.geometry.Offset(size.width, scanY),
+                strokeWidth = 1.5.dp.toPx()
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        ) {
+            NearbyHudHeader(
+                stopCount = stops.size,
+                loading = loading,
+                pulse = pulse.value,
+                sweep = sweep.value,
+                glow = glow.value,
+                onRefresh = onRefresh
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            when {
+                error != null -> NearbyErrorState(
+                    message = error,
+                    pulse = pulse.value,
+                    glow = glow.value,
+                    onRetry = onRefresh
+                )
+                loading && stops.isEmpty() -> NearbyLoadingState(
+                    pulse = pulse.value,
+                    glow = glow.value
+                )
+                stops.isEmpty() -> NearbyEmptyState(
+                    pulse = pulse.value,
+                    glow = glow.value,
+                    onRefresh = onRefresh
+                )
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(9.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 20.dp)
+                    ) {
+                        itemsIndexed(
+                            items = stops,
+                            key = { _, stop -> "${stop.code}_${stop.identifier}" }
+                        ) { index, stop ->
+                            CyberNearbyStopNode(
+                                stop = stop,
+                                index = index,
+                                pulse = pulse.value,
+                                sweep = sweep.value,
+                                glow = glow.value,
+                                onClick = { onStopClick(stop) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NearbyHudHeader(
+    stopCount: Int,
+    loading: Boolean,
+    pulse: Float,
+    sweep: Float,
+    glow: Float,
+    onRefresh: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        CyberColors.SurfaceVariant,
+                        CyberColors.Surface,
+                        CyberColors.Background
+                    )
+                )
+            )
+            .padding(2.dp)
+    ) {
+        Canvas(
+            Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(16.dp))
+        ) {
+            drawRoundRect(
+                color = CyberColors.Tertiary.copy(alpha = 0.38f + pulse * 0.28f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                style = Stroke(width = 1.5.dp.toPx())
+            )
+
+            val x = size.width * sweep
+            drawLine(
+                color = CyberColors.Tertiary.copy(alpha = 0.18f + glow * 0.16f),
+                start = androidx.compose.ui.geometry.Offset(x, 0f),
+                end = androidx.compose.ui.geometry.Offset(x, size.height),
+                strokeWidth = 7.dp.toPx()
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 15.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(CyberColors.Background),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(Modifier.fillMaxSize()) {
+                    drawRoundRect(
+                        color = CyberColors.Tertiary.copy(alpha = 0.68f + glow * 0.22f),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()),
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                    drawCircle(
+                        color = CyberColors.Tertiary.copy(alpha = 0.12f + pulse * 0.12f),
+                        radius = 15.dp.toPx()
+                    )
+                    drawCircle(
+                        color = CyberColors.Tertiary.copy(alpha = 0.55f + pulse * 0.35f),
+                        radius = 4.dp.toPx()
+                    )
+                }
+                Text(
+                    "◎",
+                    color = CyberColors.Tertiary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black
+                )
+            }
+
+            Spacer(Modifier.size(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "04 // PROXIMITY SENSOR",
+                    color = CyberColors.Tertiary,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.4.sp
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "PARADAS CERCANAS",
+                    color = CyberColors.OnSurface,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.8.sp
+                )
+                Text(
+                    if (loading) "ESCANEANDO ENTORNO // GPS ACTIVO"
+                    else "GEOLOCALIZACIÓN // DISTANCIA REAL",
+                    color = CyberColors.Muted,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.9.sp
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.clickable(enabled = !loading, onClick = onRefresh)
+            ) {
+                Text(
+                    if (loading) "SCAN" else "REFRESH",
+                    color = CyberColors.Primary.copy(alpha = 0.7f + glow * 0.3f),
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    "%02d".format(stopCount),
+                    color = CyberColors.Tertiary,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    "NODOS",
+                    color = CyberColors.Muted,
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CyberNearbyStopNode(
+    stop: TransitStop,
+    index: Int,
+    pulse: Float,
+    sweep: Float,
+    glow: Float,
+    onClick: () -> Unit
+) {
+    val accent = when (index % 3) {
+        0 -> CyberColors.Tertiary
+        1 -> CyberColors.Primary
+        else -> CyberColors.Secondary
+    }
+
+    val linesLabel = when {
+        stop.lineCodes.isNotEmpty() -> stop.lineCodes.joinToString(" · ") { it.toString() }
+        stop.lineCode != 0 -> stop.lineCode.toString()
+        else -> "—"
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        CyberColors.SurfaceVariant,
+                        CyberColors.Surface,
+                        CyberColors.Background
+                    )
+                )
+            )
+            .clickable(onClick = onClick)
+            .padding(1.5.dp)
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawRoundRect(
+                color = accent.copy(alpha = 0.28f + pulse * 0.28f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx()),
+                style = Stroke(width = 1.5.dp.toPx())
+            )
+
+            val x = size.width * sweep
+            drawLine(
+                color = accent.copy(alpha = 0.08f + glow * 0.10f),
+                start = androidx.compose.ui.geometry.Offset(x, 0f),
+                end = androidx.compose.ui.geometry.Offset(x, size.height),
+                strokeWidth = 6.dp.toPx()
+            )
+
+            val corner = 12.dp.toPx()
+            drawLine(
+                color = accent.copy(alpha = 0.85f),
+                start = androidx.compose.ui.geometry.Offset(0f, corner),
+                end = androidx.compose.ui.geometry.Offset(0f, 0f),
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Square
+            )
+            drawLine(
+                color = accent.copy(alpha = 0.85f),
+                start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                end = androidx.compose.ui.geometry.Offset(corner, 0f),
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Square
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 13.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(CyberColors.Background),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "%02d".format(index + 1),
+                    color = accent,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    "RADAR",
+                    color = CyberColors.Muted,
+                    fontSize = 6.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.6.sp
+                )
+            }
+
+            Spacer(Modifier.size(11.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "LÍNEAS // $linesLabel",
+                    color = accent.copy(alpha = 0.82f + glow * 0.18f),
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.8.sp,
+                    maxLines = 1
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    stop.description.uppercase(),
+                    color = CyberColors.OnSurface,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.6.sp,
+                    maxLines = 2
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    listOf(stop.street, stop.intersection)
+                        .filter { it.isNotBlank() }
+                        .joinToString("  //  ")
+                        .ifBlank { stop.identifier.ifBlank { "PUNTO DE ACCESO" } }
+                        .uppercase(),
+                    color = CyberColors.Muted,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.35.sp,
+                    maxLines = 1
+                )
+            }
+
+            Spacer(Modifier.size(8.dp))
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    "◎",
+                    color = CyberColors.Tertiary.copy(alpha = 0.55f + glow * 0.45f),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black
+                )
+                Text(
+                    "OPEN",
+                    color = CyberColors.Primary.copy(alpha = 0.65f + pulse * 0.35f),
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.9.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NearbyEmptyState(
+    pulse: Float,
+    glow: Float,
+    onRefresh: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(CyberColors.Surface)
+            .clickable(onClick = onRefresh)
+            .padding(2.dp)
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawRoundRect(
+                color = CyberColors.Tertiary.copy(alpha = 0.28f + pulse * 0.28f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                style = Stroke(width = 1.5.dp.toPx())
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "◎",
+                color = CyberColors.Tertiary.copy(alpha = 0.55f + glow * 0.45f),
+                fontSize = 42.sp,
+                fontWeight = FontWeight.Black
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "SIN NODOS EN RANGO",
+                color = CyberColors.OnSurface,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.1.sp
+            )
+            Spacer(Modifier.height(5.dp))
+            Text(
+                "ACTIVÁ EL GPS O TOCÁ AQUÍ\nPARA REESCANEAR EL ENTORNO.",
+                color = CyberColors.Muted,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.7.sp,
+                lineHeight = 15.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun NearbyLoadingState(
+    pulse: Float,
+    glow: Float
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(CyberColors.Surface)
+            .padding(2.dp)
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawRoundRect(
+                color = CyberColors.Primary.copy(alpha = 0.28f + pulse * 0.28f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                style = Stroke(width = 1.5.dp.toPx())
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "◉",
+                color = CyberColors.Primary.copy(alpha = 0.55f + glow * 0.45f),
+                fontSize = 42.sp,
+                fontWeight = FontWeight.Black
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "ESCANEANDO ENTORNO",
+                color = CyberColors.OnSurface,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.1.sp
+            )
+            Spacer(Modifier.height(5.dp))
+            Text(
+                "GPS ACTIVO // LOCALIZANDO PARADAS",
+                color = CyberColors.Muted,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.7.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun NearbyErrorState(
+    message: String,
+    pulse: Float,
+    glow: Float,
+    onRetry: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(CyberColors.Surface)
+            .clickable(onClick = onRetry)
+            .padding(2.dp)
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawRoundRect(
+                color = CyberColors.Error.copy(alpha = 0.28f + pulse * 0.28f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                style = Stroke(width = 1.5.dp.toPx())
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "⚠",
+                color = CyberColors.Error.copy(alpha = 0.55f + glow * 0.45f),
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Black
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "FALLO DE SENSOR",
+                color = CyberColors.OnSurface,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.1.sp
+            )
+            Spacer(Modifier.height(5.dp))
+            Text(
+                message.uppercase().ifBlank { "NO SE PUDO OBTENER UBICACIÓN" },
+                color = CyberColors.Muted,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.7.sp,
+                maxLines = 3
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "TOCÁ PARA REINTENTAR",
+                color = CyberColors.Primary.copy(alpha = 0.75f),
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp
             )
         }
     }
