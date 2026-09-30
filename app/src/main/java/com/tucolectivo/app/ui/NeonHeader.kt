@@ -131,6 +131,56 @@ fun CyberFrame(
 
 
 @Composable
+private fun NeonCyberText(
+    text: String,
+    fontFamily: androidx.compose.ui.text.font.FontFamily,
+    fontSize: TextUnit,
+    letterSpacing: TextUnit,
+    modifier: Modifier = Modifier
+) {
+    val transition = rememberInfiniteTransition(label = "neon_text")
+    val sweep by transition.animateFloat(
+        initialValue = -0.35f,
+        targetValue = 1.35f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2600, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "neon_sweep"
+    )
+
+    BasicText(
+        text = text,
+        modifier = modifier.drawWithCache {
+            val glow = Brush.linearGradient(
+                listOf(
+                    Color(0xFF19D9FF),
+                    Color(0xFFB66CFF),
+                    Color(0xFFFF2E9A)
+                ),
+                start = Offset(size.width * (sweep - 0.55f), 0f),
+                end = Offset(size.width * (sweep + 0.55f), size.height)
+            )
+            onDrawWithContent {
+                drawContent()
+                drawRect(glow, blendMode = BlendMode.SrcIn)
+            }
+        },
+        style = TextStyle(
+            color = Color.White,
+            fontFamily = fontFamily,
+            fontSize = fontSize,
+            letterSpacing = letterSpacing,
+            shadow = Shadow(
+                color = Color(0xFF19D9FF).copy(alpha = 0.72f),
+                blurRadius = 9f
+            )
+        ),
+        maxLines = 1
+    )
+}
+
+@Composable
 fun NeonHeader(
     modifier: Modifier = Modifier,
     title: String = "TU COLECTIVO 2.0",
@@ -207,15 +257,11 @@ fun NeonHeader(
                     padding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    BasicText(
+                    NeonCyberText(
                         text = title,
-                        style = TextStyle(
-                            color = Color(0xFFE8FCFF),
-                            fontFamily = fontFamily,
-                            fontSize = 12.sp,
-                            letterSpacing = 0.08.em
-                        ),
-                        maxLines = 1
+                        fontFamily = fontFamily,
+                        fontSize = 12.sp,
+                        letterSpacing = 0.08.em
                     )
                 }
 
@@ -230,15 +276,11 @@ fun NeonHeader(
                     padding = PaddingValues(horizontal = 10.dp, vertical = 3.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    BasicText(
+                    NeonCyberText(
                         text = statusText,
-                        style = TextStyle(
-                            color = CyberColors.Cyan,
-                            fontFamily = fontFamily,
-                            fontSize = 8.sp,
-                            letterSpacing = 0.06.em
-                        ),
-                        maxLines = 1
+                        fontFamily = fontFamily,
+                        fontSize = 8.sp,
+                        letterSpacing = 0.06.em
                     )
                 }
             }
