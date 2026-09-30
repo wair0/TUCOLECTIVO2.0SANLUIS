@@ -89,9 +89,10 @@ private fun InicioBase(
                 onClick = { onNavigate(4) },
                 modifier = Modifier.padding(top = 12.dp)
             )
-            Spacer(Modifier.height(8.dp))
-            Text("MÓDULO RESTANTE", color = CyberColors.Muted)
-            Button(onClick = { onNavigate(3) }) { Text("FAVORITOS") }
+            CyberFavoritesCard(
+                onClick = { onNavigate(3) },
+                modifier = Modifier.padding(top = 12.dp)
+            )
         }
     }
 }
