@@ -4,16 +4,17 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -157,22 +158,18 @@ private fun InicioBase(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
         ) {
-            androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
-            Text("INICIO", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
-            Text(
-                if (syncing) "SINCRONIZANDO..." else "SISTEMA LISTO",
-                color = CyberColors.Muted
+            Spacer(Modifier.height(8.dp))
+            Text("INICIO", style = MaterialTheme.typography.headlineSmall)
+            CyberSyncPanel(
+                syncing = syncing,
+                statusText = statusText,
+                onSync = onSync,
+                modifier = Modifier.padding(top = 10.dp)
             )
-            androidx.compose.material3.Button(
-                onClick = onSync,
-                enabled = !syncing
-            ) {
-                Text(if (syncing) "SINCRONIZANDO..." else "SINCRONIZAR")
-            }
-            androidx.compose.material3.Button(onClick = { onNavigate(1) }) { Text("LÍNEAS") }
-            androidx.compose.material3.Button(onClick = { onNavigate(2) }) { Text("MAPA") }
-            androidx.compose.material3.Button(onClick = { onNavigate(3) }) { Text("FAVORITOS") }
-            androidx.compose.material3.Button(onClick = { onNavigate(4) }) { Text("PARADAS CERCANAS") }
+            Button(onClick = { onNavigate(1) }) { Text("LÍNEAS") }
+            Button(onClick = { onNavigate(2) }) { Text("MAPA") }
+            Button(onClick = { onNavigate(3) }) { Text("FAVORITOS") }
+            Button(onClick = { onNavigate(4) }) { Text("PARADAS CERCANAS") }
         }
     }
 }
@@ -254,6 +251,6 @@ private fun MapHost(factory: () -> CyberMapView, mapKey: Any?) {
     val map = factory()
     addView(map, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
    }
-  }, modifier = Modifier.fillMaxSize())
+  }, modifier = androidx.compose.ui.Modifier.fillMaxSize())
  }
 }
