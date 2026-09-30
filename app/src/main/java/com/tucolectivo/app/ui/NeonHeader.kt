@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.geometry.Offset
@@ -108,9 +109,9 @@ fun CyberFrame(
                 onDrawBehind {
                     drawRect(plate)
                     bevel(w, h, 2 * u)
-                    drawRect(Color.Black.copy(alpha = 0.6f), Offset(5 * u, 5 * u), Size(w - 10 * u, h - 10 * u), style = Stroke(u)) // línea de panel
+                    drawRect(Color.Black.copy(alpha = 0.6f), Offset(5 * u, 5 * u), Size(w - 10 * u, h - 10 * u), style = Stroke(u))
                     rivets(w, h, 8 * u, 3 * u)
-                    drawRect(edge, alpha = 0.22f, style = Stroke(5 * u))                                                        // glow energon
+                    drawRect(edge, alpha = 0.22f, style = Stroke(5 * u))
                     drawRect(edge, style = Stroke(1.5f * u))
                     if (vents) repeat(4) { i ->
                         val x = w - 34 * u + i * 6 * u
@@ -132,7 +133,6 @@ fun CyberFrame(
     )
 }
 
-
 @Composable
 private fun NeonCyberText(
     text: String,
@@ -141,8 +141,6 @@ private fun NeonCyberText(
     letterSpacing: TextUnit,
     modifier: Modifier = Modifier
 ) {
-    // Animación visible y aislada: el barrido se aplica solo a los píxeles del texto.
-    // InfiniteTransition actualiza el valor continuamente mientras el texto está en composición.
     val transition = rememberInfiniteTransition(label = "neon_text")
     val sweep by transition.animateFloat(
         initialValue = -0.45f,
@@ -167,14 +165,11 @@ private fun NeonCyberText(
         text = text,
         modifier = modifier
             .graphicsLayer {
-                // SrcIn necesita una capa aislada para no afectar el marco.
                 compositingStrategy = CompositingStrategy.Offscreen
                 alpha = 0.92f + 0.08f * pulse
             }
             .drawWithContent {
                 drawContent()
-
-                // Banda estrecha de luz que cruza realmente las letras.
                 val bandCenter = size.width * sweep
                 val bandWidth = (size.width * 0.42f).coerceAtLeast(24f)
                 val band = Brush.linearGradient(
@@ -188,11 +183,7 @@ private fun NeonCyberText(
                     start = Offset(bandCenter - bandWidth, 0f),
                     end = Offset(bandCenter + bandWidth, size.height)
                 )
-
-                drawRect(
-                    brush = band,
-                    blendMode = BlendMode.SrcIn
-                )
+                drawRect(brush = band, blendMode = BlendMode.SrcIn)
             },
         style = TextStyle(
             color = Color.White,
@@ -221,7 +212,7 @@ fun NeonHeader(
     onSearchClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {}
 ) {
-    val fontFamily = rememberCyberpunkFontFamily()
+    val fontFamily = rememberHeaderCyberpunkFontFamily()
 
     Column(
         modifier = modifier
@@ -269,7 +260,6 @@ fun NeonHeader(
 
             Spacer(Modifier.width(10.dp))
 
-            // Centro del header: título arriba y estado debajo.
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -379,7 +369,6 @@ private fun CyberHeaderControl(
                 topLeft = Offset(2.dp.toPx(), 2.dp.toPx()),
                 size = Size(size.width - 4.dp.toPx(), size.height - 4.dp.toPx())
             )
-            // El icono dibuja su propio marco Transformer: no se superpone un marco antiguo.
             icon(frameAccent, press, open)
 
             if (badge) {
@@ -431,7 +420,6 @@ private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
     val steel = CyberColors.Steel
     val frame = Rect(2f * u, 2f * u, size.width - 2f * u, size.height - 2f * u)
 
-    // Diseño Canva: módulo mecánico Transformer, exclusivamente cyan/blanco.
     drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
     drawRect(color.copy(alpha = 0.34f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4f * u))
     drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.4f * u))
@@ -468,25 +456,21 @@ private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
     val core = Color(0xFFE8FCFF)
     val glow = color.copy(alpha = 0.20f + press * 0.12f)
 
-    // Icono nativo HUD: visor de reconocimiento cyberpunk.
     drawCircle(glow, r + 5f * u, Offset(cx, cy), style = Stroke(2.5f * u))
     drawCircle(color.copy(alpha = 0.55f), r + 2.2f * u, Offset(cx, cy), style = Stroke(1f * u))
     drawCircle(color, r, Offset(cx, cy), style = Stroke(2f * u))
 
-    // Retícula interna.
     drawLine(color.copy(alpha = 0.55f), Offset(cx - r + 2f*u, cy), Offset(cx + r - 2f*u, cy), 0.7f*u)
     drawLine(color.copy(alpha = 0.55f), Offset(cx, cy - r + 2f*u), Offset(cx, cy + r - 2f*u), 0.7f*u)
     drawCircle(core.copy(alpha = 0.9f), 2.1f*u, Offset(cx, cy))
     drawCircle(color, (3.6f + press*1.5f)*u, Offset(cx, cy), style = Stroke(0.8f*u))
 
-    // Mango mecánico angular.
     val p0 = Offset(cx + r*0.62f, cy + r*0.62f)
     val p1 = Offset(cx + 13f*u, cy + 13f*u)
     drawLine(color.copy(alpha = 0.30f), p0, p1, 4f*u, StrokeCap.Square)
     drawLine(color, p0, p1, 1.8f*u, StrokeCap.Square)
     drawLine(core.copy(alpha = 0.8f), Offset(p1.x-2.5f*u,p1.y-2.5f*u), p1, 0.8f*u)
 
-    // Tres microsegmentos de estado.
     drawLine(color, Offset(5f*u, 8f*u), Offset(10f*u, 8f*u), 1f*u)
     drawLine(color.copy(alpha=0.7f), Offset(5f*u, 11f*u), Offset(8f*u, 11f*u), 0.8f*u)
 }
@@ -498,7 +482,6 @@ private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     val top = 9f*u
     val bottom = 28f*u
 
-    // Icono nativo HUD: módulo de alerta cyberpunk.
     val shell = Path().apply {
         moveTo(cx-9f*u,bottom)
         lineTo(cx-7f*u,bottom-3f*u)
@@ -511,30 +494,24 @@ private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     drawPath(shell, color.copy(alpha=0.18f + press*0.08f), style=Stroke(3.8f*u))
     drawPath(shell, color, style=Stroke(1.8f*u))
 
-    // Barras HUD laterales.
     drawLine(color, Offset(cx-13f*u,top+6f*u), Offset(cx-10f*u,top+9f*u), 1.5f*u, StrokeCap.Square)
     drawLine(color.copy(alpha=.7f), Offset(cx-14f*u,top+11f*u), Offset(cx-11f*u,top+11f*u), 1f*u)
     drawLine(color, Offset(cx+13f*u,top+6f*u), Offset(cx+10f*u,top+9f*u), 1.5f*u, StrokeCap.Square)
     drawLine(color.copy(alpha=.7f), Offset(cx+14f*u,top+11f*u), Offset(cx+11f*u,top+11f*u), 1f*u)
 
-    // Sensor energético central.
     drawCircle(color.copy(alpha=.18f + press*.10f), 5f*u, Offset(cx,top+9f*u))
     drawCircle(color, 2.2f*u, Offset(cx,top+9f*u))
     drawCircle(core, .7f*u, Offset(cx-.7f*u,top+8.3f*u))
 
-    // Placa inferior.
     drawLine(color, Offset(cx-11f*u,bottom), Offset(cx+11f*u,bottom), 2f*u, StrokeCap.Square)
     drawLine(core.copy(alpha=.75f), Offset(cx-5f*u,bottom-4.5f*u), Offset(cx+5f*u,bottom-4.5f*u), .8f*u)
 
-    // Pulso de alerta.
     drawCircle(color.copy(alpha=.45f), (11f+press*3f)*u, Offset(cx,top+9f*u), style=Stroke(.8f*u))
 }
 
-
-
 @OptIn(ExperimentalTextApi::class)
 @Composable
-private fun rememberCyberpunkFontFamily(): androidx.compose.ui.text.font.FontFamily {
+private fun rememberHeaderCyberpunkFontFamily(): androidx.compose.ui.text.font.FontFamily {
     val assets = LocalContext.current.assets
     return androidx.compose.ui.text.font.FontFamily(
         androidx.compose.ui.text.font.Font(
