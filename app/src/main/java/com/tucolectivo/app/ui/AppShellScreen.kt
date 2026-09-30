@@ -168,9 +168,15 @@ private fun LinesBase(
  onStopClick: (TransitStop) -> Unit, activeStop: TransitStop?, arrivals: List<TransitArrival>,
  arrivalsLoading: Boolean, arrivalsError: String?, onRefreshArrivals: () -> Unit, onSaveFavorite: () -> Unit, onBack: () -> Unit
 ) {
- Column(Modifier.fillMaxSize().padding(12.dp)) {
-  Text("LÍNEAS · " + level, style = MaterialTheme.typography.headlineSmall)
-  Button(onClick = onBack) { Text("VOLVER") }
+ Column(Modifier.fillMaxSize()) {
+  CyberLinesHeader(
+   level = level,
+   activeLine = activeLine,
+   activeStreet = activeStreet,
+   activeIntersection = activeIntersection,
+   activeStop = activeStop,
+   onBack = onBack
+  )
   when (level) {
    LinesLevel.CATALOG -> {
     Button(onClick = onRefreshLines, enabled = !linesLoading) { Text(if (linesLoading) "CARGANDO..." else "ACTUALIZAR") }
