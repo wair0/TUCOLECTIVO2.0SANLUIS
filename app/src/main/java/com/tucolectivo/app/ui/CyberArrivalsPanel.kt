@@ -32,7 +32,7 @@ fun CyberArrivalsPanel(stopName:String, activeLineCode:Int?, arrivals:List<Trans
   if(arrivals.isEmpty() && !loading) CyberArrivalsEmptyState(error)
   LazyColumn(Modifier.fillMaxWidth(), verticalArrangement=Arrangement.spacedBy(8.dp), contentPadding=PaddingValues(start=12.dp,end=12.dp,top=12.dp,bottom=24.dp)) {
    items(arrivals) { arrival ->
-    NeonArrivalCard(lineLabel=if(arrival.line.isBlank()) "LÍNEA \u0024{{activeLineCode ?: "--"}" else arrival.line, destination=arrival.destination.ifBlank{"DESTINO"}, minutes=arrival.minutes, modifier=Modifier.padding(vertical=2.dp))
+    NeonArrivalCard(lineLabel=if(arrival.line.isBlank()) "LÍNEA ${activeLineCode ?: "--"}" else arrival.line, destination=arrival.destination.ifBlank{"DESTINO"}, minutes=arrival.minutes, modifier=Modifier.padding(vertical=2.dp))
    }
   }
  }
@@ -57,8 +57,8 @@ private fun CyberArrivalsHeader(stopName:String, activeLineCode:Int?, loading:Bo
   Column(Modifier.padding(horizontal=18.dp,vertical=13.dp)) {
    Text("10 // ARRIBOS EN TIEMPO REAL",color=CyberColors.Secondary,fontSize=9.sp,fontWeight=FontWeight.Bold)
    Text(stopName.ifBlank{"PARADA ACTIVA"}.uppercase(),color=CyberColors.OnSurface,fontSize=17.sp,fontWeight=FontWeight.Bold,maxLines=1)
-   Text("LÍNEA \u0024{{activeLineCode ?: "--"} // \u0024{{arrivalsCount.toString().padStart(2,'0')} ARRIBOS // \u0024{{if(loading) "SINCRONIZANDO" else "LINK ONLINE"}",color=if(loading) CyberColors.Secondary else CyberColors.Tertiary,fontSize=9.sp,fontWeight=FontWeight.Bold)
-   error?.let{Text("ERROR // \u0024{{it.uppercase()}",color=CyberColors.Error,fontSize=8.sp,maxLines=1)}
+   Text("LÍNEA ${activeLineCode ?: "--"} // ${arrivalsCount.toString().padStart(2,'0')} ARRIBOS // ${if(loading) "SINCRONIZANDO" else "LINK ONLINE"}",color=if(loading) CyberColors.Secondary else CyberColors.Tertiary,fontSize=9.sp,fontWeight=FontWeight.Bold)
+   error?.let{Text("ERROR // ${it.uppercase()}",color=CyberColors.Error,fontSize=8.sp,maxLines=1)}
   }
  }
 }
