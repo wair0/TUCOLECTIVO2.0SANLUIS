@@ -1,7 +1,6 @@
 package com.tucolectivo.app.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,13 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.animation.core.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -50,15 +44,7 @@ fun NeonArrivalCard(
     modifier: Modifier = Modifier,
     isArriving: Boolean = minutes != null && minutes <= 1
 ) {
-    val source = remember { MutableInteractionSource() }
-    val pressed by source.collectIsPressedAsState()
-    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(90), label = "arrivalPress")
-    val pulse by rememberInfiniteTransition(label = "arrivalPulse").animateFloat(
-        0.25f, 1f, infiniteRepeatable(tween(1300, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "arrivalGlow"
-    )
-    Box(modifier.fillMaxWidth().height(104.dp).graphicsLayer {
-        val s = 1f - 0.018f * press; scaleX = s; scaleY = s
-    }) {
+    Box(modifier.fillMaxWidth().height(104.dp)) {
         Canvas(Modifier.fillMaxSize()) {
             val pad = 2.dp.toPx()
             val left = pad
@@ -66,8 +52,8 @@ fun NeonArrivalCard(
             val right = size.width - pad
             val bottom = size.height - pad
             drawRect(Panel, Offset(left, top), Size(right - left, bottom - top))
-            drawRect(NeonCeleste.copy(alpha = 0.10f + 0.12f * pulse), Offset(left, top), Size(right - left, bottom - top), style = Stroke(width = 6.dp.toPx()))
-            drawRect(NeonCeleste.copy(alpha = 0.75f + 0.2f * pulse), Offset(left, top), Size(right - left, bottom - top), style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Square))
+            drawRect(NeonCeleste.copy(alpha = 0.10f), Offset(left, top), Size(right - left, bottom - top), style = Stroke(width = 6.dp.toPx()))
+            drawRect(NeonCeleste.copy(alpha = 0.75f), Offset(left, top), Size(right - left, bottom - top), style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Square))
             drawRect(NeonPink.copy(alpha = 0.7f), Offset(left + 2.dp.toPx(), top + 2.dp.toPx()), Size(34.dp.toPx(), 2.dp.toPx()))
             drawRect(NeonPink.copy(alpha = 0.7f), Offset(right - 36.dp.toPx(), bottom - 4.dp.toPx()), Size(34.dp.toPx(), 2.dp.toPx()))
         }
