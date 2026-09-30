@@ -21,14 +21,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
-import androidx.compose.ui.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.transpuntano.app.model.TransitStop
 
 @Composable
 fun FavoritesComposeScreen(
@@ -388,6 +387,40 @@ private fun CyberFavoriteStopNode(
                     fontWeight = FontWeight.Black,
                     letterSpacing = 0.9.sp
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun NearbyComposeScreen(
+    stops: List<TransitStop>,
+    loading: Boolean,
+    error: String?,
+    onRefresh: () -> Unit,
+    onStopClick: (TransitStop) -> Unit
+) {
+    Column(Modifier.fillMaxSize().padding(12.dp)) {
+        Text("PARADAS CERCANAS")
+        androidx.compose.material3.Button(
+            onClick = onRefresh,
+            enabled = !loading
+        ) {
+            Text(if (loading) "BUSCANDO..." else "ACTUALIZAR")
+        }
+        error?.let { Text(it) }
+        if (!loading && stops.isEmpty() && error == null) {
+            Text("SIN PARADAS CERCANAS", Modifier.padding(12.dp))
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.foundation.lazy.items(stops) { stop ->
+                    androidx.compose.material3.Button(
+                        onClick = { onStopClick(stop) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stop.description)
+                    }
+                }
             }
         }
     }
