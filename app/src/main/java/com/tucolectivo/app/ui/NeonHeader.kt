@@ -263,8 +263,9 @@ fun NeonHeader(
                 active = menuOpen,
                 accent = CyberColors.Cyan,
                 onClick = onMenuClick,
+                icon = { color, press, open -> drawMenuIcon(color, press, open) },
                 animationsEnabled = animationsEnabled
-            ) { color, press, open -> drawMenuIcon(color, press, open) }
+            )
 
             Spacer(Modifier.width(10.dp))
 
@@ -320,8 +321,9 @@ fun NeonHeader(
                 active = searchOpen,
                 accent = CyberColors.Cyan,
                 onClick = onSearchClick,
+                icon = { color, press, _ -> drawSearchIcon(color, press) },
                 animationsEnabled = animationsEnabled
-            ) { color, press, _ -> drawSearchIcon(color, press) }
+            )
 
             Spacer(Modifier.width(8.dp))
 
@@ -331,8 +333,9 @@ fun NeonHeader(
                 accent = CyberColors.Cyan,
                 badge = hasUnread,
                 onClick = onNotificationsClick,
+                icon = { color, press, _ -> drawBellIcon(color, press) },
                 animationsEnabled = animationsEnabled
-            ) { color, press, _ -> drawBellIcon(color, press) }
+            )
         }
     }
 }

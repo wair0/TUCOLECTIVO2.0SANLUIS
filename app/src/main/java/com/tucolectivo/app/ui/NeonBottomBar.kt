@@ -36,8 +36,8 @@ private val TabIcons: List<DrawScope.(Float, Float, Float, Float) -> Unit> = lis
 @Composable
 fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, animationsEnabled: Boolean = true) {
     val infinite = if (animationsEnabled) rememberInfiniteTransition(label = "bottom") else null
-    val t by if (animationsEnabled) infinite!!.animateFloat(0f, 1f, infiniteRepeatable(tween(4000, easing = LinearEasing)), label = "t") else rememberUpdatedState(0f)
-    val pulse by if (animationsEnabled) infinite!!.animateFloat(0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse") else rememberUpdatedState(0f)
+    val t = if (animationsEnabled) infinite!!.animateFloat(0f, 1f, infiniteRepeatable(tween(4000, easing = LinearEasing)), label = "t") else rememberUpdatedState(0f)
+    val pulse = if (animationsEnabled) infinite!!.animateFloat(0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse") else rememberUpdatedState(0f)
     val pos by animateFloatAsState(selected.toFloat(), if (animationsEnabled) spring(dampingRatio = 0.7f, stiffness = 300f) else snap(), label = "pos")
 
     Box(modifier.fillMaxWidth().height(76.dp)) {
