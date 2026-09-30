@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -81,8 +82,9 @@ fun AppShellScreen(
     mapFactory: () -> CyberMapView,
     mapKey: Any? = null
 ) {
-    MaterialTheme {
-        Column(Modifier.fillMaxSize()) {
+    CyberpunkTheme {
+        Surface(Modifier.fillMaxSize(), color = CyberColors.Background) {
+            Column(Modifier.fillMaxSize()) {
             Row(
                 Modifier.fillMaxWidth().padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -112,6 +114,8 @@ fun AppShellScreen(
                     4 -> SimpleList("PARADAS CERCANAS", nearby, if (nearbyLoading) "BUSCANDO..." else nearbyError ?: "SIN PARADAS", onNearbyClick) { it.description }
                     else -> InicioBase(syncing, statusText, onSync, onNavigate)
                 }
+            }
+        }
             }
         }
     }
