@@ -179,11 +179,30 @@ private fun LinesBase(
   )
   when (level) {
    LinesLevel.CATALOG -> {
-    Button(onClick = onRefreshLines, enabled = !linesLoading) { Text(if (linesLoading) "CARGANDO..." else "ACTUALIZAR") }
-    linesError?.let { Text(it) }
-    LazyColumn { items(lines) { line ->
-     Button(onClick = { onLineClick(line) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(line.code.toString() + " · " + line.name) }
-    } }
+    CyberLinesRefreshPanel(
+     loading = linesLoading,
+     error = linesError,
+     onRefresh = onRefreshLines
+    )
+    LazyColumn(
+     modifier = Modifier.fillMaxWidth(),
+     verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+     contentPadding = androidx.compose.foundation.layout.PaddingValues(
+      start = 12.dp,
+      end = 12.dp,
+      top = 10.dp,
+      bottom = 24.dp
+     )
+    ) {
+     items(lines) { line ->
+      CyberLineCard(
+       lineCode = line.code,
+       lineName = line.name,
+       index = lines.indexOf(line),
+       onClick = { onLineClick(line) }
+      )
+     }
+    }
    }
    LinesLevel.STREETS -> {
     Text(activeLine?.name ?: ""); if (streetsLoading) Text("CARGANDO..."); streetsError?.let { Text(it) }
