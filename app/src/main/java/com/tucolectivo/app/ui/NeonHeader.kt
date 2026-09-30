@@ -142,15 +142,6 @@ private fun NeonCyberText(
     modifier: Modifier = Modifier
 ) {
     val transition = rememberInfiniteTransition(label = "neon_text")
-    val sweep by transition.animateFloat(
-        initialValue = -0.45f,
-        targetValue = 1.45f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "neon_sweep"
-    )
     val pulse by transition.animateFloat(
         initialValue = 0.72f,
         targetValue = 1f,
@@ -164,34 +155,17 @@ private fun NeonCyberText(
     BasicText(
         text = text,
         modifier = modifier
-            .drawWithContent {
-                drawContent()
-                val bandCenter = size.width * sweep
-                val bandWidth = (size.width * 0.42f).coerceAtLeast(24f)
-                val band = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF19D9FF),
-                        Color(0xFF19D9FF),
-                        Color(0xFFE8FCFF),
-                        Color(0xFFB66CFF),
-                        Color(0xFFFF2E9A)
-                    ),
-                    start = Offset(bandCenter - bandWidth, 0f),
-                    end = Offset(bandCenter + bandWidth, size.height)
-                )
-                drawRect(brush = band, blendMode = BlendMode.SrcIn)
-            }
             .graphicsLayer {
                 compositingStrategy = CompositingStrategy.Offscreen
                 alpha = 0.92f + 0.08f * pulse
             },
         style = TextStyle(
-            color = Color.White,
+            color = CyberColors.Cyan,
             fontFamily = fontFamily,
             fontSize = fontSize,
             letterSpacing = letterSpacing,
             shadow = Shadow(
-                color = Color(0xFF19D9FF).copy(alpha = 0.78f),
+                color = CyberColors.Cyan.copy(alpha = 0.85f),
                 blurRadius = 9f
             )
         ),
