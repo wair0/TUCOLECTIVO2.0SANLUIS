@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -151,21 +152,27 @@ private fun NeonCyberText(
 
     BasicText(
         text = text,
-        modifier = modifier.drawWithCache {
-            val glow = Brush.linearGradient(
-                listOf(
-                    Color(0xFF19D9FF),
-                    Color(0xFFB66CFF),
-                    Color(0xFFFF2E9A)
-                ),
-                start = Offset(size.width * (sweep - 0.55f), 0f),
-                end = Offset(size.width * (sweep + 0.55f), size.height)
-            )
-            onDrawWithContent {
-                drawContent()
-                drawRect(glow, blendMode = BlendMode.SrcIn)
+        modifier = modifier
+            .graphicsLayer {
+                // SrcIn debe operar sobre una capa aislada para no teñir el marco.
+                compositingStrategy = CompositingStrategy.Offscreen
             }
-        },
+            .drawWithCache {
+                val glow = Brush.linearGradient(
+                    listOf(
+                        Color(0xFF19D9FF),
+                        Color(0xFF8E7BFF),
+                        Color(0xFFFF2E9A)
+                    ),
+                    start = Offset(size.width * (sweep - 0.55f), 0f),
+                    end = Offset(size.width * (sweep + 0.55f), size.height)
+                )
+                onDrawWithContent {
+                    drawContent()
+                    // El gradiente se recorta exclusivamente a los píxeles del texto.
+                    drawRect(glow, blendMode = BlendMode.SrcIn)
+                }
+            },
         style = TextStyle(
             color = Color.White,
             fontFamily = fontFamily,
