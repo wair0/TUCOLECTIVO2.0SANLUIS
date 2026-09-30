@@ -45,14 +45,15 @@ fun CyberContextOverlays(
     onClose: () -> Unit,
     onMenuItem: (Int) -> Unit,
     onSearch: (String) -> Unit,
-    onNotification: (Int) -> Unit
+    onNotification: (Int) -> Unit,
+    animationsEnabled: Boolean = true
 ) {
     if (panel == HeaderPanel.None) return
 
     val cyberFont = rememberCyberpunkFontFamily()
-    val infinite = rememberInfiniteTransition(label = "overlay")
-    val pulse by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
-    val scan by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "scan")
+    val infinite = if (animationsEnabled) rememberInfiniteTransition(label = "overlay") else null
+    val pulse by if (animationsEnabled) infinite!!.animateFloat(0f, 1f, infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse") else rememberUpdatedState(0f)
+    val scan by if (animationsEnabled) infinite!!.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "scan") else rememberUpdatedState(0f)
 
     Box(
         Modifier

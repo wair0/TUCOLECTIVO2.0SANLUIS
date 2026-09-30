@@ -91,11 +91,12 @@ fun CyberFrame(
     visor: Boolean = false,
     padding: PaddingValues = PaddingValues(0.dp),
     contentAlignment: Alignment = Alignment.Center,
+    animateSize: Boolean = true,
     content: @Composable BoxScope.() -> Unit = {}
 ) {
     Box(
         modifier = Modifier
-            .animateContentSize()
+            .then(if (animateSize) Modifier.animateContentSize() else Modifier)
             .then(modifier)
             .drawWithCache {
                 val u = 1.dp.toPx()
@@ -139,15 +140,24 @@ private fun NeonCyberText(
     fontFamily: androidx.compose.ui.text.font.FontFamily,
     fontSize: TextUnit,
     letterSpacing: TextUnit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    animated: Boolean = true
 ) {
-    /*
-     * Renderizado directo con Canvas/TextMeasurer.
-     * La animación modifica directamente lo que se dibuja en cada frame.
-     */
+    if (!animated) {
+        androidx.compose.material3.Text(
+            text = text,
+            modifier = modifier,
+            color = CyberColors.Cyan,
+            fontFamily = fontFamily,
+            fontSize = fontSize,
+            letterSpacing = letterSpacing,
+            maxLines = 1
+        )
+        return
+    }
+
     val textMeasurer = rememberTextMeasurer()
     val transition = rememberInfiniteTransition(label = "cyber_text_render")
-
     val sweep by transition.animateFloat(
         initialValue = -0.25f,
         targetValue = 1.25f,
@@ -157,7 +167,6 @@ private fun NeonCyberText(
         ),
         label = "cyber_text_sweep"
     )
-
     val pulse by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
@@ -167,77 +176,31 @@ private fun NeonCyberText(
         ),
         label = "cyber_text_pulse"
     )
-
     val textStyle = TextStyle(
         color = CyberColors.Cyan,
         fontFamily = fontFamily,
         fontSize = fontSize,
         letterSpacing = letterSpacing
     )
-
     val layout = remember(text, fontFamily, fontSize, letterSpacing) {
-        textMeasurer.measure(
-            text = text,
-            style = textStyle,
-            maxLines = 1,
-            softWrap = false
-        )
+        textMeasurer.measure(text = text, style = textStyle, maxLines = 1, softWrap = false)
     }
-
     Canvas(modifier = modifier) {
         val x = (size.width - layout.size.width) / 2f
         val y = (size.height - layout.size.height) / 2f
         val origin = Offset(x, y)
-
-        // Ghost magenta/cyan: desplazamiento físico visible del render.
-        drawText(
-            textLayoutResult = layout,
-            topLeft = origin + Offset(0.8.dp.toPx(), 0f),
-            color = CyberColors.Magenta.copy(alpha = 0.34f + 0.18f * pulse)
-        )
-        drawText(
-            textLayoutResult = layout,
-            topLeft = origin + Offset(-0.8.dp.toPx(), 0f),
-            color = CyberColors.Cyan.copy(alpha = 0.55f + 0.20f * pulse)
-        )
-
-        // Texto principal sólido. Sin Shadow, sin degradado y sin BlendMode.
-        drawText(
-            textLayoutResult = layout,
-            topLeft = origin,
-            color = CyberColors.Cyan
-        )
-
-        // Highlight móvil recortado exclusivamente a los glifos.
+        drawText(layout, topLeft = origin + Offset(0.8.dp.toPx(), 0f), color = CyberColors.Magenta.copy(alpha = 0.34f + 0.18f * pulse))
+        drawText(layout, topLeft = origin + Offset(-0.8.dp.toPx(), 0f), color = CyberColors.Cyan.copy(alpha = 0.55f + 0.20f * pulse))
+        drawText(layout, topLeft = origin, color = CyberColors.Cyan)
         val highlightCenter = size.width * sweep
         val highlightWidth = 16.dp.toPx()
-        clipRect(
-            left = highlightCenter - highlightWidth,
-            top = y,
-            right = highlightCenter + highlightWidth,
-            bottom = y + layout.size.height
-        ) {
-            drawText(
-                textLayoutResult = layout,
-                topLeft = origin,
-                color = Color.White.copy(alpha = 0.82f)
-            )
+        clipRect(left = highlightCenter - highlightWidth, top = y, right = highlightCenter + highlightWidth, bottom = y + layout.size.height) {
+            drawText(layout, topLeft = origin, color = Color.White.copy(alpha = 0.82f))
         }
-
-        // Micro-glitch corto y periódico, también recortado al texto.
         if (pulse > 0.82f) {
             val glitch = 0.9.dp.toPx()
-            clipRect(
-                left = x,
-                top = y + layout.size.height * 0.28f,
-                right = x + layout.size.width,
-                bottom = y + layout.size.height * 0.52f
-            ) {
-                drawText(
-                    textLayoutResult = layout,
-                    topLeft = origin + Offset(glitch, 0f),
-                    color = CyberColors.Magenta.copy(alpha = 0.42f)
-                )
+            clipRect(left = x, top = y + layout.size.height * 0.28f, right = x + layout.size.width, bottom = y + layout.size.height * 0.52f) {
+                drawText(layout, topLeft = origin + Offset(glitch, 0f), color = CyberColors.Magenta.copy(alpha = 0.42f))
             }
         }
     }
@@ -254,7 +217,8 @@ fun NeonHeader(
     hasUnread: Boolean = false,
     onMenuClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
-    onNotificationsClick: () -> Unit = {}
+    onNotificationsClick: () -> Unit = {},
+    animationsEnabled: Boolean = true
 ) {
     val fontFamily = rememberHeaderCyberpunkFontFamily()
     Column(
@@ -298,7 +262,8 @@ fun NeonHeader(
                 modifier = Modifier.size(48.dp),
                 active = menuOpen,
                 accent = CyberColors.Cyan,
-                onClick = onMenuClick
+                onClick = onMenuClick,
+                animationsEnabled = animationsEnabled
             ) { color, press, open -> drawMenuIcon(color, press, open) }
 
             Spacer(Modifier.width(10.dp))
@@ -315,13 +280,15 @@ fun NeonHeader(
                     accent = CyberColors.Cyan,
                     accent2 = CyberColors.Magenta,
                     padding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
+                    animateSize = animationsEnabled
                 ) {
                     NeonCyberText(
                         text = title,
                         fontFamily = fontFamily,
                         fontSize = 12.sp,
-                        letterSpacing = 0.08.em
+                        letterSpacing = 0.08.em,
+                        animated = animationsEnabled
                     )
                 }
 
@@ -330,17 +297,18 @@ fun NeonHeader(
                 CyberFrame(
                     modifier = Modifier
                         .widthIn(min = 120.dp, max = 170.dp)
-                        .height(30.dp)
-                        .animateContentSize(),
+                        .height(30.dp),
                     vents = true,
                     padding = PaddingValues(horizontal = 10.dp, vertical = 3.dp),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
+                    animateSize = animationsEnabled
                 ) {
                     NeonCyberText(
                         text = statusText,
                         fontFamily = fontFamily,
                         fontSize = 8.sp,
-                        letterSpacing = 0.06.em
+                        letterSpacing = 0.06.em,
+                        animated = animationsEnabled
                     )
                 }
             }
@@ -351,7 +319,8 @@ fun NeonHeader(
                 modifier = Modifier.size(44.dp),
                 active = searchOpen,
                 accent = CyberColors.Cyan,
-                onClick = onSearchClick
+                onClick = onSearchClick,
+                animationsEnabled = animationsEnabled
             ) { color, press, _ -> drawSearchIcon(color, press) }
 
             Spacer(Modifier.width(8.dp))
@@ -361,7 +330,8 @@ fun NeonHeader(
                 active = notificationsOpen,
                 accent = CyberColors.Cyan,
                 badge = hasUnread,
-                onClick = onNotificationsClick
+                onClick = onNotificationsClick,
+                animationsEnabled = animationsEnabled
             ) { color, press, _ -> drawBellIcon(color, press) }
         }
     }
@@ -374,26 +344,25 @@ private fun CyberHeaderControl(
     accent: Color,
     badge: Boolean = false,
     onClick: () -> Unit,
-    icon: DrawScope.(Color, Float, Float) -> Unit
+    icon: DrawScope.(Color, Float, Float) -> Unit,
+    animationsEnabled: Boolean = true
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val press by animateFloatAsState(
         targetValue = if (pressed) 1f else 0f,
-        animationSpec = tween(90),
+        animationSpec = if (animationsEnabled) tween(90) else snap(),
         label = "headerPress"
     )
     val open by animateFloatAsState(
         targetValue = if (active) 1f else 0f,
-        animationSpec = tween(220),
+        animationSpec = if (animationsEnabled) tween(220) else snap(),
         label = "headerOpen"
     )
-    val pulseTransition = rememberInfiniteTransition(label = "headerControlPulse")
-    val pulse by pulseTransition.animateFloat(
-        0f, 1f,
-        infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "headerControlPulseValue"
-    )
+    val pulseTransition = if (animationsEnabled) rememberInfiniteTransition(label = "headerControlPulse") else null
+    val pulse by if (animationsEnabled) {
+        pulseTransition!!.animateFloat(0f, 1f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "headerControlPulseValue")
+    } else rememberUpdatedState(0f)
 
     Box(
         modifier = modifier

@@ -34,11 +34,11 @@ private val TabIcons: List<DrawScope.(Float, Float, Float, Float) -> Unit> = lis
 )
 
 @Composable
-fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val infinite = rememberInfiniteTransition(label = "bottom")
-    val t = infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(4000, easing = LinearEasing)), label = "t")
-    val pulse = infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse")
-    val pos by animateFloatAsState(selected.toFloat(), spring(dampingRatio = 0.7f, stiffness = 300f), label = "pos")
+fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, animationsEnabled: Boolean = true) {
+    val infinite = if (animationsEnabled) rememberInfiniteTransition(label = "bottom") else null
+    val t by if (animationsEnabled) infinite!!.animateFloat(0f, 1f, infiniteRepeatable(tween(4000, easing = LinearEasing)), label = "t") else rememberUpdatedState(0f)
+    val pulse by if (animationsEnabled) infinite!!.animateFloat(0f, 1f, infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse") else rememberUpdatedState(0f)
+    val pos by animateFloatAsState(selected.toFloat(), if (animationsEnabled) spring(dampingRatio = 0.7f, stiffness = 300f) else snap(), label = "pos")
 
     Box(modifier.fillMaxWidth().height(76.dp)) {
         Canvas(Modifier.fillMaxSize()) {
@@ -79,7 +79,7 @@ fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = M
         }
         Row(Modifier.fillMaxSize().padding(top = 6.dp)) {
             Tabs.forEachIndexed { i, label ->
-                BarItem(label, i == selected, t, pulse, Modifier.weight(1f), { onSelect(i) }, TabIcons[i])
+                BarItem(label, i == selected, t, pulse, Modifier.weight(1f), { onSelect(i) }, TabIcons[i], animationsEnabled)
             }
         }
     }
@@ -89,13 +89,14 @@ fun NeonBottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = M
 private fun BarItem(
     label: String, selected: Boolean, t: State<Float>, pulse: State<Float>,
     modifier: Modifier, onClick: () -> Unit,
-    icon: DrawScope.(t: Float, pulse: Float, glow: Float, sel: Float) -> Unit
+    icon: DrawScope.(t: Float, pulse: Float, glow: Float, sel: Float) -> Unit,
+    animationsEnabled: Boolean
 ) {
     val cyberFont = rememberCyberpunkFontFamily()
-    val sel by animateFloatAsState(if (selected) 1f else 0f, tween(250), label = "sel")
+    val sel by animateFloatAsState(if (selected) 1f else 0f, if (animationsEnabled) tween(250) else snap(), label = "sel")
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
-    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(120), label = "press")
+    val press by animateFloatAsState(if (pressed) 1f else 0f, if (animationsEnabled) tween(120) else snap(), label = "press")
 
     Column(
         modifier.fillMaxHeight()

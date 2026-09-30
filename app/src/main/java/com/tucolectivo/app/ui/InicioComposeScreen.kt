@@ -37,7 +37,8 @@ fun InicioComposeScreen(
                     },
                     onNotificationsClick = {
                         panel = if (panel == HeaderPanel.Notifications) HeaderPanel.None else HeaderPanel.Notifications
-                    }
+                    },
+                    animationsEnabled = false
                 )
 
                 Box(modifier = Modifier.weight(1f)) {
@@ -61,7 +62,7 @@ fun InicioComposeScreen(
                     )
                 }
 
-                NeonSyncButton(syncing = syncing, onClick = onSync)
+                NeonSyncButton(syncing = syncing, onClick = onSync, animationsEnabled = false)
 
                 NeonBottomBar(
                     selected = selected.intValue,

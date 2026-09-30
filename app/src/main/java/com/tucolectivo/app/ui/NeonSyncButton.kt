@@ -34,18 +34,19 @@ fun NeonSyncButton(
     text: String = "SINCRONIZAR LINEAS",
     syncingText: String = "SINCRONIZANDO...",
     syncing: Boolean = false,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    animationsEnabled: Boolean = true
 ) {
     val cyberFont = rememberCyberpunkFontFamily()
-    val time = rememberFrameTimeSec()
+    val time = if (animationsEnabled) rememberFrameTimeSec() else rememberUpdatedState(0f)
     val timeSec = time.value
-    val t = cycle01(timeSec, 3.0f)
-    val pulse = pulse01(timeSec, 1.5f)
-    val spin = cycle01(timeSec, 0.9f) * 360f
-    val mix by animateFloatAsState(if (syncing) 1f else 0f, tween(300), label = "mix")
+    val t = if (animationsEnabled) cycle01(timeSec, 3.0f) else 0f
+    val pulse = if (animationsEnabled) pulse01(timeSec, 1.5f) else 0f
+    val spin = if (animationsEnabled) cycle01(timeSec, 0.9f) * 360f else 0f
+    val mix by animateFloatAsState(if (syncing) 1f else 0f, if (animationsEnabled) tween(300) else snap(), label = "mix")
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
-    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(120), label = "press")
+    val press by animateFloatAsState(if (pressed) 1f else 0f, if (animationsEnabled) tween(120) else snap(), label = "press")
 
     val angle = when {
         syncing -> spin

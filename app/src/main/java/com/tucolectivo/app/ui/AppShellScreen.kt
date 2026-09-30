@@ -69,6 +69,7 @@ fun AppShellScreen(
     mapKey: Any? = null
 ) {
     val bgActive = section != 2
+    val animationsEnabled = section != 0
     var panel by remember { mutableStateOf(HeaderPanel.None) }
     val menuItems = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS")
     val notifications = remember {
@@ -98,7 +99,8 @@ fun AppShellScreen(
                     },
                     onNotificationsClick = {
                         panel = if (panel == HeaderPanel.Notifications) HeaderPanel.None else HeaderPanel.Notifications
-                    }
+                    },
+                    animationsEnabled = animationsEnabled
                 )
 
                 Box(modifier = Modifier.weight(1f)) {
@@ -113,7 +115,7 @@ fun AppShellScreen(
                                         onFavoritos = { onNavigate(3) }
                                     )
                                 }
-                                NeonSyncButton(syncing = syncing, onClick = onSync)
+                                NeonSyncButton(syncing = syncing, onClick = onSync, animationsEnabled = animationsEnabled)
                             }
                         }
                         1 -> LinesFlowScreen(
@@ -165,7 +167,7 @@ fun AppShellScreen(
                     }
                 }
 
-                NeonBottomBar(selected = section.coerceIn(0, 4), onSelect = onNavigate)
+                NeonBottomBar(selected = section.coerceIn(0, 4), onSelect = onNavigate, animationsEnabled = animationsEnabled)
             }
 
             CyberContextOverlays(
@@ -181,7 +183,8 @@ fun AppShellScreen(
                     panel = HeaderPanel.None
                     onSearch(query)
                 },
-                onNotification = { panel = HeaderPanel.None }
+                onNotification = { panel = HeaderPanel.None },
+                animationsEnabled = animationsEnabled
             )
         }
     }
