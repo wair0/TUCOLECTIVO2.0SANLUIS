@@ -81,7 +81,7 @@ object CyberAnimation {
     @Composable
     fun glitch(
         amplitude: Float = 2f,
-        durationMillis: Int = GlitchDuration
+        durationMs: Int = GlitchDuration
     ): State<Float> {
         val transition = rememberInfiniteTransition()
         return transition.animateFloat(
@@ -89,12 +89,12 @@ object CyberAnimation {
             targetValue = 0f,
             animationSpec = infiniteRepeatable(
                 animation = keyframes {
-                    durationMillis = durationMillis
+                    durationMillis = durationMs
                     0f at 0
-                    amplitude at durationMillis / 8
-                    -amplitude at durationMillis / 5
-                    amplitude * 0.35f at durationMillis / 3
-                    0f at durationMillis
+                    amplitude at durationMs / 8
+                    -amplitude at durationMs / 5
+                    amplitude * 0.35f at durationMs / 3
+                    0f at durationMs
                 },
                 repeatMode = RepeatMode.Restart
             )
