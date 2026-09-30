@@ -52,16 +52,6 @@ class CyberMapView(context: Context) : View(context) {
     private var stops = emptyList<MapStop>()
     private var vehicles = emptyList<MapVehicle>()
     private var user: Pair<Double, Double>? = null
-    private var vehiclePhase = 0f
-    private val vehicleRunner = object : Runnable {
-        override fun run() {
-            if (!isAttachedToWindow) return
-            vehiclePhase += 0.22f
-            postInvalidateOnAnimation()
-            postOnAnimationDelayed(this, 60L)
-        }
-    }
-
     private var lat = -33.3017
     private var lon = -66.3378
     private var zoom = 13
@@ -629,7 +619,7 @@ private fun updateMapRect() {
                 p.y !in mapRect.top - dp(28f)..mapRect.bottom + dp(28f)
             ) return@forEach
 
-            val pulse = sin(vehiclePhase) * 0.5f + 0.5f
+            val pulse = 0.5f
             paint.style = Paint.Style.FILL
             paint.color = Color.argb((35 + pulse * 35).toInt(), 255, 0, 255)
             c.drawCircle(p.x, p.y, dp(17f) + dp(4f) * pulse, paint)
