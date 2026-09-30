@@ -28,110 +28,38 @@ import com.transpuntano.app.ui.CyberMapView
 
 @Composable
 fun AppShellScreen(
-    section: Int,
-    onNavigate: (Int) -> Unit,
-    syncing: Boolean,
-    onSync: () -> Unit,
-    statusText: String = "● SISTEMA LISTO",
-    onSearch: (String) -> Unit = {},
-    linesLevel: LinesLevel,
-    lines: List<TransitLine>,
-    linesLoading: Boolean,
-    linesError: String?,
-    onRefreshLines: () -> Unit,
-    onLineClick: (TransitLine) -> Unit,
-    activeLine: TransitLine?,
-    streets: List<TransitStreet>,
-    streetsLoading: Boolean,
-    streetsError: String?,
-    onStreetClick: (TransitStreet) -> Unit,
-    onMapRoute: (TransitLine) -> Unit,
-    activeStreet: TransitStreet?,
-    intersections: List<TransitIntersection>,
-    intersectionsLoading: Boolean,
-    intersectionsError: String?,
-    onIntersectionClick: (TransitIntersection) -> Unit,
-    activeIntersection: TransitIntersection?,
-    stops: List<TransitStop>,
-    stopsLoading: Boolean,
-    stopsError: String?,
-    onStopClick: (TransitStop) -> Unit,
-    activeStop: TransitStop?,
-    arrivals: List<TransitArrival>,
-    arrivalsLoading: Boolean,
-    arrivalsError: String?,
-    onRefreshArrivals: () -> Unit,
-    onSaveFavorite: () -> Unit,
-    onLinesBack: () -> Unit,
-    favorites: List<FavoriteStopUi>,
-    onFavoriteClick: (FavoriteStopUi) -> Unit,
-    nearby: List<TransitStop>,
-    nearbyLoading: Boolean,
-    nearbyError: String?,
-    onRefreshNearby: () -> Unit,
-    onNearbyClick: (TransitStop) -> Unit,
-    mapFactory: () -> CyberMapView,
-    mapKey: Any? = null
+    section: Int, onNavigate: (Int) -> Unit, syncing: Boolean, onSync: () -> Unit,
+    statusText: String = "● SISTEMA LISTO", onSearch: (String) -> Unit = {},
+    linesLevel: LinesLevel, lines: List<TransitLine>, linesLoading: Boolean, linesError: String?,
+    onRefreshLines: () -> Unit, onLineClick: (TransitLine) -> Unit, activeLine: TransitLine?,
+    streets: List<TransitStreet>, streetsLoading: Boolean, streetsError: String?,
+    onStreetClick: (TransitStreet) -> Unit, onMapRoute: (TransitLine) -> Unit, activeStreet: TransitStreet?,
+    intersections: List<TransitIntersection>, intersectionsLoading: Boolean, intersectionsError: String?,
+    onIntersectionClick: (TransitIntersection) -> Unit, activeIntersection: TransitIntersection?,
+    stops: List<TransitStop>, stopsLoading: Boolean, stopsError: String?,
+    onStopClick: (TransitStop) -> Unit, activeStop: TransitStop?, arrivals: List<TransitArrival>,
+    arrivalsLoading: Boolean, arrivalsError: String?, onRefreshArrivals: () -> Unit, onSaveFavorite: () -> Unit,
+    onLinesBack: () -> Unit, favorites: List<FavoriteStopUi>, onFavoriteClick: (FavoriteStopUi) -> Unit,
+    nearby: List<TransitStop>, nearbyLoading: Boolean, nearbyError: String?, onRefreshNearby: () -> Unit,
+    onNearbyClick: (TransitStop) -> Unit, mapFactory: () -> CyberMapView, mapKey: Any? = null
 ) {
     CyberpunkTheme {
         Surface(Modifier.fillMaxSize(), color = CyberColors.Background) {
             Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f).fillMaxSize()) {
                     when (section) {
-                        0 -> InicioBase(
-                            syncing = syncing,
-                            statusText = statusText,
-                            onSync = onSync,
-                            onNavigate = onNavigate,
-                            onSearch = onSearch
-                        )
+                        0 -> InicioBase(syncing, statusText, onSync, onNavigate, onSearch)
                         1 -> LinesBase(
-                            level = linesLevel,
-                            lines = lines,
-                            linesLoading = linesLoading,
-                            linesError = linesError,
-                            onRefreshLines = onRefreshLines,
-                            onLineClick = onLineClick,
-                            activeLine = activeLine,
-                            streets = streets,
-                            streetsLoading = streetsLoading,
-                            streetsError = streetsError,
-                            onStreetClick = onStreetClick,
-                            onMapRoute = onMapRoute,
-                            activeStreet = activeStreet,
-                            intersections = intersections,
-                            intersectionsLoading = intersectionsLoading,
-                            intersectionsError = intersectionsError,
-                            onIntersectionClick = onIntersectionClick,
-                            activeIntersection = activeIntersection,
-                            stops = stops,
-                            stopsLoading = stopsLoading,
-                            stopsError = stopsError,
-                            onStopClick = onStopClick,
-                            activeStop = activeStop,
-                            arrivals = arrivals,
-                            arrivalsLoading = arrivalsLoading,
-                            arrivalsError = arrivalsError,
-                            onRefreshArrivals = onRefreshArrivals,
-                            onSaveFavorite = onSaveFavorite,
-                            onBack = onLinesBack
+                            linesLevel, lines, linesLoading, linesError, onRefreshLines, onLineClick, activeLine,
+                            streets, streetsLoading, streetsError, onStreetClick, onMapRoute, activeStreet,
+                            intersections, intersectionsLoading, intersectionsError, onIntersectionClick, activeIntersection,
+                            stops, stopsLoading, stopsError, onStopClick, activeStop, arrivals, arrivalsLoading,
+                            arrivalsError, onRefreshArrivals, onSaveFavorite, onLinesBack
                         )
                         2 -> MapHost(mapFactory, mapKey)
                         3 -> FavoritesComposeScreen(favorites = favorites, onFavoriteClick = onFavoriteClick)
-                        4 -> NearbyComposeScreen(
-                            stops = nearby,
-                            loading = nearbyLoading,
-                            error = nearbyError,
-                            onRefresh = onRefreshNearby,
-                            onStopClick = onNearbyClick
-                        )
-                        else -> InicioBase(
-                            syncing = syncing,
-                            statusText = statusText,
-                            onSync = onSync,
-                            onNavigate = onNavigate,
-                            onSearch = onSearch
-                        )
+                        4 -> NearbyComposeScreen(nearby, nearbyLoading, nearbyError, onRefreshNearby, onNearbyClick)
+                        else -> InicioBase(syncing, statusText, onSync, onNavigate, onSearch)
                     }
                 }
             }
@@ -141,32 +69,20 @@ fun AppShellScreen(
 
 @Composable
 private fun InicioBase(
-    syncing: Boolean,
-    statusText: String,
-    onSync: () -> Unit,
-    onNavigate: (Int) -> Unit,
-    onSearch: (String) -> Unit
+    syncing: Boolean, statusText: String, onSync: () -> Unit, onNavigate: (Int) -> Unit, onSearch: (String) -> Unit
 ) {
     Column(Modifier.fillMaxSize()) {
-        CyberHeader(
-            statusText = statusText,
-            onNavigate = onNavigate,
-            onSearch = onSearch
-        )
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
+        CyberHeader(statusText = statusText, onNavigate = onNavigate, onSearch = onSearch)
+        Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(8.dp))
             Text("INICIO", style = MaterialTheme.typography.headlineSmall)
-            CyberSyncPanel(
-                syncing = syncing,
-                statusText = statusText,
-                onSync = onSync,
-                modifier = Modifier.padding(top = 10.dp)
+            CyberSyncPanel(syncing, statusText, onSync, Modifier.padding(top = 10.dp))
+            CyberLinesCard(
+                onClick = { onNavigate(1) },
+                modifier = Modifier.padding(top = 12.dp)
             )
-            Button(onClick = { onNavigate(1) }) { Text("LÍNEAS") }
+            Spacer(Modifier.height(8.dp))
+            Text("MÓDULOS RESTANTES", color = CyberColors.Muted)
             Button(onClick = { onNavigate(2) }) { Text("MAPA") }
             Button(onClick = { onNavigate(3) }) { Text("FAVORITOS") }
             Button(onClick = { onNavigate(4) }) { Text("PARADAS CERCANAS") }
@@ -193,35 +109,21 @@ private fun LinesBase(
     Button(onClick = onRefreshLines, enabled = !linesLoading) { Text(if (linesLoading) "CARGANDO..." else "ACTUALIZAR") }
     linesError?.let { Text(it) }
     LazyColumn { items(lines) { line ->
-     Button(onClick = { onLineClick(line) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-      Text(line.code.toString() + " · " + line.name)
-     }
+     Button(onClick = { onLineClick(line) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(line.code.toString() + " · " + line.name) }
     } }
    }
    LinesLevel.STREETS -> {
-    Text(activeLine?.name ?: "")
-    if (streetsLoading) Text("CARGANDO...")
-    streetsError?.let { Text(it) }
-    LazyColumn { items(streets) { item ->
-     Button(onClick = { onStreetClick(item) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.name) }
-    } }
+    Text(activeLine?.name ?: ""); if (streetsLoading) Text("CARGANDO..."); streetsError?.let { Text(it) }
+    LazyColumn { items(streets) { item -> Button(onClick = { onStreetClick(item) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.name) } } }
     activeLine?.let { line -> Button(onClick = { onMapRoute(line) }) { Text("VER RECORRIDO EN MAPA") } }
    }
    LinesLevel.INTERSECTIONS -> {
-    Text(activeStreet?.name ?: "")
-    if (intersectionsLoading) Text("CARGANDO...")
-    intersectionsError?.let { Text(it) }
-    LazyColumn { items(intersections) { item ->
-     Button(onClick = { onIntersectionClick(item) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.name) }
-    } }
+    Text(activeStreet?.name ?: ""); if (intersectionsLoading) Text("CARGANDO..."); intersectionsError?.let { Text(it) }
+    LazyColumn { items(intersections) { item -> Button(onClick = { onIntersectionClick(item) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.name) } } }
    }
    LinesLevel.STOPS -> {
-    Text(activeIntersection?.name ?: "")
-    if (stopsLoading) Text("CARGANDO...")
-    stopsError?.let { Text(it) }
-    LazyColumn { items(stops) { item ->
-     Button(onClick = { onStopClick(item) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.description) }
-    } }
+    Text(activeIntersection?.name ?: ""); if (stopsLoading) Text("CARGANDO..."); stopsError?.let { Text(it) }
+    LazyColumn { items(stops) { item -> Button(onClick = { onStopClick(item) }, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.description) } } }
    }
    LinesLevel.ARRIVALS -> {
     Text(activeStop?.description ?: "")
@@ -229,14 +131,10 @@ private fun LinesBase(
     Button(onClick = onSaveFavorite) { Text("GUARDAR FAVORITO") }
     Button(onClick = { activeLine?.let { line -> onMapRoute(line) } }, enabled = activeLine != null) { Text("VER RECORRIDO EN MAPA") }
     arrivalsError?.let { Text(it) }
-    LazyColumn { items(arrivals) { arrival ->
-     NeonArrivalCard(
+    LazyColumn { items(arrivals) { arrival -> NeonArrivalCard(
       lineLabel = if (arrival.line.isBlank()) "LÍNEA " + (activeLine?.code ?: "") else arrival.line,
-      destination = arrival.destination.ifBlank { "DESTINO" },
-      minutes = arrival.minutes,
-      modifier = Modifier.padding(vertical = 4.dp)
-     )
-    } }
+      destination = arrival.destination.ifBlank { "DESTINO" }, minutes = arrival.minutes, modifier = Modifier.padding(vertical = 4.dp)
+    ) } }
    }
   }
  }
