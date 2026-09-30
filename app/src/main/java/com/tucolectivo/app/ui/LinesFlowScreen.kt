@@ -23,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.animation.core.*
 import androidx.compose.runtime.getValue
 import com.transpuntano.app.model.TransitArrival
 import com.transpuntano.app.model.TransitIntersection
@@ -123,9 +122,6 @@ private fun <T> HierarchyListScreen(
     rowTitle: (T) -> String,
     onItemClick: (T) -> Unit
 ) {
-    val infinite = rememberInfiniteTransition(label = "hierarchyHud")
-    val scan by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "hierarchyScan")
-    val pulse by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(1000, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "hierarchyPulse")
     Box(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.92f))) {
         Canvas(Modifier.fillMaxSize()) {
             val step = 28.dp.toPx()
@@ -133,8 +129,6 @@ private fun <T> HierarchyListScreen(
             while (x < size.width) { drawLine(NeonCeleste.copy(alpha = 0.025f), Offset(x, 0f), Offset(x, size.height), 1f); x += step }
             var y = 0f
             while (y < size.height) { drawLine(NeonCeleste.copy(alpha = 0.018f), Offset(0f, y), Offset(size.width, y), 1f); y += step }
-            val sy = size.height * scan
-            drawLine(NeonPink.copy(alpha = 0.35f + 0.25f * pulse), Offset(0f, sy), Offset(size.width, sy), 1.2.dp.toPx())
         }
         Column(Modifier.fillMaxSize()) {
         HierarchyHeader(title = title, subtitle = when {
@@ -143,12 +137,6 @@ private fun <T> HierarchyListScreen(
             items.isEmpty() -> emptyMessage
             else -> subtitle.ifBlank { "${items.size} ÍTEMS" }
         }, onBack = onBack)
-        Canvas(Modifier.fillMaxWidth().height(2.dp)) {
-            val y = size.height / 2f
-            val x = size.width * scan
-            drawLine(NeonCeleste.copy(alpha = 0.22f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
-            drawLine(NeonPink.copy(alpha = 0.9f), Offset((x - 42.dp.toPx()).coerceAtLeast(0f), y), Offset(x, y), 2.dp.toPx())
-        }
         Box(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             when {
                 loading && items.isEmpty() -> CenterMsg("CARGANDO...")
@@ -177,13 +165,7 @@ private fun ArrivalsComposeScreen(
     onRefresh: () -> Unit, onSaveFavorite: () -> Unit,
     onMapRoute: (TransitLine) -> Unit
 ) {
-    val infinite = rememberInfiniteTransition(label = "arrivalsHud")
-    val scan by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "arrivalsScan")
     Box(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.92f))) {
-        Canvas(Modifier.fillMaxSize()) {
-            val sy = size.height * scan
-            drawLine(NeonPink.copy(alpha = 0.28f), Offset(0f, sy), Offset(size.width, sy), 1.2.dp.toPx())
-        }
         Column(Modifier.fillMaxSize()) {
         HierarchyHeader(
             title = "ARRIBOS",
