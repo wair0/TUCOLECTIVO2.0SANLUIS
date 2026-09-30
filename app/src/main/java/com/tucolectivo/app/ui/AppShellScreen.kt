@@ -142,32 +142,80 @@ private fun InicioBase(
     onSearch: (String) -> Unit
 ) {
     Column(Modifier.fillMaxSize()) {
-        CyberHeader(
-            statusText = statusText,
-            onNavigate = onNavigate,
-            onSearch = onSearch
-        )
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
+        CyberHeader(statusText = statusText, onNavigate = onNavigate, onSearch = onSearch)
+        Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
-            Text("INICIO", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
-            Text(
-                if (syncing) "SINCRONIZANDO..." else "SISTEMA LISTO",
-                color = CyberColors.Muted
-            )
-            androidx.compose.material3.Button(
-                onClick = onSync,
-                enabled = !syncing
-            ) {
+            Text("INICIO", style = MaterialTheme.typography.headlineSmall)
+            Text(if (syncing) "SINCRONIZANDO..." else "SISTEMA LISTO", color = CyberColors.Muted)
+            Button(onClick = onSync, enabled = !syncing) {
                 Text(if (syncing) "SINCRONIZANDO..." else "SINCRONIZAR")
             }
-            androidx.compose.material3.Button(onClick = { onNavigate(1) }) { Text("LÍNEAS") }
-            androidx.compose.material3.Button(onClick = { onNavigate(2) }) { Text("MAPA") }
-            androidx.compose.material3.Button(onClick = { onNavigate(3) }) { Text("FAVORITOS") }
-            androidx.compose.material3.Button(onClick = { onNavigate(4) }) { Text("PARADAS CERCANAS") }
+            Button(onClick = { onNavigate(1) }) { Text("LÍNEAS") }
+            Button(onClick = { onNavigate(2) }) { Text("MAPA") }
+            Button(onClick = { onNavigate(3) }) { Text("FAVORITOS") }
+            Button(onClick = { onNavigate(4) }) { Text("PARADAS CERCANAS") }
+        }
+    }
+}
+
+@Composable
+private fun LinesBase(
+    level: LinesLevel, lines: List<TransitLine>, linesLoading: Boolean, linesError: String?,
+    onRefreshLines: () -> Unit, onLineClick: (TransitLine) -> Unit, activeLine: TransitLine?,
+    streets: List<TransitStreet>, streetsLoading: Boolean, streetsError: String?,
+    onStreetClick: (TransitStreet) -> Unit, onMapRoute: (TransitLine) -> Unit, activeStreet: TransitStreet?,
+    intersections: List<TransitIntersection>, intersectionsLoading: Boolean, intersectionsError: String?,
+    onIntersectionClick: (TransitIntersection) -> Unit, activeIntersection: TransitIntersection?,
+    stops: List<TransitStop>, stopsLoading: Boolean, stopsError: String?,
+    onStopClick: (TransitStop) -> Unit, activeStop: TransitStop?, arrivals: List<TransitArrival>,
+    arrivalsLoading: Boolean, arrivalsError: String?, onRefreshArrivals: () -> Unit,
+    onSaveFavorite: () -> Unit, onBack: () -> Unit
+) {
+    Column(Modifier.fillMaxSize().padding(12.dp)) {
+        Text("LÍNEAS · $level", style = MaterialTheme.typography.headlineSmall)
+        Button(onClick = onBack) { Text("VOLVER") }
+        when (level) {
+            LinesLevel.CATALOG -> {
+                Button(onClick = onRefreshLines, enabled = !linesLoading) { Text(if (linesLoading) "CARGANDO..." else "ACTUALIZAR") }
+                if (linesError != null) Text(linesError)
+                LazyColumn { items(lines) { line ->
+                    Button(onClick = { onLineClick(line) }, Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                        Text("${line.code} · ${line.name}")
+                    }
+                } }
+            }
+            LinesLevel.STREETS -> {
+                Text(activeLine?.name ?: "")
+                LazyColumn { items(streets) { item ->
+                    Button(onClick = { onStreetClick(item) }, Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.name) }
+                } }
+                if (streetsLoading) Text("CARGANDO...")
+                if (streetsError != null) Text(streetsError)
+                activeLine?.let { Button(onClick = { onMapRoute(it) }) { Text("VER RECORRIDO EN MAPA") } }
+            }
+            LinesLevel.INTERSECTIONS -> {
+                Text(activeStreet?.name ?: "")
+                LazyColumn { items(intersections) { item ->
+                    Button(onClick = { onIntersectionClick(item) }, Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.name) }
+                } }
+                if (intersectionsLoading) Text("CARGANDO...")
+                if (intersectionsError != null) Text(intersectionsError)
+            }
+            LinesLevel.STOPS -> {
+                Text(activeIntersection?.name ?: "")
+                LazyColumn { items(stops) { item ->
+                    Button(onClick = { onStopClick(item) }, Modifier.fillMaxWidth().padding(vertical = 2.dp)) { Text(item.description) }
+                } }
+                if (stopsLoading) Text("CARGANDO...")
+                if (stopsError != null) Text(stopsError)
+            }
+            LinesLevel.ARRIVALS -> {
+                Text(activeStop?.description ?: "")
+                Button(onClick = onRefreshArrivals, enabled = !arrivalsLoading) { Text(if (arrivalsLoading) "CARGANDO..." else "ACTUALIZAR ARRIBOS") }
+                Button(onClick = onSaveFavorite) { Text("GUARDAR FAVORITO") }
+                if (arrivalsError != null) Text(arrivalsError)
+                LazyColumn { items(arrivals) { item -> Text(item.toString(), Modifier.padding(8.dp)) } }
+            }
         }
     }
 }
