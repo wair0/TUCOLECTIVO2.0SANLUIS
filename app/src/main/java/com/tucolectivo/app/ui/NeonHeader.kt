@@ -213,6 +213,25 @@ fun NeonHeader(
     onNotificationsClick: () -> Unit = {}
 ) {
     val fontFamily = rememberHeaderCyberpunkFontFamily()
+    val headerTransition = rememberInfiniteTransition(label = "headerFrame")
+    val headerSweep by headerTransition.animateFloat(
+        initialValue = -0.25f,
+        targetValue = 1.25f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "headerSweep"
+    )
+    val headerPulse by headerTransition.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1100, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "headerPulse"
+    )
 
     Column(
         modifier = modifier
@@ -220,6 +239,23 @@ fun NeonHeader(
             .background(CyberColors.Deep)
             .statusBarsPadding()
             .padding(6.dp)
+            .drawWithContent {
+                drawContent()
+                val bandWidth = (size.width * 0.30f).coerceAtLeast(48f)
+                val center = size.width * headerSweep
+                val band = Brush.linearGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        CyberColors.Cyan.copy(alpha = 0.10f * headerPulse),
+                        Color.White.copy(alpha = 0.32f * headerPulse),
+                        CyberColors.Magenta.copy(alpha = 0.10f * headerPulse),
+                        Color.Transparent
+                    ),
+                    start = Offset(center - bandWidth, 0f),
+                    end = Offset(center + bandWidth, size.height)
+                )
+                drawRect(brush = band, blendMode = BlendMode.Screen)
+            }
             .drawWithCache {
                 val u = 1.dp.toPx()
                 val w = size.width
@@ -428,19 +464,22 @@ private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
 
     val cy = size.height / 2f
     val gap = 8f * u
+    val openOffset = open * 3.5f * u
+    val openAlpha = 0.55f + open * 0.45f
     for (i in -1..1) {
         val y = cy + i * gap
+        val lineOffset = if (i == 0) openOffset else -openOffset * 0.35f
         val p = Path().apply {
-            moveTo(9f * u, y - 2.8f * u)
-            lineTo(13f * u, y - 4.2f * u)
-            lineTo(size.width - 13f * u, y - 4.2f * u)
-            lineTo(size.width - 9f * u, y)
-            lineTo(size.width - 13f * u, y + 4.2f * u)
-            lineTo(13f * u, y + 4.2f * u)
+            moveTo(9f * u + lineOffset, y - 2.8f * u)
+            lineTo(13f * u + lineOffset, y - 4.2f * u)
+            lineTo(size.width - 13f * u - lineOffset, y - 4.2f * u)
+            lineTo(size.width - 9f * u - lineOffset, y)
+            lineTo(size.width - 13f * u - lineOffset, y + 4.2f * u)
+            lineTo(13f * u + lineOffset, y + 4.2f * u)
             close()
         }
         drawPath(p, color.copy(alpha = 0.22f), style = Stroke(2.8f * u))
-        drawPath(p, color, style = Stroke(1.5f * u))
+        drawPath(p, color.copy(alpha = openAlpha), style = Stroke(1.5f * u))
         drawLine(white.copy(alpha = 0.75f), Offset(14f * u, y - 0.8f * u),
             Offset(size.width - 14f * u, y - 0.8f * u), 0.55f * u)
     }
