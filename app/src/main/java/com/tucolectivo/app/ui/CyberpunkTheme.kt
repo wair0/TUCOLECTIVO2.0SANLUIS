@@ -79,6 +79,7 @@ fun CyberpunkTheme(content: @Composable () -> Unit) {
     )
 }
 
+@Composable
 fun cyberButtonColors() = ButtonDefaults.buttonColors(
     containerColor = CyberColors.SurfaceVariant,
     contentColor = CyberColors.Primary,

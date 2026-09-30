@@ -116,7 +116,6 @@ fun AppShellScreen(
                 }
             }
         }
-            }
         }
     }
 }
