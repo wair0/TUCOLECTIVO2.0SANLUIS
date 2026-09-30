@@ -530,10 +530,14 @@ private fun DrawScope.drawBellIcon(color: Color, press: Float) {
 
 
 
+@OptIn(ExperimentalTextApi::class)
+@Composable
 private fun rememberCyberpunkFontFamily(): androidx.compose.ui.text.font.FontFamily {
+    val assets = LocalContext.current.assets
     return androidx.compose.ui.text.font.FontFamily(
         androidx.compose.ui.text.font.Font(
-            "fonts/cyberpunk.ttf",
+            path = "fonts/cyberpunk.ttf",
+            assetManager = assets,
             weight = androidx.compose.ui.text.font.FontWeight.Normal
         )
     )
