@@ -164,10 +164,6 @@ private fun NeonCyberText(
     BasicText(
         text = text,
         modifier = modifier
-            .graphicsLayer {
-                compositingStrategy = CompositingStrategy.Offscreen
-                alpha = 0.92f + 0.08f * pulse
-            }
             .drawWithContent {
                 drawContent()
                 val bandCenter = size.width * sweep
@@ -184,6 +180,10 @@ private fun NeonCyberText(
                     end = Offset(bandCenter + bandWidth, size.height)
                 )
                 drawRect(brush = band, blendMode = BlendMode.SrcIn)
+            }
+            .graphicsLayer {
+                compositingStrategy = CompositingStrategy.Offscreen
+                alpha = 0.92f + 0.08f * pulse
             },
         style = TextStyle(
             color = Color.White,
