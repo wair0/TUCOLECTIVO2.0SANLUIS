@@ -32,7 +32,7 @@ fun CyberArrivalsPanel(stopName:String, activeLineCode:Int?, arrivals:List<Trans
   if(arrivals.isEmpty() && !loading) CyberArrivalsEmptyState(error)
   LazyColumn(Modifier.fillMaxWidth(), verticalArrangement=Arrangement.spacedBy(8.dp), contentPadding=PaddingValues(start=12.dp,end=12.dp,top=12.dp,bottom=24.dp)) {
    items(arrivals) { arrival ->
-    NeonArrivalCard(lineLabel=if(arrival.line.isBlank()) "LÍNEA ${activeLineCode ?: "--"}" else arrival.line, destination=arrival.destination.ifBlank{"DESTINO"}, minutes=arrival.minutes, modifier=Modifier.padding(vertical=2.dp))
+    CyberArrivalCard(lineLabel=if(arrival.line.isBlank()) "LÍNEA ${activeLineCode ?: "--"}" else arrival.line, destination=arrival.destination.ifBlank{"DESTINO"}, minutes=arrival.minutes, modifier=Modifier.padding(vertical=2.dp))
    }
   }
  }
