@@ -176,7 +176,12 @@ private fun LinesBase(
    activeStop = activeStop,
    onBack = onBack
   )
-  when (level) {
+  Box(
+   modifier = Modifier
+    .weight(1f)
+    .fillMaxWidth()
+  ) {
+   when (level) {
    LinesLevel.CATALOG -> {
     CyberLinesRefreshPanel(loading = linesLoading, error = linesError, onRefresh = onRefreshLines)
     LazyColumn(
@@ -278,6 +283,65 @@ private fun LinesBase(
      onMapRoute = { activeLine?.let { onMapRoute(it) } }
     )
    }
+  }
+  }
+  CyberLinesStatusRail(level = level, activeLine = activeLine, activeStop = activeStop)
+ }
+}
+
+@Composable
+private fun CyberLinesStatusRail(
+ level: LinesLevel,
+ activeLine: TransitLine?,
+ activeStop: TransitStop?
+) {
+ val pulse by CyberAnimation.pulse(min = 0.35f, max = 1f)
+ val sweep by CyberAnimation.sweep(durationMillis = 2600)
+ val label = when (level) {
+  LinesLevel.CATALOG -> "CATÁLOGO // RED COMPLETA"
+  LinesLevel.STREETS -> "TRAYECTO // CALLES"
+  LinesLevel.INTERSECTIONS -> "TRAYECTO // NODOS"
+  LinesLevel.STOPS -> "TRAYECTO // PARADAS"
+  LinesLevel.ARRIVALS -> "TIEMPO REAL // ARRIBOS"
+ }
+ val context = when (level) {
+  LinesLevel.CATALOG -> "LINK ONLINE"
+  LinesLevel.STREETS -> "LÍNEA ${activeLine?.code ?: "--"}"
+  LinesLevel.INTERSECTIONS -> "RUTA ACTIVA"
+  LinesLevel.STOPS -> "NODO ACTIVO"
+  LinesLevel.ARRIVALS -> "PARADA ${activeStop?.description?.uppercase() ?: "ACTIVA"}"
+ }
+ Box(
+  modifier = Modifier
+   .fillMaxWidth()
+   .height(44.dp)
+   .padding(horizontal = 12.dp, vertical = 4.dp)
+ ) {
+  Canvas(Modifier.fillMaxWidth().height(36.dp)) {
+   drawRoundRect(
+    color = CyberColors.SurfaceVariant,
+    cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx(), 10.dp.toPx())
+   )
+   drawRoundRect(
+    color = CyberColors.Primary.copy(alpha = .38f + .22f * pulse),
+    cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx(), 10.dp.toPx()),
+    style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx())
+   )
+   val x = 8.dp.toPx() + (size.width - 16.dp.toPx()) * sweep
+   drawLine(
+    color = CyberColors.Secondary.copy(alpha = .65f),
+    start = androidx.compose.ui.geometry.Offset(x, 4.dp.toPx()),
+    end = androidx.compose.ui.geometry.Offset(x, size.height - 4.dp.toPx()),
+    strokeWidth = 1.5.dp.toPx()
+   )
+  }
+  androidx.compose.foundation.layout.Row(
+   Modifier.fillMaxWidth().height(36.dp).padding(horizontal = 12.dp),
+   verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+   horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+  ) {
+   Text(label, color = CyberColors.Primary, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+   Text(context, color = CyberColors.Tertiary.copy(alpha = .85f), fontSize = 8.sp, fontWeight = FontWeight.Bold, maxLines = 1)
   }
  }
 }
