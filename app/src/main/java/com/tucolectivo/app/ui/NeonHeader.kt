@@ -382,65 +382,71 @@ private fun DrawScope.drawMenuIcon(color: Color, press: Float, open: Float) {
 
 private fun DrawScope.drawSearchIcon(color: Color, press: Float) {
     val u = size.minDimension / 44f
-    val white = Color(0xFFE8FCFF)
-    val steel = CyberColors.Steel
-    val frame = Rect(2f * u, 2f * u, size.width - 2f * u, size.height - 2f * u)
+    val cx = size.width * 0.46f
+    val cy = size.height * 0.45f
+    val r = 8.4f * u
+    val core = Color(0xFFE8FCFF)
+    val glow = color.copy(alpha = 0.20f + press * 0.12f)
 
-    // Diseño Canva: visor mecánico/energético, sin magenta ni geometría Figma.
-    drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
-    drawRect(color.copy(alpha = 0.34f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4f * u))
-    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.4f * u))
-    drawRect(white.copy(alpha = 0.65f), Offset(frame.left + 4f * u, frame.top + 4f * u),
-        Size(frame.width - 8f * u, frame.height - 8f * u), style = Stroke(0.6f * u))
+    // Icono nativo HUD: visor de reconocimiento cyberpunk.
+    drawCircle(glow, r + 5f * u, Offset(cx, cy), style = Stroke(2.5f * u))
+    drawCircle(color.copy(alpha = 0.55f), r + 2.2f * u, Offset(cx, cy), style = Stroke(1f * u))
+    drawCircle(color, r, Offset(cx, cy), style = Stroke(2f * u))
 
-    val cx = size.width * 0.43f
-    val cy = size.height * 0.43f
-    val r = 8.5f * u
-    drawCircle(color.copy(alpha = 0.18f), r + 4.5f * u, Offset(cx, cy), style = Stroke(2.8f * u))
-    drawCircle(color.copy(alpha = 0.38f), r + 2.1f * u, Offset(cx, cy), style = Stroke(1.2f * u))
-    drawCircle(color, r, Offset(cx, cy), style = Stroke(2.2f * u))
-    drawCircle(white.copy(alpha = 0.85f), r - 3f * u, Offset(cx - 0.8f * u, cy - 0.8f * u), style = Stroke(0.7f * u))
-    drawLine(color.copy(alpha = 0.35f), Offset(cx + r * .68f, cy + r * .68f),
-        Offset(cx + 15f * u, cy + 15f * u), 4.5f * u, StrokeCap.Square)
-    drawLine(color, Offset(cx + r * .68f, cy + r * .68f),
-        Offset(cx + 15f * u, cy + 15f * u), 2.1f * u, StrokeCap.Square)
-    drawLine(white.copy(alpha = 0.75f), Offset(cx + 12f * u, cy + 13f * u),
-        Offset(cx + 15f * u, cy + 15f * u), 0.8f * u)
+    // Retícula interna.
+    drawLine(color.copy(alpha = 0.55f), Offset(cx - r + 2f*u, cy), Offset(cx + r - 2f*u, cy), 0.7f*u)
+    drawLine(color.copy(alpha = 0.55f), Offset(cx, cy - r + 2f*u), Offset(cx, cy + r - 2f*u), 0.7f*u)
+    drawCircle(core.copy(alpha = 0.9f), 2.1f*u, Offset(cx, cy))
+    drawCircle(color, (3.6f + press*1.5f)*u, Offset(cx, cy), style = Stroke(0.8f*u))
+
+    // Mango mecánico angular.
+    val p0 = Offset(cx + r*0.62f, cy + r*0.62f)
+    val p1 = Offset(cx + 13f*u, cy + 13f*u)
+    drawLine(color.copy(alpha = 0.30f), p0, p1, 4f*u, StrokeCap.Square)
+    drawLine(color, p0, p1, 1.8f*u, StrokeCap.Square)
+    drawLine(core.copy(alpha = 0.8f), Offset(p1.x-2.5f*u,p1.y-2.5f*u), p1, 0.8f*u)
+
+    // Tres microsegmentos de estado.
+    drawLine(color, Offset(5f*u, 8f*u), Offset(10f*u, 8f*u), 1f*u)
+    drawLine(color.copy(alpha=0.7f), Offset(5f*u, 11f*u), Offset(8f*u, 11f*u), 0.8f*u)
 }
 
 private fun DrawScope.drawBellIcon(color: Color, press: Float) {
     val u = size.minDimension / 44f
-    val white = Color(0xFFE8FCFF)
-    val steel = CyberColors.Steel
-    val frame = Rect(2f * u, 2f * u, size.width - 2f * u, size.height - 2f * u)
-
-    // Diseño Canva: módulo de alerta Transformer, exclusivamente cyan/blanco.
-    drawRect(steel, frame.topLeft, Size(frame.width, frame.height))
-    drawRect(color.copy(alpha = 0.34f), frame.topLeft, Size(frame.width, frame.height), style = Stroke(4f * u))
-    drawRect(color, frame.topLeft, Size(frame.width, frame.height), style = Stroke(1.4f * u))
-    drawRect(white.copy(alpha = 0.65f), Offset(frame.left + 4f * u, frame.top + 4f * u),
-        Size(frame.width - 8f * u, frame.height - 8f * u), style = Stroke(0.6f * u))
-
     val cx = size.width / 2f
-    val top = 9f * u
-    val bottom = 29f * u
+    val core = Color(0xFFE8FCFF)
+    val top = 9f*u
+    val bottom = 28f*u
+
+    // Icono nativo HUD: módulo de alerta cyberpunk.
     val shell = Path().apply {
-        moveTo(cx - 11f * u, bottom)
-        lineTo(cx - 8.2f * u, bottom - 3f * u)
-        lineTo(cx - 7f * u, top + 5f * u)
-        lineTo(cx - 3.5f * u, top + 1.5f * u)
-        lineTo(cx + 3.5f * u, top + 1.5f * u)
-        lineTo(cx + 7f * u, top + 5f * u)
-        lineTo(cx + 8.2f * u, bottom - 3f * u)
-        lineTo(cx + 11f * u, bottom)
+        moveTo(cx-9f*u,bottom)
+        lineTo(cx-7f*u,bottom-3f*u)
+        lineTo(cx-6.5f*u,top+5f*u)
+        quadraticBezierTo(cx,top,cx+6.5f*u,top+5f*u)
+        lineTo(cx+7f*u,bottom-3f*u)
+        lineTo(cx+9f*u,bottom)
         close()
     }
-    drawPath(shell, color.copy(alpha = 0.20f), style = Stroke(3.8f * u))
-    drawPath(shell, color, style = Stroke(1.8f * u))
-    drawLine(white.copy(alpha = 0.8f), Offset(cx - 5f * u, bottom - 5f * u),
-        Offset(cx + 5f * u, bottom - 5f * u), 0.8f * u)
-    drawCircle(color.copy(alpha = 0.25f), 4.2f * u, Offset(cx, top + 9f * u))
-    drawCircle(color, 2.3f * u, Offset(cx, top + 9f * u))
-    drawCircle(white.copy(alpha = 0.8f), 0.75f * u, Offset(cx - 0.8f * u, top + 8.2f * u))
-    drawLine(color, Offset(cx - 11f * u, bottom), Offset(cx + 11f * u, bottom), 2.2f * u, StrokeCap.Square)
+    drawPath(shell, color.copy(alpha=0.18f + press*0.08f), style=Stroke(3.8f*u))
+    drawPath(shell, color, style=Stroke(1.8f*u))
+
+    // Barras HUD laterales.
+    drawLine(color, Offset(cx-13f*u,top+6f*u), Offset(cx-10f*u,top+9f*u), 1.5f*u, StrokeCap.Square)
+    drawLine(color.copy(alpha=.7f), Offset(cx-14f*u,top+11f*u), Offset(cx-11f*u,top+11f*u), 1f*u)
+    drawLine(color, Offset(cx+13f*u,top+6f*u), Offset(cx+10f*u,top+9f*u), 1.5f*u, StrokeCap.Square)
+    drawLine(color.copy(alpha=.7f), Offset(cx+14f*u,top+11f*u), Offset(cx+11f*u,top+11f*u), 1f*u)
+
+    // Sensor energético central.
+    drawCircle(color.copy(alpha=.18f + press*.10f), 5f*u, Offset(cx,top+9f*u))
+    drawCircle(color, 2.2f*u, Offset(cx,top+9f*u))
+    drawCircle(core, .7f*u, Offset(cx-.7f*u,top+8.3f*u))
+
+    // Placa inferior.
+    drawLine(color, Offset(cx-11f*u,bottom), Offset(cx+11f*u,bottom), 2f*u, StrokeCap.Square)
+    drawLine(core.copy(alpha=.75f), Offset(cx-5f*u,bottom-4.5f*u), Offset(cx+5f*u,bottom-4.5f*u), .8f*u)
+
+    // Pulso de alerta.
+    drawCircle(color.copy(alpha=.45f), (11f+press*3f)*u, Offset(cx,top+9f*u), style=Stroke(.8f*u))
 }
+
