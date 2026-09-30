@@ -69,7 +69,7 @@ fun AppShellScreen(
     mapKey: Any? = null
 ) {
     val bgActive = section != 2
-    val animationsEnabled = section != 0
+    val animationsEnabled = false
     var panel by remember { mutableStateOf(HeaderPanel.None) }
     val menuItems = listOf("INICIO", "LÍNEAS", "MAPA", "FAVORITOS", "PARADAS CERCANAS")
     val notifications = remember {
