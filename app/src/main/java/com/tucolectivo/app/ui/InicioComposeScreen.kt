@@ -69,7 +69,8 @@ fun InicioComposeScreen(
                     onSelect = {
                         selected.intValue = it
                         onNavigate(it)
-                    }
+                    },
+                    animationsEnabled = false
                 )
             }
 
