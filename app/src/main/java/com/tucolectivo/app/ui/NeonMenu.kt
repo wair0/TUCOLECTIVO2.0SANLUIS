@@ -216,3 +216,13 @@ private fun DrawScope.neon(
         Stroke(width = width, cap = StrokeCap.Square, join = StrokeJoin.Miter)
     )
 }
+
+
+private fun rememberCyberpunkFontFamily(): androidx.compose.ui.text.font.FontFamily {
+    return androidx.compose.ui.text.font.FontFamily(
+        androidx.compose.ui.text.font.Font(
+            "fonts/cyberpunk.ttf",
+            weight = androidx.compose.ui.text.font.FontWeight.Normal
+        )
+    )
+}
