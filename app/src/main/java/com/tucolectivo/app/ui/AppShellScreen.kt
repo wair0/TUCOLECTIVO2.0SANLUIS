@@ -81,9 +81,12 @@ private fun InicioBase(
                 onClick = { onNavigate(1) },
                 modifier = Modifier.padding(top = 12.dp)
             )
+            CyberMapCard(
+                onClick = { onNavigate(2) },
+                modifier = Modifier.padding(top = 12.dp)
+            )
             Spacer(Modifier.height(8.dp))
             Text("MÓDULOS RESTANTES", color = CyberColors.Muted)
-            Button(onClick = { onNavigate(2) }) { Text("MAPA") }
             Button(onClick = { onNavigate(3) }) { Text("FAVORITOS") }
             Button(onClick = { onNavigate(4) }) { Text("PARADAS CERCANAS") }
         }
