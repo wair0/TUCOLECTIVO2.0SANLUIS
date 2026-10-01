@@ -308,13 +308,33 @@ class MainActivity : AppCompatActivity() {
                     val matched = mutableListOf<Int>()
                     for (line in lines) {
                         val points = runCatching { api.getRoute(line.code) }.getOrDefault(emptyList())
-                        // El recorrido se aproxima por puntos; umbral 120 m para tolerar separación entre GPS y trazado.
-                        val near = points.any { point ->
-                            val latMeters = (point.first - latitude) * 111_320.0
-                            val lonMeters = (point.second - longitude) * 111_320.0 * kotlin.math.cos(Math.toRadians(latitude))
-                            kotlin.math.sqrt(latMeters * latMeters + lonMeters * lonMeters) <= 120.0
+                        // Medir la distancia a cada segmento del recorrido, no solo a los vértices:
+                        // los puntos de SmartMove pueden estar separados y una parada caer entre ellos.
+                        val cosLat = kotlin.math.cos(Math.toRadians(latitude)).coerceAtLeast(0.01)
+                        fun distanceMeters(point: Pair<Double, Double>): Double {
+                            val dy = (point.first - latitude) * 111_320.0
+                            val dx = (point.second - longitude) * 111_320.0 * cosLat
+                            return kotlin.math.sqrt(dx * dx + dy * dy)
                         }
-                        if (near) matched.add(line.code)
+                        var nearest = Double.POSITIVE_INFINITY
+                        if (points.size == 1) nearest = distanceMeters(points[0])
+                        for (i in 0 until (points.size - 1).coerceAtLeast(0)) {
+                            val a = points[i]
+                            val b = points[i + 1]
+                            val ax = (a.second - longitude) * 111_320.0 * cosLat
+                            val ay = (a.first - latitude) * 111_320.0
+                            val bx = (b.second - longitude) * 111_320.0 * cosLat
+                            val by = (b.first - latitude) * 111_320.0
+                            val vx = bx - ax
+                            val vy = by - ay
+                            val denom = vx * vx + vy * vy
+                            val t = if (denom <= 0.0001) 0.0 else ((-ax * vx - ay * vy) / denom).coerceIn(0.0, 1.0)
+                            val dx = ax + t * vx
+                            val dy = ay + t * vy
+                            nearest = minOf(nearest, kotlin.math.sqrt(dx * dx + dy * dy))
+                        }
+                        // 80 m permite separar corredores cercanos y tolera GPS/trazado imperfecto.
+                        if (nearest <= 80.0) matched.add(line.code)
                     }
                     dispatch("onNativeNearbyStopLines", JSONObject()
                         .put("identifier", identifier)

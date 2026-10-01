@@ -272,10 +272,13 @@
     const renderLineChoices=choices=>{lines.innerHTML=choices.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">CONSULTAR LÍNEA '+n+'</button>').join('')||'<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';};
     if(availableLines.length)renderLineChoices(availableLines);
     else{
-      lines.innerHTML='<small>NO HAY LÍNEAS CONFIRMADAS PARA ESTA PARADA. NO SE MOSTRARÁN LÍNEAS DE TODA LA CIUDAD.</small>';
+      lines.innerHTML='<small>BUSCANDO LÍNEAS QUE PASAN POR ESTA PARADA...</small>';
     }
     document.getElementById('mapPopupArrivals').innerHTML='';
     popup.hidden=false;
+    if(!availableLines.length&&window.TuColectivoNative?.resolveNearbyStopLines){
+      window.TuColectivoNative.resolveNearbyStopLines(stop.identifier,stop.lat,stop.lng);
+    }
   }
   function hitTestMap(x,y){
     const r=wrap.getBoundingClientRect(),center=project(map.lat,map.lng,map.zoom),w=r.width,h=r.height;
@@ -516,12 +519,38 @@
 
   window.onNativeNearbyStopLines=function(payload){
     let result={};try{result=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
-    const stop=(window.TuColectivoStops||[]).find(s=>String(s.identifier)===String(result.identifier));
-    if(!stop)return;
     const lines=[...new Set((result.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
+    // El mismo resultado debe actualizar el popup del mapa o la sección de paradas cercanas.
+    const mapStop=map.pendingStop&&String(map.pendingStop.identifier)===String(result.identifier)?map.pendingStop:null;
+    const stop=mapStop||(window.TuColectivoStops||[]).find(s=>String(s.identifier)===String(result.identifier));
+    if(!stop)return;
     stop.lines=lines;
+    if(mapStop){
+      const box=document.getElementById('mapPopupLines');
+      if(!box)return;
+      if(!lines.length){
+        box.innerHTML='<small>NO SE PUDIERON CONFIRMAR LÍNEAS PARA ESTA PARADA. REVISÁ EL RECORRIDO DE SMARTMOVE.</small>';
+        return;
+      }
+      if(lines.length===1){
+        box.innerHTML='<small>LÍNEA CONFIRMADA: '+lines[0]+' · ABRIENDO ARRIBOS...</small>';
+        showArrival(stop,lines[0]);
+        return;
+      }
+      box.innerHTML='<small>LÍNEAS QUE PASAN POR ESTA PARADA</small>'+lines.map(line=>'<button class="map-popup-line" data-map-stop-line="'+line+'" type="button">CONSULTAR LÍNEA '+line+'</button>').join('');
+      return;
+    }
+    const card=nearbyList.querySelector('[data-stop-id="'+CSS.escape(String(stop.id))+'"]');
+    if(card){
+      const summary=card.querySelector('span');
+      if(summary)summary.textContent=lines.length?lines.length+' '+(lines.length===1?'LÍNEA':'LÍNEAS')+' CONFIRMADAS':'LÍNEAS NO CONFIRMADAS';
+      const oldMarkup=card.querySelector('.line-list,.line-markup,.stop-lines');
+      if(oldMarkup)oldMarkup.remove();
+      const markup=lineMarkup(lines);
+      if(markup)card.insertAdjacentHTML('beforeend',markup);
+    }
     if(!lines.length){
-      nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>SMARTMOVE NO CONFIRMÓ LÍNEAS PARA ESTA PARADA.</span></div>';
+      nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>NO SE PUDIERON CONFIRMAR LÍNEAS PARA ESTA PARADA CON LOS RECORRIDOS DISPONIBLES.</span></div>';
       return;
     }
     if(lines.length===1){showArrival(stop,lines[0]);return;}
