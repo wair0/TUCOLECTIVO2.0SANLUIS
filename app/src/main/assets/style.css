@@ -1118,3 +1118,34 @@ html,body,body *{
 .notification-time-fields label{display:flex;flex-direction:column;gap:6px;color:var(--cy);font-size:10px;letter-spacing:.08em}
 .notification-time-fields input{width:100%;min-height:42px;padding:7px 9px;box-sizing:border-box;color:#faff00;background:rgba(5,8,20,.96);border:1px solid rgba(250,255,0,.7);font:700 17px/1.2 monospace;color-scheme:dark}
 .notification-schedule>small{display:block;margin-top:10px;color:rgba(217,251,255,.7);font-size:9px;line-height:1.5}
+
+/* FIX HEADER: título legible y punto de estado perfectamente circular y verde */
+.bar .title{
+  width:max-content!important;
+  max-width:calc(100vw - 164px)!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+  font-size:clamp(10px,3.25vw,15px)!important;
+  letter-spacing:.035em!important;
+  transform:translateX(-50%)!important;
+  text-align:center!important;
+}
+.bar>.side:first-child .btn{left:8px!important}
+.bar>.side.r .btn:first-child{right:49px!important}
+.bar>.side.r .btn:last-child{right:8px!important}
+.dot{
+  width:8px!important;
+  height:8px!important;
+  min-width:8px!important;
+  min-height:8px!important;
+  aspect-ratio:1/1!important;
+  border-radius:50%!important;
+  background:#39ff88!important;
+  box-shadow:0 0 5px #39ff88,0 0 10px rgba(57,255,136,.8)!important;
+  transform:none;
+}
+@media(max-width:380px){
+  .bar .title{max-width:calc(100vw - 145px)!important;font-size:clamp(9px,3vw,12px)!important}
+  .bar>.side.r .btn:first-child{right:45px!important}
+}
