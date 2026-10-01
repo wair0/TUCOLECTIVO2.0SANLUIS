@@ -342,7 +342,10 @@
   function showArrival(stop,line){
     const minutes=Math.max(2,(line*3)%17+2);
     arrivalStop.innerHTML='<strong>'+stop.name+'</strong><span>LÍNEA '+line+' · PARADA SELECCIONADA</span>';
-    arrivalList.innerHTML='<div class="arrival-card"><b>LÍNEA '+line+'</b><span>PRÓXIMO ARRIBO ESTIMADO</span><em class="arrival-time"><strong>'+minutes+'</strong><small>MIN</small></em></div><div class="arrival-card"><b>LÍNEA '+line+'</b><span>SIGUIENTE SERVICIO</span><em class="arrival-time"><strong>'+Math.min(59,minutes+8)+'</strong><small>MIN</small></em></div>';
+    const d1=Math.max(1.2,Math.min(18,minutes*.35));
+    const next=Math.min(59,minutes+8);
+    const d2=Math.max(1.2,Math.min(18,next*.35));
+    arrivalList.innerHTML='<div class="arrival-card"><b>LÍNEA '+line+'</b><span>PRÓXIMO ARRIBO ESTIMADO</span><em class="arrival-time" style="--arrival-duration:'+d1+'s"><strong>'+minutes+'</strong><small>MIN</small></em></div><div class="arrival-card"><b>LÍNEA '+line+'</b><span>SIGUIENTE SERVICIO</span><em class="arrival-time" style="--arrival-duration:'+d2+'s"><strong>'+next+'</strong><small>MIN</small></em></div>';
     arrivalsMeta.textContent='LÍNEA '+line;
     window.TuColectivo.navigate('arribos');
   }
@@ -390,7 +393,6 @@
     }
   });
 
-  arrivalsBack.addEventListener('click',()=>window.TuColectivo.navigate('paradas'));
 })();
 
 /* FASE 8 — FAVORITOS */
