@@ -1033,3 +1033,7 @@ html,body,body *{
 .arrival-ring-dot{
   animation:none!important;
 }
+
+
+/* AJUSTES DE ARRIBOS Y ENCABEZADO DE CALLES */
+.screen[data-screen="arribos"] .screen-head span{font-size:12px!important;}

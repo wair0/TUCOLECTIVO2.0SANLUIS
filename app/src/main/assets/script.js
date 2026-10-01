@@ -544,7 +544,7 @@
   const cleanStreetName=name=>String(name??'').replace(/\s*(?:,|-)?\s*SAN LUIS\s*$/i,'').trim();
   window.onNativeStreets=p=>{
     const a=JSON.parse(p).map(x=>({...x,name:cleanStreetName(x.name)}));
-    showList('CALLES PRINCIPALES',currentLine.name,a,'SIN CALLES',x=>{currentStreet=x;nativeApi.loadIntersections(currentLine.code,x.code);},'INTERSECCIONES');
+    showList('CALLES','',a,'SIN CALLES',x=>{currentStreet=x;nativeApi.loadIntersections(currentLine.code,x.code);},'INTERSECCIONES');
   };
   window.onNativeStreetsError=p=>showError('CALLES PRINCIPALES',JSON.parse(p).message);
   window.onNativeIntersections=p=>{const a=JSON.parse(p);showList('INTERSECCIONES',currentStreet.name,a,'SIN INTERSECCIONES',x=>{currentIntersection=x;nativeApi.loadStops(currentLine.code,currentStreet.code,x.code);},'');};
@@ -599,7 +599,7 @@
  .arrival-time strong,.arrival-time small{position:absolute!important;left:50%!important;z-index:5!important;line-height:1!important;margin:0!important;white-space:nowrap!important}
  .arrival-time strong{top:50%!important;transform:translate(-50%,-50%)!important;font-size:15px!important}
  .arrival-time small{top:calc(50% + 10px)!important;transform:translateX(-50%)!important;font-size:6.5px!important}
- @keyframes arrivalNativeOrbit{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+ @keyframes arrivalNativeOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
  `;
  document.head.appendChild(css);
 })();
