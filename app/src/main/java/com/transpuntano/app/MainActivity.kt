@@ -4,6 +4,16 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.view.Gravity
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.TextView
 import android.webkit.GeolocationPermissions
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -25,49 +35,61 @@ class MainActivity : AppCompatActivity() {
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
 
     @SuppressLint("SetJavaScriptEnabled")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); showSplash() }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun startApp() {
         webView = WebView(this).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.allowFileAccess = true
-            settings.allowContentAccess = true
-            settings.loadsImagesAutomatically = true
-            settings.textZoom = 100
-            settings.setSupportZoom(false)
-            settings.builtInZoomControls = false
-            settings.displayZoomControls = false
-            settings.setGeolocationEnabled(true)
+            settings.javaScriptEnabled = true; settings.domStorageEnabled = true
+            settings.allowFileAccess = true; settings.allowContentAccess = true
+            settings.loadsImagesAutomatically = true; settings.textZoom = 100
+            settings.setSupportZoom(false); settings.builtInZoomControls = false
+            settings.displayZoomControls = false; settings.setGeolocationEnabled(true)
             addJavascriptInterface(TransitBridge(), "TuColectivoNative")
             webViewClient = WebViewClient()
             webChromeClient = object : WebChromeClient() {
                 override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
                     if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                        callback.invoke(origin, true, false)
-                    } else {
-                        pendingGeoOrigin = origin
-                        pendingGeoCallback = callback
-                        requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST)
-                    }
+                        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) callback.invoke(origin, true, false)
+                    else { pendingGeoOrigin=origin; pendingGeoCallback=callback; requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST) }
                 }
             }
             loadUrl("file:///android_asset/index.html")
         }
         setContentView(webView)
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                webView.evaluateJavascript("""
-                    (function(){
-                      var closed = window.TuColectivo && TuColectivo.closeMenus ? TuColectivo.closeMenus() : false;
-                      if (closed) return true;
-                      return window.TuColectivo && TuColectivo.handleBack ? TuColectivo.handleBack() : false;
-                    })()
-                """.trimIndent()) { result ->
-                    if (result != "true") finish()
-                }
-            }
-        })
+    }
+
+    private fun showSplash() {
+        val root=FrameLayout(this); root.setBackgroundColor(0xFF050316.toInt())
+        root.addView(AnimatedGifBackgroundView(this),FrameLayout.LayoutParams(-1,-1))
+        val overlay=FrameLayout(this); root.addView(overlay,FrameLayout.LayoutParams(-1,-1))
+        val title=TextView(this).apply{
+            text="TU COLECTIVO 2.0 SAN LUIS"; setTextColor(0xFF8CF8FF.toInt()); textSize=25f; gravity=Gravity.CENTER
+            typeface=runCatching{Typeface.createFromAsset(assets,"fonts/cyberpunk.ttf")}.getOrDefault(Typeface.create(Typeface.MONOSPACE,Typeface.BOLD))
+            setShadowLayer(14f,0f,0f,0xFF00E5FF.toInt())
+        }
+        overlay.addView(title,FrameLayout.LayoutParams(-1,-2,Gravity.CENTER).apply{leftMargin=18;rightMargin=18;topMargin=-55})
+        overlay.addView(SplashProgressView(this,4800L),FrameLayout.LayoutParams(-1,46,Gravity.CENTER).apply{leftMargin=42;rightMargin=42;topMargin=45})
+        setContentView(root); Handler(Looper.getMainLooper()).postDelayed({startApp()},4800L)
+    }
+
+    private class SplashProgressView(context: android.content.Context,private val durationMs:Long):View(context){
+        private val paint=Paint(Paint.ANTI_ALIAS_FLAG); private val started=SystemClock.uptimeMillis()
+        private val tick=object:Runnable{override fun run(){if(!isAttachedToWindow)return;invalidate();postOnAnimation(this)}}
+        init{postOnAnimation(tick)}
+        override fun onDetachedFromWindow(){removeCallbacks(tick);super.onDetachedFromWindow()}
+        override fun onDraw(c:Canvas){val p=((SystemClock.uptimeMillis()-started).toFloat()/durationMs).coerceIn(0f,1f);val w=width.toFloat();val y=height*.5f
+            paint.style=Paint.Style.STROKE;paint.strokeWidth=3f;paint.color=0xFF00E5FF.toInt();c.drawRoundRect(2f,y-8f,w-2f,y+8f,8f,8f,paint)
+            paint.style=Paint.Style.FILL;paint.color=0xFF00E5FF.toInt();c.drawRoundRect(5f,y-5f,5f+(w-10f)*p,y+5f,5f,5f,paint);paint.color=0xFFB14CFF.toInt();c.drawCircle(5f+(w-10f)*p,y,5f,paint)}
+    }
+
+    private class AnimatedGifBackgroundView(context: android.content.Context):View(context){
+        private var movie:android.graphics.Movie?=null; private var startedAt=0L
+        private val invalidator=object:Runnable{override fun run(){if(!isAttachedToWindow)return;invalidate();postOnAnimation(this)}}
+        init{setWillNotDraw(false);isClickable=false;isFocusable=false;setLayerType(View.LAYER_TYPE_SOFTWARE,null);movie=runCatching{context.assets.open("background_cyberpunk.gif").use{android.graphics.Movie.decodeStream(it)}}.getOrNull()}
+        override fun onAttachedToWindow(){super.onAttachedToWindow();startedAt=SystemClock.uptimeMillis();postOnAnimation(invalidator)}
+        override fun onDetachedFromWindow(){removeCallbacks(invalidator);super.onDetachedFromWindow()}
+        override fun onDraw(c:Canvas){val gif=movie?:return;if(width<=0||height<=0)return;val duration=gif.duration().takeIf{it>0}?:12000;gif.setTime(((SystemClock.uptimeMillis()-startedAt)%duration).toInt());val mw=gif.width().toFloat();val mh=gif.height().toFloat();if(mw<=0f||mh<=0f)return;val scale=maxOf(width/mw,height/mh);val dw=mw*scale;val dh=mh*scale;c.save();c.translate((width-dw)*.5f,(height-dh)*.5f);c.scale(scale,scale);gif.draw(c,0f,0f);c.restore()}
     }
 
     private fun dispatch(functionName: String, payload: String) {
