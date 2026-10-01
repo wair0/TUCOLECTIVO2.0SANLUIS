@@ -510,3 +510,22 @@ body,button,input,textarea,select{
   .bar::after,.title,.title::before,.title::after,.status,.status::after,.dot,
   .hack,.favorite-toggle,.home-card,.line-card,.data-card,.favorite-item{animation:none!important;transition:none!important}
 }
+
+
+/* FASE 11A — NUEVO INICIO DEL ZIP, CONSERVANDO LA ESTRUCTURA FUNCIONAL */
+.home-design-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;filter:drop-shadow(0 0 5px rgba(0,240,255,.45))}
+.home-design-grid .card{position:relative;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:14px;min-height:120px;padding:14px;text-align:left;color:var(--tx);background:#10152b;border:1px solid var(--cy);border-left:3px solid var(--vi);box-shadow:inset 0 0 16px rgba(0,240,255,.22);clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));overflow:hidden;transition:transform .08s steps(2),background .08s,color .08s}
+.home-design-grid .card::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(0,240,255,.035) 6px),radial-gradient(circle at 82% 22%,rgba(0,240,255,.18),transparent 34%)}
+.home-design-grid .card .ic{width:34px;height:34px;position:relative;z-index:1;color:var(--cy)}
+.home-design-grid .card span{position:relative;z-index:1;display:block}
+.home-design-grid .card b{display:block;font-size:13px;letter-spacing:.1em;color:#fff;text-shadow:0 0 7px var(--cy)}
+.home-design-grid .card small{display:block;margin-top:3px;font-size:9px;letter-spacing:.12em;color:var(--vt)}
+.home-design-grid .card:active{transform:scale(.97);background:#302047;box-shadow:inset 0 0 20px rgba(0,240,255,.38)}
+.home-design-grid .card.sync{grid-column:1/-1;flex-direction:row;align-items:center;gap:14px;min-height:84px;border-color:var(--vi);border-left-color:var(--cy);background:#15142f;box-shadow:inset 0 0 16px rgba(160,32,255,.4)}
+.home-design-grid .card.sync .ic{flex:none;color:var(--vt)}
+.home-design-grid .card.sync small{color:var(--cy)}
+.home-design-grid .card.sync .prog{position:absolute;left:0;bottom:0;height:3px;width:0;background:linear-gradient(90deg,var(--vi),var(--cy));box-shadow:0 0 8px var(--cy)}
+.home-design-grid .card.sync.run .prog{animation:fill 2.2s linear forwards}
+.home-design-grid .card.sync.run .ic{animation:spin 1s linear infinite}
+@keyframes fill{to{width:100%}} @keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:360px){.home-design-grid{gap:8px}.home-design-grid .card{min-height:104px;padding:12px}.home-design-grid .card b{font-size:12px}.home-design-grid .card small{font-size:8px}.home-design-grid .card.sync{min-height:78px}}

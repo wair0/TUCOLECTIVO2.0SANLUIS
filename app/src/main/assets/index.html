@@ -62,13 +62,13 @@
 <main id="app" class="app-shell">
   <section class="screen active" data-screen="inicio">
     <div class="screen-head"><span>INICIO</span></div>
-    <div class="home-grid">
-      <button class="home-card card-lineas" data-go="lineas"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 48V20c0-7 8-10 18-10s18 3 18 10v28M10 48h44M16 20h32M17 38h8M39 38h8M18 49v5M46 49v5M18 27h28v9H18z"/><circle cx="21" cy="43" r="2"/><circle cx="43" cy="43" r="2"/></svg><strong>LÍNEAS</strong><span>14 RECORRIDOS</span><i>01</i></button>
-      <button class="home-card card-mapa" data-go="mapa"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 57S16 40 16 27a16 16 0 1 1 32 0c0 13-16 30-16 30Z"/><circle cx="32" cy="27" r="6"/></svg><strong>MAPA</strong><span>RED EN TIEMPO REAL</span><i>02</i></button>
-      <button class="home-card card-paradas" data-go="paradas"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="20"/><circle cx="32" cy="32" r="9"/><path d="M32 5v10M32 49v10M5 32h10M49 32h10M32 32l14-14"/></svg><strong>PARADAS CERCANAS</strong><span>UBICACIÓN ACTUAL</span><i>03</i></button>
-      <button class="home-card card-favoritos" data-go="favoritos"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="m32 7 7.7 16.1 17.8 2.6-12.8 12.5 3 17.7L32 47.5 16.3 56l3-17.8L6.5 25.7l17.8-2.6z"/></svg><strong>FAVORITOS</strong><span>TUS ACCESOS</span><i>04</i></button>
+    <div class="grid home-design-grid">
+      <button class="card card-lineas" data-go="lineas"><svg class="ic"><use href="#i-bus"/></svg><span><b>LÍNEAS</b><small>RECORRIDOS</small></span></button>
+      <button class="card card-mapa" data-go="mapa"><svg class="ic"><use href="#i-map"/></svg><span><b>MAPA</b><small>VISTA GLOBAL</small></span></button>
+      <button class="card card-paradas" data-go="paradas"><svg class="ic"><use href="#i-pin"/></svg><span><b>PARADAS CERCANAS</b><small>RADAR</small></span></button>
+      <button class="card card-favoritos" data-go="favoritos"><svg class="ic"><use href="#i-star"/></svg><span><b>FAVORITOS</b><small>GUARDADOS</small></span></button>
+      <button class="card sync" id="sync"><svg class="ic"><use href="#i-sync"/></svg><span><b>SINCRONIZAR LÍNEAS</b><small id="sync-st">TOCA PARA ACTUALIZAR</small></span><i class="prog"></i></button>
     </div>
-    <button id="sync" class="sync-btn"><span>SINCRONIZAR LÍNEAS</span><b>14</b></button>
   </section>
 
   <section class="screen" data-screen="lineas">
