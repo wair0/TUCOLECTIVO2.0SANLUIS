@@ -886,6 +886,7 @@
     if(!list)return;
     list.innerHTML=a.length?a.map(x=>{
       const m=Number(x.minutes);
+      // Cada arribo se evalúa de forma independiente: solo esta línea pasa a ARRIBANDO.
       const arriving=Number.isFinite(m)&&m<=1;
       const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
       const destination=String(x.destination||'SERVICIO').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\\u200B-\\u200D\\uFEFF]/g,' ').replace(/\\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
