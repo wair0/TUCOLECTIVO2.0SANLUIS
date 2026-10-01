@@ -1,6 +1,6 @@
-package com.transpuntano.app.data
+package com.tucolectivo.app.data
 
-import com.transpuntano.app.model.*
+import com.tucolectivo.app.model.*
 import org.json.JSONArray
 import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser

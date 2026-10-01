@@ -1,4 +1,4 @@
-package com.transpuntano.app.model
+package com.tucolectivo.app.model
 
 data class TransitLine(
     val code: Int,
