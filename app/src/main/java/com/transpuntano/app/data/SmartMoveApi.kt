@@ -143,12 +143,12 @@ class SmartMoveApi {
         return parseStops(firstArray(root, "ParadaCercanasJson", "paradasCercanas", "paradas", "Parada", "parada"), 0)
     }
 
-    fun getRoute(line: Int): List<Pair<Double, Double>> {
+    fun getRoute(line: Int, timeoutMs: Int = TIMEOUT_MS): List<Pair<Double, Double>> {
         val root = soap("RecuperarRecorridoParaMapaAbrevYAmpliPorEntidadYLinea", listOf(
             intParam("codigoLineaParada", line),
             stringParam("usuario", USER),
             stringParam("clave", PASSWORD)
-        ))
+        ), timeoutMs = timeoutMs)
         val array = firstArray(root, "PuntosJson", "puntos", "Puntos", "recorrido", "Recorrido") ?: return emptyList()
         return (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
