@@ -653,6 +653,52 @@ html,body,body *{
 }
 
 
+/* CORREGIR HEADER Y ANIMACIÓN DE SINCRONIZAR */
+.bar>.side:first-child,
+.bar>.side.r{
+  position:static!important;
+  height:auto!important;
+  align-items:initial!important;
+}
+.bar>.side:first-child .btn{
+  position:absolute!important;
+  left:10px;
+  top:18px;
+}
+.bar>.side.r .btn:first-child{
+  position:absolute!important;
+  right:54px;
+  top:18px;
+}
+.bar>.side.r .btn:last-child{
+  position:absolute!important;
+  right:10px;
+  top:18px;
+}
+.title{
+  top:1px!important;
+  left:50%!important;
+}
+.status{
+  position:absolute!important;
+  left:8px!important;
+  right:8px!important;
+  bottom:2px!important;
+  top:auto!important;
+}
+.home-design-grid .card.sync.run .ic{
+  animation:spin 1s linear infinite!important;
+  transform-origin:center;
+}
+.home-design-grid .card.sync.run .prog{
+  animation:fill 2.2s linear forwards!important;
+  transform-origin:left center;
+}
+.home-design-grid .card.sync.done .prog{
+  width:100%;
+}
+
+
 /* FASE 15D — CORREGIR ESCALA TIPOGRÁFICA Y GEOMETRÍA DEL HEADER */
 .bar{
   align-items:center!important;
