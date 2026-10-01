@@ -265,6 +265,7 @@
     {id:'san-martin-junín',name:'SAN MARTÍN Y JUNÍN',lat:-33.3019,lng:-66.3370,lines:[2,5,9]},
     {id:'riobamba-juan',name:'RIobamba Y JUAN SAÁ',lat:-33.2969,lng:-66.3410,lines:[7,10,14]}
   ];
+  window.TuColectivoStops=stops;
 
   function meters(a,b){
     const R=6371000,rad=Math.PI/180;
@@ -322,4 +323,90 @@
   });
 
   arrivalsBack.addEventListener('click',()=>window.TuColectivo.navigate('paradas'));
+})();
+
+/* FASE 8 — FAVORITOS */
+(() => {
+  'use strict';
+  const list=document.getElementById('favoritesList');
+  const STORAGE='tucolectivo:favorites:v1';
+  if(!list)return;
+
+  const empty='<div class="favorites-empty"><strong>SIN FAVORITOS_</strong><span>GUARDÁ LÍNEAS O PARADAS PARA VERLAS AQUÍ</span></div>';
+  let favorites=load();
+
+  function load(){
+    try{
+      const raw=localStorage.getItem(STORAGE);
+      const parsed=raw?JSON.parse(raw):{lines:[],stops:[]};
+      return {
+        lines:Array.isArray(parsed.lines)?parsed.lines.map(Number).filter(n=>n>=1&&n<=14):[],
+        stops:Array.isArray(parsed.stops)?parsed.stops.filter(Boolean):[]
+      };
+    }catch(_){return {lines:[],stops:[]};}
+  }
+  function save(){try{localStorage.setItem(STORAGE,JSON.stringify(favorites));}catch(_){}}
+  function has(type,id){return favorites[type].some(v=>String(v)===String(id));}
+  function toggle(type,id){
+    const key=String(id);
+    favorites[type]=has(type,id)?favorites[type].filter(v=>String(v)!==key):[...favorites[type],type==='lines'?Number(id):key];
+    save();syncButtons();render();
+  }
+  function syncButtons(){
+    document.querySelectorAll('.line-card[data-line]').forEach(card=>{
+      const line=Number(card.dataset.line), on=has('lines',line), b=card.querySelector('.favorite-toggle');
+      if(!b)return;
+      b.textContent=on?'★':'☆';b.setAttribute('aria-pressed',String(on));
+      b.setAttribute('aria-label',(on?'Quitar LÍNEA ':'Agregar LÍNEA ')+line+' a favoritos');
+    });
+    document.querySelectorAll('.nearby-stop[data-stop-id],.favorite-stop[data-stop-id]').forEach(card=>{
+      const b=card.querySelector('.favorite-toggle'); if(!b)return;
+      const on=has('stops',card.dataset.stopId);
+      b.textContent=on?'★':'☆';b.setAttribute('aria-pressed',String(on));
+    });
+  }
+  function stopInfo(id){
+    const stop=window.TuColectivoStops?.find(s=>s.id===id);
+    return stop||null;
+  }
+  function render(){
+    const lines=favorites.lines.slice().sort((a,b)=>a-b);
+    const stops=favorites.stops.map(stopInfo).filter(Boolean);
+    if(!lines.length&&!stops.length){list.innerHTML=empty;return;}
+    let html='';
+    if(lines.length){
+      html+='<div class="favorite-group">LÍNEAS FAVORITAS</div>';
+      html+=lines.map(n=>'<div class="favorite-item" data-fav-type="lines" data-fav-id="'+n+'"><div><b>LÍNEA '+n+'</b><small>RECORRIDO ACTIVO · ACCESO RÁPIDO</small></div><button class="favorite-remove" type="button" aria-label="Quitar LÍNEA '+n+' de favoritos">×</button></div>').join('');
+    }
+    if(stops.length){
+      html+='<div class="favorite-group">PARADAS FAVORITAS</div>';
+      html+=stops.map(s=>'<div class="favorite-item" data-fav-type="stops" data-fav-id="'+s.id+'"><div><b>'+s.name+'</b><small>'+s.lines.length+' '+(s.lines.length===1?'LÍNEA':'LÍNEAS')+' · ACCESO RÁPIDO</small></div><button class="favorite-remove" type="button" aria-label="Quitar parada de favoritos">×</button></div>').join('');
+    }
+    list.innerHTML=html;
+  }
+
+  document.addEventListener('click',e=>{
+    const toggleBtn=e.target.closest('.favorite-toggle');
+    if(toggleBtn){
+      e.preventDefault();e.stopPropagation();
+      const card=toggleBtn.closest('[data-line],[data-stop-id]');
+      if(!card)return;
+      if(card.dataset.line)toggle('lines',card.dataset.line);
+      else if(card.dataset.stopId)toggle('stops',card.dataset.stopId);
+      return;
+    }
+    const remove=e.target.closest('.favorite-remove');
+    if(remove){
+      const item=remove.closest('.favorite-item');
+      if(item)toggle(item.dataset.favType,item.dataset.favId);
+      return;
+    }
+  });
+  document.addEventListener('keydown',e=>{
+    const b=e.target.closest('.favorite-toggle');
+    if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();b.click();}
+  });
+  document.addEventListener('app:navigate',e=>{if(e.detail.go==='favoritos')render();});
+  window.TuColectivoFavorites={toggle,render};
+  render();syncButtons();
 })();
