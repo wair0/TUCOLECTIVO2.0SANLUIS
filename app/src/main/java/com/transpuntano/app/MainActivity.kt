@@ -66,54 +66,94 @@ class MainActivity : AppCompatActivity() {
 
     private fun dispatch(functionName: String, payload: String) {
         val safe = JSONObject.quote(payload)
-        runOnUiThread { webView.evaluateJavascript("window.${functionName} && window.${functionName}($safe)", null) }
+        runOnUiThread { webView.evaluateJavascript("window.$functionName && window.$functionName($safe)", null) }
     }
 
     private fun lineJson(items: List<TransitLine>) = JSONArray().apply {
         items.forEach { put(JSONObject().put("code", it.code).put("name", it.name).put("raw", it.raw)) }
     }.toString()
+
     private fun streetJson(items: List<TransitStreet>) = JSONArray().apply {
         items.forEach { put(JSONObject().put("code", it.code).put("name", it.name)) }
     }.toString()
+
     private fun intersectionJson(items: List<TransitIntersection>) = JSONArray().apply {
         items.forEach { put(JSONObject().put("code", it.code).put("name", it.name)) }
     }.toString()
+
     private fun stopJson(items: List<TransitStop>) = JSONArray().apply {
-        items.forEach { put(JSONObject().put("code", it.code).put("description", it.description).put("identifier", it.identifier)
-            .put("latitude", it.latitude).put("longitude", it.longitude).put("street", it.street).put("intersection", it.intersection)
-            .put("lineCode", it.lineCode).put("lineCodes", JSONArray(it.lineCodes)) }
+        items.forEach { stop ->
+            val lineCodes = JSONArray().apply { stop.lineCodes.forEach { put(it) } }
+            put(
+                JSONObject()
+                    .put("code", stop.code)
+                    .put("description", stop.description)
+                    .put("identifier", stop.identifier)
+                    .put("latitude", stop.latitude)
+                    .put("longitude", stop.longitude)
+                    .put("street", stop.street)
+                    .put("intersection", stop.intersection)
+                    .put("lineCode", stop.lineCode)
+                    .put("lineCodes", lineCodes)
+            )
+        }
     }.toString()
+
     private fun arrivalJson(items: List<TransitArrival>) = JSONArray().apply {
-        items.forEach { put(JSONObject().put("line", it.line).put("destination", it.destination).put("minutes", it.minutes)
-            .put("status", it.status).put("vehicleId", it.vehicleId).put("latitude", it.latitude).put("longitude", it.longitude)
-            .put("gpsTimestamp", it.gpsTimestamp)) }
+        items.forEach { arrival ->
+            put(
+                JSONObject()
+                    .put("line", arrival.line)
+                    .put("destination", arrival.destination)
+                    .put("minutes", arrival.minutes)
+                    .put("status", arrival.status)
+                    .put("vehicleId", arrival.vehicleId)
+                    .put("latitude", arrival.latitude)
+                    .put("longitude", arrival.longitude)
+                    .put("gpsTimestamp", arrival.gpsTimestamp)
+            )
+        }
     }.toString()
 
     inner class TransitBridge {
         @JavascriptInterface fun loadLines() {
-            executor.execute { runCatching { api.getLines() }
-                .onSuccess { dispatch("onNativeLines", lineJson(it)) }
-                .onFailure { dispatch("onNativeLinesError", JSONObject().put("message", it.message ?: "No se pudieron cargar las líneas").toString()) } }
+            executor.execute {
+                runCatching { api.getLines() }
+                    .onSuccess { dispatch("onNativeLines", lineJson(it)) }
+                    .onFailure { dispatch("onNativeLinesError", JSONObject().put("message", it.message ?: "No se pudieron cargar las líneas").toString()) }
+            }
         }
+
         @JavascriptInterface fun loadStreets(lineCode: Int) {
-            executor.execute { runCatching { api.getStreets(lineCode) }
-                .onSuccess { dispatch("onNativeStreets", streetJson(it)) }
-                .onFailure { dispatch("onNativeStreetsError", JSONObject().put("message", it.message ?: "No se pudieron cargar las calles").toString()) } }
+            executor.execute {
+                runCatching { api.getStreets(lineCode) }
+                    .onSuccess { dispatch("onNativeStreets", streetJson(it)) }
+                    .onFailure { dispatch("onNativeStreetsError", JSONObject().put("message", it.message ?: "No se pudieron cargar las calles").toString()) }
+            }
         }
+
         @JavascriptInterface fun loadIntersections(lineCode: Int, streetCode: Int) {
-            executor.execute { runCatching { api.getIntersections(lineCode, streetCode) }
-                .onSuccess { dispatch("onNativeIntersections", intersectionJson(it)) }
-                .onFailure { dispatch("onNativeIntersectionsError", JSONObject().put("message", it.message ?: "No se pudieron cargar las intersecciones").toString()) } }
+            executor.execute {
+                runCatching { api.getIntersections(lineCode, streetCode) }
+                    .onSuccess { dispatch("onNativeIntersections", intersectionJson(it)) }
+                    .onFailure { dispatch("onNativeIntersectionsError", JSONObject().put("message", it.message ?: "No se pudieron cargar las intersecciones").toString()) }
+            }
         }
+
         @JavascriptInterface fun loadStops(lineCode: Int, streetCode: Int, intersectionCode: Int) {
-            executor.execute { runCatching { api.getStops(lineCode, streetCode, intersectionCode) }
-                .onSuccess { dispatch("onNativeStops", stopJson(it)) }
-                .onFailure { dispatch("onNativeStopsError", JSONObject().put("message", it.message ?: "No se pudieron cargar las paradas").toString()) } }
+            executor.execute {
+                runCatching { api.getStops(lineCode, streetCode, intersectionCode) }
+                    .onSuccess { dispatch("onNativeStops", stopJson(it)) }
+                    .onFailure { dispatch("onNativeStopsError", JSONObject().put("message", it.message ?: "No se pudieron cargar las paradas").toString()) }
+            }
         }
+
         @JavascriptInterface fun loadArrivals(identifier: String, lineCode: Int) {
-            executor.execute { runCatching { api.getArrivals(identifier, lineCode) }
-                .onSuccess { dispatch("onNativeArrivals", arrivalJson(it)) }
-                .onFailure { dispatch("onNativeArrivalsError", JSONObject().put("message", it.message ?: "No se pudieron cargar los arribos").toString()) } }
+            executor.execute {
+                runCatching { api.getArrivals(identifier, lineCode) }
+                    .onSuccess { dispatch("onNativeArrivals", arrivalJson(it)) }
+                    .onFailure { dispatch("onNativeArrivalsError", JSONObject().put("message", it.message ?: "No se pudieron cargar los arribos").toString()) }
+            }
         }
     }
 
@@ -136,5 +176,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    companion object { private const val LOCATION_PERMISSION_REQUEST = 4102 }
+    companion object {
+        private const val LOCATION_PERMISSION_REQUEST = 4102
+    }
 }
