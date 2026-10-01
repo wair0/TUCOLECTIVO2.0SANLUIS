@@ -1396,6 +1396,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             this,
             mapStop,
             lineCodes,
+            lineLabels,
             cyberpunkTypeface,
             cyan,
             pink,
@@ -1646,6 +1647,7 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         context: Context,
         private val stop: MapStop,
         private val lineCodes: List<Int>,
+        private val lineLabels: Map<Int, String>,
         private val typeface: Typeface,
         private val cyan: Int,
         private val pink: Int,
@@ -1715,7 +1717,11 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             val gap = 8f * density
 
             lineCodes.take(8).forEach { code ->
-                val label = "LÍNEA " + code
+                val label = lineLabels[code]
+                    ?.trim()
+                    ?.takeIf { it.isNotBlank() }
+                    ?.uppercase(java.util.Locale.getDefault())
+                    ?: "LÍNEA " + code
                 paint.textSize = 9f * density
                 val widthText = paint.measureText(label) + 22f * density
                 if (x + widthText > w - 16f * density) return@forEach
