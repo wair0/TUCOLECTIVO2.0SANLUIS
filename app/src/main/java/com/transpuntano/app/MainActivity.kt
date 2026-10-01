@@ -1,6 +1,10 @@
 package com.tucolectivo.app
 
 import android.Manifest
+import android.content.Context
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -39,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private var pendingArrivalEndTime: String = "19:30"
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
+    @Volatile private var pendingLocationPurpose: String? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); showSplash() }
@@ -226,6 +231,43 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private fun requestNativeLocation(purpose: String) {
+        pendingLocationPurpose = purpose
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST)
+            return
+        }
+        try {
+            val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).filter { runCatching { manager.isProviderEnabled(it) }.getOrDefault(false) }
+            val last = providers.mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }.maxByOrNull { it.time }
+            if (last != null) { deliverNativeLocation(purpose, last); return }
+            val provider = providers.firstOrNull() ?: run { failNativeLocation(purpose, "UBICACIÓN DESACTIVADA"); return }
+            val listener = object : LocationListener {
+                override fun onLocationChanged(location: Location) { runCatching { manager.removeUpdates(this) }; deliverNativeLocation(purpose, location) }
+            }
+            manager.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper())
+            Handler(Looper.getMainLooper()).postDelayed({ runCatching { manager.removeUpdates(listener) }; if (pendingLocationPurpose == purpose) failNativeLocation(purpose, "TIEMPO DE ESPERA AGOTADO") }, 12000L)
+        } catch (e: Exception) { failNativeLocation(purpose, e.message ?: "ERROR DE UBICACIÓN") }
+    }
+    private fun deliverNativeLocation(purpose: String, location: Location) {
+        if (pendingLocationPurpose != purpose) return
+        pendingLocationPurpose = null
+        dispatch("onNativeLocation", JSONObject().put("purpose", purpose).put("latitude", location.latitude).put("longitude", location.longitude).toString())
+        if (purpose == "map") loadMapStopsAt(location.latitude, location.longitude, mapLineCode)
+        else executor.execute {
+            runCatching { api.getNearby(location.latitude, location.longitude) }
+                .onSuccess { dispatch("onNativeNearbyStops", stopJson(it)) }
+                .onFailure { dispatch("onNativeNearbyStopsError", JSONObject().put("message", it.message ?: "No se pudieron localizar las paradas").toString()) }
+        }
+    }
+    private fun failNativeLocation(purpose: String, message: String) {
+        pendingLocationPurpose = null
+        dispatch("onNativeLocationError", JSONObject().put("purpose", purpose).put("message", message).toString())
+    }
+
     inner class TransitBridge {
         @JavascriptInterface fun loadMapAvailableLines() {
             executor.execute {
@@ -243,15 +285,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        @JavascriptInterface fun loadMapData(latitude: Double, longitude: Double, lineCode: Int) {
+        @JavascriptInterface fun requestMapLocation(lineCode: Int) { mapLineCode = lineCode; requestNativeLocation("map") }
+        @JavascriptInterface fun requestNearbyLocation() { requestNativeLocation("nearby") }
+        @JavascriptInterface fun loadMapData(latitude: Double, longitude: Double, lineCode: Int) { loadMapStopsAt(latitude, longitude, lineCode) }
+        private fun loadMapStopsAt(latitude: Double, longitude: Double, lineCode: Int) {
             executor.execute {
                 runCatching { api.getNearby(latitude, longitude) }
-                    .onSuccess { stops ->
-                        mapNearbyStops = stops
-                        mapLineCode = lineCode
-                        dispatch("onNativeMapStops", stopJson(stops))
-                        refreshMapVehiclesNow(lineCode)
-                    }
+                    .onSuccess { stops -> mapNearbyStops = stops; mapLineCode = lineCode; dispatch("onNativeMapStops", stopJson(stops)); refreshMapVehiclesNow(lineCode) }
                     .onFailure { dispatch("onNativeMapStopsError", JSONObject().put("message", it.message ?: "No se pudieron localizar las paradas").toString()) }
             }
         }

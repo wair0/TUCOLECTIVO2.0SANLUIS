@@ -305,18 +305,9 @@
     if(navigator.vibrate) navigator.vibrate(12);
   }
   function locateUser(){
-    if(!navigator.geolocation){state.textContent='GPS NO DISPONIBLE';return;}
     state.textContent='LOCALIZANDO...';
-    navigator.geolocation.getCurrentPosition(
-      p=>{
-        const lat=p.coords.latitude,lng=p.coords.longitude;
-        map.userLocation={lat,lng};setCenter(lat,lng);state.textContent='BUSCANDO PARADAS CERCANAS...';
-        if(window.TuColectivoNative&&typeof window.TuColectivoNative.loadMapData==='function')window.TuColectivoNative.loadMapData(lat,lng,map.routeLineCode||0);
-        else state.textContent='GPS ACTIVO · PUENTE SMARTMOVE NO DISPONIBLE';
-      },
-      error=>{state.textContent=error&&error.code===1?'PERMISO GPS DENEGADO':'GPS NO DISPONIBLE';},
-      {enableHighAccuracy:true,timeout:10000,maximumAge:30000}
-    );
+    if(window.TuColectivoNative&&typeof window.TuColectivoNative.requestMapLocation==='function')window.TuColectivoNative.requestMapLocation(map.routeLineCode||0);
+    else state.textContent='UBICACIÓN NATIVA NO DISPONIBLE';
   }
   function distance(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);}
   canvas.addEventListener('pointerdown',e=>{
@@ -366,6 +357,16 @@
     }catch(_){state.textContent='ERROR LEYENDO RECORRIDO';}
   };
   window.onNativeMapRouteError=payload=>{let msg='NO SE PUDO CARGAR EL RECORRIDO';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
+  window.onNativeLocation=function(payload){
+    let r={};try{r=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
+    if(r.purpose==='map'){map.userLocation={lat:Number(r.latitude),lng:Number(r.longitude)};setCenter(map.userLocation.lat,map.userLocation.lng);state.textContent='BUSCANDO PARADAS CERCANAS...';}
+    if(r.purpose==='nearby')nearbyState.textContent='GPS: BUSCANDO PARADAS...';
+  };
+  window.onNativeLocationError=function(payload){
+    let r={};try{r=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
+    if(r.purpose==='map')state.textContent=r.message||'GPS NO DISPONIBLE';
+    if(r.purpose==='nearby'){locateBtn.disabled=false;nearbyState.textContent='GPS: '+(r.message||'SIN SEÑAL');}
+  };
   window.onNativeMapStops=payload=>{
     try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.stops=raw.map(s=>({id:String(s.identifier||s.code),code:Number(s.code)||0,identifier:String(s.identifier||s.code||''),name:String(s.description||('PARADA '+s.code)),lat:Number(s.latitude),lng:Number(s.longitude),street:String(s.street||''),intersection:String(s.intersection||''),lines:(()=>{const found=[...(Array.isArray(s.lineCodes)?s.lineCodes:[]).map(Number),Number(s.lineCode)];if(!found.some(n=>Number.isFinite(n)&&n>0)&&map.routeLineCode>0)found.push(map.routeLineCode);return [...new Set(found.filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);})()})).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&(s.lat!==0||s.lng!==0));
       state.textContent='GPS ACTIVO · '+map.stops.length+' PARADAS';draw();if(map.stops.length)fitPoints(map.routePoints.length?map.routePoints.concat(map.stops):map.stops);
@@ -575,27 +576,9 @@
   }
 
   locateBtn.addEventListener('click',()=>{
-    if(!navigator.geolocation){nearbyState.textContent='GPS: NO DISPONIBLE';return;}
-    nearbyState.textContent='GPS: LOCALIZANDO...';
-    locateBtn.disabled=true;
-    navigator.geolocation.getCurrentPosition(
-      position=>{
-        window.TuColectivoPendingPosition=position;
-        if(window.TuColectivoNative&&typeof window.TuColectivoNative.loadNearbyStops==='function'){
-          window.TuColectivoNative.loadNearbyStops(position.coords.latitude,position.coords.longitude);
-        }else{
-          locateBtn.disabled=false;
-          nearbyState.textContent='GPS: PUENTE NATIVO NO DISPONIBLE';
-          nearbyList.innerHTML='<div class="nearby-empty"><strong>SMARTMOVE NO DISPONIBLE_</strong><span>LA APP NO PUDO CONECTAR CON EL SERVICIO DE PARADAS</span></div>';
-        }
-      },
-      error=>{
-        locateBtn.disabled=false;
-        nearbyState.textContent=error&&error.code===1?'GPS: PERMISO DENEGADO':'GPS: SIN SEÑAL';
-        nearbyList.innerHTML='<div class="nearby-empty"><strong>NO SE PUDO OBTENER LA UBICACIÓN_</strong><span>VERIFICÁ EL PERMISO DE UBICACIÓN Y VOLVÉ A INTENTAR</span></div>';
-      },
-      {enableHighAccuracy:true,timeout:10000,maximumAge:30000}
-    );
+    nearbyState.textContent='GPS: LOCALIZANDO...'; locateBtn.disabled=true;
+    if(window.TuColectivoNative&&typeof window.TuColectivoNative.requestNearbyLocation==='function')window.TuColectivoNative.requestNearbyLocation();
+    else { locateBtn.disabled=false; nearbyState.textContent='GPS: UBICACIÓN NATIVA NO DISPONIBLE'; }
   });
 
   nearbyList.addEventListener('click',e=>{
