@@ -1243,9 +1243,12 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
                 .onSuccess { nearby -> runOnUiThread {
                     list.removeAllViews()
                     nearby.forEach { stop ->
-                        list.addView(card(stop.description, stop.street + " · " + stop.intersection) {
-                            toast(stop.description)
-                        }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
+                        list.addView(cyberDetailCard(
+                            stop.description,
+                            buildStopLocationText(stop)
+                        ) {
+                            openNearbyStopArrivals(stop)
+                        })
                     }
                     if (nearby.isEmpty()) list.addView(panel("SIN PARADAS", "No se encontraron paradas cercanas."))
                     headerStatus.setStatusText("● " + nearby.size + " PARADAS CERCANAS");
@@ -1313,6 +1316,67 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             }
         }
         Handler(Looper.getMainLooper()).post(refresh)
+    }
+
+    private fun buildStopLocationText(stop: TransitStop): String {
+        val street = stop.street.trim()
+        val intersection = stop.intersection.trim()
+        return when {
+            street.isNotBlank() && intersection.isNotBlank() -> street + " · " + intersection
+            street.isNotBlank() -> street
+            intersection.isNotBlank() -> intersection
+            else -> "UBICACIÓN DE LA PARADA NO INFORMADA"
+        }
+    }
+
+    private fun openNearbyStopArrivals(stop: TransitStop) {
+        val codes = stop.lineCodes.filter { it > 0 }.distinct().sorted()
+        when {
+            codes.size == 1 -> {
+                executor.execute {
+                    val line = runCatching { api.getLines() }.getOrDefault(emptyList())
+                        .firstOrNull { it.code == codes.first() }
+                    runOnUiThread {
+                        if (line != null) showArrivals(stop, line)
+                        else toast("No se pudo identificar la línea de esta parada")
+                    }
+                }
+            }
+            codes.size > 1 -> {
+                executor.execute {
+                    val lines = runCatching { api.getLines() }.getOrDefault(emptyList())
+                        .filter { it.code in codes }
+                    runOnUiThread { showNearbyLineChooser(stop, lines) }
+                }
+            }
+            else -> {
+                executor.execute {
+                    val lines = runCatching { api.getLines() }.getOrDefault(emptyList())
+                    runOnUiThread { showNearbyLineChooser(stop, lines) }
+                }
+            }
+        }
+    }
+
+    private fun showNearbyLineChooser(stop: TransitStop, lines: List<TransitLine>) {
+        content.removeAllViews()
+        title.text = "ARRIBOS"
+        updateNav(1)
+        val box = box()
+        box.addView(cyberSectionHeader("PARADA " + stop.code, buildStopLocationText(stop)))
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        box.addView(list)
+        if (lines.isEmpty()) {
+            list.addView(cyberInfoCard("SIN LÍNEAS", "No se pudieron identificar las líneas de esta parada."))
+        } else {
+            list.addView(cyberInfoCard("SELECCIONÁ UNA LÍNEA", "Para consultar el contador de minutos."))
+            lines.forEach { line ->
+                list.addView(cyberDetailCard(line.name.uppercase(), "CONTADOR DE MINUTOS") {
+                    showArrivals(stop, line)
+                })
+            }
+        }
+        content.addView(ScrollView(this).apply { addView(box) })
     }
 
     private fun showMapStopInfo(root: FrameLayout, mapStop: MapStop, selectedLine: TransitLine?) {
@@ -1514,9 +1578,9 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         vehicleExecutor.execute {
             val nearbyCodes = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct().sorted()
             val lineCodes = if (line != null) {
-                // Nunca mostrar GPS de una línea que no esté asociada a las
-                // paradas cercanas actualmente sincronizadas.
-                nearbyCodes.filter { it == line.code }
+                // La línea seleccionada al entrar desde ARRIBOS es la fuente de verdad.
+                // SmartMove no siempre devuelve los códigos de línea en PARADAS CERCANAS.
+                listOf(line.code)
             } else {
                 nearbyCodes
             }

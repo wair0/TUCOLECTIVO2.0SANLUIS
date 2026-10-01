@@ -278,9 +278,17 @@ class SmartMoveApi {
                 identifier = identifier,
                 latitude = item.optStringAny("Latitud", "latitud")?.replace(',', '.')?.toDoubleOrNull() ?: 0.0,
                 longitude = item.optStringAny("Longitud", "longitud")?.replace(',', '.')?.toDoubleOrNull() ?: 0.0,
-                street = item.optStringAny("nombreCalle", "CallePrincipal", "callePrincipal").orEmpty(),
+                street = item.optStringAny(
+                    "nombreCalle", "NombreCalle", "nombreCallePrincipal",
+                    "CallePrincipal", "callePrincipal", "Calle", "calle",
+                    "DescripcionCalle", "descripcionCalle"
+                ).orEmpty(),
                 intersection = item.optStringAny(
-                    "inteserccionCalle", "interseccionCalle", "CalleInterseccion", "calleInterseccion"
+                    "inteserccionCalle", "interseccionCalle",
+                    "InterseccionCalle", "IntersecciónCalle",
+                    "CalleInterseccion", "calleInterseccion",
+                    "Interseccion", "interseccion",
+                    "CalleCruce", "calleCruce"
                 ).orEmpty(),
                 lineCode = line,
                 lineCodes = linkedLineCodes(item, line)
@@ -304,12 +312,16 @@ class SmartMoveApi {
         listOf(
             "codigoLinea", "CodigoLinea",
             "codigoLineaParada", "CodigoLineaParada",
-            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada"
+            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada",
+            "codigoLineaServicio", "CodigoLineaServicio", "codigoServicio", "CodigoServicio"
         ).forEach { key ->
             item.optStringAny(key)?.trim()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
         }
 
-        val arrays = listOf("lineas", "Lineas", "listaLineas", "lineasParada", "LineasParada", "lineasJson")
+        val arrays = listOf(
+            "lineas", "Lineas", "listaLineas", "lineasParada", "LineasParada",
+            "lineasJson", "LineasJson", "servicios", "Servicios", "lineasServicio"
+        )
         arrays.forEach { key ->
             val array = item.optJSONArray(key) ?: return@forEach
             for (i in 0 until array.length()) {
@@ -319,7 +331,8 @@ class SmartMoveApi {
                         listOf(
                             "codigoLinea", "CodigoLinea",
                             "codigoLineaParada", "CodigoLineaParada",
-                            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada"
+                            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada",
+            "codigoLineaServicio", "CodigoLineaServicio", "codigoServicio", "CodigoServicio"
                         ).forEach { field ->
                             value.optStringAny(field)?.trim()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
                         }
