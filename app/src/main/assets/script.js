@@ -518,6 +518,7 @@
   });
 
   nearbyList.addEventListener('click',e=>{
+    if(e.target.closest('.favorite-toggle'))return;
     const choice=e.target.closest('.stop-line-choice');
     if(choice){
       const stop=(window.TuColectivoStops||[]).find(s=>String(s.id)===String(choice.dataset.stopId));
