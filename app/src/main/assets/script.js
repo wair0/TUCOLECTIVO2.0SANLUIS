@@ -263,7 +263,7 @@
     {id:'pringles-illia',name:'PLAZA PRINGLES · PRINGLES Y RIVADAVIA',lat:-33.3012,lng:-66.3379,lines:[3,4]},
     {id:'terminal',name:'TERMINAL DE ÓMNIBUS · AV. ILLIA Y ESTEBAN ADARO',lat:-33.3005,lng:-66.3208,lines:[1,6,12]},
     {id:'san-martin-junín',name:'SAN MARTÍN Y JUNÍN',lat:-33.3019,lng:-66.3370,lines:[2,5,9]},
-    {id:'riobamba-juan',name:'RIobamba Y JUAN SAÁ',lat:-33.2969,lng:-66.3410,lines:[7,10,14]}
+    {id:'riobamba-juan',name:'RIOBAMBA Y JUAN SAÁ',lat:-33.2969,lng:-66.3410,lines:[7,10,14]}
   ];
   window.TuColectivoStops=stops;
 
@@ -279,7 +279,7 @@
   function renderNearby(position){
     const here={lat:position.coords.latitude,lng:position.coords.longitude};
     const ranked=stops.map(stop=>({...stop,distance:meters(here,stop)})).sort((a,b)=>a.distance-b.distance).slice(0,5);
-    nearbyList.innerHTML=ranked.map(stop=>'<button class="data-card nearby-stop" data-stop-id="'+stop.id+'" type="button"><b>'+stop.name+'</b><span>'+stop.lines.length+' '+(stop.lines.length===1?'LÍNEA':'LÍNEAS')+' DISPONIBLES</span>'+lineMarkup(stop.lines)+'<em>'+formatDistance(stop.distance)+'</em></button>').join('');
+    nearbyList.innerHTML=ranked.map(stop=>'<div class="data-card nearby-stop" data-stop-id="'+stop.id+'" role="button" tabindex="0"><button class="favorite-toggle" type="button" aria-label="Agregar '+stop.name+' a favoritos" aria-pressed="false">☆</button><b>'+stop.name+'</b><span>'+stop.lines.length+' '+(stop.lines.length===1?'LÍNEA':'LÍNEAS')+' DISPONIBLES</span>'+lineMarkup(stop.lines)+'<em>'+formatDistance(stop.distance)+'</em></div>').join('');
     nearbyState.textContent='GPS: ACTIVO';
     nearbyState.style.color='var(--cy)';
   }
@@ -404,7 +404,40 @@
   });
   document.addEventListener('keydown',e=>{
     const b=e.target.closest('.favorite-toggle');
-    if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();b.click();}
+    if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();b.click();return;}
+    const stop=e.target.closest('.nearby-stop');
+    if(stop&&(e.key==='Enter'||e.key===' ')){
+      e.preventDefault();
+      const item=window.TuColectivoStops?.find(s=>s.id===stop.dataset.stopId);
+      if(item){
+        const hasMultiple=item.lines.length>1;
+        if(hasMultiple){
+          stop.click();
+        }else{
+          stop.click();
+        }
+      }
+    }
+  });
+  list.addEventListener('click',e=>{
+    if(e.target.closest('.favorite-remove'))return;
+    const item=e.target.closest('.favorite-item');
+    if(!item)return;
+    const type=item.dataset.favType;
+    const id=item.dataset.favId;
+    if(type==='lines'){
+      window.TuColectivo.navigate('lineas');
+      setTimeout(()=>document.querySelector('.line-card[data-line="'+id+'"]')?.scrollIntoView({behavior:'smooth',block:'center'}),80);
+    }else if(type==='stops'){
+      window.TuColectivo.navigate('paradas');
+      setTimeout(()=>{
+        const stop=window.TuColectivoStops?.find(s=>s.id===id);
+        if(stop){
+          const nearby=document.getElementById('nearbyList');
+          nearby.innerHTML='<div class="nearby-empty"><strong>'+stop.name+'</strong><span>PARADA FAVORITA · SELECCIONÁ UNA LÍNEA PARA VER ARRIBOS</span>'+lineMarkup(stop.lines)+'</div>'+stop.lines.map(line=>'<button class="data-card stop-line-choice" data-stop-id="'+stop.id+'" data-line="'+line+'" type="button"><b>LÍNEA '+line+'</b><span>VER ARRIBOS DE ESTA PARADA</span><em>›</em></button>').join('');
+        }
+      },80);
+    }
   });
   document.addEventListener('app:navigate',e=>{if(e.detail.go==='favoritos')render();});
   window.TuColectivoFavorites={toggle,render};

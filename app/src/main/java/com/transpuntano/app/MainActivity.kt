@@ -26,6 +26,10 @@ class MainActivity : AppCompatActivity() {
             settings.allowFileAccess = true
             settings.allowContentAccess = true
             settings.loadsImagesAutomatically = true
+            settings.textZoom = 100
+            settings.setSupportZoom(false)
+            settings.builtInZoomControls = false
+            settings.displayZoomControls = false
             settings.setGeolocationEnabled(true)
             webViewClient = WebViewClient()
             webChromeClient = object : WebChromeClient() {
