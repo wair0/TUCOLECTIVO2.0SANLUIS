@@ -451,15 +451,41 @@
   };
 
   function showArrival(stop,line){
-    const minutes=Math.max(2,(line*3)%17+2);
-    arrivalStop.innerHTML='<strong>'+stop.name+'</strong><span>LÍNEA '+line+' · PARADA SELECCIONADA</span>';
-    const d1=Math.max(1.2,Math.min(18,minutes*.35));
-    const next=Math.min(59,minutes+8);
-    const d2=Math.max(1.2,Math.min(18,next*.35));
-    arrivalList.innerHTML='<div class="arrival-card"><b>LÍNEA '+line+'</b><span>PRÓXIMO ARRIBO ESTIMADO</span><em class="arrival-time" style="--arrival-duration:'+d1+'s"><strong>'+minutes+'</strong><small>MIN</small></em></div><div class="arrival-card"><b>LÍNEA '+line+'</b><span>SIGUIENTE SERVICIO</span><em class="arrival-time" style="--arrival-duration:'+d2+'s"><strong>'+next+'</strong><small>MIN</small></em></div>';
-    arrivalsMeta.textContent='LÍNEA '+line;
+    window.TuColectivoCurrentNearbyArrival={stop,line:Number(line)};
+    arrivalStop.innerHTML='<strong>'+escapeHtml(stop.name)+'</strong><span>LÍNEA '+Number(line)+' · PARADA SELECCIONADA</span><button class="arrival-favorite-toggle" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button>';
+    arrivalList.innerHTML='<div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>OBTENIENDO DATOS REALES DE SMARTMOVE</span></div>';
+    arrivalsMeta.textContent='LÍNEA '+Number(line);
     window.TuColectivo.navigate('arribos');
+    syncNearbyArrivalFavorite();
+    if(window.TuColectivoNative&&typeof window.TuColectivoNative.loadArrivals==='function'){
+      window.TuColectivoNative.loadArrivals(stop.identifier,Number(line));
+    }else{
+      arrivalList.innerHTML='<div class="nearby-empty"><strong>SERVICIO NO DISPONIBLE</strong><span>NO SE PUDO CONECTAR CON SMARTMOVE</span></div>';
+    }
   }
+  function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function syncNearbyArrivalFavorite(){
+    const current=window.TuColectivoCurrentNearbyArrival;
+    const button=arrivalStop.querySelector('.arrival-favorite-toggle');
+    if(!current||!button)return;
+    const saved=window.TuColectivoFavorites?.isArrivalSaved(current.stop,current.line)||false;
+    button.textContent=saved?'★ ARRIBO GUARDADO':'☆ AGREGAR ARRIBO A FAVORITOS';
+    button.setAttribute('aria-pressed',String(saved));
+  }
+  window.onNativeNearbyArrivals=function(payload){
+    let items=[];
+    try{items=typeof payload==='string'?JSON.parse(payload):payload||[];}catch(_){}
+    if(!arrivalList)return;
+    arrivalList.innerHTML=items.length?items.map(item=>{
+      const m=Number(item.minutes),duration=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
+      return '<div class="arrival-card"><div class="arrival-copy"><b>'+escapeHtml(item.line||('LÍNEA '+(window.TuColectivoCurrentNearbyArrival?.line||'')))+'</b><span>'+escapeHtml(item.destination||'SERVICIO')+'</span></div><em class="arrival-time" style="--arrival-duration:'+duration+'s"><strong>'+escapeHtml(item.minutes==null?'--':item.minutes)+'</strong><small>MIN</small></em></div>';
+    }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
+  };
+  window.onNativeNearbyArrivalsError=function(payload){
+    let message='NO SE PUDIERON CARGAR LOS ARRIBOS';
+    try{const data=typeof payload==='string'?JSON.parse(payload):payload;if(data?.message)message=data.message;}catch(_){}
+    if(arrivalList)arrivalList.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+escapeHtml(message)+'</span></div>';
+  };
 
   function chooseStop(stop){
     if(stop.lines.length===1){showArrival(stop,stop.lines[0]);return;}
@@ -522,12 +548,22 @@
       const parsed=raw?JSON.parse(raw):{lines:[],stops:[]};
       return {
         lines:Array.isArray(parsed.lines)?parsed.lines.map(Number).filter(n=>n>=1&&n<=14):[],
-        stops:Array.isArray(parsed.stops)?parsed.stops.filter(Boolean):[]
+        stops:Array.isArray(parsed.stops)?parsed.stops.filter(Boolean):[],
+        arrivals:Array.isArray(parsed.arrivals)?parsed.arrivals.filter(Boolean):[]
       };
-    }catch(_){return {lines:[],stops:[]};}
+    }catch(_){return {lines:[],stops:[],arrivals:[]};}
   }
   function save(){try{localStorage.setItem(STORAGE,JSON.stringify(favorites));}catch(_){}}
   function has(type,id){return favorites[type].some(v=>String(v)===String(id));}
+  function arrivalKey(stop,line){return String(stop.identifier||stop.id||stop.code)+'::'+Number(line);}
+  function isArrivalSaved(stop,line){const key=arrivalKey(stop,line);return favorites.arrivals.some(v=>v.key===key);}
+  function toggleArrival(stop,line){
+    const key=arrivalKey(stop,line);
+    if(isArrivalSaved(stop,line))favorites.arrivals=favorites.arrivals.filter(v=>v.key!==key);
+    else favorites.arrivals.push({key,line:Number(line),stop:{id:String(stop.id||stop.identifier||stop.code),identifier:String(stop.identifier||stop.id||stop.code),code:Number(stop.code)||0,name:String(stop.name||stop.description||('PARADA '+stop.code)),street:String(stop.street||''),intersection:String(stop.intersection||''),lat:Number(stop.lat??stop.latitude),lng:Number(stop.lng??stop.longitude),lines:Array.isArray(stop.lines)?stop.lines.map(Number):[Number(line)]}});
+    save();syncButtons();render();syncNearbyArrivalFavorite();syncLineArrivalFavorite();
+  }
+  function syncLineArrivalFavorite(){const current=window.TuColectivoCurrentLineArrival;const button=document.querySelector('[data-line-arrival-favorite]');if(!current||!button)return;const on=isArrivalSaved(current.stop,current.line);button.textContent=on?'★ ARRIBO GUARDADO':'☆ AGREGAR ARRIBO A FAVORITOS';button.setAttribute('aria-pressed',String(on));}
   function toggle(type,id){
     const key=String(id);
     favorites[type]=has(type,id)?favorites[type].filter(v=>String(v)!==key):[...favorites[type],type==='lines'?Number(id):key];
@@ -553,7 +589,7 @@
   function render(){
     const lines=favorites.lines.slice().sort((a,b)=>a-b);
     const stops=favorites.stops.map(stopInfo).filter(Boolean);
-    if(!lines.length&&!stops.length){list.innerHTML=empty;return;}
+    if(!lines.length&&!stops.length&&!favorites.arrivals.length){list.innerHTML=empty;return;}
     let html='';
     if(lines.length){
       html+='<div class="favorite-group">LÍNEAS FAVORITAS</div>';
@@ -563,10 +599,21 @@
       html+='<div class="favorite-group">PARADAS FAVORITAS</div>';
       html+=stops.map(s=>'<div class="favorite-item" data-fav-type="stops" data-fav-id="'+s.id+'"><div><b>'+s.name+'</b><small>'+s.lines.length+' '+(s.lines.length===1?'LÍNEA':'LÍNEAS')+' · ACCESO RÁPIDO</small></div><button class="favorite-remove" type="button" aria-label="Quitar parada de favoritos">×</button></div>').join('');
     }
+    if(favorites.arrivals.length){
+      html+='<div class="favorite-group">ARRIBOS FAVORITOS</div>';
+      html+=favorites.arrivals.map(v=>'<div class="favorite-item" data-fav-type="arrivals" data-fav-id="'+v.key+'"><div><b>'+String(v.stop?.name||'PARADA').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</b><small>LÍNEA '+Number(v.line)+' · ARRIBOS EN TIEMPO REAL</small></div><button class="favorite-remove" type="button" aria-label="Quitar arribo de favoritos">×</button></div>').join('');
+    }
     list.innerHTML=html;
   }
 
   document.addEventListener('click',e=>{
+    const arrivalBtn=e.target.closest('.arrival-favorite-toggle');
+    if(arrivalBtn){
+      e.preventDefault();e.stopPropagation();
+      const current=arrivalBtn.hasAttribute('data-line-arrival-favorite')?window.TuColectivoCurrentLineArrival:window.TuColectivoCurrentNearbyArrival;
+      if(current)toggleArrival(current.stop,current.line);
+      return;
+    }
     const toggleBtn=e.target.closest('.favorite-toggle');
     if(toggleBtn){
       e.preventDefault();e.stopPropagation();
@@ -609,6 +656,9 @@
     if(type==='lines'){
       window.TuColectivo.navigate('lineas');
       setTimeout(()=>document.querySelector('.line-card[data-line="'+id+'"]')?.scrollIntoView({behavior:'smooth',block:'center'}),80);
+    }else if(type==='arrivals'){
+      const saved=favorites.arrivals.find(v=>v.key===id);
+      if(saved){window.TuColectivoCurrentNearbyArrival={stop:{...saved.stop,lines:saved.stop.lines||[saved.line]},line:Number(saved.line)};window.TuColectivo.navigate('arribos');const current=window.TuColectivoCurrentNearbyArrival;const box=document.getElementById('arrivalStop'),target=document.getElementById('arrivalList');box.innerHTML='<strong>'+String(current.stop.name).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</strong><span>LÍNEA '+current.line+' · PARADA FAVORITA</span><button class="arrival-favorite-toggle" type="button" aria-pressed="true">★ ARRIBO GUARDADO</button>';target.innerHTML='<div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>OBTENIENDO DATOS REALES DE SMARTMOVE</span></div>';window.TuColectivoNative?.loadArrivals(current.stop.identifier,current.line);}
     }else if(type==='stops'){
       window.TuColectivo.navigate('paradas');
       setTimeout(()=>{
@@ -621,7 +671,7 @@
     }
   });
   document.addEventListener('app:navigate',e=>{if(e.detail.go==='favoritos')render();});
-  window.TuColectivoFavorites={toggle,render};
+  window.TuColectivoFavorites={toggle,render,toggleArrival,isArrivalSaved};
   render();syncButtons();
 })();
 
@@ -665,15 +715,19 @@
   window.onNativeStopsError=p=>showError('PARADAS',JSON.parse(p).message);
   window.onNativeArrivals=p=>{
     if(window.TuColectivoMap?.handleArrivals(p))return;
+    if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivals?.(p);return;}
     const a=JSON.parse(p),list=lineGrid.querySelector('.line-arrivals');
     if(!list)return;
     list.innerHTML=a.length?a.map(x=>{const m=Number(x.minutes);const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;return '<div class="arrival-card"><div class="arrival-copy"><b>'+esc(x.line||currentLine.name)+'</b><span>'+esc(x.destination||'SERVICIO')+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';}).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
   };
-  window.onNativeArrivalsError=p=>{if(window.TuColectivoMap?.handleArrivalsError(p))return;const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
+  window.onNativeArrivalsError=p=>{if(window.TuColectivoMap?.handleArrivalsError(p))return;if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivalsError?.(p);return;}const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
   function showArrivals(stop){
     currentStop=stop;
     lineHead.textContent='ARRIBOS';
-    lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(stop.description)+'</strong><small class="line-sub-context">'+esc((stop.street||'')+' · '+(stop.intersection||''))+'</small></div><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div><button class="map-route-action" data-map-route-line="'+Number(currentLine.code)+'" type="button">⌖ VER RECORRIDO EN EL MAPA</button>';
+    const favKey=String(stop.identifier||stop.code)+'::'+Number(currentLine.code);
+    window.TuColectivoCurrentLineArrival={stop:{id:String(stop.identifier||stop.code),identifier:String(stop.identifier||stop.code),code:Number(stop.code)||0,name:stop.description,street:stop.street||'',intersection:stop.intersection||'',lat:Number(stop.latitude),lng:Number(stop.longitude),lines:[Number(currentLine.code)]},line:Number(currentLine.code)};
+    lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(stop.description)+'</strong><small class="line-sub-context">'+esc((stop.street||'')+' · '+(stop.intersection||''))+'</small></div><button class="arrival-favorite-toggle" data-line-arrival-favorite="true" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div><button class="map-route-action" data-map-route-line="'+Number(currentLine.code)+'" type="button">⌖ VER RECORRIDO EN EL MAPA</button>';
+    syncLineArrivalFavorite();
     nativeApi.loadArrivals(stop.identifier,currentLine.code);
   }
   function loadLines(){if(nativeApi){loading('CARGANDO LÍNEAS');nativeApi.loadLines();}else showError('LÍNEAS','PUENTE ANDROID NO DISPONIBLE');}
