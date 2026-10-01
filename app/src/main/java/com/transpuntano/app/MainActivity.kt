@@ -301,6 +301,32 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        @JavascriptInterface fun resolveNearbyStopLines(identifier: String, latitude: Double, longitude: Double) {
+            executor.execute {
+                try {
+                    val lines = api.getLines()
+                    val matched = mutableListOf<Int>()
+                    for (line in lines) {
+                        val points = runCatching { api.getRoute(line.code) }.getOrDefault(emptyList())
+                        // El recorrido se aproxima por puntos; umbral 120 m para tolerar separación entre GPS y trazado.
+                        val near = points.any { point ->
+                            val latMeters = (point.first - latitude) * 111_320.0
+                            val lonMeters = (point.second - longitude) * 111_320.0 * kotlin.math.cos(Math.toRadians(latitude))
+                            kotlin.math.sqrt(latMeters * latMeters + lonMeters * lonMeters) <= 120.0
+                        }
+                        if (near) matched.add(line.code)
+                    }
+                    dispatch("onNativeNearbyStopLines", JSONObject()
+                        .put("identifier", identifier)
+                        .put("lines", JSONArray(matched.distinct().sorted())).toString())
+                } catch (e: Exception) {
+                    dispatch("onNativeNearbyStopLines", JSONObject()
+                        .put("identifier", identifier)
+                        .put("lines", JSONArray()).toString())
+                }
+            }
+        }
+
         @JavascriptInterface fun loadArrivals(identifier: String, lineCode: Int) {
             executor.execute {
                 runCatching { api.getArrivals(identifier, lineCode) }

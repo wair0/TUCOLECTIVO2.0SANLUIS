@@ -505,7 +505,7 @@
     if(!arrivalList)return;
     arrivalList.innerHTML=items.length?items.map(item=>{
       const m=Number(item.minutes),duration=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
-      return '<div class="arrival-card"><div class="arrival-copy"><b>'+escapeHtml(item.line||('LÍNEA '+(window.TuColectivoCurrentNearbyArrival?.line||'')))+'</b><span>'+escapeHtml(item.destination||'SERVICIO')+'</span></div><em class="arrival-time" style="--arrival-duration:'+duration+'s"><strong>'+escapeHtml(item.minutes==null?'--':item.minutes)+'</strong><small>MIN</small></em></div>';
+      return '<div class="arrival-card"><div class="arrival-copy"><b>'+escapeHtml(item.line||('LÍNEA '+(window.TuColectivoCurrentNearbyArrival?.line||'')))+'</b><span>'+escapeHtml(item.destination||'SERVICIO').replace(/[.·]+$/,'').trim()+'</span></div><em class="arrival-time" style="--arrival-duration:'+duration+'s"><strong>'+escapeHtml(item.minutes==null?'--':item.minutes)+'</strong><small>MIN</small></em></div>';
     }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
   };
   window.onNativeNearbyArrivalsError=function(payload){
@@ -514,8 +514,30 @@
     if(arrivalList)arrivalList.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+escapeHtml(message)+'</span></div>';
   };
 
+  window.onNativeNearbyStopLines=function(payload){
+    let result={};try{result=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
+    const stop=(window.TuColectivoStops||[]).find(s=>String(s.identifier)===String(result.identifier));
+    if(!stop)return;
+    const lines=[...new Set((result.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
+    stop.lines=lines;
+    if(!lines.length){
+      nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>SMARTMOVE NO CONFIRMÓ LÍNEAS PARA ESTA PARADA.</span></div>';
+      return;
+    }
+    if(lines.length===1){showArrival(stop,lines[0]);return;}
+    nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>LÍNEAS QUE PASAN POR ESTA PARADA</span>'+lineMarkup(lines)+'</div>'+lines.map(line=>'<button class="data-card stop-line-choice" data-stop-id="'+stop.id+'" data-line="'+line+'" type="button"><b>LÍNEA '+line+'</b><span>VER ARRIBOS DE ESTA PARADA</span></button>').join('');
+  };
   function chooseStop(stop){
     if(stop.lines.length===1){showArrival(stop,stop.lines[0]);return;}
+    if(!stop.lines.length){
+      nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>BUSCANDO LÍNEAS QUE PASAN POR ESTA PARADA...</span></div>';
+      if(window.TuColectivoNative?.resolveNearbyStopLines){
+        window.TuColectivoNative.resolveNearbyStopLines(stop.identifier,stop.lat,stop.lng);
+      }else{
+        nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>NO SE PUDIERON CONSULTAR LAS LÍNEAS DE ESTA PARADA.</span></div>';
+      }
+      return;
+    }
     if(!stop.lines.length){
       nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>SMARTMOVE NO PROPORCIONÓ LÍNEAS CONFIRMADAS PARA ESTA PARADA. NO SE MOSTRARÁN LÍNEAS INVENTADAS.</span></div>';
       return;

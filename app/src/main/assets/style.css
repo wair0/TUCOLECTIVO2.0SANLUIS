@@ -1226,3 +1226,11 @@ html,body,body *{
   .bar .title{max-width:calc(100vw - 132px)!important;font-size:clamp(8px,2.8vw,11px)!important}
 }
 .nearby-stop .favorite-toggle{display:none!important}
+
+
+/* FIX: paneles contextuales por encima del indicador de estado */
+.hdr{z-index:20!important}
+.hdr .bar{position:relative;z-index:21!important}
+.hdr .status{position:relative;z-index:1!important}
+.panel,.panel.open{z-index:50!important}
+.status::after{content:none!important;display:none!important;animation:none!important}
