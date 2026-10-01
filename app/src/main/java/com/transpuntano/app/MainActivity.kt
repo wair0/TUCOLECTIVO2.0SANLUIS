@@ -304,45 +304,42 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun resolveNearbyStopLines(identifier: String, latitude: Double, longitude: Double) {
             executor.execute {
                 try {
-                    val lines = api.getLines()
-                    val matched = mutableListOf<Int>()
-                    for (line in lines) {
-                        val points = runCatching { api.getRoute(line.code) }.getOrDefault(emptyList())
-                        // Medir la distancia a cada segmento del recorrido, no solo a los vértices:
-                        // los puntos de SmartMove pueden estar separados y una parada caer entre ellos.
-                        val cosLat = kotlin.math.cos(Math.toRadians(latitude)).coerceAtLeast(0.01)
-                        fun distanceMeters(point: Pair<Double, Double>): Double {
-                            val dy = (point.first - latitude) * 111_320.0
-                            val dx = (point.second - longitude) * 111_320.0 * cosLat
-                            return kotlin.math.sqrt(dx * dx + dy * dy)
-                        }
-                        var nearest = Double.POSITIVE_INFINITY
-                        if (points.size == 1) nearest = distanceMeters(points[0])
-                        for (i in 0 until (points.size - 1).coerceAtLeast(0)) {
-                            val a = points[i]
-                            val b = points[i + 1]
-                            val ax = (a.second - longitude) * 111_320.0 * cosLat
-                            val ay = (a.first - latitude) * 111_320.0
-                            val bx = (b.second - longitude) * 111_320.0 * cosLat
-                            val by = (b.first - latitude) * 111_320.0
-                            val vx = bx - ax
-                            val vy = by - ay
-                            val denom = vx * vx + vy * vy
-                            val t = if (denom <= 0.0001) 0.0 else ((-ax * vx - ay * vy) / denom).coerceIn(0.0, 1.0)
-                            val dx = ax + t * vx
-                            val dy = ay + t * vy
-                            nearest = minOf(nearest, kotlin.math.sqrt(dx * dx + dy * dy))
-                        }
-                        // 80 m permite separar corredores cercanos y tolera GPS/trazado imperfecto.
-                        if (nearest <= 80.0) matched.add(line.code)
+                    // Primero usar la relación parada-línea que devuelve SmartMove,
+                    // igual que la app de la rama native/cyberpunk-ui. No inferir líneas
+                    // midiendo la cercanía geométrica a recorridos completos.
+                    val cached = mapNearbyStops.firstOrNull {
+                        it.identifier == identifier || it.code.toString() == identifier
                     }
+                    var matched = cached?.lineCodes.orEmpty().filter { it > 0 }.distinct().sorted()
+
+                    if (matched.isEmpty()) {
+                        val nearbyAtStop = runCatching { api.getNearby(latitude, longitude) }
+                            .getOrDefault(emptyList())
+                        val exact = nearbyAtStop.firstOrNull {
+                            it.identifier == identifier || it.code.toString() == identifier
+                        } ?: nearbyAtStop.minByOrNull { stop ->
+                            val dy = (stop.latitude - latitude) * 111_320.0
+                            val dx = (stop.longitude - longitude) * 111_320.0 *
+                                kotlin.math.cos(Math.toRadians(latitude))
+                            kotlin.math.sqrt(dx * dx + dy * dy)
+                        }?.takeIf { stop ->
+                            val dy = (stop.latitude - latitude) * 111_320.0
+                            val dx = (stop.longitude - longitude) * 111_320.0 *
+                                kotlin.math.cos(Math.toRadians(latitude))
+                            kotlin.math.sqrt(dx * dx + dy * dy) <= 45.0
+                        }
+                        matched = exact?.lineCodes.orEmpty().filter { it > 0 }.distinct().sorted()
+                    }
+
                     dispatch("onNativeNearbyStopLines", JSONObject()
                         .put("identifier", identifier)
-                        .put("lines", JSONArray(matched.distinct().sorted())).toString())
+                        .put("lines", JSONArray(matched)).toString())
                 } catch (e: Exception) {
                     dispatch("onNativeNearbyStopLines", JSONObject()
                         .put("identifier", identifier)
-                        .put("lines", JSONArray()).toString())
+                        .put("lines", JSONArray())
+                        .put("message", e.message ?: "No se pudieron consultar las líneas asociadas a la parada")
+                        .toString())
                 }
             }
         }
