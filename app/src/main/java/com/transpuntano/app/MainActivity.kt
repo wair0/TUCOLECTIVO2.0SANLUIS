@@ -242,24 +242,49 @@ class MainActivity : AppCompatActivity() {
         try {
             val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
             val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).filter { runCatching { manager.isProviderEnabled(it) }.getOrDefault(false) }
-            val last = providers.mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }.maxByOrNull { it.time }
-            if (last != null) { deliverNativeLocation(purpose, last); return }
-            val provider = providers.firstOrNull() ?: run { failNativeLocation(purpose, "UBICACIÓN DESACTIVADA"); return }
-            val listener = object : LocationListener {
-                override fun onLocationChanged(location: Location) { runCatching { manager.removeUpdates(this) }; deliverNativeLocation(purpose, location) }
+            if (providers.isEmpty()) { failNativeLocation(purpose, "UBICACIÓN DESACTIVADA"); return }
+            var delivered = false
+            val listeners = mutableListOf<LocationListener>()
+            val finish: (Location) -> Unit = { location ->
+                if (!delivered) {
+                    delivered = true
+                    listeners.forEach { listener -> runCatching { manager.removeUpdates(listener) } }
+                    listeners.clear()
+                    deliverNativeLocation(purpose, location)
+                }
             }
-            manager.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper())
-            Handler(Looper.getMainLooper()).postDelayed({ runCatching { manager.removeUpdates(listener) }; if (pendingLocationPurpose == purpose) failNativeLocation(purpose, "TIEMPO DE ESPERA AGOTADO") }, 12000L)
+            providers.forEach { provider ->
+                val listener = object : LocationListener {
+                    override fun onLocationChanged(location: Location) { finish(location) }
+                }
+                listeners += listener
+                runCatching { manager.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper()) }
+                    .onFailure { listeners.remove(listener) }
+            }
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (!delivered && pendingLocationPurpose == purpose) {
+                    listeners.forEach { listener -> runCatching { manager.removeUpdates(listener) } }
+                    listeners.clear()
+                    failNativeLocation(purpose, "TIEMPO DE ESPERA AGOTADO")
+                }
+            }, 12000L)
         } catch (e: Exception) { failNativeLocation(purpose, e.message ?: "ERROR DE UBICACIÓN") }
     }
     private fun deliverNativeLocation(purpose: String, location: Location) {
         if (pendingLocationPurpose != purpose) return
         pendingLocationPurpose = null
         dispatch("onNativeLocation", JSONObject().put("purpose", purpose).put("latitude", location.latitude).put("longitude", location.longitude).toString())
-        if (purpose == "map") TransitBridge().loadMapData(location.latitude, location.longitude, mapLineCode)
-        else executor.execute {
+        if (purpose == "map") {
+            TransitBridge().loadMapData(location.latitude, location.longitude, mapLineCode)
+        } else executor.execute {
             runCatching { api.getNearby(location.latitude, location.longitude) }
-                .onSuccess { dispatch("onNativeNearbyStops", stopJson(it)) }
+                .onSuccess { stops ->
+                    dispatch("onNativeNearbyStops", JSONObject()
+                        .put("latitude", location.latitude)
+                        .put("longitude", location.longitude)
+                        .put("stops", JSONArray(stopJson(stops)))
+                        .toString())
+                }
                 .onFailure { dispatch("onNativeNearbyStopsError", JSONObject().put("message", it.message ?: "No se pudieron localizar las paradas").toString()) }
         }
     }
@@ -472,6 +497,12 @@ class MainActivity : AppCompatActivity() {
         pendingGeoCallback?.invoke(pendingGeoOrigin ?: "file://", granted, false)
         pendingGeoCallback = null
         pendingGeoOrigin = null
+        val pendingPurpose = pendingLocationPurpose
+        if (granted && pendingPurpose != null) {
+            requestNativeLocation(pendingPurpose)
+        } else if (!granted && pendingPurpose != null) {
+            failNativeLocation(pendingPurpose, "PERMISO DE UBICACIÓN DENEGADO")
+        }
     }
 
     override fun onDestroy() {

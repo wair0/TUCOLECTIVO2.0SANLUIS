@@ -368,7 +368,7 @@
     if(r.purpose==='nearby'){locateBtn.disabled=false;nearbyState.textContent='GPS: '+(r.message||'SIN SEÑAL');}
   };
   window.onNativeMapStops=payload=>{
-    try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.stops=raw.map(s=>({id:String(s.identifier||s.code),code:Number(s.code)||0,identifier:String(s.identifier||s.code||''),name:String(s.description||('PARADA '+s.code)),lat:Number(s.latitude),lng:Number(s.longitude),street:String(s.street||''),intersection:String(s.intersection||''),lines:(()=>{const found=[...(Array.isArray(s.lineCodes)?s.lineCodes:[]).map(Number),Number(s.lineCode)];if(!found.some(n=>Number.isFinite(n)&&n>0)&&map.routeLineCode>0)found.push(map.routeLineCode);return [...new Set(found.filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);})()})).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&(s.lat!==0||s.lng!==0));
+    try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.stops=raw.map(s=>({id:String(s.identifier||s.code),code:Number(s.code)||0,identifier:String(s.identifier||s.code||''),name:String(s.description||('PARADA '+s.code)),lat:Number(s.latitude),lng:Number(s.longitude),street:String(s.street||''),intersection:String(s.intersection||''),lines:(()=>{const found=[...(Array.isArray(s.lineCodes)?s.lineCodes:[]).map(Number),Number(s.lineCode)];return [...new Set(found.filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);})()})).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&(s.lat!==0||s.lng!==0));
       state.textContent='GPS ACTIVO · '+map.stops.length+' PARADAS';draw();if(map.stops.length)fitPoints(map.routePoints.length?map.routePoints.concat(map.stops):map.stops);
     }catch(_){state.textContent='ERROR LEYENDO PARADAS';}
   };
@@ -396,7 +396,12 @@
     handleArrivalsError(payload){if(!map.pendingMapArrival)return false;let msg='NO SE PUDIERON CARGAR LOS ARRIBOS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.textContent=msg;map.pendingMapArrival=null;return true;}
   };
   window.setInterval(()=>{const screen=document.querySelector('[data-screen="mapa"]');if(screen&&screen.classList.contains('active')&&window.TuColectivoNative&&typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode||0);},12000);
-  document.addEventListener('app:navigate',e=>{if(e.detail.go==='mapa')setTimeout(resize,60);});
+  document.addEventListener('app:navigate',e=>{
+    if(e.detail.go==='mapa'){
+      setTimeout(resize,60);
+      setTimeout(()=>{if(typeof locateUser==='function')locateUser();},120);
+    }
+  });
   resize();
 })();
 
@@ -455,8 +460,11 @@
 
   window.onNativeNearbyStops=function(payload){
     try{
-      const raw=typeof payload==='string'?JSON.parse(payload):payload;
-      const stops=Array.isArray(raw)?raw:[];
+      const data=typeof payload==='string'?JSON.parse(payload):payload;
+      const stops=Array.isArray(data)?data:(Array.isArray(data?.stops)?data.stops:[]);
+      if(data&&Number.isFinite(Number(data.latitude))&&Number.isFinite(Number(data.longitude))){
+        window.TuColectivoPendingPosition={coords:{latitude:Number(data.latitude),longitude:Number(data.longitude)}};
+      }
       if(window.TuColectivoPendingPosition) renderNearby(stops,window.TuColectivoPendingPosition);
       else {
         nearbyState.textContent='GPS: SIN POSICIÓN';
