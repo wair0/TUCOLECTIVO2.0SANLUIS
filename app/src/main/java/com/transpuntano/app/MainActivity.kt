@@ -13,6 +13,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.BitmapFactory
 import android.util.Base64
+import android.util.DisplayMetrics
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Handler
@@ -67,6 +68,19 @@ class MainActivity : AppCompatActivity() {
     private lateinit var drawerScrim: View
     private var drawerOpen = false
     private var drawerHotspotsReady = false
+
+    /**
+     * La interfaz visual de esta versión usa una escala de diseño propia.
+     * Ignoramos el fontScale y el densityDpi modificados por "Tamaño de texto"
+     * y "Tamaño de pantalla" para que header, tarjetas, botones y Canvas
+     * conserven exactamente sus proporciones diseñadas.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        val configuration = android.content.res.Configuration(newBase.resources.configuration)
+        configuration.fontScale = 1f
+        configuration.densityDpi = DisplayMetrics.DENSITY_DEVICE_STABLE
+        super.attachBaseContext(newBase.createConfigurationContext(configuration))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
