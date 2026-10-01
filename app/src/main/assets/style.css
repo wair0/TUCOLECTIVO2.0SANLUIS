@@ -830,3 +830,19 @@ html,body,body *{
   0%,100%{box-shadow:0 0 6px rgba(0,240,255,.3),inset 0 0 8px rgba(160,32,255,.1)}
   50%{box-shadow:0 0 12px rgba(160,32,255,.55),inset 0 0 12px rgba(0,240,255,.16)}
 }
+
+/* REUBICAR MARCO DE ESTADO: EXTENSIÓN INFERIOR DEL HEADER */
+.status{
+  top:calc(var(--hh) + var(--top) - 1px)!important;
+  left:50%!important;
+  right:auto!important;
+  width:max-content!important;
+  max-width:calc(100vw - 80px)!important;
+  min-width:92px;
+  min-height:24px;
+  padding:5px 14px 5px!important;
+  font-size:10px!important;
+  line-height:1!important;
+  transform:translateX(-50%)!important;
+  z-index:30!important;
+}
