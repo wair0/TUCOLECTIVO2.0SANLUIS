@@ -42,10 +42,6 @@ class MainActivity : AppCompatActivity() {
     private val resolvedStopLines = java.util.concurrent.ConcurrentHashMap<String, List<Int>>()
     private val routeCache = java.util.concurrent.ConcurrentHashMap<Int, List<Pair<Double, Double>>>()
     @Volatile private var transitLinesCache: List<TransitLine> = emptyList()
-    private val lineResolutionExecutor = Executors.newFixedThreadPool(8)
-    private val resolvedStopLines = ConcurrentHashMap<String, List<Int>>()
-    private val routeCache = ConcurrentHashMap<Int, List<Pair<Double, Double>>>()
-    @Volatile private var transitLinesCache: List<TransitLine> = emptyList()
     @Volatile private var mapNearbyStops: List<TransitStop> = emptyList()
     @Volatile private var mapLineCode: Int = 0
     @Volatile private var mapVehicleRefreshInProgress = false
