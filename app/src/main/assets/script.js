@@ -592,12 +592,14 @@
  .arrival-copy span{line-height:1.15!important;white-space:normal!important}
  .arrival-time{position:relative!important;flex:0 0 70px!important;width:70px!important;height:70px!important;display:grid!important;place-items:center!important}
  .arrival-ring{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;overflow:visible!important;transform:rotate(-90deg)!important}
+  .arrival-ring-orbit{transform-box:view-box!important;transform-origin:40px 40px!important;animation:arrivalNativeOrbit var(--arrival-duration,1.5s) linear infinite!important}
+  .arrival-ring-dot{fill:var(--vt);stroke:var(--vt);stroke-width:1;filter:drop-shadow(0 0 5px var(--vt));animation:none!important}
  .arrival-ring-base{fill:none;stroke:var(--cy);stroke-width:4;filter:drop-shadow(0 0 5px var(--cy))}
- .arrival-ring-arc{fill:none;stroke:var(--vt);stroke-width:4;stroke-linecap:round;stroke-dasharray:56.2 163.7;filter:drop-shadow(0 0 6px var(--vt));transform-origin:40px 40px;animation:arrivalNativeOrbit var(--arrival-duration,1.5s) linear infinite}
- .arrival-time strong,.arrival-time small{position:relative!important;z-index:2!important;line-height:1!important}
- .arrival-time strong{font-size:15px!important}
- .arrival-time small{font-size:6.5px!important;margin-top:-1px!important}
- @keyframes arrivalNativeOrbit{to{transform:rotate(360deg)}}
+ .arrival-ring-arc{fill:none;stroke:var(--vt);stroke-width:4;stroke-linecap:round;stroke-dasharray:56.2 163.7;filter:drop-shadow(0 0 6px var(--vt));transform-origin:40px 40px;animation:none!important}
+ .arrival-time strong,.arrival-time small{position:absolute!important;left:50%!important;z-index:5!important;line-height:1!important;margin:0!important;white-space:nowrap!important}
+ .arrival-time strong{top:50%!important;transform:translate(-50%,-68%)!important;font-size:15px!important}
+ .arrival-time small{top:calc(50% + 7px)!important;transform:translateX(-50%)!important;font-size:6.5px!important}
+ @keyframes arrivalNativeOrbit{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
  `;
  document.head.appendChild(css);
 })();
