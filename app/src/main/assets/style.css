@@ -3,7 +3,7 @@
 @supports(top:env(safe-area-inset-top)){:root{--top:env(safe-area-inset-top)}}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
 body{min-height:100vh;background:var(--bg);color:var(--tx);font:14px/1.4 var(--mono);overflow-x:hidden;-webkit-user-select:none;user-select:none;background-image:linear-gradient(rgba(0,240,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(160,32,255,.07) 1px,transparent 1px);background-size:28px 28px}
-main{padding:calc(var(--hh) + var(--top) + 28px) 16px;color:var(--cy);opacity:.45;font-size:12px;letter-spacing:.2em}
+main{padding:calc(var(--hh) + var(--top) + 28px) 16px;color:var(--cy);opacity:1;font-size:12px;letter-spacing:.2em}
 button{font:inherit;cursor:pointer;touch-action:manipulation}
 :focus-visible{outline:2px solid var(--vt);outline-offset:2px}
 .hdr{position:fixed;top:0;left:0;right:0;z-index:20;filter:drop-shadow(0 0 5px rgba(0,240,255,.6)) drop-shadow(0 0 12px rgba(160,32,255,.4))}
@@ -250,8 +250,9 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
 .map-wrap{
   position:relative;
   width:100%;
-  height:calc(100vh - var(--hh) - var(--top) - 156px);
-  min-height:360px;
+  height:calc(100dvh - var(--hh) - var(--top) - 66px - env(safe-area-inset-bottom) - 112px);
+  min-height:260px;
+  max-height:calc(100dvh - var(--hh) - var(--top) - 66px - env(safe-area-inset-bottom) - 112px);
   margin-top:14px;
   overflow:hidden;
   background:#07101c;
@@ -339,7 +340,7 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
 }
 @keyframes mapScan{50%{opacity:.45;transform:scaleX(.72)}}
 @media(max-width:360px){
-  .map-wrap{min-height:330px;height:calc(100vh - var(--hh) - var(--top) - 146px)}
+  .map-wrap{min-height:330px;height:calc(100dvh - var(--hh) - var(--top) - 62px - env(safe-area-inset-bottom) - 112px)}
   .map-controls button{width:38px;height:38px}
 }
 @media(prefers-reduced-motion:reduce){.map-wrap::after{animation:none}}
@@ -554,3 +555,22 @@ body,button,input,textarea,select{
   .btn svg{width:18px;height:18px}
 }
 @media(min-width:600px){.title{max-width:300px}}
+
+
+/* FASE 12 — CORRECCIÓN DE SUPERFICIES, HOME Y MAPA */
+.home-design-grid .card{opacity:1;background:linear-gradient(160deg,#101940,#080c22);border:1px solid var(--cy);border-left:3px solid var(--vi);box-shadow:inset 0 0 16px rgba(0,240,255,.22)}
+.home-design-grid .card .ic{width:34px;height:34px;position:relative;z-index:1;color:var(--cy);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;filter:drop-shadow(0 0 4px currentColor)}
+.home-design-grid .card span,.home-design-grid .card b,.home-design-grid .card small{position:relative;z-index:1}
+.home-design-grid .card b{color:#fff;text-shadow:0 0 6px var(--cy)}
+.home-design-grid .card small{color:var(--vt)}
+.home-design-grid .card.sync{background:linear-gradient(160deg,#1b0a40,#0d0524);border-color:var(--vi);border-left-color:var(--cy);box-shadow:inset 0 0 16px rgba(160,32,255,.4)}
+.home-design-grid .card.sync .ic{flex:none;color:var(--vt)}
+.home-design-grid .card.sync .prog{position:absolute;left:0;bottom:0;height:3px;width:0;background:linear-gradient(90deg,var(--vi),var(--cy));box-shadow:0 0 8px var(--cy)}
+.home-design-grid .card.sync.run .prog{animation:fill 2.2s linear forwards}
+.home-design-grid .card.sync.run .ic{animation:spin 1s linear infinite}
+.screen.active,.screen.active>*{opacity:1}
+.line-card,.data-card,.locate-stops,.arrival-card,.favorite-item,.nearby-empty,.favorite-toggle,.favorite-remove,.sub-back{opacity:1!important}
+.line-card,.data-card,.arrival-card,.favorite-item{background:#10152b}
+.line-card:active,.data-card:active,.arrival-card:active,.favorite-item:active{background:#302047}
+.screen[data-screen="mapa"]{overflow:hidden}
+.screen[data-screen="mapa"] .map-wrap{margin-bottom:0}
