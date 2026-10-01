@@ -529,3 +529,28 @@ body,button,input,textarea,select{
 .home-design-grid .card.sync.run .ic{animation:spin 1s linear infinite}
 @keyframes fill{to{width:100%}} @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:360px){.home-design-grid{gap:8px}.home-design-grid .card{min-height:104px;padding:12px}.home-design-grid .card b{font-size:12px}.home-design-grid .card small{font-size:8px}.home-design-grid .card.sync{min-height:78px}}
+
+
+/* FASE 11E — HEADER RESPONSIVE */
+/* Mantiene tres zonas estables: acciones, título y estado. */
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:center}
+.side{width:100%;min-width:0}
+.side.l{justify-content:flex-start}
+.side.r{justify-content:flex-end}
+.title{min-width:0;max-width:min(46vw,220px);overflow:hidden;text-overflow:ellipsis;text-align:center}
+.status{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:390px){
+  .bar{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px;padding-left:7px;padding-right:7px}
+  .title{font-size:13px;max-width:38vw;letter-spacing:.06em}
+  .status{font-size:8px;max-width:100%}
+  .side{gap:4px}
+  .btn{width:34px;height:34px}
+  .btn svg{width:19px;height:19px}
+}
+@media(max-width:340px){
+  .title{font-size:12px;max-width:34vw}
+  .status{font-size:7px;letter-spacing:.03em}
+  .btn{width:32px;height:32px}
+  .btn svg{width:18px;height:18px}
+}
+@media(min-width:600px){.title{max-width:300px}}
