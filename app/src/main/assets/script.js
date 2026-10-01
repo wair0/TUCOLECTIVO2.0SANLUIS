@@ -881,12 +881,25 @@
   window.onNativeIntersectionsError=p=>showError('INTERSECCIONES',JSON.parse(p).message);
   window.onNativeStops=p=>{const a=JSON.parse(p);currentStop=null;showList('PARADAS','INTERSECCIÓN: '+(currentIntersection?.name||''),a,'SIN PARADAS',showArrivals,'ARRIBOS');};
   window.onNativeStopsError=p=>showError('PARADAS',JSON.parse(p).message);
+  const renderLineArrivals=(items,list)=>{
+    const a=Array.isArray(items)?items:[];
+    if(!list)return;
+    list.innerHTML=a.length?a.map(x=>{
+      const m=Number(x.minutes);
+      const arriving=Number.isFinite(m)&&m<=1;
+      const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
+      const destination=String(x.destination||'SERVICIO').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\\u200B-\\u200D\\uFEFF]/g,' ').replace(/\\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
+      if(arriving){
+        return '<div class="arrival-card arrival-arriving"><div class="arrival-copy"><b>'+esc(x.line||currentLine?.name||'LÍNEA')+'</b><span>'+esc(destination)+'</span></div><em class="arrival-time arrival-time-arriving"><strong>ARRIBANDO</strong></em></div>';
+      }
+      return '<div class="arrival-card"><div class="arrival-copy"><b>'+esc(x.line||currentLine?.name||'LÍNEA')+'</b><span>'+esc(destination)+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';
+    }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
+  };
   window.onNativeArrivals=p=>{
     if(window.TuColectivoMap?.handleArrivals(p))return;
     if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivals?.(p);return;}
     const a=JSON.parse(p),list=lineGrid.querySelector('.line-arrivals');
-    if(!list)return;
-    list.innerHTML=a.length?a.map(x=>{const m=Number(x.minutes);const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;return '<div class="arrival-card"><div class="arrival-copy"><b>'+esc(x.line||currentLine.name)+'</b><span>'+esc(String(x.destination||'SERVICIO').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim())+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';}).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
+    renderLineArrivals(a,list);
   };
   window.onNativeArrivalsError=p=>{if(window.TuColectivoMap?.handleArrivalsError(p))return;if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivalsError?.(p);return;}const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
   function showArrivals(stop){
@@ -894,7 +907,7 @@
     lineHead.textContent='ARRIBOS';
     const favKey=String(stop.identifier||stop.code)+'::'+Number(currentLine.code);
     window.TuColectivoCurrentLineArrival={stop:{id:String(stop.identifier||stop.code),identifier:String(stop.identifier||stop.code),code:Number(stop.code)||0,name:stop.description,street:stop.street||'',intersection:stop.intersection||'',lat:Number(stop.latitude),lng:Number(stop.longitude),lines:[Number(currentLine.code)]},line:Number(currentLine.code)};
-    lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(stop.description)+'</strong><small class="line-sub-context">'+esc((stop.street||'')+' · '+(stop.intersection||''))+'</small></div><button class="arrival-favorite-toggle" data-line-arrival-favorite="true" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div><button class="map-route-action" data-map-route-line="'+Number(currentLine.code)+'" type="button">⌖ VER RECORRIDO EN EL MAPA</button>';
+    lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(stop.description)+'</strong><small class="line-sub-context">'+esc((stop.street||'')+' · '+(stop.intersection||''))+'</small></div><button class="arrival-favorite-toggle" data-line-arrival-favorite="true" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button><button class="arrival-refresh" type="button" data-arrival-refresh="true">↻ ACTUALIZAR MINUTOS</button><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div><button class="map-route-action" data-map-route-line="'+Number(currentLine.code)+'" type="button">⌖ VER RECORRIDO EN EL MAPA</button>';
     window.TuColectivoFavorites?.syncLineArrivalFavorite?.();
     nativeApi.loadArrivals(stop.identifier,currentLine.code);
   }
@@ -909,6 +922,16 @@
     return true;
   }
   lineGrid.addEventListener('click',e=>{
+    const refresh=e.target.closest('[data-arrival-refresh]');
+    if(refresh&&currentStop&&currentLine){
+      refresh.disabled=true;
+      refresh.textContent='↻ ACTUALIZANDO...';
+      const list=lineGrid.querySelector('.line-arrivals');
+      if(list)list.innerHTML='<div class="nearby-empty"><strong>ACTUALIZANDO MINUTOS_</strong><span>CONSULTANDO ARRIBOS EN TIEMPO REAL</span></div>';
+      nativeApi.loadArrivals(currentStop.identifier,currentLine.code);
+      setTimeout(()=>{if(refresh.isConnected){refresh.disabled=false;refresh.textContent='↻ ACTUALIZAR MINUTOS';}},1200);
+      return;
+    }
     const mapBtn=e.target.closest('[data-map-route-line]');if(mapBtn){const code=Number(mapBtn.dataset.mapRouteLine);if(code&&window.TuColectivoMap)window.TuColectivoMap.showRoute(code);return;}
     const c=e.target.closest('.line-card');if(c){const l=lines.find(x=>String(x.code)===c.dataset.line);if(l)openLine(l);return;}
   });
@@ -926,6 +949,12 @@
  .line-card small{display:none!important}
  .data-card.line-detail-card span{display:block!important}
  .arrival-card{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:88px!important;padding:10px 14px!important;box-sizing:border-box!important}
+ .arrival-refresh{display:block!important;width:100%!important;min-height:44px!important;margin:8px 0 10px!important;padding:10px 14px!important;border:1px solid var(--vt)!important;background:rgba(0,240,255,.08)!important;color:var(--vt)!important;font-family:inherit!important;font-weight:800!important;letter-spacing:.08em!important;border-radius:10px!important;box-shadow:0 0 10px rgba(0,240,255,.12)!important}
+ .arrival-refresh:disabled{opacity:.55!important}
+ .arrival-arriving .arrival-copy{padding-right:8px}
+ .arrival-time-arriving{flex:0 0 auto!important;width:auto!important;min-width:92px!important;height:42px!important}
+ .arrival-time-arriving strong{position:static!important;transform:none!important;font-size:15px!important;letter-spacing:.08em!important;color:var(--vt)!important;text-shadow:0 0 8px var(--vt)!important}
+
  .arrival-copy{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:7px;flex:1;padding-right:12px}
  .arrival-copy b{line-height:1.15!important}
  .arrival-copy span{line-height:1.15!important;white-space:normal!important}
