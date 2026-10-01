@@ -5,21 +5,28 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.webkit.GeolocationPermissions
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import com.tucolectivo.app.data.SmartMoveApi
+import com.tucolectivo.app.model.*
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
+    private val api = SmartMoveApi()
+    private val executor = Executors.newFixedThreadPool(3)
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -31,55 +38,88 @@ class MainActivity : AppCompatActivity() {
             settings.builtInZoomControls = false
             settings.displayZoomControls = false
             settings.setGeolocationEnabled(true)
+            addJavascriptInterface(TransitBridge(), "TuColectivoNative")
             webViewClient = WebViewClient()
             webChromeClient = object : WebChromeClient() {
-                override fun onGeolocationPermissionsShowPrompt(
-                    origin: String,
-                    callback: GeolocationPermissions.Callback
-                ) {
+                override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
                     if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                    ) {
+                        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                         callback.invoke(origin, true, false)
-                        return
+                    } else {
+                        pendingGeoOrigin = origin
+                        pendingGeoCallback = callback
+                        requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST)
                     }
-
-                    pendingGeoOrigin = origin
-                    pendingGeoCallback = callback
-                    requestPermissions(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        ),
-                        LOCATION_PERMISSION_REQUEST
-                    )
                 }
             }
             loadUrl("file:///android_asset/index.html")
         }
-
         setContentView(webView)
-
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                webView.evaluateJavascript(
-                    "window.TuColectivo && TuColectivo.closeMenus ? TuColectivo.closeMenus() : false"
-                ) { result ->
+                webView.evaluateJavascript("window.TuColectivo && TuColectivo.closeMenus ? TuColectivo.closeMenus() : false") { result ->
                     if (result != "true") finish()
                 }
             }
         })
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    private fun dispatch(functionName: String, payload: String) {
+        val safe = JSONObject.quote(payload)
+        runOnUiThread { webView.evaluateJavascript("window.${functionName} && window.${functionName}($safe)", null) }
+    }
+
+    private fun lineJson(items: List<TransitLine>) = JSONArray().apply {
+        items.forEach { put(JSONObject().put("code", it.code).put("name", it.name).put("raw", it.raw)) }
+    }.toString()
+    private fun streetJson(items: List<TransitStreet>) = JSONArray().apply {
+        items.forEach { put(JSONObject().put("code", it.code).put("name", it.name)) }
+    }.toString()
+    private fun intersectionJson(items: List<TransitIntersection>) = JSONArray().apply {
+        items.forEach { put(JSONObject().put("code", it.code).put("name", it.name)) }
+    }.toString()
+    private fun stopJson(items: List<TransitStop>) = JSONArray().apply {
+        items.forEach { put(JSONObject().put("code", it.code).put("description", it.description).put("identifier", it.identifier)
+            .put("latitude", it.latitude).put("longitude", it.longitude).put("street", it.street).put("intersection", it.intersection)
+            .put("lineCode", it.lineCode).put("lineCodes", JSONArray(it.lineCodes)) }
+    }.toString()
+    private fun arrivalJson(items: List<TransitArrival>) = JSONArray().apply {
+        items.forEach { put(JSONObject().put("line", it.line).put("destination", it.destination).put("minutes", it.minutes)
+            .put("status", it.status).put("vehicleId", it.vehicleId).put("latitude", it.latitude).put("longitude", it.longitude)
+            .put("gpsTimestamp", it.gpsTimestamp)) }
+    }.toString()
+
+    inner class TransitBridge {
+        @JavascriptInterface fun loadLines() {
+            executor.execute { runCatching { api.getLines() }
+                .onSuccess { dispatch("onNativeLines", lineJson(it)) }
+                .onFailure { dispatch("onNativeLinesError", JSONObject().put("message", it.message ?: "No se pudieron cargar las líneas").toString()) } }
+        }
+        @JavascriptInterface fun loadStreets(lineCode: Int) {
+            executor.execute { runCatching { api.getStreets(lineCode) }
+                .onSuccess { dispatch("onNativeStreets", streetJson(it)) }
+                .onFailure { dispatch("onNativeStreetsError", JSONObject().put("message", it.message ?: "No se pudieron cargar las calles").toString()) } }
+        }
+        @JavascriptInterface fun loadIntersections(lineCode: Int, streetCode: Int) {
+            executor.execute { runCatching { api.getIntersections(lineCode, streetCode) }
+                .onSuccess { dispatch("onNativeIntersections", intersectionJson(it)) }
+                .onFailure { dispatch("onNativeIntersectionsError", JSONObject().put("message", it.message ?: "No se pudieron cargar las intersecciones").toString()) } }
+        }
+        @JavascriptInterface fun loadStops(lineCode: Int, streetCode: Int, intersectionCode: Int) {
+            executor.execute { runCatching { api.getStops(lineCode, streetCode, intersectionCode) }
+                .onSuccess { dispatch("onNativeStops", stopJson(it)) }
+                .onFailure { dispatch("onNativeStopsError", JSONObject().put("message", it.message ?: "No se pudieron cargar las paradas").toString()) } }
+        }
+        @JavascriptInterface fun loadArrivals(identifier: String, lineCode: Int) {
+            executor.execute { runCatching { api.getArrivals(identifier, lineCode) }
+                .onSuccess { dispatch("onNativeArrivals", arrivalJson(it)) }
+                .onFailure { dispatch("onNativeArrivalsError", JSONObject().put("message", it.message ?: "No se pudieron cargar los arribos").toString()) } }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
         if (requestCode != LOCATION_PERMISSION_REQUEST) return
-
         val granted = grantResults.any { it == PackageManager.PERMISSION_GRANTED }
         pendingGeoCallback?.invoke(pendingGeoOrigin ?: "file://", granted, false)
         pendingGeoCallback = null
@@ -90,12 +130,11 @@ class MainActivity : AppCompatActivity() {
         pendingGeoCallback?.invoke(pendingGeoOrigin ?: "file://", false, false)
         pendingGeoCallback = null
         pendingGeoOrigin = null
+        executor.shutdownNow()
         webView.stopLoading()
         webView.destroy()
         super.onDestroy()
     }
 
-    companion object {
-        private const val LOCATION_PERMISSION_REQUEST = 4102
-    }
+    companion object { private const val LOCATION_PERMISSION_REQUEST = 4102 }
 }

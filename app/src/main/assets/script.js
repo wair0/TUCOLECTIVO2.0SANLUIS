@@ -443,3 +443,63 @@
   window.TuColectivoFavorites={toggle,render};
   render();syncButtons();
 })();
+
+/* FASE 11B — LÍNEAS REALES + SUBSECCIONES DESDE SMARTMOVE NATIVO */
+(() => {
+  'use strict';
+  const lineScreen=document.querySelector('[data-screen="lineas"]');
+  if(!lineScreen)return;
+  const lineGrid=lineScreen.querySelector('.lineas-grid');
+  const lineHead=lineScreen.querySelector('.screen-head small');
+  const nativeApi=window.TuColectivoNative;
+  if(!lineGrid)return;
+  let lines=[],currentLine=null,currentStreet=null,currentIntersection=null;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const loading=t=>lineGrid.innerHTML='<div class="nearby-empty"><strong>'+esc(t)+'</strong><span>CONSULTANDO SERVICIO SMARTMOVE_</span></div>';
+  const renderLines=items=>{
+    lines=Array.isArray(items)?items:[];
+    lineHead.textContent=lines.length+' RUTAS';
+    lineGrid.innerHTML=lines.map(l=>'<button class="line-card" data-line="'+l.code+'"><span class="line-badge">'+esc(l.name)+'</span><div><b>'+esc(l.name.toUpperCase())+'</b><small>RECORRIDO ACTIVO · CALLES E INTERSECCIONES</small></div><em>›</em><span class="favorite-toggle" role="button" tabindex="0" aria-label="Agregar '+esc(l.name)+' a favoritos" aria-pressed="false">☆</span></button>').join('');
+    if(!lines.length)loading('SIN LÍNEAS');
+    if(window.TuColectivoFavorites?.render)window.TuColectivoFavorites.render();
+  };
+  const showList=(title,subtitle,items,empty,onClick)=>{
+    lineGrid.innerHTML='<div class="line-sub-head"><button class="sub-back" type="button" data-lines-back>‹ VOLVER</button><strong>'+esc(title)+'</strong><small>'+esc(subtitle)+'</small></div>';
+    if(!items.length){lineGrid.insertAdjacentHTML('beforeend','<div class="nearby-empty"><strong>'+esc(empty)+'</strong><span>NO HAY DATOS PARA ESTA SELECCIÓN_</span></div>');return;}
+    items.forEach(item=>{const b=document.createElement('button');b.type='button';b.className='data-card line-detail-card';b.innerHTML='<b>'+esc(item.name)+'</b><span>SELECCIONAR · SIGUIENTE NIVEL</span><em>›</em>';b.addEventListener('click',()=>onClick(item));lineGrid.appendChild(b);});
+  };
+  const showError=(title,msg)=>showList(title,'',[],msg,()=>{});
+  window.onNativeLines=p=>{try{renderLines(JSON.parse(p));}catch(_){showError('LÍNEAS','RESPUESTA INVÁLIDA');}};
+  window.onNativeLinesError=p=>{try{showError('LÍNEAS',JSON.parse(p).message);}catch(_){showError('LÍNEAS','ERROR SMARTMOVE');}};
+  window.onNativeStreets=p=>{const a=JSON.parse(p);showList('CALLES PRINCIPALES',currentLine.name,a,'SIN CALLES',x=>{currentStreet=x;nativeApi.loadIntersections(currentLine.code,x.code);});};
+  window.onNativeStreetsError=p=>showError('CALLES PRINCIPALES',JSON.parse(p).message);
+  window.onNativeIntersections=p=>{const a=JSON.parse(p);showList('INTERSECCIONES',currentStreet.name,a,'SIN INTERSECCIONES',x=>{currentIntersection=x;nativeApi.loadStops(currentLine.code,currentStreet.code,x.code);});};
+  window.onNativeIntersectionsError=p=>showError('INTERSECCIONES',JSON.parse(p).message);
+  window.onNativeStops=p=>{const a=JSON.parse(p);showList('PARADAS',currentIntersection.name,a,'SIN PARADAS',showArrivals);};
+  window.onNativeStopsError=p=>showError('PARADAS',JSON.parse(p).message);
+  window.onNativeArrivals=p=>{
+    const a=JSON.parse(p),list=lineGrid.querySelector('.line-arrivals');
+    if(!list)return;
+    list.innerHTML=a.length?a.map(x=>'<div class="arrival-card"><b>'+esc(x.line||currentLine.name)+'</b><span>'+esc(x.destination||'SERVICIO')+'</span><em class="arrival-time"><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>').join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
+  };
+  window.onNativeArrivalsError=p=>{const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
+  function showArrivals(stop){
+    lineHead.textContent='ARRIBOS';
+    lineGrid.innerHTML='<div class="line-sub-head"><button class="sub-back" type="button" data-lines-back>‹ VOLVER</button><strong>'+esc(stop.description)+'</strong><small>'+esc((stop.street||'')+' · '+(stop.intersection||''))+'</small></div><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div>';
+    nativeApi.loadArrivals(stop.identifier,currentLine.code);
+  }
+  function loadLines(){if(nativeApi){loading('CARGANDO LÍNEAS');nativeApi.loadLines();}else showError('LÍNEAS','PUENTE ANDROID NO DISPONIBLE');}
+  function openLine(l){currentLine=l;lineHead.textContent=l.name.toUpperCase();showList(l.name,'CALLES PRINCIPALES',[], 'CARGANDO CALLES',()=>{});nativeApi.loadStreets(l.code);}
+  function back(){
+    if(currentIntersection){currentIntersection=null;lineHead.textContent=currentStreet.name;nativeApi.loadIntersections(currentLine.code,currentStreet.code);return;}
+    if(currentStreet){currentStreet=null;lineHead.textContent=currentLine.name;nativeApi.loadStreets(currentLine.code);return;}
+    if(currentLine){currentLine=null;renderLines(lines);return;}
+    window.TuColectivo.navigate('inicio');
+  }
+  lineGrid.addEventListener('click',e=>{
+    if(e.target.closest('[data-lines-back]')){back();return;}
+    const c=e.target.closest('.line-card');if(c){const l=lines.find(x=>String(x.code)===c.dataset.line);if(l)openLine(l);return;}
+  });
+  document.addEventListener('app:navigate',e=>{if(e.detail.go==='lineas'){currentLine=null;currentStreet=null;currentIntersection=null;loadLines();}});
+  if(nativeApi)loadLines();
+})();
