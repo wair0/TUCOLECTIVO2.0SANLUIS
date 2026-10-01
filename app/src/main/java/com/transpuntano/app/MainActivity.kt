@@ -39,6 +39,10 @@ class MainActivity : AppCompatActivity() {
     private val api = SmartMoveApi()
     private val executor = Executors.newFixedThreadPool(3)
     private val lineResolutionExecutor = Executors.newFixedThreadPool(8)
+    private val resolvedStopLines = java.util.concurrent.ConcurrentHashMap<String, List<Int>>()
+    private val routeCache = java.util.concurrent.ConcurrentHashMap<Int, List<Pair<Double, Double>>>()
+    @Volatile private var transitLinesCache: List<TransitLine> = emptyList()
+    private val lineResolutionExecutor = Executors.newFixedThreadPool(8)
     private val resolvedStopLines = ConcurrentHashMap<String, List<Int>>()
     private val routeCache = ConcurrentHashMap<Int, List<Pair<Double, Double>>>()
     @Volatile private var transitLinesCache: List<TransitLine> = emptyList()
@@ -389,57 +393,43 @@ class MainActivity : AppCompatActivity() {
                 try {
                     val cacheKey = identifier.ifBlank { "%.6f,%.6f".format(java.util.Locale.US, latitude, longitude) }
                     resolvedStopLines[cacheKey]?.let { cached ->
-                        dispatch("onNativeNearbyStopLines", JSONObject()
-                            .put("identifier", identifier)
-                            .put("lines", JSONArray(cached)).toString())
+                        dispatch("onNativeNearbyStopLines", JSONObject().put("identifier", identifier).put("lines", JSONArray(cached)).toString())
                         return@execute
                     }
 
-                    // Fuente primaria: relación parada-línea que entregue SmartMove.
-                    val nearbyAtStop = runCatching { api.getNearby(latitude, longitude) }
-                        .getOrDefault(emptyList())
+                    val nearbyAtStop = runCatching { api.getNearby(latitude, longitude) }.getOrDefault(emptyList())
                     val exact = nearbyAtStop.firstOrNull {
                         it.identifier == identifier || it.code.toString() == identifier
                     } ?: nearbyAtStop.minByOrNull { stop ->
                         val dy = (stop.latitude - latitude) * 111_320.0
-                        val dx = (stop.longitude - longitude) * 111_320.0 *
-                            kotlin.math.cos(Math.toRadians(latitude))
+                        val dx = (stop.longitude - longitude) * 111_320.0 * kotlin.math.cos(Math.toRadians(latitude))
                         kotlin.math.sqrt(dx * dx + dy * dy)
                     }?.takeIf { stop ->
                         val dy = (stop.latitude - latitude) * 111_320.0
-                        val dx = (stop.longitude - longitude) * 111_320.0 *
-                            kotlin.math.cos(Math.toRadians(latitude))
+                        val dx = (stop.longitude - longitude) * 111_320.0 * kotlin.math.cos(Math.toRadians(latitude))
                         kotlin.math.sqrt(dx * dx + dy * dy) <= 45.0
                     }
+
                     var matched = exact?.lineCodes.orEmpty().filter { it > 0 }.distinct().sorted()
 
-                    // Respaldo: algunos payloads de SmartMove no traen la relación
-                    // parada-línea. En ese caso comprobamos las líneas reales mediante
-                    // arribos y, si no hay servicio en tiempo real, mediante geometría.
                     if (matched.isEmpty()) {
                         val candidates = if (transitLinesCache.isNotEmpty()) transitLinesCache
                         else runCatching { api.getLines() }.getOrDefault(emptyList()).also { transitLinesCache = it }
 
                         val tasks = candidates.map { line ->
-                            Callable {
-                                val hasArrivals = runCatching {
-                                    api.getArrivals(identifier, line.code, timeoutMs = 2_500)
-                                }.getOrDefault(emptyList()).isNotEmpty()
-                                if (hasArrivals) {
+                            java.util.concurrent.Callable {
+                                val arrivals = runCatching { api.getArrivals(identifier, line.code, timeoutMs = 2_500) }.getOrDefault(emptyList())
+                                if (arrivals.isNotEmpty()) {
                                     line.code to true
                                 } else {
-                                    val route = routeCache[line.code] ?: runCatching {
-                                        api.getRoute(line.code, timeoutMs = 2_500)
-                                    }.getOrDefault(emptyList()).also { routeCache[line.code] = it }
-                                    line.code to route.any { point ->
-                                        distanceMeters(latitude, longitude, point.first, point.second) <= 300.0
-                                    }
+                                    val route = routeCache[line.code] ?: runCatching { api.getRoute(line.code, timeoutMs = 2_500) }.getOrDefault(emptyList()).also { routeCache[line.code] = it }
+                                    line.code to route.any { point -> distanceMeters(latitude, longitude, point.first, point.second) <= 300.0 }
                                 }
                             }
                         }
 
                         matched = runCatching {
-                            lineResolutionExecutor.invokeAll(tasks, 12, TimeUnit.SECONDS)
+                            lineResolutionExecutor.invokeAll(tasks, 12, java.util.concurrent.TimeUnit.SECONDS)
                                 .mapNotNull { future -> runCatching { future.get() }.getOrNull() }
                                 .filter { it.second }
                                 .map { it.first }
@@ -449,15 +439,9 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     resolvedStopLines[cacheKey] = matched
-                    dispatch("onNativeNearbyStopLines", JSONObject()
-                        .put("identifier", identifier)
-                        .put("lines", JSONArray(matched)).toString())
+                    dispatch("onNativeNearbyStopLines", JSONObject().put("identifier", identifier).put("lines", JSONArray(matched)).toString())
                 } catch (e: Exception) {
-                    dispatch("onNativeNearbyStopLines", JSONObject()
-                        .put("identifier", identifier)
-                        .put("lines", JSONArray())
-                        .put("message", e.message ?: "No se pudieron consultar las líneas asociadas a la parada")
-                        .toString())
+                    dispatch("onNativeNearbyStopLines", JSONObject().put("identifier", identifier).put("lines", JSONArray()).put("message", e.message ?: "No se pudieron consultar las líneas asociadas a la parada").toString())
                 }
             }
         }
