@@ -692,7 +692,7 @@
   const renderLines=items=>{
     lines=Array.isArray(items)?items:[];
     lineHead.textContent=lines.length+' RUTAS';
-    lineGrid.innerHTML=lines.map(l=>'<button class="line-card" data-line="'+l.code+'"><span class="line-badge">'+esc(l.name)+'</span><div><b>'+esc(l.name.toUpperCase())+'</b></div><em>›</em><span class="favorite-toggle" role="button" tabindex="0" aria-label="Agregar '+esc(l.name)+' a favoritos" aria-pressed="false">☆</span></button>').join('');
+    lineGrid.innerHTML=lines.map(l=>'<button class="line-card" data-line="'+l.code+'"><span class="line-badge">'+esc(l.name)+'</span><div><b>'+esc(l.name.toUpperCase())+'</b></div><em>›</em></button>').join('');
     if(!lines.length)loading('SIN LÍNEAS');
     if(window.TuColectivoFavorites?.render)window.TuColectivoFavorites.render();
   };
@@ -708,10 +708,10 @@
   const cleanStreetName=name=>String(name??'').replace(/\s*(?:,|-)?\s*SAN LUIS\s*$/i,'').trim();
   window.onNativeStreets=p=>{
     const a=JSON.parse(p).map(x=>({...x,name:cleanStreetName(x.name)}));
-    showList('CALLES','',a,'SIN CALLES',x=>{currentStreet=x;nativeApi.loadIntersections(currentLine.code,x.code);},'INTERSECCIONES');
+    showList('CALLES','',a,'SIN CALLES',x=>{currentStreet=x;nativeApi.loadIntersections(currentLine.code,x.code);},'');
   };
   window.onNativeStreetsError=p=>showError('CALLES PRINCIPALES',JSON.parse(p).message);
-  window.onNativeIntersections=p=>{const a=JSON.parse(p);showList('INTERSECCIONES','CALLE: '+(currentStreet?.name||''),a,'SIN INTERSECCIONES',x=>{currentIntersection=x;nativeApi.loadStops(currentLine.code,currentStreet.code,x.code);},'');};
+  window.onNativeIntersections=p=>{const a=JSON.parse(p).map(x=>({...x,name:cleanStreetName(x.name)}));showList('INTERSECCIONES','CALLE: '+(currentStreet?.name||''),a,'SIN INTERSECCIONES',x=>{currentIntersection=x;nativeApi.loadStops(currentLine.code,currentStreet.code,x.code);},'');};
   window.onNativeIntersectionsError=p=>showError('INTERSECCIONES',JSON.parse(p).message);
   window.onNativeStops=p=>{const a=JSON.parse(p);currentStop=null;showList('PARADAS','INTERSECCIÓN: '+(currentIntersection?.name||''),a,'SIN PARADAS',showArrivals,'ARRIBOS');};
   window.onNativeStopsError=p=>showError('PARADAS',JSON.parse(p).message);
