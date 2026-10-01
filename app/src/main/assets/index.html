@@ -61,7 +61,7 @@
 
 <main id="app" class="app-shell">
   <section class="screen active" data-screen="inicio">
-    <div class="screen-head"><span>INICIO</span><small>CONTROL_CENTRAL</small></div>
+    <div class="screen-head"><span>INICIO</span></div>
     <div class="home-grid">
       <button class="home-card card-lineas" data-go="lineas"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 48V20c0-7 8-10 18-10s18 3 18 10v28M10 48h44M16 20h32M17 38h8M39 38h8M18 49v5M46 49v5M18 27h28v9H18z"/><circle cx="21" cy="43" r="2"/><circle cx="43" cy="43" r="2"/></svg><strong>LÍNEAS</strong><span>14 RECORRIDOS</span><i>01</i></button>
       <button class="home-card card-mapa" data-go="mapa"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 57S16 40 16 27a16 16 0 1 1 32 0c0 13-16 30-16 30Z"/><circle cx="32" cy="27" r="6"/></svg><strong>MAPA</strong><span>RED EN TIEMPO REAL</span><i>02</i></button>
@@ -73,11 +73,22 @@
 
   <section class="screen" data-screen="lineas">
     <div class="screen-head"><span>LÍNEAS</span><small>14 RUTAS</small></div>
-    <div class="section-list">
-      <button class="data-card"><b>LÍNEA 1</b><span>RECORRIDO ACTIVO</span><em>5 MIN</em></button>
-      <button class="data-card"><b>LÍNEA 2</b><span>RECORRIDO ACTIVO</span><em>8 MIN</em></button>
-      <button class="data-card"><b>LÍNEA 3</b><span>RECORRIDO ACTIVO</span><em>11 MIN</em></button>
-      <button class="data-card"><b>LÍNEA 4</b><span>RECORRIDO ACTIVO</span><em>14 MIN</em></button>
+    
+    <div class="lineas-grid">
+      <button class="line-card"><span class="line-badge">01</span><div><b>LÍNEA 1</b><small>RECORRIDO ACTIVO</small></div><em><strong>5</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">02</span><div><b>LÍNEA 2</b><small>RECORRIDO ACTIVO</small></div><em><strong>8</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">03</span><div><b>LÍNEA 3</b><small>RECORRIDO ACTIVO</small></div><em><strong>11</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">04</span><div><b>LÍNEA 4</b><small>RECORRIDO ACTIVO</small></div><em><strong>14</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">05</span><div><b>LÍNEA 5</b><small>RECORRIDO ACTIVO</small></div><em><strong>17</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">06</span><div><b>LÍNEA 6</b><small>RECORRIDO ACTIVO</small></div><em><strong>20</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">07</span><div><b>LÍNEA 7</b><small>RECORRIDO ACTIVO</small></div><em><strong>23</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">08</span><div><b>LÍNEA 8</b><small>RECORRIDO ACTIVO</small></div><em><strong>26</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">09</span><div><b>LÍNEA 9</b><small>RECORRIDO ACTIVO</small></div><em><strong>29</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">10</span><div><b>LÍNEA 10</b><small>RECORRIDO ACTIVO</small></div><em><strong>32</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">11</span><div><b>LÍNEA 11</b><small>RECORRIDO ACTIVO</small></div><em><strong>35</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">12</span><div><b>LÍNEA 12</b><small>RECORRIDO ACTIVO</small></div><em><strong>38</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">13</span><div><b>LÍNEA 13</b><small>RECORRIDO ACTIVO</small></div><em><strong>41</strong> MIN</em></button>
+      <button class="line-card"><span class="line-badge">14</span><div><b>LÍNEA 14</b><small>RECORRIDO ACTIVO</small></div><em><strong>44</strong> MIN</em></button>
     </div>
   </section>
 
