@@ -585,7 +585,7 @@
  const css=document.createElement('style');
  css.textContent=`
  .line-card small{display:none!important}
- .data-card.line-detail-card span{display:none!important}
+ .data-card.line-detail-card span{display:block!important}
  .arrival-card{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:88px!important;padding:10px 14px!important;box-sizing:border-box!important}
  .arrival-copy{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:7px;flex:1;padding-right:12px}
  .arrival-copy b{line-height:1.15!important}

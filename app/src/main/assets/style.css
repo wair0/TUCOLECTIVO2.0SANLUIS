@@ -940,3 +940,46 @@ html,body,body *{
   .arrival-time{width:46px!important;height:46px!important}
   .arrival-time::before{width:40px!important;height:40px!important}
 }
+
+
+/* CORRECCIÓN ARRIBOS — UNA SOLA CAPA DE CÍRCULO Y DISTRIBUCIÓN HORIZONTAL */
+.arrival-card{
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  text-align:left!important;
+}
+.arrival-copy{
+  align-self:center!important;
+  text-align:left!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+  padding-right:14px!important;
+}
+.arrival-time{
+  position:relative!important;
+  flex:0 0 70px!important;
+  width:70px!important;
+  height:70px!important;
+  margin-left:auto!important;
+  transform:none!important;
+}
+.arrival-time::before{
+  display:none!important;
+  content:none!important;
+}
+.arrival-ring{
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  width:70px!important;
+  height:70px!important;
+}
+.arrival-ring-base,
+.arrival-ring-arc{
+  fill:none!important;
+}
+.data-card.line-detail-card span{
+  display:block!important;
+  margin-top:6px!important;
+}
