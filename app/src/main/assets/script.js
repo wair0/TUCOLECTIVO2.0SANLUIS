@@ -271,13 +271,8 @@
     const availableLines=[...new Set((stop.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
     const renderLineChoices=choices=>{lines.innerHTML=choices.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">CONSULTAR LÍNEA '+n+'</button>').join('')||'<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';};
     if(availableLines.length)renderLineChoices(availableLines);
-    else if(map.availableLines.length)renderLineChoices(map.availableLines);
     else{
-      lines.innerHTML='<small>CONSULTANDO LÍNEAS DISPONIBLES...</small>';
-      if(!map.availableLinesLoading&&window.TuColectivoNative?.loadMapAvailableLines){
-        map.availableLinesLoading=true;
-        window.TuColectivoNative.loadMapAvailableLines();
-      }
+      lines.innerHTML='<small>NO HAY LÍNEAS CONFIRMADAS PARA ESTA PARADA. NO SE MOSTRARÁN LÍNEAS DE TODA LA CIUDAD.</small>';
     }
     document.getElementById('mapPopupArrivals').innerHTML='';
     popup.hidden=false;
@@ -381,7 +376,7 @@
       map.availableLinesLoading=false;
       const popup=document.getElementById('mapStopPopup'), lines=document.getElementById('mapPopupLines');
       if(popup&&!popup.hidden&&map.pendingStop&&!(map.pendingStop.lines||[]).length&&lines){
-        lines.innerHTML=map.availableLines.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">CONSULTAR LÍNEA '+n+'</button>').join('')||'<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';
+        lines.innerHTML='<small>NO HAY LÍNEAS CONFIRMADAS PARA ESTA PARADA.</small>';
       }
     }catch(_){map.availableLinesLoading=false;}
   };
@@ -449,7 +444,7 @@
       nearbyList.innerHTML='<div class="nearby-empty"><strong>NO HAY PARADAS CERCANAS_</strong><span>SMARTMOVE NO DEVOLVIÓ PARADAS PARA ESTA UBICACIÓN</span></div>';
       return;
     }
-    nearbyList.innerHTML=ranked.map(stop=>'<div class="data-card nearby-stop" data-stop-id="'+stop.id+'" role="button" tabindex="0"><button class="favorite-toggle" type="button" aria-label="Agregar '+stop.name+' a favoritos" aria-pressed="false">☆</button><b>'+stop.name+'</b><span>'+stop.lines.length+' '+(stop.lines.length===1?'LÍNEA':'LÍNEAS')+' DISPONIBLES</span>'+lineMarkup(stop.lines)+'<em>'+formatDistance(stop.distance)+'</em></div>').join('');
+    nearbyList.innerHTML=ranked.map(stop=>'<div class="data-card nearby-stop" data-stop-id="'+stop.id+'" role="button" tabindex="0"><b>'+escapeHtml(stop.name)+'</b><span>'+(stop.lines.length?stop.lines.length+' '+(stop.lines.length===1?'LÍNEA':'LÍNEAS')+' CONFIRMADAS':'LÍNEAS NO CONFIRMADAS')+'</span>'+lineMarkup(stop.lines)+'<em>'+formatDistance(stop.distance)+'</em></div>').join('');
     nearbyState.textContent='GPS: ACTIVO · '+ranked.length+' PARADAS';
     nearbyState.style.color='var(--cy)';
   }
@@ -521,7 +516,11 @@
 
   function chooseStop(stop){
     if(stop.lines.length===1){showArrival(stop,stop.lines[0]);return;}
-    nearbyList.innerHTML='<div class="nearby-empty"><strong>'+stop.name+'</strong><span>SELECCIONÁ LA LÍNEA PARA VER SUS ARRIBOS</span>'+lineMarkup(stop.lines)+'</div>'+stop.lines.map(line=>'<button class="data-card stop-line-choice" data-stop-id="'+stop.id+'" data-line="'+line+'" type="button"><b>LÍNEA '+line+'</b><span>VER ARRIBOS DE ESTA PARADA</span><em>›</em></button>').join('');
+    if(!stop.lines.length){
+      nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>SMARTMOVE NO PROPORCIONÓ LÍNEAS CONFIRMADAS PARA ESTA PARADA. NO SE MOSTRARÁN LÍNEAS INVENTADAS.</span></div>';
+      return;
+    }
+    nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>SELECCIONÁ UNA LÍNEA CONFIRMADA PARA VER ARRIBOS</span>'+lineMarkup(stop.lines)+'</div>'+stop.lines.map(line=>'<button class="data-card stop-line-choice" data-stop-id="'+stop.id+'" data-line="'+line+'" type="button"><b>LÍNEA '+line+'</b><span>VER ARRIBOS DE ESTA PARADA</span><em>›</em></button>').join('');
   }
 
   locateBtn.addEventListener('click',()=>{

@@ -309,11 +309,13 @@ class SmartMoveApi {
         val codes = linkedMapOf<Int, Boolean>()
         if (line > 0) codes[line] = true
 
+        // Solo campos que identifican explícitamente una línea. Campos genéricos
+        // como codigoServicio/lineaId pueden ser IDs internos y causaban líneas falsas.
         val scalarFields = listOf(
-            "codigoLinea", "CodigoLinea", "CODIGOLINEA", "lineaCodigo", "LineaCodigo",
-            "codigoLineaParada", "CodigoLineaParada", "codLinea", "CodLinea",
-            "codLineaParada", "CodLineaParada", "codigoLineaServicio", "CodigoLineaServicio",
-            "codigoServicio", "CodigoServicio", "lineaId", "LineaId"
+            "codigoLinea", "CodigoLinea", "CODIGOLINEA",
+            "lineaCodigo", "LineaCodigo",
+            "codigoLineaParada", "CodigoLineaParada",
+            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada"
         )
         scalarFields.forEach { key ->
             item.optStringAny(key)?.trim()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
@@ -321,7 +323,7 @@ class SmartMoveApi {
 
         val arrays = listOf(
             "lineas", "Lineas", "listaLineas", "lineasParada", "LineasParada",
-            "lineasJson", "LineasJson", "servicios", "Servicios", "lineasServicio",
+            "lineasJson", "LineasJson", "lineasServicio",
             "lineCodes", "LineCodes", "codigosLinea", "CodigosLinea"
         )
         arrays.forEach { key ->

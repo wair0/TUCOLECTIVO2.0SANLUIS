@@ -1149,3 +1149,80 @@ html,body,body *{
   .bar .title{max-width:calc(100vw - 145px)!important;font-size:clamp(9px,3vw,12px)!important}
   .bar>.side.r .btn:first-child{right:45px!important}
 }
+
+
+/* FIX VERIFICADO POR CASOS: header, estado verde, mapa y ficha de parada */
+.bar{position:relative!important;align-items:center!important}
+.bar .title{
+  position:absolute!important;
+  top:50%!important;
+  left:50%!important;
+  bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+  margin:0!important;
+  width:max-content!important;
+  max-width:calc(100vw - 150px)!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+  text-align:center!important;
+  line-height:1!important;
+  font-size:clamp(9px,3vw,14px)!important;
+  letter-spacing:.025em!important;
+  z-index:4!important;
+}
+/* El estado deja de usar el marco pseudo-elemento violeta: círculo real y verde. */
+.hdr>.status{
+  color:#39ff88!important;
+  text-shadow:0 0 5px #39ff88!important;
+  background:rgba(3,30,20,.96)!important;
+  border:1px solid #39ff88!important;
+  border-image:none!important;
+  box-shadow:0 0 7px rgba(57,255,136,.45),inset 0 0 7px rgba(57,255,136,.12)!important;
+  border-radius:0!important;
+  animation:none!important;
+  padding:5px 12px!important;
+}
+.hdr>.status::before{
+  content:""!important;
+  position:static!important;
+  display:inline-block!important;
+  width:7px!important;height:7px!important;
+  min-width:7px!important;min-height:7px!important;
+  margin:0 6px 0 0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:#39ff88!important;
+  box-shadow:0 0 5px #39ff88,0 0 9px rgba(57,255,136,.85)!important;
+  clip-path:none!important;
+  vertical-align:middle!important;
+  transform:none!important;
+}
+.hdr>.status::after{content:""!important;display:none!important;border:0!important;animation:none!important}
+#map-wrap,.map-wrap{
+  height:clamp(190px,30dvh,270px)!important;
+  min-height:190px!important;
+  max-height:270px!important;
+  flex:none!important;
+}
+.map-stop-popup{
+  position:relative!important;
+  inset:auto!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  max-height:calc(100dvh - 58px - 30dvh - 150px)!important;
+  min-height:0!important;
+  overflow-y:auto!important;
+  margin-top:8px!important;
+  z-index:5!important;
+}
+.map-stop-popup[hidden]{display:none!important}
+@media(max-height:700px){
+  #map-wrap,.map-wrap{height:26dvh!important;min-height:170px!important;max-height:220px!important}
+  .map-stop-popup{max-height:35dvh!important}
+}
+@media(max-width:380px){
+  .bar .title{max-width:calc(100vw - 132px)!important;font-size:clamp(8px,2.8vw,11px)!important}
+}
+.nearby-stop .favorite-toggle{display:none!important}
