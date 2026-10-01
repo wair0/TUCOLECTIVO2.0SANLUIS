@@ -245,3 +245,101 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
   .line-card em{min-width:52px;font-size:9px}
   .line-card em strong{font-size:19px}
 }
+
+/* FASE 6 — MAPA CYBERPUNK */
+.map-wrap{
+  position:relative;
+  width:100%;
+  height:calc(100vh - var(--hh) - var(--top) - 156px);
+  min-height:360px;
+  margin-top:14px;
+  overflow:hidden;
+  background:#07101c;
+  border:1px solid rgba(0,240,255,.9);
+  box-shadow:inset 0 0 28px rgba(0,240,255,.12),0 0 18px rgba(160,32,255,.2);
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+  touch-action:none;
+}
+#mapCanvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  background:#07101c;
+  touch-action:none;
+}
+.map-wrap::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  background:
+    linear-gradient(rgba(0,240,255,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(160,32,255,.045) 1px,transparent 1px),
+    repeating-linear-gradient(0deg,transparent 0 5px,rgba(0,240,255,.025) 6px);
+  background-size:32px 32px,32px 32px,100% 6px;
+  mix-blend-mode:screen;
+}
+.map-wrap::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;
+  height:2px;
+  z-index:4;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--cy),var(--vi),var(--cy),transparent);
+  box-shadow:0 0 10px var(--cy);
+  animation:mapScan 3.5s linear infinite;
+}
+.map-topbar{
+  position:absolute;
+  left:10px;right:10px;top:10px;
+  z-index:5;
+  display:flex;justify-content:space-between;align-items:center;
+  gap:8px;
+  padding:7px 9px;
+  color:var(--cy);
+  background:rgba(5,8,20,.88);
+  border:1px solid rgba(0,240,255,.65);
+  box-shadow:inset 0 0 12px rgba(0,240,255,.12);
+  font-size:8px;letter-spacing:.1em;
+  pointer-events:none;
+}
+.map-controls{position:absolute;right:10px;bottom:34px;z-index:5;display:flex;gap:8px}
+.map-controls button{
+  width:42px;height:42px;
+  border:1px solid var(--cy);
+  color:var(--cy);
+  background:#0c1429;
+  box-shadow:inset 0 0 12px rgba(0,240,255,.18),0 0 10px rgba(0,240,255,.12);
+  font-size:22px;
+}
+.map-controls button:active{transform:scale(.88);background:var(--vi);color:#fff}
+.map-zoom{display:grid;grid-template-rows:1fr 1fr}
+.map-zoom button{height:21px;min-height:21px;font-size:16px}
+.map-crosshair{
+  position:absolute;left:50%;top:50%;z-index:4;
+  width:18px;height:18px;transform:translate(-50%,-50%);
+  border:1px solid rgba(0,240,255,.55);
+  border-radius:50%;
+  box-shadow:0 0 12px rgba(0,240,255,.35);
+  pointer-events:none;
+}
+.map-crosshair::before,.map-crosshair::after{content:"";position:absolute;background:rgba(0,240,255,.55)}
+.map-crosshair::before{left:50%;top:-7px;width:1px;height:32px}
+.map-crosshair::after{top:50%;left:-7px;width:32px;height:1px}
+.map-attribution{
+  position:absolute;left:8px;bottom:8px;z-index:5;
+  padding:3px 5px;color:rgba(217,251,255,.65);
+  background:rgba(5,8,20,.78);
+  font:8px Arial,sans-serif;letter-spacing:.02em;
+  pointer-events:none;
+}
+@keyframes mapScan{50%{opacity:.45;transform:scaleX(.72)}}
+@media(max-width:360px){
+  .map-wrap{min-height:330px;height:calc(100vh - var(--hh) - var(--top) - 146px)}
+  .map-controls button{width:38px;height:38px}
+}
+@media(prefers-reduced-motion:reduce){.map-wrap::after{animation:none}}

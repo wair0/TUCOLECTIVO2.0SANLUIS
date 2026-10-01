@@ -94,7 +94,22 @@
 
   <section class="screen" data-screen="mapa">
     <div class="screen-head"><span>MAPA</span><small>RED_TRANSPUNTANO</small></div>
-    <div class="placeholder"><strong>MAPA_</strong><span>ÁREA RESERVADA PARA LA INTEGRACIÓN DEL MAPA</span></div>
+    <div class="map-wrap" id="map-wrap">
+      <canvas id="mapCanvas" aria-label="Mapa de San Luis"></canvas>
+      <div class="map-topbar">
+        <span id="mapState">MAPA EN LÍNEA</span>
+        <span id="mapZoom">ZOOM 14</span>
+      </div>
+      <div class="map-controls">
+        <button id="mapLocate" aria-label="Usar mi ubicación">◎</button>
+        <div class="map-zoom">
+          <button id="mapPlus" aria-label="Acercar">+</button>
+          <button id="mapMinus" aria-label="Alejar">−</button>
+        </div>
+      </div>
+      <div class="map-crosshair" aria-hidden="true"></div>
+      <div class="map-attribution">© OpenStreetMap contributors</div>
+    </div>
   </section>
 
   <section class="screen" data-screen="paradas">
