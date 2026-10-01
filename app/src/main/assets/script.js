@@ -472,6 +472,7 @@
     button.textContent=saved?'★ ARRIBO GUARDADO':'☆ AGREGAR ARRIBO A FAVORITOS';
     button.setAttribute('aria-pressed',String(saved));
   }
+  window.TuColectivoNearbySyncArrivalFavorite=syncNearbyArrivalFavorite;
   window.onNativeNearbyArrivals=function(payload){
     let items=[];
     try{items=typeof payload==='string'?JSON.parse(payload):payload||[];}catch(_){}
@@ -561,7 +562,7 @@
     const key=arrivalKey(stop,line);
     if(isArrivalSaved(stop,line))favorites.arrivals=favorites.arrivals.filter(v=>v.key!==key);
     else favorites.arrivals.push({key,line:Number(line),stop:{id:String(stop.id||stop.identifier||stop.code),identifier:String(stop.identifier||stop.id||stop.code),code:Number(stop.code)||0,name:String(stop.name||stop.description||('PARADA '+stop.code)),street:String(stop.street||''),intersection:String(stop.intersection||''),lat:Number(stop.lat??stop.latitude),lng:Number(stop.lng??stop.longitude),lines:Array.isArray(stop.lines)?stop.lines.map(Number):[Number(line)]}});
-    save();syncButtons();render();syncNearbyArrivalFavorite();syncLineArrivalFavorite();
+    save();syncButtons();render();window.TuColectivoNearbySyncArrivalFavorite?.();syncLineArrivalFavorite();
   }
   function syncLineArrivalFavorite(){const current=window.TuColectivoCurrentLineArrival;const button=document.querySelector('[data-line-arrival-favorite]');if(!current||!button)return;const on=isArrivalSaved(current.stop,current.line);button.textContent=on?'★ ARRIBO GUARDADO':'☆ AGREGAR ARRIBO A FAVORITOS';button.setAttribute('aria-pressed',String(on));}
   function toggle(type,id){
