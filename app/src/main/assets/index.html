@@ -63,10 +63,10 @@
   <section class="screen active" data-screen="inicio">
     <div class="screen-head"><span>INICIO</span><small>CONTROL_CENTRAL</small></div>
     <div class="home-grid">
-      <button class="home-card" data-go="lineas"><strong>LÍNEAS</strong><span>14 RECORRIDOS</span><i>01</i></button>
-      <button class="home-card" data-go="mapa"><strong>MAPA</strong><span>RED EN TIEMPO REAL</span><i>02</i></button>
-      <button class="home-card" data-go="paradas"><strong>PARADAS CERCANAS</strong><span>UBICACIÓN ACTUAL</span><i>03</i></button>
-      <button class="home-card" data-go="favoritos"><strong>FAVORITOS</strong><span>TUS ACCESOS</span><i>04</i></button>
+      <button class="home-card card-lineas" data-go="lineas"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 48V20c0-7 8-10 18-10s18 3 18 10v28M10 48h44M16 20h32M17 38h8M39 38h8M18 49v5M46 49v5M18 27h28v9H18z"/><circle cx="21" cy="43" r="2"/><circle cx="43" cy="43" r="2"/></svg><strong>LÍNEAS</strong><span>14 RECORRIDOS</span><i>01</i></button>
+      <button class="home-card card-mapa" data-go="mapa"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 57S16 40 16 27a16 16 0 1 1 32 0c0 13-16 30-16 30Z"/><circle cx="32" cy="27" r="6"/></svg><strong>MAPA</strong><span>RED EN TIEMPO REAL</span><i>02</i></button>
+      <button class="home-card card-paradas" data-go="paradas"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="20"/><circle cx="32" cy="32" r="9"/><path d="M32 5v10M32 49v10M5 32h10M49 32h10M32 32l14-14"/></svg><strong>PARADAS CERCANAS</strong><span>UBICACIÓN ACTUAL</span><i>03</i></button>
+      <button class="home-card card-favoritos" data-go="favoritos"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="m32 7 7.7 16.1 17.8 2.6-12.8 12.5 3 17.7L32 47.5 16.3 56l3-17.8L6.5 25.7l17.8-2.6z"/></svg><strong>FAVORITOS</strong><span>TUS ACCESOS</span><i>04</i></button>
     </div>
     <button id="sync" class="sync-btn"><span>SINCRONIZAR LÍNEAS</span><b>14</b></button>
   </section>
@@ -102,11 +102,11 @@
 </main>
 
 <nav class="bottom-nav" aria-label="Navegación inferior">
-  <button class="nav-btn active" data-go="inicio"><span>⌂</span><small>INICIO</small></button>
-  <button class="nav-btn" data-go="lineas"><span>01</span><small>LÍNEAS</small></button>
-  <button class="nav-btn" data-go="mapa"><span>◎</span><small>MAPA</small></button>
-  <button class="nav-btn" data-go="paradas"><span>⌖</span><small>PARADAS</small></button>
-  <button class="nav-btn" data-go="favoritos"><span>☆</span><small>FAVORITOS</small></button>
+  <button class="nav-btn active" data-go="inicio"><span class="nav-icon">⌂</span><small>INICIO</small></button>
+  <button class="nav-btn" data-go="lineas"><span class="nav-icon"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 48V20c0-7 8-10 18-10s18 3 18 10v28M10 48h44M16 20h32M17 38h8M39 38h8M18 49v5M46 49v5M18 27h28v9H18z"/><circle cx="21" cy="43" r="2"/><circle cx="43" cy="43" r="2"/></svg></span><small>LÍNEAS</small></button>
+  <button class="nav-btn" data-go="mapa"><span class="nav-icon"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 57S16 40 16 27a16 16 0 1 1 32 0c0 13-16 30-16 30Z"/><circle cx="32" cy="27" r="6"/></svg></span><small>MAPA</small></button>
+  <button class="nav-btn" data-go="paradas"><span class="nav-icon"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="20"/><circle cx="32" cy="32" r="9"/><path d="M32 5v10M32 49v10M5 32h10M49 32h10M32 32l14-14"/></svg></span><small>PARADAS</small></button>
+  <button class="nav-btn" data-go="favoritos"><span class="nav-icon"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="m32 7 7.7 16.1 17.8 2.6-12.8 12.5 3 17.7L32 47.5 16.3 56l3-17.8L6.5 25.7l17.8-2.6z"/></svg></span><small>FAVORITOS</small></button>
 </nav>
 
 <script src="script.js"></script>
