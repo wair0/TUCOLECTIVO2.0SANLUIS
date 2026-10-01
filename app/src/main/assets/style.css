@@ -646,7 +646,73 @@ body,button,input,textarea,select{
   font-style:normal;
   font-weight:100 900;
   font-display:swap;
+  size-adjust:82%;
 }
 html,body,body *{
   font-family:"Cyberpunk",var(--mono),sans-serif!important;
+}
+
+
+/* FASE 15D — CORREGIR ESCALA TIPOGRÁFICA Y GEOMETRÍA DEL HEADER */
+.bar{
+  align-items:center!important;
+}
+.title{
+  top:1px!important;
+  font-size:15px!important;
+  line-height:1!important;
+}
+.bar>.side:first-child,
+.bar>.side.r{
+  height:100%;
+  align-items:center!important;
+}
+.status{
+  bottom:2px!important;
+  left:8px!important;
+  right:8px!important;
+  font-size:8px!important;
+  line-height:1!important;
+  letter-spacing:.04em!important;
+  max-width:none!important;
+  width:auto!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.screen-head span{
+  font-size:clamp(18px,5.2vw,23px)!important;
+  line-height:1!important;
+}
+.screen-head small{
+  font-size:7px!important;
+  line-height:1!important;
+}
+.sync-btn span,
+.sync-btn b{
+  font-size:10px!important;
+  line-height:1!important;
+}
+.nav-btn small{
+  font-size:6px!important;
+  line-height:1!important;
+}
+.line-card b{
+  font-size:12px!important;
+  line-height:1.1!important;
+}
+.line-card em strong{
+  font-size:20px!important;
+}
+.data-card>b{
+  font-size:12px!important;
+}
+.arrival-card>b{
+  font-size:12px!important;
+}
+.favorite-item b{
+  font-size:11px!important;
+}
+.locate-stops strong{
+  font-size:11px!important;
 }
