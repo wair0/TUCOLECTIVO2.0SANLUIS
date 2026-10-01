@@ -348,6 +348,7 @@ class MainActivity : AppCompatActivity() {
                 .put("enabled", prefs.getBoolean("enabled", false))
                 .put("startTime", prefs.getString("start_time", "18:00"))
                 .put("endTime", prefs.getString("end_time", "19:30"))
+                .put("hasSchedule", prefs.contains("start_time") && prefs.contains("end_time"))
                 .put("history", history)
                 .put("message", if (prefs.getBoolean("enabled", false)) "ALERTAS PROGRAMADAS" else "ALERTAS INACTIVAS")
                 .toString())

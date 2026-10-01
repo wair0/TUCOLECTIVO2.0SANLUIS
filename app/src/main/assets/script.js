@@ -622,7 +622,7 @@
     let state={enabled:false,history:[],message:''};
     try{state=typeof payload==='string'?JSON.parse(payload):payload||state;}catch(_){}
     notificationsEnabled=!!state.enabled;
-    if(state.startTime&&state.endTime){
+    if(state.startTime&&state.endTime&&state.hasSchedule){
       notificationSchedule={start:String(state.startTime),end:String(state.endTime)};
       const start=document.getElementById('arrivalNotificationStart'),end=document.getElementById('arrivalNotificationEnd');
       if(start)start.value=notificationSchedule.start;
