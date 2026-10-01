@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05060f">
+<title>TU COLECTIVO 2.0</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="hdr">
+  <div class="bar">
+    <div class="side">
+      <button class="btn" data-menu="m-nav" aria-label="Menú" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h12M3 18h18"/></svg>
+      </button>
+      <span id="status" class="status" data-state="ok" role="status">SISTEMA LISTO</span>
+    </div>
+    <h1 class="title" data-text="TU COLECTIVO 2.0">TU COLECTIVO 2.0</h1>
+    <div class="side r">
+      <button class="btn" data-menu="m-search" aria-label="Buscar" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+      </button>
+      <button class="btn" data-menu="m-bell" aria-label="Notificaciones" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg>
+        <i class="dot"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav class="panel" id="m-nav" aria-label="Menú principal">
+  <div class="ph">MENU_PRINCIPAL.EXE</div>
+  <button class="item" data-go="inicio">INICIO</button>
+  <button class="item" data-go="lineas">LÍNEAS<small>DE COLECTIVOS</small></button>
+  <button class="item" data-go="mapa">MAPA</button>
+  <button class="item" data-go="paradas">PARADAS CERCANAS</button>
+  <button class="item" data-go="favoritos">FAVORITOS</button>
+</nav>
+
+<section class="panel" id="m-search" aria-label="Búsqueda">
+  <div class="ph">BUSCAR_DATOS.SYS</div>
+  <label class="sbox"><b>&gt;</b>
+    <input id="q" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Línea o parada_">
+  </label>
+  <div class="chips">
+    <button class="chip" data-f="todo" aria-pressed="true">TODO</button>
+    <button class="chip" data-f="lineas" aria-pressed="false">LÍNEAS</button>
+    <button class="chip" data-f="paradas" aria-pressed="false">PARADAS</button>
+    <button class="chip" data-f="cercanas" aria-pressed="false">CERCANAS</button>
+    <button class="chip" data-f="favoritos" aria-pressed="false">FAVORITOS</button>
+  </div>
+</section>
+
+<section class="panel" id="m-bell" aria-label="Notificaciones">
+  <div class="ph">ALERTAS_RECIENTES.LOG</div>
+  <ul class="nl">
+    <li><b>LÍNEA 60</b><span>Demora de 8 min en el recorrido.</span><time>hace 2 min</time></li>
+    <li><b>PARADA CERCANA</b><span>El 12 llega en 3 min a Av. Colón.</span><time>hace 9 min</time></li>
+    <li><b>SISTEMA</b><span>Mapa sin conexión actualizado.</span><time>hace 1 h</time></li>
+  </ul>
+</section>
+
+<!-- Relleno de demostración: reemplazalo por el contenido real de la app -->
+<main>ÁREA DE CONTENIDO_</main>
+
+<script src="script.js"></script>
+</body>
+</html>
