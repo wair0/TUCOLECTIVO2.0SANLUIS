@@ -258,15 +258,6 @@
   const arrivalsBack=document.getElementById('arrivalsBack');
   if(!locateBtn||!nearbyList)return;
 
-  const stops=[
-    {id:'colón-cervantes',name:'AV. COLÓN Y CERVANTES',lat:-33.2989,lng:-66.3371,lines:[1,2,12]},
-    {id:'pringles-illia',name:'PLAZA PRINGLES · PRINGLES Y RIVADAVIA',lat:-33.3012,lng:-66.3379,lines:[3,4]},
-    {id:'terminal',name:'TERMINAL DE ÓMNIBUS · AV. ILLIA Y ESTEBAN ADARO',lat:-33.3005,lng:-66.3208,lines:[1,6,12]},
-    {id:'san-martin-junín',name:'SAN MARTÍN Y JUNÍN',lat:-33.3019,lng:-66.3370,lines:[2,5,9]},
-    {id:'riobamba-juan',name:'RIOBAMBA Y JUAN SAÁ',lat:-33.2969,lng:-66.3410,lines:[7,10,14]}
-  ];
-  window.TuColectivoStops=stops;
-
   function meters(a,b){
     const R=6371000,rad=Math.PI/180;
     const dLat=(b.lat-a.lat)*rad,dLng=(b.lng-a.lng)*rad;
@@ -276,13 +267,64 @@
   function formatDistance(m){return m<1000?Math.max(1,m)+' M':(m/1000).toFixed(1).replace('.',',')+' KM';}
   function lineMarkup(lines){return '<div class="line-badges">'+lines.map(n=>'<span class="line-badge-mini">LÍNEA '+n+'</span>').join('')+'</div>';}
 
-  function renderNearby(position){
+  function normalizeStop(stop){
+    const lines=Array.isArray(stop.lineCodes)?stop.lineCodes.map(Number).filter(Number.isFinite):[];
+    const lineCode=Number(stop.lineCode);
+    if(lineCode>0&&!lines.includes(lineCode))lines.push(lineCode);
+    return {
+      id:String(stop.identifier||stop.code),
+      code:Number(stop.code)||0,
+      identifier:String(stop.identifier||stop.code||''),
+      name:String(stop.description||('PARADA '+stop.code)),
+      lat:Number(stop.latitude),
+      lng:Number(stop.longitude),
+      street:String(stop.street||''),
+      intersection:String(stop.intersection||''),
+      lines:lines.sort((a,b)=>a-b)
+    };
+  }
+
+  function renderNearby(rawStops,position){
     const here={lat:position.coords.latitude,lng:position.coords.longitude};
+    const stops=rawStops.map(normalizeStop).filter(stop=>Number.isFinite(stop.lat)&&Number.isFinite(stop.lng));
+    window.TuColectivoStops=stops;
     const ranked=stops.map(stop=>({...stop,distance:meters(here,stop)})).sort((a,b)=>a.distance-b.distance).slice(0,5);
+    if(!ranked.length){
+      nearbyState.textContent='GPS: SIN PARADAS';
+      nearbyList.innerHTML='<div class="nearby-empty"><strong>NO HAY PARADAS CERCANAS_</strong><span>SMARTMOVE NO DEVOLVIÓ PARADAS PARA ESTA UBICACIÓN</span></div>';
+      return;
+    }
     nearbyList.innerHTML=ranked.map(stop=>'<div class="data-card nearby-stop" data-stop-id="'+stop.id+'" role="button" tabindex="0"><button class="favorite-toggle" type="button" aria-label="Agregar '+stop.name+' a favoritos" aria-pressed="false">☆</button><b>'+stop.name+'</b><span>'+stop.lines.length+' '+(stop.lines.length===1?'LÍNEA':'LÍNEAS')+' DISPONIBLES</span>'+lineMarkup(stop.lines)+'<em>'+formatDistance(stop.distance)+'</em></div>').join('');
-    nearbyState.textContent='GPS: ACTIVO';
+    nearbyState.textContent='GPS: ACTIVO · '+ranked.length+' PARADAS';
     nearbyState.style.color='var(--cy)';
   }
+
+  window.onNativeNearbyStops=function(payload){
+    try{
+      const raw=typeof payload==='string'?JSON.parse(payload):payload;
+      const stops=Array.isArray(raw)?raw:[];
+      if(window.TuColectivoPendingPosition) renderNearby(stops,window.TuColectivoPendingPosition);
+      else {
+        nearbyState.textContent='GPS: SIN POSICIÓN';
+        nearbyList.innerHTML='<div class="nearby-empty"><strong>UBICACIÓN NO DISPONIBLE_</strong><span>VOLVÉ A LOCALIZAR LAS PARADAS</span></div>';
+      }
+    }catch(error){
+      nearbyState.textContent='GPS: DATOS INVÁLIDOS';
+      nearbyList.innerHTML='<div class="nearby-empty"><strong>ERROR DE DATOS_</strong><span>NO SE PUDIERON LEER LAS PARADAS DE SMARTMOVE</span></div>';
+    }finally{
+      locateBtn.disabled=false;
+      window.TuColectivoPendingPosition=null;
+    }
+  };
+
+  window.onNativeNearbyStopsError=function(payload){
+    let message='NO SE PUDIERON LOCALIZAR PARADAS';
+    try{const data=typeof payload==='string'?JSON.parse(payload):payload;if(data&&data.message)message=data.message;}catch(_){}
+    locateBtn.disabled=false;
+    window.TuColectivoPendingPosition=null;
+    nearbyState.textContent='GPS: ERROR SMARTMOVE';
+    nearbyList.innerHTML='<div class="nearby-empty"><strong>NO SE PUDIERON LOCALIZAR PARADAS_</strong><span>'+message+'</span></div>';
+  };
 
   function showArrival(stop,line){
     const minutes=Math.max(2,(line*3)%17+2);
@@ -302,8 +344,21 @@
     nearbyState.textContent='GPS: LOCALIZANDO...';
     locateBtn.disabled=true;
     navigator.geolocation.getCurrentPosition(
-      position=>{locateBtn.disabled=false;renderNearby(position);},
-      error=>{locateBtn.disabled=false;nearbyState.textContent=error&&error.code===1?'GPS: PERMISO DENEGADO':'GPS: SIN SEÑAL';nearbyList.innerHTML='<div class="nearby-empty"><strong>NO SE PUDIERON LOCALIZAR PARADAS_</strong><span>VERIFICÁ EL PERMISO DE UBICACIÓN Y VOLVÉ A INTENTAR</span></div>';},
+      position=>{
+        window.TuColectivoPendingPosition=position;
+        if(window.TuColectivoNative&&typeof window.TuColectivoNative.loadNearbyStops==='function'){
+          window.TuColectivoNative.loadNearbyStops(position.coords.latitude,position.coords.longitude);
+        }else{
+          locateBtn.disabled=false;
+          nearbyState.textContent='GPS: PUENTE NATIVO NO DISPONIBLE';
+          nearbyList.innerHTML='<div class="nearby-empty"><strong>SMARTMOVE NO DISPONIBLE_</strong><span>LA APP NO PUDO CONECTAR CON EL SERVICIO DE PARADAS</span></div>';
+        }
+      },
+      error=>{
+        locateBtn.disabled=false;
+        nearbyState.textContent=error&&error.code===1?'GPS: PERMISO DENEGADO':'GPS: SIN SEÑAL';
+        nearbyList.innerHTML='<div class="nearby-empty"><strong>NO SE PUDO OBTENER LA UBICACIÓN_</strong><span>VERIFICÁ EL PERMISO DE UBICACIÓN Y VOLVÉ A INTENTAR</span></div>';
+      },
       {enableHighAccuracy:true,timeout:10000,maximumAge:30000}
     );
   });
@@ -311,13 +366,13 @@
   nearbyList.addEventListener('click',e=>{
     const choice=e.target.closest('.stop-line-choice');
     if(choice){
-      const stop=stops.find(s=>s.id===choice.dataset.stopId);
+      const stop=(window.TuColectivoStops||[]).find(s=>String(s.id)===String(choice.dataset.stopId));
       if(stop)showArrival(stop,Number(choice.dataset.line));
       return;
     }
     const card=e.target.closest('.nearby-stop');
     if(card){
-      const stop=stops.find(s=>s.id===card.dataset.stopId);
+      const stop=(window.TuColectivoStops||[]).find(s=>String(s.id)===String(card.dataset.stopId));
       if(stop)chooseStop(stop);
     }
   });

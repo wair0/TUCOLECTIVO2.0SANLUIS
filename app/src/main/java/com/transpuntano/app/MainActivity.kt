@@ -148,6 +148,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        @JavascriptInterface fun loadNearbyStops(latitude: Double, longitude: Double) {
+            executor.execute {
+                runCatching { api.getNearby(latitude, longitude) }
+                    .onSuccess { dispatch("onNativeNearbyStops", stopJson(it)) }
+                    .onFailure { dispatch("onNativeNearbyStopsError", JSONObject().put("message", it.message ?: "No se pudieron localizar las paradas").toString()) }
+            }
+        }
+
         @JavascriptInterface fun loadArrivals(identifier: String, lineCode: Int) {
             executor.execute {
                 runCatching { api.getArrivals(identifier, lineCode) }

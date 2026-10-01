@@ -250,9 +250,8 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
 .map-wrap{
   position:relative;
   width:100%;
-  height:min(calc(100vh - var(--hh) - var(--top) - 176px),calc(100vw - 24px));
-  min-height:240px;
-  max-height:520px;
+  height:calc(100vh - var(--hh) - var(--top) - 156px);
+  min-height:360px;
   margin-top:14px;
   overflow:hidden;
   background:#07101c;
