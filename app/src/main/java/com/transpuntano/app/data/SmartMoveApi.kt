@@ -306,51 +306,58 @@ class SmartMoveApi {
         return grouped.values.toList()
     }
     private fun linkedLineCodes(item: JSONObject, line: Int): List<Int> {
-        val codes = linkedMapOf<Int, Boolean>()
-        if (line > 0) codes[line] = true
+        val codes = linkedSetOf<Int>()
+        if (line > 0) codes.add(line)
 
-        // Solo campos que identifican explícitamente una línea. Campos genéricos
-        // como codigoServicio/lineaId pueden ser IDs internos y causaban líneas falsas.
+        // Compatibilidad con el payload real de paradas cercanas de SmartMove.
+        // La versión nativa anterior reconocía codigoLineaServicio/codigoServicio;
+        // al quitarlos, getNearby() devolvía paradas válidas pero sin sus líneas.
         val scalarFields = listOf(
             "codigoLinea", "CodigoLinea", "CODIGOLINEA",
-            "lineaCodigo", "LineaCodigo",
             "codigoLineaParada", "CodigoLineaParada",
-            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada"
+            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada",
+            "codigoLineaServicio", "CodigoLineaServicio",
+            "codigoServicio", "CodigoServicio"
         )
-        scalarFields.forEach { key ->
-            item.optStringAny(key)?.trim()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
-        }
 
-        val arrays = listOf(
+        fun addScalar(source: JSONObject) {
+            scalarFields.forEach { key ->
+                source.optStringAny(key)?.trim()?.toDoubleOrNull()?.toInt()
+                    ?.takeIf { it > 0 }?.let { codes.add(it) }
+            }
+        }
+        addScalar(item)
+
+        val arrayFields = listOf(
             "lineas", "Lineas", "listaLineas", "lineasParada", "LineasParada",
-            "lineasJson", "LineasJson", "lineasServicio",
+            "lineasJson", "LineasJson", "servicios", "Servicios", "lineasServicio",
             "lineCodes", "LineCodes", "codigosLinea", "CodigosLinea"
         )
-        arrays.forEach { key ->
+        arrayFields.forEach { key ->
             val raw = item.opt(key)
-            val array = when (raw) {
+            val values = when (raw) {
                 is JSONArray -> raw
-                is String -> runCatching { if (raw.trim().startsWith("[")) JSONArray(raw) else null }.getOrNull()
+                is String -> runCatching {
+                    val value = raw.trim()
+                    if (value.startsWith("[")) JSONArray(value) else null
+                }.getOrNull()
                 else -> null
             }
-            if (array != null) {
-                for (i in 0 until array.length()) {
-                    val value = array.opt(i)
-                    when (value) {
-                        is JSONObject -> scalarFields.forEach { field ->
-                            value.optStringAny(field)?.trim()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
-                        }
-                        is Number -> value.toInt().takeIf { it > 0 }?.let { codes[it] = true }
-                        is String -> value.trim().toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
+            if (values != null) {
+                for (i in 0 until values.length()) {
+                    when (val value = values.opt(i)) {
+                        is JSONObject -> addScalar(value)
+                        is Number -> value.toInt().takeIf { it > 0 }?.let { codes.add(it) }
+                        is String -> value.trim().toDoubleOrNull()?.toInt()
+                            ?.takeIf { it > 0 }?.let { codes.add(it) }
                     }
                 }
             } else if (raw is String) {
                 raw.split(',', ';', '|').mapNotNull { it.trim().toDoubleOrNull()?.toInt() }
-                    .filter { it > 0 }.forEach { codes[it] = true }
+                    .filter { it > 0 }.forEach { codes.add(it) }
             }
         }
-
-        return codes.keys.toList()
+        return codes.toList()
     }
 
     private fun parseMinutes(value: String): Int? {
