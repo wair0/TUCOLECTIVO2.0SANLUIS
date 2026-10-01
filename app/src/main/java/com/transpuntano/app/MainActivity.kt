@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var mapNearbyStops: List<TransitStop> = emptyList()
     @Volatile private var mapLineCode: Int = 0
     @Volatile private var mapVehicleRefreshInProgress = false
+    private var pendingArrivalNotifications: String? = null
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
 
@@ -297,10 +298,69 @@ class MainActivity : AppCompatActivity() {
                     .onFailure { dispatch("onNativeArrivalsError", JSONObject().put("message", it.message ?: "No se pudieron cargar los arribos").toString()) }
             }
         }
+
+        @JavascriptInterface fun setArrivalNotifications(favoritesJson: String) {
+            runOnUiThread {
+                val favorites = runCatching { JSONArray(favoritesJson) }.getOrNull()
+                if (favorites == null || favorites.length() == 0) {
+                    dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "GUARDÁ AL MENOS UN ARRIBO EN FAVORITOS").toString())
+                    return@runOnUiThread
+                }
+                if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                    checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    pendingArrivalNotifications = favoritesJson
+                    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
+                    return@runOnUiThread
+                }
+                startArrivalNotifications(favoritesJson)
+            }
+        }
+
+        @JavascriptInterface fun stopArrivalNotifications() {
+            runOnUiThread {
+                getSharedPreferences(ArrivalNotificationService.PREFS, MODE_PRIVATE).edit().putBoolean("enabled", false).apply()
+                stopService(android.content.Intent(this@MainActivity, ArrivalNotificationService::class.java))
+                dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "NOTIFICACIONES DESACTIVADAS").toString())
+            }
+        }
+
+        @JavascriptInterface fun getArrivalNotificationState() {
+            val prefs = getSharedPreferences(ArrivalNotificationService.PREFS, MODE_PRIVATE)
+            val history = runCatching { JSONArray(prefs.getString("history", "[]")) }.getOrDefault(JSONArray())
+            dispatch("onNativeArrivalNotificationsState", JSONObject()
+                .put("enabled", prefs.getBoolean("enabled", false))
+                .put("history", history)
+                .put("message", if (prefs.getBoolean("enabled", false)) "SEGUIMIENTO ACTIVO" else "SEGUIMIENTO INACTIVO")
+                .toString())
+        }
+    }
+
+    private fun startArrivalNotifications(favoritesJson: String) {
+        val prefs = getSharedPreferences(ArrivalNotificationService.PREFS, MODE_PRIVATE)
+        prefs.edit().putString("favorites", favoritesJson).putBoolean("enabled", true).apply()
+        val intent = android.content.Intent(this, ArrivalNotificationService::class.java)
+            .putExtra(ArrivalNotificationService.EXTRA_FAVORITES, favoritesJson)
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
+            dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", true).put("message", "SEGUIMIENTO DE ARRIBOS ACTIVADO").toString())
+        } catch (error: Exception) {
+            prefs.edit().putBoolean("enabled", false).apply()
+            dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", error.message ?: "NO SE PUDO ACTIVAR EL SEGUIMIENTO").toString())
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST) {
+            val favorites = pendingArrivalNotifications
+            pendingArrivalNotifications = null
+            if (grantResults.any { it == PackageManager.PERMISSION_GRANTED } && favorites != null) {
+                startArrivalNotifications(favorites)
+            } else {
+                dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "PERMISO DE NOTIFICACIONES DENEGADO").toString())
+            }
+            return
+        }
         if (requestCode != LOCATION_PERMISSION_REQUEST) return
         val granted = grantResults.any { it == PackageManager.PERMISSION_GRANTED }
         pendingGeoCallback?.invoke(pendingGeoOrigin ?: "file://", granted, false)
@@ -320,5 +380,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST = 4102
+        private const val NOTIFICATION_PERMISSION_REQUEST = 4103
     }
 }
