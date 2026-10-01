@@ -256,6 +256,7 @@
     }
     map.zoom=chosen;draw();
   }
+  function mapEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function openStopPopup(stop){
     const popup=document.getElementById('mapStopPopup');if(!popup)return;
     map.pendingStop=stop;
@@ -354,15 +355,15 @@
   window.onNativeMapRouteError=payload=>{let msg='NO SE PUDO CARGAR EL RECORRIDO';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
   window.onNativeMapStops=payload=>{
     try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.stops=raw.map(s=>({id:String(s.identifier||s.code),code:Number(s.code)||0,identifier:String(s.identifier||s.code||''),name:String(s.description||('PARADA '+s.code)),lat:Number(s.latitude),lng:Number(s.longitude),street:String(s.street||''),intersection:String(s.intersection||''),lines:[...(Array.isArray(s.lineCodes)?s.lineCodes:[]).map(Number),Number(s.lineCode)].filter((n,i,a)=>n>0&&a.indexOf(n)===i).sort((a,b)=>a-b)})).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&(s.lat!==0||s.lng!==0));
-      state.textContent='GPS ACTIVO · '+map.stops.length+' PARADAS';draw();if(map.stops.length&&!map.routePoints.length)fitPoints(map.stops);
+      state.textContent='GPS ACTIVO · '+map.stops.length+' PARADAS';draw();if(map.stops.length)fitPoints(map.routePoints.length?map.routePoints.concat(map.stops):map.stops);
     }catch(_){state.textContent='ERROR LEYENDO PARADAS';}
   };
   window.onNativeMapStopsError=payload=>{let msg='NO SE PUDIERON CARGAR LAS PARADAS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
   window.onNativeMapVehicles=payload=>{try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.vehicles=raw.map(v=>({id:String(v.id||v.vehicleId||''),line:String(v.line||''),destination:String(v.destination||''),lat:Number(v.lat??v.latitude),lng:Number(v.lng??v.longitude),gpsTimestamp:String(v.gpsTimestamp||'')})).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lng)&&(v.lat!==0||v.lng!==0));draw();}catch(_){state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
   window.TuColectivoMap={
     showRoute(lineCode){map.routeLineCode=Number(lineCode)||0;map.routePoints=[];map.vehicles=[];state.textContent='CARGANDO RECORRIDO...';document.getElementById('mapStopPopup')?.setAttribute('hidden','');if(window.TuColectivoNative&&map.routeLineCode>0)window.TuColectivoNative.loadMapRoute(map.routeLineCode);window.TuColectivo.navigate('mapa');setTimeout(locateUser,100);draw();},
-    handleArrivals(payload){if(!map.pendingMapArrival)return false;let items=[];try{items=typeof payload==='string'?JSON.parse(payload):payload||[];}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.innerHTML=items.length?items.map(a=>'<div class="map-popup-arrival"><b>'+String(a.line||'COLECTIVO')+'</b><span>'+String(a.destination||'SERVICIO')+'</span><strong>'+String(a.minutes==null?'--':a.minutes)+' MIN</strong></div>').join(''):'<small>SMARTMOVE NO DEVOLVIÓ ARRIBOS PARA ESTA LÍNEA</small>';map.pendingMapArrival=null;return true;},
-    handleArrivalsError(payload){if(!map.pendingMapArrival)return false;let msg='NO SE PUDIERON CARGAR LOS ARRIBOS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.innerHTML='<small>'+msg+'</small>';map.pendingMapArrival=null;return true;}
+    handleArrivals(payload){if(!map.pendingMapArrival)return false;let items=[];try{items=typeof payload==='string'?JSON.parse(payload):payload||[];}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.innerHTML=items.length?items.map(a=>'<div class="map-popup-arrival"><b>'+mapEscape(a.line||'COLECTIVO')+'</b><span>'+mapEscape(a.destination||'SERVICIO')+'</span><strong>'+mapEscape(a.minutes==null?'--':a.minutes)+' MIN</strong></div>').join(''):'<small>SMARTMOVE NO DEVOLVIÓ ARRIBOS PARA ESTA LÍNEA</small>';map.pendingMapArrival=null;return true;},
+    handleArrivalsError(payload){if(!map.pendingMapArrival)return false;let msg='NO SE PUDIERON CARGAR LOS ARRIBOS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.textContent=msg;map.pendingMapArrival=null;return true;}
   };
   window.setInterval(()=>{const screen=document.querySelector('[data-screen="mapa"]');if(screen&&screen.classList.contains('active')&&window.TuColectivoNative&&typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode||0);},12000);
   document.addEventListener('app:navigate',e=>{if(e.detail.go==='mapa')setTimeout(resize,60);});
