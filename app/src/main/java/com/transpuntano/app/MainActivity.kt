@@ -189,9 +189,10 @@ class MainActivity : AppCompatActivity() {
         executor.execute {
             try {
                 val vehicles = linkedMapOf<String, JSONObject>()
-                for (stop in mapNearbyStops.take(15)) {
-                    val codes = if (lineCode > 0) listOf(lineCode)
-                        else stop.lineCodes.filter { it > 0 }.distinct()
+                for (stop in mapNearbyStops) {
+                    val codes = if (lineCode > 0) {
+                        if (lineCode in stop.lineCodes) listOf(lineCode) else emptyList()
+                    } else stop.lineCodes.filter { it > 0 }.distinct()
                     for (code in codes) {
                         val arrivals = runCatching {
                             api.getArrivals(stop.identifier, code, timeoutMs = 5_000)
