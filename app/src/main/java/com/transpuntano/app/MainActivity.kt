@@ -64,9 +64,9 @@ class MainActivity : AppCompatActivity() {
         root.addView(AnimatedGifBackgroundView(this),FrameLayout.LayoutParams(-1,-1))
         val overlay=FrameLayout(this); root.addView(overlay,FrameLayout.LayoutParams(-1,-1))
         val title=TextView(this).apply{
-            text="TU COLECTIVO 2.0 SAN LUIS"; setTextColor(0xFF8CF8FF.toInt()); textSize=25f; gravity=Gravity.CENTER
+            text="TU COLECTIVO 2.0 SAN LUIS"; setTextColor(0xFFFF1744.toInt()); textSize=25f; gravity=Gravity.CENTER
             typeface=runCatching{Typeface.createFromAsset(assets,"fonts/cyberpunk.ttf")}.getOrDefault(Typeface.create(Typeface.MONOSPACE,Typeface.BOLD))
-            setShadowLayer(14f,0f,0f,0xFF00E5FF.toInt())
+            setShadowLayer(14f,0f,0f,0xFFFF1744.toInt())
         }
         overlay.addView(title,FrameLayout.LayoutParams(-1,-2,Gravity.CENTER).apply{leftMargin=18;rightMargin=18;topMargin=-55})
         overlay.addView(SplashProgressView(this,4800L),FrameLayout.LayoutParams(-1,46,Gravity.CENTER).apply{leftMargin=42;rightMargin=42;topMargin=45})
@@ -79,8 +79,8 @@ class MainActivity : AppCompatActivity() {
         init{postOnAnimation(tick)}
         override fun onDetachedFromWindow(){removeCallbacks(tick);super.onDetachedFromWindow()}
         override fun onDraw(c:Canvas){val p=((SystemClock.uptimeMillis()-started).toFloat()/durationMs).coerceIn(0f,1f);val w=width.toFloat();val y=height*.5f
-            paint.style=Paint.Style.STROKE;paint.strokeWidth=3f;paint.color=0xFF00E5FF.toInt();c.drawRoundRect(2f,y-8f,w-2f,y+8f,8f,8f,paint)
-            paint.style=Paint.Style.FILL;paint.color=0xFF00E5FF.toInt();c.drawRoundRect(5f,y-5f,5f+(w-10f)*p,y+5f,5f,5f,paint);paint.color=0xFFB14CFF.toInt();c.drawCircle(5f+(w-10f)*p,y,5f,paint)}
+            paint.style=Paint.Style.STROKE;paint.strokeWidth=3f;paint.color=0xFFFF1744.toInt();c.drawRoundRect(2f,y-8f,w-2f,y+8f,8f,8f,paint)
+            paint.style=Paint.Style.FILL;paint.color=0xFFFF1744.toInt();c.drawRoundRect(5f,y-5f,5f+(w-10f)*p,y+5f,5f,5f,paint);paint.color=0xFFFF1744.toInt();c.drawCircle(5f+(w-10f)*p,y,5f,paint)}
     }
 
     private class AnimatedGifBackgroundView(context: android.content.Context):View(context){

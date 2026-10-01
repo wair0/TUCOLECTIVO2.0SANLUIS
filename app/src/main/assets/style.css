@@ -983,3 +983,23 @@ html,body,body *{
   display:block!important;
   margin-top:6px!important;
 }
+
+
+/* CORRECCIÓN CONTADOR — CENTRADO REAL Y CABEZA LUMINOSA DEL ARCO */
+.arrival-time{
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  margin-top:0!important;
+  margin-bottom:0!important;
+  align-self:center!important;
+}
+.arrival-ring-dot{
+  fill:var(--vt)!important;
+  stroke:var(--vt)!important;
+  stroke-width:1!important;
+  filter:drop-shadow(0 0 5px var(--vt))!important;
+  transform-origin:40px 40px;
+  animation:arrivalNativeOrbit var(--arrival-duration,1.5s) linear infinite;
+}
