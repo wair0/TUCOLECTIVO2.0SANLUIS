@@ -15,7 +15,6 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import android.location.LocationManager
 import android.os.Bundle
-import android.os.SystemClock
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
@@ -87,7 +86,6 @@ class MainActivity : AppCompatActivity() {
     private fun buildShell() {
         val rootFrame = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         rootFrame.addView(CyberBackgroundView(this), FrameLayout.LayoutParams(-1, -1))
-        rootFrame.addView(AnimatedGifBackgroundView(this), FrameLayout.LayoutParams(-1, -1))
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -920,6 +918,7 @@ class MainActivity : AppCompatActivity() {
         box.addView(list)
         box.addView(cyberActionCard("ACTUALIZAR ARRIBOS", cyan) { loadArrivals(stop, line, list) })
         box.addView(cyberActionCard("☆ GUARDAR PARADA", cyan) { saveFavorite(stop, line); toast("Parada guardada") })
+        box.addView(cyberActionCard("VER RECORRIDO EN EL MAPA", pink) { showMap(line) })
         content.addView(ScrollView(this).apply { addView(box) })
         loadArrivals(stop, line, list)
     }
@@ -1993,118 +1992,100 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         private val paintItem = Paint(Paint.ANTI_ALIAS_FLAG)
     }
 
-    /**
-     * Fondo GIF animado con decodificación nativa de Android moderno.
-     *
-     * Android 12+ (API 31):
-     * - Recupera el GIF original desde el asset Base64.
-     * - ImageDecoder lo convierte a AnimatedImageDrawable.
-     * - AnimatedImageDrawable decodifica los frames en segundo plano y se repite infinitamente.
-     *
-     * Android 7-11:
-     * - Mantiene Movie como fallback para conservar minSdk 24.
-     */
-    /**
-     * Fondo GIF animado real.
-     *
-     * Se carga el GIF binario directamente desde assets y se dibuja con
-     * Movie en una capa de software para evitar problemas de callbacks
-     * internos y de compatibilidad con ImageDecoder.
-     */
-    private class AnimatedGifBackgroundView(context: Context) : View(context) {
-        private var movie: android.graphics.Movie? = null
-        private var startedAt = 0L
-        private var loadError = false
-
-        private val invalidator = object : Runnable {
-            override fun run() {
-                if (!isAttachedToWindow) return
-                invalidate()
-                postOnAnimation(this)
-            }
-        }
-
-        init {
-            setWillNotDraw(false)
-            isClickable = false
-            isFocusable = false
-            // Movie/GIF se renderiza de forma fiable mediante Canvas software.
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-            movie = loadMovie(context)
-        }
-
-        private fun loadMovie(context: Context): android.graphics.Movie? {
-            return runCatching {
-                context.assets.open("background_cyberpunk.gif").use { input ->
-                    android.graphics.Movie.decodeStream(input)
-                }.also {
-                    if (it == null) loadError = true
-                }
-            }.getOrElse {
-                loadError = true
-                null
-            }
-        }
-
-        override fun onAttachedToWindow() {
-            super.onAttachedToWindow()
-            startedAt = SystemClock.uptimeMillis()
-            postOnAnimation(invalidator)
-        }
-
-        override fun onDetachedFromWindow() {
-            removeCallbacks(invalidator)
-            super.onDetachedFromWindow()
-        }
-
-        override fun onDraw(canvas: Canvas) {
-            val gif = movie ?: return
-            if (width <= 0 || height <= 0) return
-
-            val duration = gif.duration().takeIf { it > 0 } ?: 12000
-            val elapsed = ((SystemClock.uptimeMillis() - startedAt) % duration).toInt()
-            gif.setTime(elapsed)
-
-            val mw = gif.width().toFloat()
-            val mh = gif.height().toFloat()
-            if (mw <= 0f || mh <= 0f) return
-
-            // Cover: ocupa todo el contenedor sin deformar el GIF.
-            val scale = maxOf(width / mw, height / mh)
-            val drawW = mw * scale
-            val drawH = mh * scale
-            val left = (width - drawW) * .5f
-            val top = (height - drawH) * .5f
-
-            canvas.save()
-            canvas.translate(left, top)
-            canvas.scale(scale, scale)
-            gif.draw(canvas, 0f, 0f)
-            canvas.restore()
-        }
-    }
-
     private class CyberBackgroundView(context: Context) : View(context) {
-        private val p=Paint(Paint.ANTI_ALIAS_FLAG);private val path=Path()
-        override fun onDraw(c:Canvas){val w=width.toFloat();val h=height.toFloat();val cx=w*.5f;val cy=h*.48f
-            val lime=0xFF00F0FF.toInt();val orange=0xFFFF00FF.toInt();val blue=0xFF006CFF.toInt()
-            c.drawColor(0xFF010302.toInt());p.style=Paint.Style.FILL
-            p.shader=android.graphics.RadialGradient(cx,cy,maxOf(w,h)*.78f,intArrayOf(0x30100035,0x18002C45,0x00000000),null,android.graphics.Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=null
-            // New visual language: vertical light shafts + orange volumetric zones.
-            for(i in 0..7){val x=w*(.08f+i*.12f);p.color=if(i%2==0)lime else orange;p.alpha=34;path.reset();path.moveTo(x,0f);path.lineTo(x+28f,0f);path.lineTo(cx+(x-cx)*.18f,h);path.lineTo(cx+(x-cx)*.18f+12f,h);path.close();c.drawPath(path,p)}
-            p.style=Paint.Style.STROKE;p.strokeWidth=1f
-            // Radar rings, no grid.
-            p.color=lime;p.alpha=105;c.drawCircle(cx,cy,38f,p);c.drawCircle(cx,cy,74f,p);c.drawCircle(cx,cy,126f,p)
-            p.color=orange;p.alpha=110;c.drawArc(cx-170f,cy-170f,cx+170f,cy+170f,18f,95f,false,p);c.drawArc(cx-120f,cy-120f,cx+120f,cy+120f,202f,78f,false,p)
-            // Data beams.
-            for(i in 0..11){val x=w*i/11f;p.color=if(i%2==0) blue else orange;p.alpha=42;c.drawLine(x,0f,cx+(x-cx)*.25f,cy,p);c.drawLine(x,h,cx+(x-cx)*.25f,cy,p)}
-            // Floating nodes / beacons.
-            p.style=Paint.Style.FILL;for(i in 1..16){val x=w*(.04f+(i*47%92)/100f);val y=h*(.06f+(i*31%88)/100f);p.color=if(i%4==0)orange else lime;p.alpha=120;c.drawCircle(x,y,1.5f+(i%3),p);p.alpha=25;c.drawCircle(x,y,10f+(i%4)*4f,p)}
-            // Central radar target.
-            p.style=Paint.Style.STROKE;p.color=lime;p.alpha=160;p.strokeWidth=2f;c.drawCircle(cx,cy,18f,p);p.color=orange;p.alpha=210;c.drawLine(cx-28f,cy,cx+28f,cy,p);c.drawLine(cx,cy-28f,cx,cy+28f,p)
-            p.color=blue;p.alpha=110;c.drawCircle(cx,cy,5f,p)
-            // Asymmetric corner brackets.
-            p.color=lime;p.alpha=100;p.strokeWidth=2f;c.drawLine(10f,10f,78f,10f,p);c.drawLine(10f,10f,10f,55f,p);p.color=orange;c.drawLine(w-10f, h-10f,w-78f,h-10f,p);c.drawLine(w-10f,h-10f,w-10f,h-55f,p)
+        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val glow = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val path = Path()
+
+        override fun onDraw(c: Canvas) {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return
+
+            val cyan = 0xFF00F0FF.toInt()
+            val deep = 0xFF020812.toInt()
+            val mid = 0xFF031827.toInt()
+
+            c.drawColor(deep)
+
+            // Brillo central celeste: fondo HUD oscuro con iluminación neón.
+            glow.style = Paint.Style.FILL
+            glow.shader = android.graphics.RadialGradient(
+                w * .5f, h * .42f, maxOf(w, h) * .82f,
+                intArrayOf(0x5530EFFF, 0x2215AFCB, 0x00020812),
+                null, android.graphics.Shader.TileMode.CLAMP
+            )
+            c.drawRect(0f, 0f, w, h, glow)
+            glow.shader = null
+
+            // Campo técnico de cuadrícula tipo HUD.
+            p.style = Paint.Style.STROKE
+            p.strokeWidth = 1f
+            p.color = cyan
+            p.alpha = 52
+
+            val grid = 28f * resources.displayMetrics.density
+            var x = 0f
+            while (x <= w) {
+                c.drawLine(x, 0f, x, h, p)
+                x += grid
+            }
+            var y = 0f
+            while (y <= h) {
+                c.drawLine(0f, y, w, y, p)
+                y += grid
+            }
+
+            // Segunda retícula fina para dar profundidad tecnológica.
+            p.alpha = 18
+            val fine = 7f * resources.displayMetrics.density
+            x = 0f
+            while (x <= w) {
+                c.drawLine(x, 0f, x, h, p)
+                x += fine
+            }
+            y = 0f
+            while (y <= h) {
+                c.drawLine(0f, y, w, y, p)
+                y += fine
+            }
+
+            // Líneas HUD y esquinas de interfaz.
+            p.alpha = 135
+            p.strokeWidth = 1.5f
+            val corner = minOf(w, h) * .075f
+            c.drawLine(10f, 10f, 10f + corner, 10f, p)
+            c.drawLine(10f, 10f, 10f, 10f + corner, p)
+            c.drawLine(w - 10f, 10f, w - 10f - corner, 10f, p)
+            c.drawLine(w - 10f, 10f, w - 10f, 10f + corner, p)
+            c.drawLine(10f, h - 10f, 10f + corner, h - 10f, p)
+            c.drawLine(10f, h - 10f, 10f, h - 10f - corner, p)
+            c.drawLine(w - 10f, h - 10f, w - 10f - corner, h - 10f, p)
+            c.drawLine(w - 10f, h - 10f, w - 10f, h - 10f - corner, p)
+
+            // Nodos y marcadores de sistema.
+            p.style = Paint.Style.FILL
+            p.alpha = 180
+            val nodeStep = maxOf(48f * resources.displayMetrics.density, 48f)
+            var nx = nodeStep
+            while (nx < w) {
+                c.drawCircle(nx, 18f, 1.8f, p)
+                nx += nodeStep * 2f
+            }
+
+            // Horizonte digital sutil para reforzar el aspecto de HUD hacker.
+            p.style = Paint.Style.STROKE
+            p.alpha = 75
+            val horizonY = h * .68f
+            c.drawLine(0f, horizonY, w, horizonY, p)
+
+            // Barrido horizontal muy tenue, sin depender de imágenes externas.
+            p.alpha = 20
+            var scanY = 0f
+            while (scanY < h) {
+                c.drawLine(0f, scanY, w, scanY, p)
+                scanY += 5f
+            }
         }
     }
 
