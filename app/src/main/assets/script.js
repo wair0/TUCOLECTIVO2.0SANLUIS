@@ -534,7 +534,8 @@
     if(window.TuColectivoFavorites?.render)window.TuColectivoFavorites.render();
   };
   const showList=(title,subtitle,items,empty,onClick,itemLabel='')=>{
-    lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(title)+'</strong><small>'+esc(subtitle)+'</small></div>';
+    const context=String(subtitle??'').trim();
+    lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(title)+'</strong>'+(context?'<small class="line-sub-context">'+esc(context)+'</small>':'')+'</div>';
     if(!items.length){lineGrid.insertAdjacentHTML('beforeend','<div class="nearby-empty"><strong>'+esc(empty)+'</strong><span>NO HAY DATOS PARA ESTA SELECCIÓN_</span></div>');return;}
     items.forEach(item=>{const b=document.createElement('button');b.type='button';b.className='data-card line-detail-card';b.innerHTML='<b>'+esc(item.name)+'</b>'+(itemLabel?'<span>'+esc(itemLabel)+'</span>':'')+'<em>›</em>';b.addEventListener('click',()=>onClick(item));lineGrid.appendChild(b);});
   };
@@ -547,9 +548,9 @@
     showList('CALLES','',a,'SIN CALLES',x=>{currentStreet=x;nativeApi.loadIntersections(currentLine.code,x.code);},'INTERSECCIONES');
   };
   window.onNativeStreetsError=p=>showError('CALLES PRINCIPALES',JSON.parse(p).message);
-  window.onNativeIntersections=p=>{const a=JSON.parse(p);showList('INTERSECCIONES',currentStreet.name,a,'SIN INTERSECCIONES',x=>{currentIntersection=x;nativeApi.loadStops(currentLine.code,currentStreet.code,x.code);},'');};
+  window.onNativeIntersections=p=>{const a=JSON.parse(p);showList('INTERSECCIONES','CALLE: '+(currentStreet?.name||''),a,'SIN INTERSECCIONES',x=>{currentIntersection=x;nativeApi.loadStops(currentLine.code,currentStreet.code,x.code);},'');};
   window.onNativeIntersectionsError=p=>showError('INTERSECCIONES',JSON.parse(p).message);
-  window.onNativeStops=p=>{const a=JSON.parse(p);currentStop=null;showList('PARADAS',currentIntersection.name,a,'SIN PARADAS',showArrivals,'ARRIBOS');};
+  window.onNativeStops=p=>{const a=JSON.parse(p);currentStop=null;showList('PARADAS','INTERSECCIÓN: '+(currentIntersection?.name||''),a,'SIN PARADAS',showArrivals,'ARRIBOS');};
   window.onNativeStopsError=p=>showError('PARADAS',JSON.parse(p).message);
   window.onNativeArrivals=p=>{
     const a=JSON.parse(p),list=lineGrid.querySelector('.line-arrivals');
@@ -578,6 +579,9 @@
   });
   document.addEventListener('app:navigate',e=>{if(e.detail.go==='lineas'){currentLine=null;currentStreet=null;currentIntersection=null;currentStop=null;loadLines();}});
   window.TuColectivoLineBack=back;
+  const listStyle=document.createElement('style');
+  listStyle.textContent='.line-sub-head{display:flex;flex-direction:column;align-items:flex-start;gap:7px}.line-sub-head>strong{display:block;line-height:1.2}.line-sub-head>.line-sub-context{display:block;max-width:100%;line-height:1.35;overflow-wrap:anywhere;white-space:normal;opacity:.9}';
+  document.head.appendChild(listStyle);
   if(nativeApi)loadLines();
 })();
 /* CÍRCULO DE ARRIBOS — MISMA LÓGICA VISUAL DE LA RAMA NATIVA */
