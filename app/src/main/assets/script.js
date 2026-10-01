@@ -31,7 +31,10 @@
     btn.classList.add('on');
     btn.setAttribute('aria-expanded', 'true');
     current = id;
-    if (id === 'm-bell') { const d = $('.dot', btn); if (d) d.remove(); }
+    if (id === 'm-bell') {
+      const d = $('.dot', btn); if (d) d.remove();
+      if (window.TuColectivoNative?.getArrivalNotificationState) window.TuColectivoNative.getArrivalNotificationState();
+    }
     if (id === 'm-search') setTimeout(() => q.focus(), 220);
   }
 
@@ -546,7 +549,47 @@
 
   const empty='<div class="favorites-empty"><strong>SIN FAVORITOS_</strong><span>GUARDÁ LÍNEAS O PARADAS PARA VERLAS AQUÍ</span></div>';
   let favorites=load();
+  let notificationsEnabled=false;
 
+  function syncArrivalNotificationConfig(){
+    if(!notificationsEnabled)return;
+    if(!favorites.arrivals.length){
+      window.TuColectivoNative?.stopArrivalNotifications?.();
+      return;
+    }
+    window.TuColectivoNative?.setArrivalNotifications?.(JSON.stringify(favorites.arrivals));
+  }
+  function escapeNotificationText(value){
+    return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function renderNotificationHistory(history){
+    const host=document.getElementById('recentAlertsList');
+    if(!host)return;
+    if(!Array.isArray(history)||!history.length){
+      host.innerHTML='<li><b>SIN ALERTAS RECIENTES</b><span>Las alertas aparecerán cuando se aproximen los arribos guardados en Favoritos.</span></li>';
+      return;
+    }
+    host.innerHTML=history.slice(0,20).map(item=>{
+      const age=Math.max(0,Math.floor((Date.now()-Number(item.timestamp||Date.now()))/60000));
+      const when=age<1?'ahora':age+' min';
+      return '<li><b>'+escapeNotificationText('LÍNEA '+item.line+' · '+item.message)+'</b><span>'+escapeNotificationText([item.stop,item.destination].filter(Boolean).join(' · '))+'</span><time>'+when+'</time></li>';
+    }).join('');
+  }
+  function syncNotificationButton(){
+    const button=document.getElementById('arrivalNotificationsToggle');
+    if(!button)return;
+    button.textContent=notificationsEnabled?'DESACTIVAR NOTIFICACIONES':'ACTIVAR NOTIFICACIONES';
+    button.setAttribute('aria-pressed',String(notificationsEnabled));
+    button.classList.toggle('enabled',notificationsEnabled);
+  }
+  window.onNativeArrivalNotificationsState=function(payload){
+    let state={enabled:false,history:[],message:''};
+    try{state=typeof payload==='string'?JSON.parse(payload):payload||state;}catch(_){}
+    notificationsEnabled=!!state.enabled;
+    syncNotificationButton();
+    renderNotificationHistory(state.history);
+    if(state.message&&window.setSystemStatus)window.setSystemStatus(state.message,notificationsEnabled?'ok':'warn');
+  };
   function load(){
     try{
       const raw=localStorage.getItem(STORAGE);
@@ -566,7 +609,7 @@
     const key=arrivalKey(stop,line);
     if(isArrivalSaved(stop,line))favorites.arrivals=favorites.arrivals.filter(v=>v.key!==key);
     else favorites.arrivals.push({key,line:Number(line),stop:{id:String(stop.id||stop.identifier||stop.code),identifier:String(stop.identifier||stop.id||stop.code),code:Number(stop.code)||0,name:String(stop.name||stop.description||('PARADA '+stop.code)),street:String(stop.street||''),intersection:String(stop.intersection||''),lat:Number(stop.lat??stop.latitude),lng:Number(stop.lng??stop.longitude),lines:Array.isArray(stop.lines)?stop.lines.map(Number):[Number(line)]}});
-    save();syncButtons();render();window.TuColectivoNearbySyncArrivalFavorite?.();syncLineArrivalFavorite();
+    save();syncButtons();render();window.TuColectivoNearbySyncArrivalFavorite?.();syncLineArrivalFavorite();syncArrivalNotificationConfig();
   }
   function syncLineArrivalFavorite(){const current=window.TuColectivoCurrentLineArrival;const button=document.querySelector('[data-line-arrival-favorite]');if(!current||!button)return;const on=isArrivalSaved(current.stop,current.line);button.textContent=on?'★ ARRIBO GUARDADO':'☆ AGREGAR ARRIBO A FAVORITOS';button.setAttribute('aria-pressed',String(on));}
   function toggle(type,id){
@@ -612,6 +655,21 @@
   }
 
   document.addEventListener('click',e=>{
+    const notificationToggle=e.target.closest('#arrivalNotificationsToggle');
+    if(notificationToggle){
+      e.preventDefault();
+      if(notificationsEnabled){
+        window.TuColectivoNative?.stopArrivalNotifications?.();
+      }else if(!favorites.arrivals.length){
+        if(window.setSystemStatus)window.setSystemStatus('GUARDÁ AL MENOS UN ARRIBO EN FAVORITOS','warn');
+      }else if(window.TuColectivoNative?.setArrivalNotifications){
+        notificationToggle.textContent='ACTIVANDO NOTIFICACIONES...';
+        window.TuColectivoNative.setArrivalNotifications(JSON.stringify(favorites.arrivals));
+      }else if(window.setSystemStatus){
+        window.setSystemStatus('PUENTE NATIVO NO DISPONIBLE','error');
+      }
+      return;
+    }
     const arrivalBtn=e.target.closest('.arrival-favorite-toggle');
     if(arrivalBtn){
       e.preventDefault();e.stopPropagation();
@@ -631,7 +689,12 @@
     const remove=e.target.closest('.favorite-remove');
     if(remove){
       const item=remove.closest('.favorite-item');
-      if(item)toggle(item.dataset.favType,item.dataset.favId);
+      if(item){
+        if(item.dataset.favType==='arrivals'){
+          favorites.arrivals=favorites.arrivals.filter(v=>v.key!==item.dataset.favId);
+          save();render();syncArrivalNotificationConfig();
+        }else toggle(item.dataset.favType,item.dataset.favId);
+      }
       return;
     }
   });
@@ -675,9 +738,9 @@
       },80);
     }
   });
-  document.addEventListener('app:navigate',e=>{if(e.detail.go==='favoritos')render();});
+  document.addEventListener('app:navigate',e=>{if(e.detail.go==='favoritos'){render();window.TuColectivoNative?.getArrivalNotificationState?.();}});
   window.TuColectivoFavorites={toggle,render,toggleArrival,isArrivalSaved,syncLineArrivalFavorite};
-  render();syncButtons();
+  render();syncButtons();syncNotificationButton();
 })();
 
 /* FASE 11B — LÍNEAS REALES + SUBSECCIONES DESDE SMARTMOVE NATIVO */

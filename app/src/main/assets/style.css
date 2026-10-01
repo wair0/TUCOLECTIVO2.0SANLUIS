@@ -1099,3 +1099,12 @@ html,body,body *{
 .arrival-favorite-toggle{position:relative;display:block;width:100%;min-height:44px;margin:10px 0;padding:10px 12px;color:var(--neon-yellow);font-size:12px;font-weight:700;letter-spacing:.07em;background:linear-gradient(120deg,rgba(250,255,0,.09),rgba(160,32,255,.12));border:1px solid var(--neon-yellow);box-shadow:inset 0 0 12px rgba(250,255,0,.08),0 0 10px rgba(250,255,0,.12);text-shadow:0 0 7px rgba(250,255,0,.75)}
 .arrival-favorite-toggle[aria-pressed=true]{background:rgba(250,255,0,.15);box-shadow:inset 0 0 14px rgba(250,255,0,.16),0 0 14px rgba(250,255,0,.2)}
 .favorite-group{color:var(--neon-yellow)!important;text-shadow:0 0 8px rgba(250,255,0,.6)}
+
+
+/* FASE 5 — CONTROL DE NOTIFICACIONES REALES */
+.notification-toggle{display:block;width:100%;min-height:48px;margin:12px 0 8px;padding:12px;color:#faff00;background:linear-gradient(110deg,rgba(250,255,0,.1),rgba(160,32,255,.14));border:1px solid #faff00;box-shadow:inset 0 0 14px rgba(250,255,0,.08),0 0 12px rgba(250,255,0,.14);font-size:13px;font-weight:700;letter-spacing:.08em;text-shadow:0 0 8px rgba(250,255,0,.6)}
+.notification-toggle.enabled{color:#39ff88;border-color:#39ff88;box-shadow:inset 0 0 14px rgba(57,255,136,.12),0 0 12px rgba(57,255,136,.16);text-shadow:0 0 8px rgba(57,255,136,.65)}
+.notification-note{margin:0 0 14px;color:rgba(217,251,255,.78);font-size:10px;line-height:1.5;letter-spacing:.08em}
+#m-bell .nl li{padding:12px 14px}
+#m-bell .nl li b{color:var(--cy)}
+#m-bell .nl li span{overflow-wrap:anywhere}

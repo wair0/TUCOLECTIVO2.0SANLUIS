@@ -59,11 +59,9 @@
 </section>
 
 <section class="panel" id="m-bell" aria-label="Notificaciones">
-  <div class="ph">ALERTAS_RECIENTES.LOG</div>
-  <ul class="nl">
-    <li><b>LÍNEA 60</b><span>Demora de 8 min en el recorrido.</span><time>hace 2 min</time></li>
-    <li><b>PARADA CERCANA</b><span>El 12 llega en 3 min a Av. Colón.</span><time>hace 9 min</time></li>
-    <li><b>SISTEMA</b><span>Mapa sin conexión actualizado.</span><time>hace 1 h</time></li>
+  <div class="ph">ALERTAS_REALES.LOG</div>
+  <ul class="nl" id="recentAlertsList">
+    <li><b>SIN ALERTAS RECIENTES</b><span>Las alertas aparecerán cuando se aproximen los arribos guardados en Favoritos.</span></li>
   </ul>
 </section>
 
@@ -150,6 +148,8 @@
 
   <section class="screen" data-screen="favoritos">
     <div class="screen-head"><span>FAVORITOS</span><small>ACCESOS RÁPIDOS</small></div>
+    <button id="arrivalNotificationsToggle" class="notification-toggle" type="button" aria-pressed="false">ACTIVAR NOTIFICACIONES</button>
+    <p class="notification-note">RECIBÍ AVISOS DE LOS ARRIBOS GUARDADOS A 10, 5, 3 Y 1 MINUTO, Y CUANDO ESTÉ ARRIBANDO.</p>
     <div id="favoritesList" class="favorites-list"><div class="favorites-empty"><strong>SIN FAVORITOS_</strong><span>GUARDÁ LÍNEAS O PARADAS PARA VERLAS AQUÍ</span></div></div>
   </section>
 </main>
