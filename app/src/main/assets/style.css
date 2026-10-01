@@ -76,3 +76,122 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
 .nav-btn .nav-icon .card-icon{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px currentColor)}
 .nav-btn.active .nav-icon .card-icon{filter:drop-shadow(0 0 5px var(--cy)) drop-shadow(0 0 10px var(--vi))}
 @media(max-width:360px){.home-card .card-icon{width:45px;height:45px;right:7px;top:8px}.home-card strong{max-width:80%;font-size:14px}.home-card span{font-size:8px}}
+
+
+/* FASE 4 — BARRA INFERIOR HUD + HOME MÁS LUMINOSO */
+/* Inicio: eliminar visualmente CONTROL_CENTRAL y dar más presencia a las tarjetas */
+.screen[data-screen="inicio"] .screen-head small{display:none}
+.home-card{
+  background:
+    radial-gradient(circle at 82% 22%,rgba(0,240,255,.24),transparent 34%),
+    linear-gradient(145deg,rgba(0,240,255,.22),rgba(160,32,255,.24));
+  border-color:rgba(0,240,255,.9);
+  box-shadow:
+    inset 0 0 24px rgba(0,240,255,.2),
+    inset 0 0 46px rgba(160,32,255,.12),
+    0 0 14px rgba(0,240,255,.2),
+    0 0 22px rgba(160,32,255,.12);
+}
+.home-card::before{
+  background:
+    repeating-linear-gradient(0deg,transparent 0 5px,rgba(0,240,255,.055) 6px),
+    radial-gradient(circle at 80% 24%,rgba(0,240,255,.22),transparent 34%);
+}
+.home-card strong{text-shadow:0 0 8px var(--cy),0 0 18px var(--vi)}
+.home-card span{text-shadow:0 0 6px var(--cy)}
+.card-lineas{box-shadow:inset 0 0 28px rgba(0,240,255,.24),0 0 16px rgba(0,240,255,.25),0 0 24px rgba(160,32,255,.12)}
+.sync-btn{
+  background:
+    linear-gradient(90deg,rgba(0,240,255,.2),rgba(160,32,255,.42),rgba(0,240,255,.2));
+  border-color:#e08cff;
+  box-shadow:
+    0 0 18px rgba(160,32,255,.45),
+    0 0 28px rgba(0,240,255,.12),
+    inset 0 0 20px rgba(0,240,255,.22);
+}
+.sync-btn::before{border-color:rgba(0,240,255,.28)}
+.sync-btn span{text-shadow:0 0 9px var(--cy),0 0 15px var(--vi)}
+
+/* Barra inferior: más HUD, separación clara, indicador activo y pulso cyberpunk */
+.bottom-nav{
+  height:66px;
+  background:
+    linear-gradient(180deg,rgba(11,18,43,.97),rgba(5,7,20,.97));
+  border-color:rgba(0,240,255,.92);
+  box-shadow:
+    0 0 20px rgba(0,240,255,.3),
+    0 0 34px rgba(160,32,255,.18),
+    inset 0 0 22px rgba(160,32,255,.2);
+  overflow:hidden;
+}
+.bottom-nav::before{
+  left:3%;
+  right:3%;
+  top:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,var(--cy) 18%,var(--vi) 50%,var(--cy) 82%,transparent);
+  box-shadow:0 0 10px var(--cy),0 0 18px var(--vi);
+  animation:navEnergy 3.2s linear infinite;
+}
+.bottom-nav::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(0,240,255,.025) 6px);
+  animation:navScan 5s linear infinite;
+}
+.nav-btn{
+  z-index:1;
+  gap:4px;
+  color:rgba(217,251,255,.62);
+  border-left:1px solid rgba(0,240,255,.08);
+  transition:transform .1s,color .12s,background .12s,filter .12s;
+}
+.nav-btn:first-child{border-left:0}
+.nav-btn::before{
+  content:"";
+  position:absolute;
+  top:7px;
+  width:30px;
+  height:25px;
+  border:1px solid transparent;
+  clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));
+  transition:border-color .12s,box-shadow .12s,background .12s;
+}
+.nav-btn.active{
+  color:#fff;
+  background:linear-gradient(180deg,rgba(0,240,255,.13),rgba(160,32,255,.1));
+  text-shadow:0 0 9px var(--cy),0 0 15px var(--vi);
+}
+.nav-btn.active::before{
+  border-color:rgba(0,240,255,.75);
+  background:rgba(0,240,255,.06);
+  box-shadow:inset 0 0 10px rgba(0,240,255,.2),0 0 10px rgba(0,240,255,.18);
+}
+.nav-btn.active .nav-icon{animation:navPulse 1.8s ease-in-out infinite}
+.nav-btn.active::after{
+  bottom:3px;
+  width:34px;
+  height:2px;
+  background:linear-gradient(90deg,var(--cy),var(--vi),var(--cy));
+  box-shadow:0 0 7px var(--cy),0 0 12px var(--vi);
+}
+.nav-btn .nav-icon{position:relative;z-index:2}
+.nav-btn small{position:relative;z-index:2;font-size:7px;text-shadow:0 0 5px currentColor}
+.nav-btn:active{
+  transform:translateY(4px) scale(.9);
+  color:#fff;
+  background:rgba(160,32,255,.28);
+}
+@keyframes navEnergy{0%,100%{opacity:.7;transform:scaleX(.92)}50%{opacity:1;transform:scaleX(1)}}
+@keyframes navScan{to{background-position:0 8px}}
+@keyframes navPulse{50%{transform:scale(1.12);filter:drop-shadow(0 0 7px var(--cy)) drop-shadow(0 0 13px var(--vi))}}
+@media(max-width:360px){
+  .bottom-nav{height:62px}
+  .nav-btn::before{width:27px;height:23px}
+  .nav-btn small{font-size:6px}
+}
+@media(prefers-reduced-motion:reduce){
+  .bottom-nav::before,.bottom-nav::after,.nav-btn.active .nav-icon{animation:none}
+}
