@@ -309,37 +309,42 @@ class SmartMoveApi {
         val codes = linkedMapOf<Int, Boolean>()
         if (line > 0) codes[line] = true
 
-        listOf(
-            "codigoLinea", "CodigoLinea",
-            "codigoLineaParada", "CodigoLineaParada",
-            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada",
-            "codigoLineaServicio", "CodigoLineaServicio", "codigoServicio", "CodigoServicio"
-        ).forEach { key ->
+        val scalarFields = listOf(
+            "codigoLinea", "CodigoLinea", "CODIGOLINEA", "lineaCodigo", "LineaCodigo",
+            "codigoLineaParada", "CodigoLineaParada", "codLinea", "CodLinea",
+            "codLineaParada", "CodLineaParada", "codigoLineaServicio", "CodigoLineaServicio",
+            "codigoServicio", "CodigoServicio", "lineaId", "LineaId"
+        )
+        scalarFields.forEach { key ->
             item.optStringAny(key)?.trim()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
         }
 
         val arrays = listOf(
             "lineas", "Lineas", "listaLineas", "lineasParada", "LineasParada",
-            "lineasJson", "LineasJson", "servicios", "Servicios", "lineasServicio"
+            "lineasJson", "LineasJson", "servicios", "Servicios", "lineasServicio",
+            "lineCodes", "LineCodes", "codigosLinea", "CodigosLinea"
         )
         arrays.forEach { key ->
-            val array = item.optJSONArray(key) ?: return@forEach
-            for (i in 0 until array.length()) {
-                val value = array.opt(i)
-                when (value) {
-                    is JSONObject -> {
-                        listOf(
-                            "codigoLinea", "CodigoLinea",
-                            "codigoLineaParada", "CodigoLineaParada",
-                            "codLinea", "CodLinea", "codLineaParada", "CodLineaParada",
-            "codigoLineaServicio", "CodigoLineaServicio", "codigoServicio", "CodigoServicio"
-                        ).forEach { field ->
+            val raw = item.opt(key)
+            val array = when (raw) {
+                is JSONArray -> raw
+                is String -> runCatching { if (raw.trim().startsWith("[")) JSONArray(raw) else null }.getOrNull()
+                else -> null
+            }
+            if (array != null) {
+                for (i in 0 until array.length()) {
+                    val value = array.opt(i)
+                    when (value) {
+                        is JSONObject -> scalarFields.forEach { field ->
                             value.optStringAny(field)?.trim()?.toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
                         }
+                        is Number -> value.toInt().takeIf { it > 0 }?.let { codes[it] = true }
+                        is String -> value.trim().toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
                     }
-                    is Number -> value.toInt().takeIf { it > 0 }?.let { codes[it] = true }
-                    is String -> value.trim().toDoubleOrNull()?.toInt()?.takeIf { it > 0 }?.let { codes[it] = true }
                 }
+            } else if (raw is String) {
+                raw.split(',', ';', '|').mapNotNull { it.trim().toDoubleOrNull()?.toInt() }
+                    .filter { it > 0 }.forEach { codes[it] = true }
             }
         }
 
