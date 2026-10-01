@@ -891,9 +891,9 @@
       const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
       const destination=String(x.destination||'SERVICIO').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\\u200B-\\u200D\\uFEFF]/g,' ').replace(/\\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
       if(arriving){
-        return '<div class="arrival-card arrival-arriving"><div class="arrival-copy"><b>'+esc(x.line||currentLine?.name||'LÍNEA')+'</b><span>'+esc(destination)+'</span></div><em class="arrival-time arrival-time-arriving"><strong>ARRIBANDO</strong></em></div>';
+        return '<div class="arrival-card arrival-arriving"><div class="arrival-copy"><b>'+esc(x.line||currentLine?.name||'LÍNEA')+'</b></div><em class="arrival-time arrival-time-arriving"><strong>ARRIBANDO</strong></em></div>';
       }
-      return '<div class="arrival-card"><div class="arrival-copy"><b>'+esc(x.line||currentLine?.name||'LÍNEA')+'</b><span>'+esc(destination)+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';
+      return '<div class="arrival-card"><div class="arrival-copy"><b>'+esc(x.line||currentLine?.name||'LÍNEA')+'</b></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';
     }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
   };
   window.onNativeArrivals=p=>{
