@@ -638,3 +638,15 @@ body,button,input,textarea,select{
 .line-card{padding-left:12px!important}
 .line-card small{display:none!important}
 @media(max-width:360px){.line-card{padding-left:10px!important}.line-card small{display:none!important}}
+
+/* FASE 15C — APLICAR FUENTE CYBERPUNK A TODA LA INTERFAZ */
+@font-face{
+  font-family:"Cyberpunk";
+  src:url("fonts/cyberpunk.ttf") format("truetype");
+  font-style:normal;
+  font-weight:100 900;
+  font-display:swap;
+}
+html,body,body *{
+  font-family:"Cyberpunk",var(--mono),sans-serif!important;
+}
