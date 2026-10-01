@@ -846,3 +846,20 @@ html,body,body *{
   transform:translateX(-50%)!important;
   z-index:30!important;
 }
+
+/* CORREGIR POSICIÓN DEL MARCO: DENTRO DEL HEADER */
+.status{
+  top:calc(var(--top) + 34px)!important;
+  bottom:auto!important;
+  left:50%!important;
+  right:auto!important;
+  width:max-content!important;
+  max-width:calc(100vw - 80px)!important;
+  min-width:92px!important;
+  min-height:24px!important;
+  padding:5px 14px 5px!important;
+  font-size:10px!important;
+  line-height:1!important;
+  transform:translateX(-50%)!important;
+  z-index:30!important;
+}
