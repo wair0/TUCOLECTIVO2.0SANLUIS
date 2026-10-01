@@ -1108,3 +1108,13 @@ html,body,body *{
 #m-bell .nl li{padding:12px 14px}
 #m-bell .nl li b{color:var(--cy)}
 #m-bell .nl li span{overflow-wrap:anywhere}
+
+
+/* HORARIO CONFIGURABLE DE ALERTAS DE ARRIBOS */
+.notification-schedule{margin:12px 0;padding:14px 12px;color:#e9feff;background:linear-gradient(120deg,rgba(0,240,255,.06),rgba(160,32,255,.12));border:1px solid rgba(0,240,255,.65);box-shadow:inset 0 0 14px rgba(0,240,255,.06),0 0 12px rgba(160,32,255,.12)}
+.notification-schedule>strong{display:block;color:#faff00;font-size:13px;letter-spacing:.08em;text-shadow:0 0 7px rgba(250,255,0,.45)}
+.notification-schedule>p{margin:8px 0 12px;color:rgba(217,251,255,.8);font-size:10px;line-height:1.5}
+.notification-time-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.notification-time-fields label{display:flex;flex-direction:column;gap:6px;color:var(--cy);font-size:10px;letter-spacing:.08em}
+.notification-time-fields input{width:100%;min-height:42px;padding:7px 9px;box-sizing:border-box;color:#faff00;background:rgba(5,8,20,.96);border:1px solid rgba(250,255,0,.7);font:700 17px/1.2 monospace;color-scheme:dark}
+.notification-schedule>small{display:block;margin-top:10px;color:rgba(217,251,255,.7);font-size:9px;line-height:1.5}

@@ -575,14 +575,25 @@
   const empty='<div class="favorites-empty"><strong>SIN FAVORITOS_</strong><span>GUARDÁ LÍNEAS O PARADAS PARA VERLAS AQUÍ</span></div>';
   let favorites=load();
   let notificationsEnabled=false;
-
+  const SCHEDULE_STORAGE='tucolectivo:notification-schedule:v1';
+  function loadNotificationSchedule(){
+    try{
+      const value=JSON.parse(localStorage.getItem(SCHEDULE_STORAGE)||'{}');
+      return {start:/^([01]\d|2[0-3]):[0-5]\d$/.test(value.start)?value.start:'18:00',end:/^([01]\d|2[0-3]):[0-5]\d$/.test(value.end)?value.end:'19:30'};
+    }catch(_){return {start:'18:00',end:'19:30'};}
+  }
+  let notificationSchedule=loadNotificationSchedule();
+  function readNotificationSchedule(){
+    return {start:document.getElementById('arrivalNotificationStart')?.value||notificationSchedule.start,end:document.getElementById('arrivalNotificationEnd')?.value||notificationSchedule.end};
+  }
+  function saveNotificationSchedule(schedule){
+    notificationSchedule=schedule;
+    try{localStorage.setItem(SCHEDULE_STORAGE,JSON.stringify(schedule));}catch(_){}
+  }
   function syncArrivalNotificationConfig(){
     if(!notificationsEnabled)return;
-    if(!favorites.arrivals.length){
-      window.TuColectivoNative?.stopArrivalNotifications?.();
-      return;
-    }
-    window.TuColectivoNative?.setArrivalNotifications?.(JSON.stringify(favorites.arrivals));
+    if(!favorites.arrivals.length){window.TuColectivoNative?.stopArrivalNotifications?.();return;}
+    window.TuColectivoNative?.setArrivalNotifications?.(JSON.stringify(favorites.arrivals),notificationSchedule.start,notificationSchedule.end);
   }
   function escapeNotificationText(value){
     return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -603,7 +614,7 @@
   function syncNotificationButton(){
     const button=document.getElementById('arrivalNotificationsToggle');
     if(!button)return;
-    button.textContent=notificationsEnabled?'DESACTIVAR NOTIFICACIONES':'ACTIVAR NOTIFICACIONES';
+    button.textContent=notificationsEnabled?'DESACTIVAR ALERTAS':'ACTIVAR ALERTAS EN ESTE HORARIO';
     button.setAttribute('aria-pressed',String(notificationsEnabled));
     button.classList.toggle('enabled',notificationsEnabled);
   }
@@ -611,6 +622,13 @@
     let state={enabled:false,history:[],message:''};
     try{state=typeof payload==='string'?JSON.parse(payload):payload||state;}catch(_){}
     notificationsEnabled=!!state.enabled;
+    if(state.startTime&&state.endTime){
+      notificationSchedule={start:String(state.startTime),end:String(state.endTime)};
+      const start=document.getElementById('arrivalNotificationStart'),end=document.getElementById('arrivalNotificationEnd');
+      if(start)start.value=notificationSchedule.start;
+      if(end)end.value=notificationSchedule.end;
+      try{localStorage.setItem(SCHEDULE_STORAGE,JSON.stringify(notificationSchedule));}catch(_){}
+    }
     syncNotificationButton();
     renderNotificationHistory(state.history);
     if(state.message&&window.setSystemStatus)window.setSystemStatus(state.message,notificationsEnabled?'ok':'warn');
@@ -688,8 +706,14 @@
       }else if(!favorites.arrivals.length){
         if(window.setSystemStatus)window.setSystemStatus('GUARDÁ AL MENOS UN ARRIBO EN FAVORITOS','warn');
       }else if(window.TuColectivoNative?.setArrivalNotifications){
-        notificationToggle.textContent='ACTIVANDO NOTIFICACIONES...';
-        window.TuColectivoNative.setArrivalNotifications(JSON.stringify(favorites.arrivals));
+        const schedule=readNotificationSchedule();
+        if(!schedule.start||!schedule.end||schedule.end<=schedule.start){
+          if(window.setSystemStatus)window.setSystemStatus('LA HORA FINAL DEBE SER POSTERIOR A LA INICIAL','warn');
+          return;
+        }
+        saveNotificationSchedule(schedule);
+        notificationToggle.textContent='CONFIGURANDO HORARIO...';
+        window.TuColectivoNative.setArrivalNotifications(JSON.stringify(favorites.arrivals),schedule.start,schedule.end);
       }else if(window.setSystemStatus){
         window.setSystemStatus('PUENTE NATIVO NO DISPONIBLE','error');
       }
@@ -765,7 +789,12 @@
   });
   document.addEventListener('app:navigate',e=>{if(e.detail.go==='favoritos'){render();window.TuColectivoNative?.getArrivalNotificationState?.();}});
   window.TuColectivoFavorites={toggle,render,toggleArrival,isArrivalSaved,syncLineArrivalFavorite};
+  const scheduleStart=document.getElementById('arrivalNotificationStart'),scheduleEnd=document.getElementById('arrivalNotificationEnd');
+  if(scheduleStart)scheduleStart.value=notificationSchedule.start;
+  if(scheduleEnd)scheduleEnd.value=notificationSchedule.end;
+  [scheduleStart,scheduleEnd].forEach(input=>input?.addEventListener('change',()=>saveNotificationSchedule(readNotificationSchedule())));
   render();syncButtons();syncNotificationButton();
+  window.TuColectivoNative?.getArrivalNotificationState?.();
 })();
 
 /* FASE 11B — LÍNEAS REALES + SUBSECCIONES DESDE SMARTMOVE NATIVO */

@@ -35,6 +35,8 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var mapLineCode: Int = 0
     @Volatile private var mapVehicleRefreshInProgress = false
     private var pendingArrivalNotifications: String? = null
+    private var pendingArrivalStartTime: String = "18:00"
+    private var pendingArrivalEndTime: String = "19:30"
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
 
@@ -307,20 +309,27 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        @JavascriptInterface fun setArrivalNotifications(favoritesJson: String) {
+        @JavascriptInterface fun setArrivalNotifications(favoritesJson: String, startTime: String, endTime: String) {
             runOnUiThread {
                 val favorites = runCatching { JSONArray(favoritesJson) }.getOrNull()
                 if (favorites == null || favorites.length() == 0) {
                     dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "GUARDÁ AL MENOS UN ARRIBO EN FAVORITOS").toString())
                     return@runOnUiThread
                 }
+                val timePattern = Regex("^(?:([01]\\d|2[0-3])):([0-5]\\d)$")
+                if (!timePattern.matches(startTime) || !timePattern.matches(endTime) || endTime <= startTime) {
+                    dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "CONFIGURÁ UN HORARIO VÁLIDO").toString())
+                    return@runOnUiThread
+                }
+                pendingArrivalStartTime = startTime
+                pendingArrivalEndTime = endTime
                 if (android.os.Build.VERSION.SDK_INT >= 33 &&
                     checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                     pendingArrivalNotifications = favoritesJson
                     requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
                     return@runOnUiThread
                 }
-                startArrivalNotifications(favoritesJson)
+                startArrivalNotifications(favoritesJson, startTime, endTime)
             }
         }
 
@@ -337,17 +346,22 @@ class MainActivity : AppCompatActivity() {
             val history = runCatching { JSONArray(prefs.getString("history", "[]")) }.getOrDefault(JSONArray())
             dispatch("onNativeArrivalNotificationsState", JSONObject()
                 .put("enabled", prefs.getBoolean("enabled", false))
+                .put("startTime", prefs.getString("start_time", "18:00"))
+                .put("endTime", prefs.getString("end_time", "19:30"))
                 .put("history", history)
-                .put("message", if (prefs.getBoolean("enabled", false)) "SEGUIMIENTO ACTIVO" else "SEGUIMIENTO INACTIVO")
+                .put("message", if (prefs.getBoolean("enabled", false)) "ALERTAS PROGRAMADAS" else "ALERTAS INACTIVAS")
                 .toString())
         }
     }
 
-    private fun startArrivalNotifications(favoritesJson: String) {
+    private fun startArrivalNotifications(favoritesJson: String, startTime: String, endTime: String) {
         val prefs = getSharedPreferences(ArrivalNotificationService.PREFS, MODE_PRIVATE)
-        prefs.edit().putString("favorites", favoritesJson).putBoolean("enabled", true).apply()
+        prefs.edit().putString("favorites", favoritesJson).putString("start_time", startTime)
+            .putString("end_time", endTime).putBoolean("enabled", true).apply()
         val intent = android.content.Intent(this, ArrivalNotificationService::class.java)
             .putExtra(ArrivalNotificationService.EXTRA_FAVORITES, favoritesJson)
+            .putExtra(ArrivalNotificationService.EXTRA_START_TIME, startTime)
+            .putExtra(ArrivalNotificationService.EXTRA_END_TIME, endTime)
         try {
             if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
             dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", true).put("message", "SEGUIMIENTO DE ARRIBOS ACTIVADO").toString())
@@ -363,7 +377,7 @@ class MainActivity : AppCompatActivity() {
             val favorites = pendingArrivalNotifications
             pendingArrivalNotifications = null
             if (grantResults.any { it == PackageManager.PERMISSION_GRANTED } && favorites != null) {
-                startArrivalNotifications(favorites)
+                startArrivalNotifications(favorites, pendingArrivalStartTime, pendingArrivalEndTime)
             } else {
                 dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "PERMISO DE NOTIFICACIONES DENEGADO").toString())
             }

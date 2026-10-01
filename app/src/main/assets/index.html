@@ -148,8 +148,17 @@
 
   <section class="screen" data-screen="favoritos">
     <div class="screen-head"><span>FAVORITOS</span><small>ACCESOS RÁPIDOS</small></div>
-    <button id="arrivalNotificationsToggle" class="notification-toggle" type="button" aria-pressed="false">ACTIVAR NOTIFICACIONES</button>
-    <p class="notification-note">RECIBÍ AVISOS DE LOS ARRIBOS GUARDADOS A 10, 5, 3 Y 1 MINUTO, Y CUANDO ESTÉ ARRIBANDO.</p>
+    <div class="notification-schedule">
+      <strong>HORARIO DE ALERTAS</strong>
+      <p>Elegí cuándo querés recibir avisos. Fuera de esta franja no se consultarán arribos ni se emitirán alertas.</p>
+      <div class="notification-time-fields">
+        <label for="arrivalNotificationStart">DESDE<input id="arrivalNotificationStart" type="time" value="18:00" required></label>
+        <label for="arrivalNotificationEnd">HASTA<input id="arrivalNotificationEnd" type="time" value="19:30" required></label>
+      </div>
+      <small>Ejemplo: 18:00 a 19:30. El seguimiento se detiene automáticamente al llegar la hora final.</small>
+    </div>
+    <button id="arrivalNotificationsToggle" class="notification-toggle" type="button" aria-pressed="false">ACTIVAR ALERTAS EN ESTE HORARIO</button>
+    <p class="notification-note">AVISOS A 10, 5, 3 Y 1 MINUTO, Y CUANDO EL COLECTIVO ESTÉ ARRIBANDO. LAS ALERTAS USAN EL SONIDO DE NOTIFICACIÓN DEL TELÉFONO.</p>
     <div id="favoritesList" class="favorites-list"><div class="favorites-empty"><strong>SIN FAVORITOS_</strong><span>GUARDÁ LÍNEAS O PARADAS PARA VERLAS AQUÍ</span></div></div>
   </section>
 </main>

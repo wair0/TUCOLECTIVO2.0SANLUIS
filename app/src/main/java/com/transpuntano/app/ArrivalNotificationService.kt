@@ -11,6 +11,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
 import com.tucolectivo.app.data.SmartMoveApi
 import org.json.JSONArray
@@ -21,9 +23,11 @@ class ArrivalNotificationService : Service() {
     companion object {
         const val PREFS = "arrival_notifications"
         const val EXTRA_FAVORITES = "favorites_json"
+        const val EXTRA_START_TIME = "start_time"
+        const val EXTRA_END_TIME = "end_time"
         const val ACTION_STOP = "com.tucolectivo.app.STOP_ARRIVAL_NOTIFICATIONS"
         private const val SERVICE_CHANNEL = "arrival_monitor_service"
-        private const val ALERT_CHANNEL = "arrival_alerts"
+        private const val ALERT_CHANNEL = "arrival_alerts_v2"
         private const val SERVICE_ID = 4201
         private const val POLL_INTERVAL_MS = 45_000L
         private val THRESHOLDS = listOf(10, 5, 3, 1, 0)
@@ -46,7 +50,11 @@ class ArrivalNotificationService : Service() {
             return START_NOT_STICKY
         }
         intent?.getStringExtra(EXTRA_FAVORITES)?.let { json ->
-            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("favorites", json).putBoolean("enabled", true).apply()
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putString("favorites", json)
+                .putString("start_time", intent.getStringExtra(EXTRA_START_TIME) ?: "18:00")
+                .putString("end_time", intent.getStringExtra(EXTRA_END_TIME) ?: "19:30")
+                .putBoolean("enabled", true).apply()
         }
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         if (!prefs.getBoolean("enabled", false)) {
@@ -86,9 +94,15 @@ class ArrivalNotificationService : Service() {
         manager.createNotificationChannel(NotificationChannel(SERVICE_CHANNEL, "Seguimiento de arribos", NotificationManager.IMPORTANCE_LOW).apply {
             description = "Indica que se están vigilando los arribos favoritos"
         })
+        val notificationSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
         manager.createNotificationChannel(NotificationChannel(ALERT_CHANNEL, "Alertas de colectivos", NotificationManager.IMPORTANCE_HIGH).apply {
-            description = "Avisos cuando se aproxima un colectivo guardado en Favoritos"
+            description = "Avisos sonoros cuando se aproxima un colectivo guardado en Favoritos"
             enableVibration(true)
+            setSound(notificationSound, audioAttributes)
         })
     }
 
@@ -103,6 +117,25 @@ class ArrivalNotificationService : Service() {
             val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
             if (!prefs.getBoolean("enabled", false)) {
                 stopSelf()
+                return
+            }
+            val startMinute = parseTime(prefs.getString("start_time", "18:00") ?: "18:00")
+            val endMinute = parseTime(prefs.getString("end_time", "19:30") ?: "19:30")
+            val now = java.util.Calendar.getInstance()
+            val nowMinute = now.get(java.util.Calendar.HOUR_OF_DAY) * 60 + now.get(java.util.Calendar.MINUTE)
+            if (startMinute == null || endMinute == null || endMinute <= startMinute) {
+                prefs.edit().putBoolean("enabled", false).apply()
+                stopSelf()
+                return
+            }
+            if (nowMinute >= endMinute) {
+                prefs.edit().putBoolean("enabled", false).apply()
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return
+            }
+            if (nowMinute < startMinute) {
+                schedulePoll(30_000L)
                 return
             }
             polling = true
@@ -129,6 +162,11 @@ class ArrivalNotificationService : Service() {
                 }
             }
         }
+    }
+
+    private fun parseTime(value: String): Int? {
+        val match = Regex("^(?:([01]\\d|2[0-3])):([0-5]\\d)$").matchEntire(value) ?: return null
+        return match.groupValues[1].toInt() * 60 + match.groupValues[2].toInt()
     }
 
     private fun evaluateArrival(favorite: JSONObject, line: Int, identifier: String, vehicleId: String, destination: String, minutes: Int) {
@@ -191,6 +229,8 @@ class ArrivalNotificationService : Service() {
             .setAutoCancel(true)
             .setCategory(Notification.CATEGORY_TRANSPORT)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            .setDefaults(Notification.DEFAULT_VIBRATE)
             .build()
         runCatching { manager.notify(id, notification) }
     }
