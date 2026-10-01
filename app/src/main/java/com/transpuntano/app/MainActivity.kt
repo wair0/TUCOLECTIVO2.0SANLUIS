@@ -28,6 +28,7 @@ import com.transpuntano.app.data.SmartMoveApi
 import com.transpuntano.app.model.*
 import com.transpuntano.app.ui.CyberMapView
 import com.transpuntano.app.ui.MapStop
+import com.transpuntano.app.ui.MapVehicle
 import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
@@ -1332,6 +1333,55 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
         Handler(Looper.getMainLooper()).post(refresh)
     }
 
+    private fun syncMapLocation(map: CyberMapView, line: TransitLine?) {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 42)
+            return
+        }
+        val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+        if (location == null) { headerStatus.setStatusText("● SIN UBICACIÓN"); toast("No se pudo obtener la ubicación"); return }
+        map.setUserLocation(location.latitude, location.longitude)
+        headerStatus.setStatusText("● BUSCANDO PARADAS")
+        executor.execute {
+            runCatching { api.getNearby(location.latitude, location.longitude) }
+                .onSuccess { nearby ->
+                    lastMapNearbyStops = nearby
+                    lastMapLineCodes = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct().sorted()
+                    val mapStops = nearby.mapNotNull { stop ->
+                        if (stop.latitude == 0.0 || stop.longitude == 0.0) null else MapStop(stop.code, stop.description, buildStopLocationText(stop), stop.latitude, stop.longitude)
+                    }
+                    runOnUiThread { map.setStops(mapStops, fit = false); headerStatus.setStatusText("● " + nearby.size + " PARADAS CERCANAS") }
+                    refreshMapVehicles(map, line, nearby)
+                }
+                .onFailure { error -> runOnUiThread { headerStatus.setStatusText("● ERROR"); toast(error.message ?: "No se pudieron cargar las paradas") } }
+        }
+    }
+
+    private fun refreshMapVehicles(map: CyberMapView, selectedLine: TransitLine?, nearbyStops: List<TransitStop>) {
+        if (mapVehicleRefreshInProgress || nearbyStops.isEmpty()) return
+        mapVehicleRefreshInProgress = true
+        vehicleQueryExecutor.execute {
+            try {
+                val vehicles = mutableMapOf<String, MapVehicle>()
+                nearbyStops.forEach { stop ->
+                    val codes = selectedLine?.let { if (it.code in stop.lineCodes) listOf(it.code) else emptyList() }
+                        ?: stop.lineCodes.filter { it > 0 }.distinct()
+                    codes.forEach { code ->
+                        runCatching { api.getArrivals(stop.identifier, code, timeoutMs = 5_000) }.getOrDefault(emptyList()).forEach { arrival ->
+                            val lat = arrival.latitude ?: return@forEach
+                            val lon = arrival.longitude ?: return@forEach
+                            if (lat == 0.0 || lon == 0.0) return@forEach
+                            val id = arrival.vehicleId.ifBlank { "line-" + code + "-" + stop.code + "-" + lat + "-" + lon }
+                            vehicles[id] = MapVehicle(id, arrival.line.ifBlank { "LÍNEA " + code }, arrival.destination, lat, lon, arrival.gpsTimestamp)
+                        }
+                    }
+                }
+                runOnUiThread { map.setVehicles(vehicles.values.toList()) }
+            } finally { mapVehicleRefreshInProgress = false }
+        }
+    }
     private fun buildStopLocationText(stop: TransitStop): String {
         val street = stop.street.trim()
         val intersection = stop.intersection.trim()
