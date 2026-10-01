@@ -1234,3 +1234,18 @@ html,body,body *{
 .hdr .status{position:relative;z-index:1!important}
 .panel,.panel.open{z-index:50!important}
 .status::after{content:none!important;display:none!important;animation:none!important}
+
+
+/* FIX DEFINITIVO: ocultar cualquier marcador residual bajo el destino de un arribo */
+.arrival-copy>span::after,
+.arrival-copy>span::before,
+.arrival-card .arrival-copy::after,
+.arrival-card .arrival-copy::before{
+  content:none!important;
+  display:none!important;
+}
+.arrival-copy>span{
+  list-style:none!important;
+  white-space:pre-line!important;
+}
+.arrival-copy>span::first-line{list-style:none!important}
