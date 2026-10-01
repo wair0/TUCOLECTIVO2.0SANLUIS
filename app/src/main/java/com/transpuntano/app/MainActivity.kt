@@ -256,7 +256,7 @@ class MainActivity : AppCompatActivity() {
         if (pendingLocationPurpose != purpose) return
         pendingLocationPurpose = null
         dispatch("onNativeLocation", JSONObject().put("purpose", purpose).put("latitude", location.latitude).put("longitude", location.longitude).toString())
-        if (purpose == "map") loadMapStopsAt(location.latitude, location.longitude, mapLineCode)
+        if (purpose == "map") TransitBridge().loadMapData(location.latitude, location.longitude, mapLineCode)
         else executor.execute {
             runCatching { api.getNearby(location.latitude, location.longitude) }
                 .onSuccess { dispatch("onNativeNearbyStops", stopJson(it)) }
