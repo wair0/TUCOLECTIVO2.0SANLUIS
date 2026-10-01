@@ -881,3 +881,62 @@ html,body,body *{
   z-index:30!important;
   margin:0!important;
 }
+
+/* AJUSTES DE LÍNEAS Y CONTADOR DE ARRIBOS */
+.arrival-card{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:5px!important;
+  min-height:88px!important;
+  padding-top:12px!important;
+  padding-bottom:12px!important;
+}
+.arrival-card>b{
+  line-height:1.15!important;
+}
+.arrival-card>span{
+  margin-top:0!important;
+  line-height:1.15!important;
+}
+.arrival-time{
+  width:50px!important;
+  height:50px!important;
+  display:grid!important;
+  place-items:center!important;
+}
+.arrival-time::before{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:44px!important;
+  height:44px!important;
+  border:2px solid rgba(196,107,255,.28)!important;
+  border-top-color:var(--cy)!important;
+  border-right-color:var(--vt)!important;
+  border-radius:50%!important;
+  transform:translate(-50%,-50%) rotate(0deg)!important;
+  animation:arrivalOrbit var(--arrival-duration,8s) linear infinite!important;
+  box-shadow:0 0 7px rgba(0,240,255,.25),inset 0 0 5px rgba(160,32,255,.08)!important;
+  pointer-events:none!important;
+}
+.arrival-time strong,
+.arrival-time small{
+  position:relative!important;
+  z-index:2!important;
+}
+.arrival-time strong{
+  line-height:1!important;
+}
+.arrival-time small{
+  margin-top:-1px!important;
+}
+@keyframes arrivalOrbit{
+  to{transform:translate(-50%,-50%) rotate(360deg)}
+}
+@media(max-width:360px){
+  .arrival-card{min-height:84px!important}
+  .arrival-time{width:46px!important;height:46px!important}
+  .arrival-time::before{width:40px!important;height:40px!important}
+}
