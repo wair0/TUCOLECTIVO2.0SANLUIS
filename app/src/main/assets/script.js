@@ -85,18 +85,23 @@
 
   $('#sync').addEventListener('click', () => {
     const b = $('#sync');
+    const label = b.querySelector('b');
+    const detail = b.querySelector('small');
+
     b.classList.remove('done');
-    b.classList.add('busy');
-    b.querySelector('span').textContent = 'SINCRONIZANDO...';
+    b.classList.add('run');
+    label.textContent = 'SINCRONIZANDO...';
+    detail.textContent = 'ACTUALIZANDO LÍNEAS';
     setStatus('SINCRONIZANDO...', 'busy');
+
     setTimeout(() => {
-      b.classList.remove('busy');
+      b.classList.remove('run');
       b.classList.add('done');
-      b.querySelector('span').textContent = 'LÍNEAS ACTUALIZADAS';
-      b.querySelector('b').textContent = '14';
+      label.textContent = 'LÍNEAS ACTUALIZADAS';
+      detail.textContent = '14 LÍNEAS';
       setStatus('14 LÍNEAS', 'ok');
       emit('app:status', { text: '14 LÍNEAS', state: 'ok' });
-    }, 1100);
+    }, 2200);
   });
 
   document.addEventListener('app:status', e => setStatus(e.detail.text, e.detail.state));
