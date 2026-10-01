@@ -1387,262 +1387,70 @@ private fun cyberSectionHeader(titleText: String, subtitle: String): View =
             stop?.lineCodes.orEmpty().filter { it > 0 }.distinct().sorted()
         }
 
-        mapStopInfoPanel?.let {
-            if (it.parent === root) root.removeView(it)
-        }
-
-        lateinit var panel: CyberMapStopInfoView
-        panel = CyberMapStopInfoView(
-            this,
-            mapStop,
-            lineCodes,
-            lineLabels,
-            cyberpunkTypeface,
-            cyan,
-            pink,
-            muted
-        ) { code ->
-            executor.execute {
-                val chosen = runCatching { api.getLines() }
-                    .getOrDefault(emptyList())
-                    .firstOrNull { it.code == code }
-                runOnUiThread {
-                    if (chosen != null) {
-                        if (panel.parent === root) root.removeView(panel)
-                        if (mapStopInfoPanel === panel) mapStopInfoPanel = null
-                        showMap(chosen)
-                    } else {
-                        toast("No se pudo cargar la línea $code")
-                    }
-                }
+        fun renderPanel(lineLabels: Map<Int, String>) {
+            mapStopInfoPanel?.let {
+                if (it.parent === root) root.removeView(it)
             }
-        }
 
-        mapStopInfoPanel = panel
-
-        root.addView(
-            panel,
-            FrameLayout.LayoutParams(-1, dp(190)).apply {
-                gravity = Gravity.BOTTOM
-                leftMargin = dp(12)
-                rightMargin = dp(12)
-                bottomMargin = dp(12)
-            }
-        )
-
-        headerStatus.setStatusText(
-            if (lineCodes.isEmpty()) "● PARADA " + mapStop.id + " • SIN LÍNEAS ASOCIADAS"
-            else "● PARADA " + mapStop.id + " • " + lineCodes.size + " LÍNEAS"
-        )
-    }
-
-    private fun syncMapLocation(map: CyberMapView, line: TransitLine? = null) {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-        ) {
-            headerStatus.setStatusText("● SOLICITANDO UBICACIÓN")
-            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 42)
-            return
-        }
-
-        val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val provider = when {
-            runCatching { manager.isProviderEnabled(LocationManager.GPS_PROVIDER) }.getOrDefault(false) -> LocationManager.GPS_PROVIDER
-            runCatching { manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) }.getOrDefault(false) -> LocationManager.NETWORK_PROVIDER
-            else -> null
-        }
-
-        if (provider == null) {
-            headerStatus.setStatusText("● UBICACIÓN DESACTIVADA")
-            toast("Activá la ubicación del dispositivo.")
-            return
-        }
-
-        val lastKnown = runCatching { manager.getLastKnownLocation(provider) }.getOrNull()
-        headerStatus.setStatusText("● SINCRONIZANDO UBICACIÓN")
-
-        var delivered = false
-        val listener = object : android.location.LocationListener {
-            override fun onLocationChanged(location: android.location.Location) {
-                if (delivered) return
-                delivered = true
-                manager.removeUpdates(this)
-                applyMapLocation(map, line, location)
-            }
-            override fun onProviderDisabled(providerName: String) {
-                if (!delivered && lastKnown != null) {
-                    delivered = true
-                    manager.removeUpdates(this)
-                    applyMapLocation(map, line, lastKnown)
-                }
-            }
-        }
-
-        try {
-            manager.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper())
-        } catch (_: SecurityException) {
-            headerStatus.setStatusText("● SIN PERMISO")
-            return
-        }
-
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (!delivered) {
-                delivered = true
-                manager.removeUpdates(listener)
-                if (lastKnown != null) {
-                    applyMapLocation(map, line, lastKnown)
-                } else {
-                    headerStatus.setStatusText("● SIN UBICACIÓN")
-                    toast("No se pudo obtener tu ubicación.")
-                }
-            }
-        }, 6000L)
-    }
-
-    private fun applyMapLocation(
-        map: CyberMapView,
-        line: TransitLine?,
-        location: android.location.Location
-    ) {
-        map.setUserLocation(location.latitude, location.longitude, center = true)
-        headerStatus.setStatusText("● UBICACIÓN SINCRONIZADA")
-        executor.execute {
-            runCatching { api.getNearby(location.latitude, location.longitude) }
-                .onSuccess { nearby ->
-                    lastMapNearbyStops = nearby
-                    lastMapLineCodes = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct().sorted()
-                    val mapStops = nearby.map { stop ->
-                        MapStop(
-                            id = stop.code,
-                            title = stop.description,
-                            subtitle = listOf(stop.street, stop.intersection).filter { it.isNotBlank() }.joinToString(" · "),
-                            latitude = stop.latitude,
-                            longitude = stop.longitude
-                        )
-                    }
+            lateinit var panel: CyberMapStopInfoView
+            panel = CyberMapStopInfoView(
+                this,
+                mapStop,
+                lineCodes,
+                lineLabels,
+                cyberpunkTypeface,
+                cyan,
+                pink,
+                muted
+            ) { code ->
+                executor.execute {
+                    val chosen = runCatching { api.getLines() }
+                        .getOrDefault(emptyList())
+                        .firstOrNull { it.code == code }
                     runOnUiThread {
-                        map.setStops(mapStops, fit = false)
-                        headerStatus.setStatusText(
-                            if (line == null) "● " + mapStops.size + " PARADAS CERCANAS"
-                            else "● " + mapStops.size + " PARADAS • GPS LÍNEA " + line.code
-                        )
-                    }
-                    refreshMapRoutes(map, line, nearby)
-                    refreshMapVehicles(map, line, nearby)
-                }
-                .onFailure {
-                    runOnUiThread {
-                        headerStatus.setStatusText("● UBICACIÓN SINCRONIZADA")
-                        toast("Ubicación sincronizada, pero no se pudieron cargar las paradas cercanas.")
+                        if (chosen != null) {
+                            if (panel.parent === root) root.removeView(panel)
+                            if (mapStopInfoPanel === panel) mapStopInfoPanel = null
+                            showMap(chosen)
+                        } else {
+                            toast("No se pudo cargar la línea $code")
+                        }
                     }
                 }
-        }
-    }
+            }
 
-    private fun refreshMapRoutes(
-        map: CyberMapView,
-        line: TransitLine?,
-        nearby: List<TransitStop>
-    ) {
-        val nearbyCodes = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct().sorted()
-        val routeCodes = if (line != null) {
-            if (nearbyCodes.isEmpty()) listOf(line.code) else nearbyCodes.filter { it == line.code }
+            mapStopInfoPanel = panel
+            root.addView(
+                panel,
+                FrameLayout.LayoutParams(-1, dp(190)).apply {
+                    gravity = Gravity.BOTTOM
+                    leftMargin = dp(12)
+                    rightMargin = dp(12)
+                    bottomMargin = dp(12)
+                }
+            )
+
+            headerStatus.setStatusText(
+                if (lineCodes.isEmpty()) "● PARADA " + mapStop.id + " • SIN LÍNEAS ASOCIADAS"
+                else "● PARADA " + mapStop.id + " • " + lineCodes.size + " LÍNEAS"
+            )
+        }
+
+        if (selectedLine != null) {
+            renderPanel(mapOf(selectedLine.code to selectedLine.name))
+        } else if (lineCodes.isEmpty()) {
+            renderPanel(emptyMap())
         } else {
-            nearbyCodes
-        }
-
-        if (routeCodes.isEmpty()) {
-            runOnUiThread { map.setRoutes(emptyList(), fit = false) }
-            return
-        }
-
-        executor.execute {
-            val routes = routeCodes.mapNotNull { code ->
-                runCatching { api.getRoute(code) }
-                    .getOrNull()
-                    ?.takeIf { it.size >= 2 }
-            }
-            runOnUiThread {
-                map.setRoutes(routes, fit = false)
+            executor.execute {
+                val labels = runCatching { api.getLines() }
+                    .getOrDefault(emptyList())
+                    .filter { it.code in lineCodes }
+                    .associate { it.code to it.name }
+                runOnUiThread { renderPanel(labels) }
             }
         }
     }
 
-    private fun refreshMapVehicles(
-        map: CyberMapView,
-        line: TransitLine?,
-        nearby: List<TransitStop>
-    ) {
-        if (nearby.isEmpty() || mapVehicleRefreshInProgress) return
-        mapVehicleRefreshInProgress = true
-
-        vehicleExecutor.execute {
-            val nearbyCodes = nearby.flatMap { it.lineCodes }.filter { it > 0 }.distinct().sorted()
-            val lineCodes = if (line != null) {
-                // La línea seleccionada al entrar desde ARRIBOS es la fuente de verdad.
-                // SmartMove no siempre devuelve los códigos de línea en PARADAS CERCANAS.
-                listOf(line.code)
-            } else {
-                nearbyCodes
-            }
-
-            if (lineCodes.isEmpty()) {
-                runOnUiThread {
-                    mapVehicleRefreshInProgress = false
-                    map.setVehicles(emptyList())
-                    headerStatus.setStatusText("● PARADAS CERCANAS • SIN LÍNEAS GPS")
-                }
-                return@execute
-            }
-
-            val found = LinkedHashMap<String, com.transpuntano.app.ui.MapVehicle>()
-            val stopSubset = nearby.take(8)
-            val tasks = stopSubset.flatMap { stop ->
-                lineCodes.map { lineCode ->
-                    java.util.concurrent.Callable {
-                        val arrivals = runCatching {
-                            api.getArrivals(stop.identifier, lineCode, GPS_REQUEST_TIMEOUT_MS)
-                        }.getOrDefault(emptyList())
-                        Triple(stop, lineCode, arrivals)
-                    }
-                }
-            }
-
-            runCatching {
-                vehicleQueryExecutor.invokeAll(tasks, 7, java.util.concurrent.TimeUnit.SECONDS)
-            }.getOrNull().orEmpty().forEach { future ->
-                runCatching { future.get() }.getOrNull()?.third.orEmpty().forEach { arrival ->
-                    val lat = arrival.latitude ?: return@forEach
-                    val lon = arrival.longitude ?: return@forEach
-                    if (lat == 0.0 || lon == 0.0) return@forEach
-
-                    val id = arrival.vehicleId.ifBlank {
-                        String.format(java.util.Locale.US, "%.5f_%.5f", lat, lon)
-                    }
-
-                    found[id] = com.transpuntano.app.ui.MapVehicle(
-                        id = id,
-                        label = arrival.vehicleId.ifBlank { "BUS" },
-                        destination = arrival.destination,
-                        latitude = lat,
-                        longitude = lon,
-                        gpsTimestamp = arrival.gpsTimestamp
-                    )
-                }
-            }
-
-            val vehicles = found.values.toList()
-            runOnUiThread {
-                mapVehicleRefreshInProgress = false
-                map.setVehicles(vehicles)
-                val prefix = if (line != null) "● LÍNEA " + line.code else "● GPS PARADAS CERCANAS"
-                headerStatus.setStatusText(
-                    if (vehicles.isEmpty()) prefix + " • SIN GPS DISPONIBLE"
-                    else prefix + " • " + vehicles.size + " COLECTIVOS EN GPS"
-                )
-            }
-        }
-    }
     private class CyberMapStopInfoView(
         context: Context,
         private val stop: MapStop,
