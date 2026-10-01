@@ -633,3 +633,8 @@ body,button,input,textarea,select{
 }
 
 .bar::after,.home-design-grid .card::after,.line-card::after,.map-wrap::after,.bottom-nav::after{animation:none!important}
+
+/* FASE 15B — LIMPIAR TARJETAS DE LÍNEAS */
+.line-card{padding-left:12px!important}
+.line-card small{display:none!important}
+@media(max-width:360px){.line-card{padding-left:10px!important}.line-card small{display:none!important}}
