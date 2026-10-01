@@ -59,7 +59,7 @@
   }
 
   document.addEventListener('pointerdown', e => {
-    const b = e.target.closest('.btn,.item,.chip,.home-card,.data-card,.nav-btn,.sync-btn');
+    const b = e.target.closest('.btn,.item,.chip,.card,.home-card,.line-card,.data-card,.arrival-card,.favorite-item,.locate-stops,.sub-back,.favorite-toggle,.favorite-remove,.nav-btn,.sync-btn');
     if (b) { b.classList.remove('hack'); void b.offsetWidth; b.classList.add('hack'); }
     if (current && !e.target.closest('.panel,[data-menu]')) closeAll();
   });
