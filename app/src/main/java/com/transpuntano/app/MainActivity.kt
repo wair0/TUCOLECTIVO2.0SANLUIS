@@ -69,8 +69,32 @@ class MainActivity : AppCompatActivity() {
             setShadowLayer(14f,0f,0f,0xFFFF1744.toInt())
         }
         overlay.addView(title,FrameLayout.LayoutParams(-1,-2,Gravity.CENTER).apply{leftMargin=18;rightMargin=18;topMargin=-55})
-        overlay.addView(SplashProgressView(this,4800L),FrameLayout.LayoutParams(-1,46,Gravity.CENTER).apply{leftMargin=42;rightMargin=42;topMargin=45})
-        setContentView(root); Handler(Looper.getMainLooper()).postDelayed({startApp()},4800L)
+        overlay.addView(SplashProgressView(this,10000L),FrameLayout.LayoutParams(-1,46,Gravity.CENTER).apply{leftMargin=42;rightMargin=42;topMargin=45})
+        val statusMessages=arrayOf("ACTIVANDO SISTEMA...","CARGANDO LINEAS...","CARGANDO MAPA...","CARGANDO PARADAS CERCANAS...","CARGANDO FAVORITOS...","SINCRONIZANDO GPS...")
+        val status=TextView(this).apply{
+            text=statusMessages[0]; setTextColor(0xFFFF1744.toInt()); textSize=13f; gravity=Gravity.CENTER
+            typeface=runCatching{Typeface.createFromAsset(assets,"fonts/cyberpunk.ttf")}.getOrDefault(Typeface.create(Typeface.MONOSPACE,Typeface.BOLD))
+            setShadowLayer(10f,0f,0f,0xFFFF1744.toInt()); alpha=1f
+        }
+        overlay.addView(status,FrameLayout.LayoutParams(-1,-2,Gravity.CENTER).apply{leftMargin=18;rightMargin=18;topMargin=105})
+        val statusHandler=Handler(Looper.getMainLooper())
+        val statusInterval=1500L
+        var statusIndex=0
+        val statusRunnable=object:Runnable{
+            override fun run(){
+                if(!status.isAttachedToWindow)return
+                status.animate().alpha(0f).setDuration(180L).withEndAction{
+                    statusIndex++
+                    if(statusIndex<statusMessages.size){
+                        status.text=statusMessages[statusIndex]
+                        status.animate().alpha(1f).setDuration(180L).start()
+                        statusHandler.postDelayed(this,statusInterval-360L)
+                    }
+                }.start()
+            }
+        }
+        statusHandler.postDelayed(statusRunnable,statusInterval)
+        setContentView(root); Handler(Looper.getMainLooper()).postDelayed({startApp()},10000L)
     }
 
     private class SplashProgressView(context: android.content.Context,private val durationMs:Long):View(context){
