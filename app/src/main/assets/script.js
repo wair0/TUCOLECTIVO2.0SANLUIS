@@ -672,7 +672,7 @@
     }
   });
   document.addEventListener('app:navigate',e=>{if(e.detail.go==='favoritos')render();});
-  window.TuColectivoFavorites={toggle,render,toggleArrival,isArrivalSaved};
+  window.TuColectivoFavorites={toggle,render,toggleArrival,isArrivalSaved,syncLineArrivalFavorite};
   render();syncButtons();
 })();
 
@@ -728,7 +728,7 @@
     const favKey=String(stop.identifier||stop.code)+'::'+Number(currentLine.code);
     window.TuColectivoCurrentLineArrival={stop:{id:String(stop.identifier||stop.code),identifier:String(stop.identifier||stop.code),code:Number(stop.code)||0,name:stop.description,street:stop.street||'',intersection:stop.intersection||'',lat:Number(stop.latitude),lng:Number(stop.longitude),lines:[Number(currentLine.code)]},line:Number(currentLine.code)};
     lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(stop.description)+'</strong><small class="line-sub-context">'+esc((stop.street||'')+' · '+(stop.intersection||''))+'</small></div><button class="arrival-favorite-toggle" data-line-arrival-favorite="true" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div><button class="map-route-action" data-map-route-line="'+Number(currentLine.code)+'" type="button">⌖ VER RECORRIDO EN EL MAPA</button>';
-    syncLineArrivalFavorite();
+    window.TuColectivoFavorites?.syncLineArrivalFavorite?.();
     nativeApi.loadArrivals(stop.identifier,currentLine.code);
   }
   function loadLines(){if(nativeApi){loading('CARGANDO LÍNEAS');nativeApi.loadLines();}else showError('LÍNEAS','PUENTE ANDROID NO DISPONIBLE');}
