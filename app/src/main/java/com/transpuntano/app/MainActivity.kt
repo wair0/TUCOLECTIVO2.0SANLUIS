@@ -225,6 +225,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     inner class TransitBridge {
+        @JavascriptInterface fun loadMapAvailableLines() {
+            executor.execute {
+                runCatching { api.getLines() }
+                    .onSuccess { dispatch("onNativeMapAvailableLines", lineJson(it)) }
+                    .onFailure { dispatch("onNativeMapAvailableLinesError", JSONObject().put("message", it.message ?: "No se pudieron cargar las líneas").toString()) }
+            }
+        }
+
         @JavascriptInterface fun loadMapRoute(lineCode: Int) {
             executor.execute {
                 runCatching { api.getRoute(lineCode) }

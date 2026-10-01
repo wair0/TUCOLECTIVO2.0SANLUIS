@@ -135,7 +135,7 @@
   const ctx = canvas.getContext('2d');
   const TILE = 256;
   const FALLBACK = {lat:-33.3017,lng:-66.3378};
-  const map = {lat:FALLBACK.lat,lng:FALLBACK.lng,zoom:14,drag:false,pointers:new Map(),last:null,baseDistance:0,baseZoom:14,userLocation:null,routePoints:[],stops:[],vehicles:[],routeLineCode:0,pointerStart:null,dragged:false};
+  const map = {lat:FALLBACK.lat,lng:FALLBACK.lng,zoom:14,drag:false,pointers:new Map(),last:null,baseDistance:0,baseZoom:14,userLocation:null,routePoints:[],stops:[],vehicles:[],routeLineCode:0,availableLines:[],availableLinesLoading:false,pointerStart:null,dragged:false};
   const tiles = new Map();
 
   function worldSize(z){ return TILE * Math.pow(2,z); }
@@ -269,7 +269,16 @@
     document.getElementById('mapPopupLocation').textContent=uniqueLocations.join(' · ')||'UBICACIÓN DE PARADA';
     const lines=document.getElementById('mapPopupLines');
     const availableLines=[...new Set((stop.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
-    lines.innerHTML=availableLines.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">ARRIBOS LÍNEA '+n+'</button>').join('')||'<small>SELECCIONÁ UNA LÍNEA PARA CONSULTAR LOS ARRIBOS DISPONIBLES</small>';
+    const renderLineChoices=choices=>{lines.innerHTML=choices.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">CONSULTAR LÍNEA '+n+'</button>').join('')||'<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';};
+    if(availableLines.length)renderLineChoices(availableLines);
+    else if(map.availableLines.length)renderLineChoices(map.availableLines);
+    else{
+      lines.innerHTML='<small>CONSULTANDO LÍNEAS DISPONIBLES...</small>';
+      if(!map.availableLinesLoading&&window.TuColectivoNative?.loadMapAvailableLines){
+        map.availableLinesLoading=true;
+        window.TuColectivoNative.loadMapAvailableLines();
+      }
+    }
     document.getElementById('mapPopupArrivals').innerHTML='';
     popup.hidden=false;
   }
@@ -365,6 +374,22 @@
     }catch(_){state.textContent='ERROR LEYENDO PARADAS';}
   };
   window.onNativeMapStopsError=payload=>{let msg='NO SE PUDIERON CARGAR LAS PARADAS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
+  window.onNativeMapAvailableLines=payload=>{
+    try{
+      const raw=typeof payload==='string'?JSON.parse(payload):payload||[];
+      map.availableLines=[...new Set(raw.map(item=>Number(item.code)).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
+      map.availableLinesLoading=false;
+      const popup=document.getElementById('mapStopPopup'), lines=document.getElementById('mapPopupLines');
+      if(popup&&!popup.hidden&&map.pendingStop&&!(map.pendingStop.lines||[]).length&&lines){
+        lines.innerHTML=map.availableLines.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">CONSULTAR LÍNEA '+n+'</button>').join('')||'<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';
+      }
+    }catch(_){map.availableLinesLoading=false;}
+  };
+  window.onNativeMapAvailableLinesError=payload=>{
+    map.availableLinesLoading=false;
+    const lines=document.getElementById('mapPopupLines');
+    if(lines&&!map.availableLines.length)lines.innerHTML='<small>NO SE PUDIERON CARGAR LAS LÍNEAS. VOLVÉ A ABRIR LA PARADA PARA REINTENTAR.</small>';
+  };
   window.onNativeMapVehicles=payload=>{try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.vehicles=raw.map(v=>({id:String(v.id||v.vehicleId||''),line:String(v.line||''),destination:String(v.destination||''),lat:Number(v.lat??v.latitude),lng:Number(v.lng??v.longitude),gpsTimestamp:String(v.gpsTimestamp||'')})).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lng)&&(v.lat!==0||v.lng!==0));draw();}catch(_){state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
   window.TuColectivoMap={
     showRoute(lineCode){map.routeLineCode=Number(lineCode)||0;map.routePoints=[];map.vehicles=[];state.textContent='CARGANDO RECORRIDO...';document.getElementById('mapStopPopup')?.setAttribute('hidden','');if(window.TuColectivoNative&&map.routeLineCode>0)window.TuColectivoNative.loadMapRoute(map.routeLineCode);window.TuColectivo.navigate('mapa');setTimeout(locateUser,100);draw();},
