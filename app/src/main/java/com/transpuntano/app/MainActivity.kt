@@ -31,6 +31,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private val api = SmartMoveApi()
     private val executor = Executors.newFixedThreadPool(3)
+    @Volatile private var mapNearbyStops: List<TransitStop> = emptyList()
+    @Volatile private var mapLineCode: Int = 0
+    @Volatile private var mapVehicleRefreshInProgress = false
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
 
@@ -174,7 +177,78 @@ class MainActivity : AppCompatActivity() {
         }
     }.toString()
 
+    private fun routeJson(points: List<Pair<Double, Double>>) = JSONArray().apply {
+        points.forEach { point ->
+            put(JSONObject().put("lat", point.first).put("lng", point.second))
+        }
+    }.toString()
+
+    private fun refreshMapVehiclesNow(lineCode: Int = mapLineCode) {
+        if (mapVehicleRefreshInProgress || mapNearbyStops.isEmpty()) return
+        mapVehicleRefreshInProgress = true
+        executor.execute {
+            try {
+                val vehicles = linkedMapOf<String, JSONObject>()
+                for (stop in mapNearbyStops.take(15)) {
+                    val codes = if (lineCode > 0) listOf(lineCode)
+                        else stop.lineCodes.filter { it > 0 }.distinct()
+                    for (code in codes) {
+                        val arrivals = runCatching {
+                            api.getArrivals(stop.identifier, code, timeoutMs = 5_000)
+                        }.getOrDefault(emptyList())
+                        for (arrival in arrivals) {
+                            val lat = arrival.latitude ?: continue
+                            val lng = arrival.longitude ?: continue
+                            if (lat == 0.0 || lng == 0.0) continue
+                            val id = arrival.vehicleId.ifBlank {
+                                "line-" + code + "-" + stop.code + "-" + lat + "-" + lng
+                            }
+                            vehicles[id] = JSONObject()
+                                .put("id", id)
+                                .put("line", arrival.line.ifBlank { "LÍNEA " + code })
+                                .put("destination", arrival.destination)
+                                .put("lat", lat)
+                                .put("lng", lng)
+                                .put("gpsTimestamp", arrival.gpsTimestamp)
+                        }
+                    }
+                }
+                dispatch("onNativeMapVehicles", JSONArray().apply {
+                    vehicles.values.forEach { put(it) }
+                }.toString())
+            } finally {
+                mapVehicleRefreshInProgress = false
+            }
+        }
+    }
+
     inner class TransitBridge {
+        @JavascriptInterface fun loadMapRoute(lineCode: Int) {
+            executor.execute {
+                runCatching { api.getRoute(lineCode) }
+                    .onSuccess { dispatch("onNativeMapRoute", routeJson(it)) }
+                    .onFailure { dispatch("onNativeMapRouteError", JSONObject().put("message", it.message ?: "No se pudo cargar el recorrido").toString()) }
+            }
+        }
+
+        @JavascriptInterface fun loadMapData(latitude: Double, longitude: Double, lineCode: Int) {
+            executor.execute {
+                runCatching { api.getNearby(latitude, longitude) }
+                    .onSuccess { stops ->
+                        mapNearbyStops = stops
+                        mapLineCode = lineCode
+                        dispatch("onNativeMapStops", stopJson(stops))
+                        refreshMapVehiclesNow(lineCode)
+                    }
+                    .onFailure { dispatch("onNativeMapStopsError", JSONObject().put("message", it.message ?: "No se pudieron localizar las paradas").toString()) }
+            }
+        }
+
+        @JavascriptInterface fun refreshMapVehicles(lineCode: Int) {
+            mapLineCode = lineCode
+            refreshMapVehiclesNow(lineCode)
+        }
+
         @JavascriptInterface fun loadLines() {
             executor.execute {
                 runCatching { api.getLines() }
