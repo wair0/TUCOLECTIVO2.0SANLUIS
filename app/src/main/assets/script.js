@@ -224,8 +224,7 @@
       if(p.x< -20||p.x>w+20||p.y< -20||p.y>h+20)continue;
       ctx.beginPath();ctx.arc(p.x,p.y,6,0,Math.PI*2);ctx.fillStyle='rgba(0,240,255,.22)';ctx.fill();
       ctx.lineWidth=2;ctx.strokeStyle='#00f0ff';ctx.shadowColor='#00f0ff';ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
-      ctx.fillStyle='#e9feff';ctx.font='bold 9px Arial';ctx.textAlign='center';
-      if(map.zoom>=13)ctx.fillText(String(stop.code||'P'),p.x,p.y-10);
+      // El código interno de la parada no se dibuja para mantener el mapa limpio.
     }
     ctx.restore();
   }
@@ -261,9 +260,13 @@
     const popup=document.getElementById('mapStopPopup');if(!popup)return;
     map.pendingStop=stop;
     document.getElementById('mapPopupName').textContent=stop.name||('PARADA '+stop.code);
-    document.getElementById('mapPopupLocation').textContent=[stop.street,stop.intersection].filter(Boolean).join(' · ')||'UBICACIÓN DE PARADA';
+    const cleanLocation=value=>String(value||'').replace(/\s*(?:,|-)?\s*SAN LUIS\s*$/i,'').trim();
+    const locations=[stop.street,stop.intersection].map(cleanLocation).filter(Boolean);
+    const uniqueLocations=locations.filter((value,index,array)=>array.findIndex(other=>other.toLocaleLowerCase('es-AR')===value.toLocaleLowerCase('es-AR'))===index);
+    document.getElementById('mapPopupLocation').textContent=uniqueLocations.join(' · ')||'UBICACIÓN DE PARADA';
     const lines=document.getElementById('mapPopupLines');
-    lines.innerHTML=(stop.lines||[]).map(n=>'<button class="map-popup-line" data-map-stop-line="'+Number(n)+'" type="button">ARRIBOS LÍNEA '+Number(n)+'</button>').join('')||'<small>SIN LÍNEAS INFORMADAS</small>';
+    const availableLines=[...new Set((stop.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
+    lines.innerHTML=availableLines.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">ARRIBOS LÍNEA '+n+'</button>').join('')||'<small>SELECCIONÁ UNA LÍNEA PARA CONSULTAR LOS ARRIBOS DISPONIBLES</small>';
     document.getElementById('mapPopupArrivals').innerHTML='';
     popup.hidden=false;
   }
