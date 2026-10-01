@@ -1037,3 +1037,34 @@ html,body,body *{
 
 /* AJUSTES DE ARRIBOS Y ENCABEZADO DE CALLES */
 .screen[data-screen="arribos"] .screen-head span{font-size:12px!important;}
+
+
+/* RESTAURACIÓN WEBVIEW — RECORRIDOS, PARADAS Y VEHÍCULOS EN EL MAPA */
+.map-route-action{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;min-height:50px;margin-top:12px;padding:12px;
+  color:#ffbaff;background:linear-gradient(110deg,rgba(42,12,58,.96),rgba(12,18,42,.98));
+  border:1px solid rgba(255,0,255,.9);box-shadow:inset 0 0 16px rgba(255,0,255,.12),0 0 12px rgba(255,0,255,.15);
+  font:700 11px/1.3 Arial,sans-serif;letter-spacing:.09em;text-align:center;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+}
+.map-route-action:active{background:#43104b;color:#fff;transform:scale(.985)}
+.map-stop-popup{
+  position:absolute;z-index:7;left:10px;right:10px;bottom:62px;
+  max-height:45%;overflow:auto;padding:16px 13px 13px;
+  color:#e9feff;background:rgba(5,8,20,.96);
+  border:1px solid rgba(0,240,255,.9);
+  box-shadow:inset 0 0 20px rgba(0,240,255,.12),0 0 18px rgba(160,32,255,.25);
+  clip-path:polygon(0 0,calc(100% - 13px) 0,100% 13px,100% 100%,0 100%);
+}
+.map-stop-popup[hidden]{display:none!important}
+.map-stop-popup>strong{display:block;padding-right:32px;color:var(--cy);font-size:12px;line-height:1.4;letter-spacing:.07em;overflow-wrap:anywhere}
+.map-stop-popup>small{display:block;margin-top:6px;color:rgba(217,251,255,.72);font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+.map-popup-close{position:absolute;top:6px;right:7px;width:30px;height:30px;color:var(--cy);background:#0c1429;border:1px solid rgba(0,240,255,.65);font-size:20px}
+.map-popup-lines{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.map-popup-line{padding:8px 9px;color:#ffbaff;background:#1b1030;border:1px solid rgba(255,0,255,.7);font-size:9px;letter-spacing:.04em}
+.map-popup-arrivals{display:grid;gap:7px;margin-top:10px}
+.map-popup-arrival{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:8px;color:#e9feff;background:rgba(0,240,255,.06);border-left:2px solid var(--cy);font-size:9px}
+.map-popup-arrival span{overflow-wrap:anywhere;color:rgba(217,251,255,.72)}
+.map-popup-arrival strong{color:var(--cy);white-space:nowrap}
+.map-popup-arrivals>small,.map-popup-lines>small{color:rgba(217,251,255,.72);font-size:9px;line-height:1.5}
