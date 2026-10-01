@@ -130,7 +130,7 @@ class ArrivalNotificationService : Service() {
             }
             if (nowMinute >= endMinute) {
                 prefs.edit().putBoolean("enabled", false).apply()
-                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopForeground(true)
                 stopSelf()
                 return
             }

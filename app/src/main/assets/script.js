@@ -795,6 +795,9 @@
   [scheduleStart,scheduleEnd].forEach(input=>input?.addEventListener('change',()=>saveNotificationSchedule(readNotificationSchedule())));
   render();syncButtons();syncNotificationButton();
   window.TuColectivoNative?.getArrivalNotificationState?.();
+  window.setInterval(()=>{
+    if(document.querySelector('[data-screen="favoritos"]')?.classList.contains('active'))window.TuColectivoNative?.getArrivalNotificationState?.();
+  },30000);
 })();
 
 /* FASE 11B — LÍNEAS REALES + SUBSECCIONES DESDE SMARTMOVE NATIVO */
