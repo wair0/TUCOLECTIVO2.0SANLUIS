@@ -275,7 +275,7 @@ class MainActivity : AppCompatActivity() {
         pendingLocationPurpose = null
         dispatch("onNativeLocation", JSONObject().put("purpose", purpose).put("latitude", location.latitude).put("longitude", location.longitude).toString())
         if (purpose == "map") {
-            TransitBridge().loadMapData(location.latitude, location.longitude, mapLineCode)
+            // MAPA: sincronización/centrado solamente. La carga de paradas se solicita aparte.
         } else executor.execute {
             runCatching { api.getNearby(location.latitude, location.longitude) }
                 .onSuccess { stops ->
@@ -313,6 +313,7 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun requestMapLocation(lineCode: Int) { mapLineCode = lineCode; requestNativeLocation("map") }
         @JavascriptInterface fun requestNearbyLocation() { requestNativeLocation("nearby") }
         @JavascriptInterface fun loadMapData(latitude: Double, longitude: Double, lineCode: Int) { loadMapStopsAt(latitude, longitude, lineCode) }
+        @JavascriptInterface fun loadMapDataAtLocation(latitude: Double, longitude: Double, lineCode: Int) { loadMapStopsAt(latitude, longitude, lineCode) }
         private fun loadMapStopsAt(latitude: Double, longitude: Double, lineCode: Int) {
             executor.execute {
                 runCatching { api.getNearby(latitude, longitude) }
@@ -372,29 +373,23 @@ class MainActivity : AppCompatActivity() {
                     // Primero usar la relación parada-línea que devuelve SmartMove,
                     // igual que la app de la rama native/cyberpunk-ui. No inferir líneas
                     // midiendo la cercanía geométrica a recorridos completos.
-                    val cached = mapNearbyStops.firstOrNull {
+                    // PARADAS CERCANAS es independiente del estado del MAPA.
+                    val nearbyAtStop = runCatching { api.getNearby(latitude, longitude) }
+                        .getOrDefault(emptyList())
+                    val exact = nearbyAtStop.firstOrNull {
                         it.identifier == identifier || it.code.toString() == identifier
+                    } ?: nearbyAtStop.minByOrNull { stop ->
+                        val dy = (stop.latitude - latitude) * 111_320.0
+                        val dx = (stop.longitude - longitude) * 111_320.0 *
+                            kotlin.math.cos(Math.toRadians(latitude))
+                        kotlin.math.sqrt(dx * dx + dy * dy)
+                    }?.takeIf { stop ->
+                        val dy = (stop.latitude - latitude) * 111_320.0
+                        val dx = (stop.longitude - longitude) * 111_320.0 *
+                            kotlin.math.cos(Math.toRadians(latitude))
+                        kotlin.math.sqrt(dx * dx + dy * dy) <= 45.0
                     }
-                    var matched = cached?.lineCodes.orEmpty().filter { it > 0 }.distinct().sorted()
-
-                    if (matched.isEmpty()) {
-                        val nearbyAtStop = runCatching { api.getNearby(latitude, longitude) }
-                            .getOrDefault(emptyList())
-                        val exact = nearbyAtStop.firstOrNull {
-                            it.identifier == identifier || it.code.toString() == identifier
-                        } ?: nearbyAtStop.minByOrNull { stop ->
-                            val dy = (stop.latitude - latitude) * 111_320.0
-                            val dx = (stop.longitude - longitude) * 111_320.0 *
-                                kotlin.math.cos(Math.toRadians(latitude))
-                            kotlin.math.sqrt(dx * dx + dy * dy)
-                        }?.takeIf { stop ->
-                            val dy = (stop.latitude - latitude) * 111_320.0
-                            val dx = (stop.longitude - longitude) * 111_320.0 *
-                                kotlin.math.cos(Math.toRadians(latitude))
-                            kotlin.math.sqrt(dx * dx + dy * dy) <= 45.0
-                        }
-                        matched = exact?.lineCodes.orEmpty().filter { it > 0 }.distinct().sorted()
-                    }
+                    val matched = exact?.lineCodes.orEmpty().filter { it > 0 }.distinct().sorted()
 
                     dispatch("onNativeNearbyStopLines", JSONObject()
                         .put("identifier", identifier)
