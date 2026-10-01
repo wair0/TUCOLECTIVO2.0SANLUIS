@@ -574,3 +574,31 @@ body,button,input,textarea,select{
 .line-card:active,.data-card:active,.arrival-card:active,.favorite-item:active{background:#302047}
 .screen[data-screen="mapa"]{overflow:hidden}
 .screen[data-screen="mapa"] .map-wrap{margin-bottom:0}
+
+
+/* FASE 13 — UNIFICAR ANIMACIONES Y LIMPIAR EFECTOS */
+.screen:not([data-screen="inicio"]) .home-card::after,
+.screen:not([data-screen="inicio"]) .data-card::after,
+.screen:not([data-screen="inicio"]) .line-card::after,
+.screen:not([data-screen="inicio"]) .favorite-item::after,
+.screen:not([data-screen="inicio"]) .map-wrap::before{animation:none!important}
+.screen:not([data-screen="inicio"]) .line-card,
+.screen:not([data-screen="inicio"]) .data-card,
+.screen:not([data-screen="inicio"]) .arrival-card,
+.screen:not([data-screen="inicio"]) .favorite-item,
+.screen:not([data-screen="inicio"]) .locate-stops,
+.screen:not([data-screen="inicio"]) .sync-btn{transition:transform .1s,background .1s,box-shadow .1s}
+.screen:not([data-screen="inicio"]) .line-card:active,
+.screen:not([data-screen="inicio"]) .data-card:active,
+.screen:not([data-screen="inicio"]) .arrival-card:active,
+.screen:not([data-screen="inicio"]) .favorite-item:active,
+.screen:not([data-screen="inicio"]) .locate-stops:active,
+.screen:not([data-screen="inicio"]) .sync-btn:active{transform:translateY(4px) scale(.97)}
+.screen:not([data-screen="inicio"]) .line-card:active,
+.screen:not([data-screen="inicio"]) .data-card:active,
+.screen:not([data-screen="inicio"]) .arrival-card:active,
+.screen:not([data-screen="inicio"]) .favorite-item:active{background:linear-gradient(145deg,rgba(0,240,255,.22),rgba(160,32,255,.35));box-shadow:inset 0 0 22px rgba(0,240,255,.4),0 0 20px rgba(160,32,255,.5)}
+.status{align-self:flex-end;margin-bottom:3px;transform:translateY(5px)}
+.map-wrap{height:calc(100dvh - var(--hh) - var(--top) - 66px - env(safe-area-inset-bottom) - 148px)!important;min-height:220px!important;max-height:calc(100dvh - var(--hh) - var(--top) - 66px - env(safe-area-inset-bottom) - 148px)!important}
+@media(max-width:360px){.map-wrap{height:calc(100dvh - var(--hh) - var(--top) - 62px - env(safe-area-inset-bottom) - 148px)!important;max-height:calc(100dvh - var(--hh) - var(--top) - 62px - env(safe-area-inset-bottom) - 148px)!important}}
+.line-card .line-badge{display:none!important}
