@@ -1003,3 +1003,33 @@ html,body,body *{
   transform-origin:40px 40px;
   animation:arrivalNativeOrbit var(--arrival-duration,1.5s) linear infinite;
 }
+
+
+/* AJUSTE CONTADOR — NÚMERO/MIN AGRUPADOS Y PUNTO UNIDO AL ARCO */
+.arrival-time strong{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  transform:translate(-50%,-72%)!important;
+  margin:0!important;
+  white-space:nowrap!important;
+}
+.arrival-time small{
+  position:absolute!important;
+  left:50%!important;
+  top:calc(50% + 8px)!important;
+  transform:translateX(-50%)!important;
+  margin:0!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.arrival-ring-orbit{
+  transform-origin:40px 40px;
+  animation:arrivalNativeOrbit var(--arrival-duration,1.5s) linear infinite;
+}
+.arrival-ring-arc{
+  animation:none!important;
+}
+.arrival-ring-dot{
+  animation:none!important;
+}
