@@ -604,5 +604,32 @@ body,button,input,textarea,select{
 .line-card .line-badge{display:none!important}
 
 
-/* FASE 14 — ANIMACIONES DEL ZIP SIN SCAN */
+/* FASE 15A — AJUSTAR HEADER Y DAR ESPACIO AL ESTADO */
+.bar{position:relative;align-items:flex-start}
+.title{
+  position:absolute;
+  top:calc(var(--top) + 1px);
+  left:50%;
+  transform:translateX(-50%);
+  z-index:2;
+}
+.bar>.side:first-child{position:relative;z-index:3;height:100%;align-items:flex-end}
+.bar>.side.r{position:relative;z-index:3;height:100%;align-items:flex-end}
+.status{
+  position:absolute;
+  left:10px;
+  right:10px;
+  bottom:1px;
+  max-width:none!important;
+  width:auto;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+  text-align:center;
+  z-index:4;
+  margin:0!important;
+  transform:none!important;
+  line-height:1;
+}
+
 .bar::after,.home-design-grid .card::after,.line-card::after,.map-wrap::after,.bottom-nav::after{animation:none!important}
