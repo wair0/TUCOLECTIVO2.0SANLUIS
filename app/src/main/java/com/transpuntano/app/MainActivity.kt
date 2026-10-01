@@ -57,7 +57,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(webView)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                webView.evaluateJavascript("window.TuColectivo && TuColectivo.closeMenus ? TuColectivo.closeMenus() : false") { result ->
+                webView.evaluateJavascript("""
+                    (function(){
+                      var closed = window.TuColectivo && TuColectivo.closeMenus ? TuColectivo.closeMenus() : false;
+                      if (closed) return true;
+                      return window.TuColectivo && TuColectivo.handleBack ? TuColectivo.handleBack() : false;
+                    })()
+                """.trimIndent()) { result ->
                     if (result != "true") finish()
                 }
             }
