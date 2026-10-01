@@ -434,7 +434,7 @@ class MainActivity : AppCompatActivity() {
                         }.getOrDefault(emptyList())
                     }
 
-                    resolvedStopLines[cacheKey] = matched
+                    if (matched.isNotEmpty()) resolvedStopLines[cacheKey] = matched
                     dispatch("onNativeNearbyStopLines", JSONObject().put("identifier", identifier).put("lines", JSONArray(matched)).toString())
                 } catch (e: Exception) {
                     dispatch("onNativeNearbyStopLines", JSONObject().put("identifier", identifier).put("lines", JSONArray()).put("message", e.message ?: "No se pudieron consultar las líneas asociadas a la parada").toString())
