@@ -1,7 +1,10 @@
 package com.tucolectivo.app
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.webkit.GeolocationPermissions
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -10,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
+    private var pendingGeoOrigin: String? = null
+    private var pendingGeoCallback: GeolocationPermissions.Callback? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,8 +26,31 @@ class MainActivity : AppCompatActivity() {
             settings.allowFileAccess = true
             settings.allowContentAccess = true
             settings.loadsImagesAutomatically = true
+            settings.setGeolocationEnabled(true)
             webViewClient = WebViewClient()
-            webChromeClient = WebChromeClient()
+            webChromeClient = object : WebChromeClient() {
+                override fun onGeolocationPermissionsShowPrompt(
+                    origin: String,
+                    callback: GeolocationPermissions.Callback
+                ) {
+                    if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        callback.invoke(origin, true, false)
+                        return
+                    }
+
+                    pendingGeoOrigin = origin
+                    pendingGeoCallback = callback
+                    requestPermissions(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        ),
+                        LOCATION_PERMISSION_REQUEST
+                    )
+                }
+            }
             loadUrl("file:///android_asset/index.html")
         }
 
@@ -39,9 +67,31 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode != LOCATION_PERMISSION_REQUEST) return
+
+        val granted = grantResults.any { it == PackageManager.PERMISSION_GRANTED }
+        pendingGeoCallback?.invoke(pendingGeoOrigin ?: "file://", granted, false)
+        pendingGeoCallback = null
+        pendingGeoOrigin = null
+    }
+
     override fun onDestroy() {
+        pendingGeoCallback?.invoke(pendingGeoOrigin ?: "file://", false, false)
+        pendingGeoCallback = null
+        pendingGeoOrigin = null
         webView.stopLoading()
         webView.destroy()
         super.onDestroy()
+    }
+
+    companion object {
+        private const val LOCATION_PERMISSION_REQUEST = 4102
     }
 }
