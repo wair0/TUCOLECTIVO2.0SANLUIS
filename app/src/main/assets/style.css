@@ -762,3 +762,71 @@ html,body,body *{
 .locate-stops strong{
   font-size:11px!important;
 }
+
+/* AJUSTAR HEADER Y CREAR MARCO ADAPTATIVO DEL ESTADO */
+.title{
+  top:6px!important;
+}
+.bar>.side:first-child .btn{
+  top:8px!important;
+}
+.bar>.side.r .btn:first-child{
+  top:8px!important;
+}
+.bar>.side.r .btn:last-child{
+  top:8px!important;
+}
+.status{
+  top:calc(var(--top) + 39px)!important;
+  bottom:auto!important;
+  left:50%!important;
+  right:auto!important;
+  width:max-content!important;
+  max-width:calc(100vw - 110px)!important;
+  min-width:78px;
+  padding:5px 12px 4px!important;
+  box-sizing:border-box!important;
+  font-size:10px!important;
+  line-height:1!important;
+  letter-spacing:.05em!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  text-align:center!important;
+  transform:translateX(-50%)!important;
+  color:var(--cy)!important;
+  text-shadow:0 0 7px var(--cy)!important;
+  background:linear-gradient(90deg,rgba(0,240,255,.08),rgba(160,32,255,.12),rgba(0,240,255,.08))!important;
+  border:1px solid transparent!important;
+  border-image:linear-gradient(90deg,var(--cy),var(--vi),var(--cy)) 1!important;
+  box-shadow:0 0 7px rgba(0,240,255,.35),inset 0 0 10px rgba(160,32,255,.12)!important;
+  animation:statusFramePulse 2.4s ease-in-out infinite!important;
+  z-index:5!important;
+}
+.status::before,
+.status::after{
+  content:""!important;
+  position:absolute!important;
+  top:-1px!important;
+  bottom:-1px!important;
+  width:9px!important;
+  pointer-events:none!important;
+}
+.status::before{
+  left:-1px!important;
+  border-left:2px solid var(--cy)!important;
+  border-top:2px solid var(--cy)!important;
+  border-bottom:2px solid var(--vi)!important;
+  clip-path:polygon(0 0,100% 0,100% 22%,35% 22%,35% 78%,100% 78%,100% 100%,0 100%)!important;
+}
+.status::after{
+  right:-1px!important;
+  border-right:2px solid var(--cy)!important;
+  border-top:2px solid var(--vi)!important;
+  border-bottom:2px solid var(--cy)!important;
+  clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 78%,65% 78%,65% 22%,0 22%)!important;
+}
+@keyframes statusFramePulse{
+  0%,100%{box-shadow:0 0 6px rgba(0,240,255,.3),inset 0 0 8px rgba(160,32,255,.1)}
+  50%{box-shadow:0 0 12px rgba(160,32,255,.55),inset 0 0 12px rgba(0,240,255,.16)}
+}
