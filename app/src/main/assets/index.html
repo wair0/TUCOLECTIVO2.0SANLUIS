@@ -113,12 +113,25 @@
   </section>
 
   <section class="screen" data-screen="paradas">
-    <div class="screen-head"><span>PARADAS CERCANAS</span><small>GPS: PENDIENTE</small></div>
-    <div class="section-list">
-      <button class="data-card"><b>AV. COLÓN</b><span>LÍNEAS 1 · 2 · 12</span><em>120 M</em></button>
-      <button class="data-card"><b>PLAZA PRINGLES</b><span>LÍNEAS 3 · 4</span><em>280 M</em></button>
-      <button class="data-card"><b>TERMINAL</b><span>LÍNEAS 1 · 6 · 12</span><em>640 M</em></button>
+    <div class="screen-head"><span>PARADAS CERCANAS</span><small id="nearbyState">GPS: PENDIENTE</small></div>
+    <button id="locateStops" class="locate-stops" type="button">
+      <span class="locate-icon">◎</span>
+      <span><strong>LOCALIZAR PARADAS</strong><small>MEDIANTE UBICACIÓN</small></span>
+      <b>GPS</b>
+    </button>
+    <div id="nearbyList" class="section-list nearby-list">
+      <div class="nearby-empty"><strong>ESPERANDO UBICACIÓN_</strong><span>ACTIVÁ EL GPS PARA MOSTRAR LAS PARADAS MÁS CERCANAS</span></div>
     </div>
+  </section>
+
+  <section class="screen" data-screen="arribos">
+    <div class="screen-head">
+      <button id="arrivalsBack" class="sub-back" type="button">‹ VOLVER</button>
+      <span>ARRIBOS</span>
+      <small id="arrivalsMeta">PARADA</small>
+    </div>
+    <div id="arrivalStop" class="arrival-stop"></div>
+    <div id="arrivalList" class="arrival-list"></div>
   </section>
 
   <section class="screen" data-screen="favoritos">
