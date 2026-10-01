@@ -554,7 +554,7 @@
   window.onNativeArrivals=p=>{
     const a=JSON.parse(p),list=lineGrid.querySelector('.line-arrivals');
     if(!list)return;
-    list.innerHTML=a.length?a.map(x=>{const m=Number(x.minutes);const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;return '<div class="arrival-card"><div class="arrival-copy"><b>'+esc(x.line||currentLine.name)+'</b><span>'+esc(x.destination||'SERVICIO')+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="75" cy="40" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';}).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
+    list.innerHTML=a.length?a.map(x=>{const m=Number(x.minutes);const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;return '<div class="arrival-card"><div class="arrival-copy"><b>'+esc(x.line||currentLine.name)+'</b><span>'+esc(x.destination||'SERVICIO')+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';}).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
   };
   window.onNativeArrivalsError=p=>{const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
   function showArrivals(stop){
@@ -597,8 +597,8 @@
  .arrival-ring-base{fill:none;stroke:var(--cy);stroke-width:4;filter:drop-shadow(0 0 5px var(--cy))}
  .arrival-ring-arc{fill:none;stroke:var(--vt);stroke-width:4;stroke-linecap:round;stroke-dasharray:56.2 163.7;filter:drop-shadow(0 0 6px var(--vt));transform-origin:40px 40px;animation:none!important}
  .arrival-time strong,.arrival-time small{position:absolute!important;left:50%!important;z-index:5!important;line-height:1!important;margin:0!important;white-space:nowrap!important}
- .arrival-time strong{top:50%!important;transform:translate(-50%,-68%)!important;font-size:15px!important}
- .arrival-time small{top:calc(50% + 7px)!important;transform:translateX(-50%)!important;font-size:6.5px!important}
+ .arrival-time strong{top:50%!important;transform:translate(-50%,-50%)!important;font-size:15px!important}
+ .arrival-time small{top:calc(50% + 10px)!important;transform:translateX(-50%)!important;font-size:6.5px!important}
  @keyframes arrivalNativeOrbit{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
  `;
  document.head.appendChild(css);
