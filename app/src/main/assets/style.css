@@ -863,3 +863,21 @@ html,body,body *{
   transform:translateX(-50%)!important;
   z-index:30!important;
 }
+
+/* POSICIONAR ESTADO COMO MARCO EXTERNO PEGADO AL HEADER */
+.hdr>.status{
+  position:absolute!important;
+  top:calc(var(--hh) + var(--top) - 1px)!important;
+  left:50%!important;
+  bottom:auto!important;
+  right:auto!important;
+  width:max-content!important;
+  max-width:calc(100vw - 80px)!important;
+  min-width:92px!important;
+  min-height:24px!important;
+  padding:5px 14px!important;
+  box-sizing:border-box!important;
+  transform:translateX(-50%)!important;
+  z-index:30!important;
+  margin:0!important;
+}
