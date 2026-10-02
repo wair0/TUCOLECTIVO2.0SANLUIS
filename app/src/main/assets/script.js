@@ -135,7 +135,7 @@
   const ctx = canvas.getContext('2d');
   const TILE = 256;
   const FALLBACK = {lat:-33.3017,lng:-66.3378};
-  const map = {lat:FALLBACK.lat,lng:FALLBACK.lng,zoom:14,drag:false,pointers:new Map(),last:null,baseDistance:0,baseZoom:14,userLocation:null,routePoints:[],stops:[],vehicles:[],routeLineCode:0,availableLines:[],availableLinesLoading:false,pointerStart:null,dragged:false};
+  const map = {lat:FALLBACK.lat,lng:FALLBACK.lng,zoom:14,drag:false,pointers:new Map(),last:null,baseDistance:0,baseZoom:14,userLocation:null,routePoints:[],stops:[],vehicles:[],routeLineCode:0,availableLines:[],availableLineLabels:{},lineLabels:{},availableLinesLoading:false,pointerStart:null,dragged:false};
   const tiles = new Map();
 
   function worldSize(z){ return TILE * Math.pow(2,z); }
@@ -240,7 +240,7 @@
       ctx.beginPath();ctx.arc(p.x,p.y,9,0,Math.PI*2);ctx.fillStyle='rgba(255,0,255,.22)';ctx.fill();
       ctx.strokeStyle='#ff4dff';ctx.lineWidth=2;ctx.shadowColor='#ff00ff';ctx.shadowBlur=12;ctx.stroke();ctx.shadowBlur=0;
       ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('B',p.x,p.y+.5);
-      if(map.zoom>=13){ctx.fillStyle='#ffd6ff';ctx.font='bold 8px Arial';ctx.fillText(String(vehicle.line||'BUS').replace(/LÍNEA/i,'L'),p.x,p.y+19);}
+      if(map.zoom>=13){ctx.fillStyle='#ffd6ff';ctx.font='bold 8px Arial';ctx.fillText(String(vehicle.line||'BUS').replace(/^LÍNEA\s*/i,'L '),p.x,p.y+19);}
     }
     ctx.restore();
   }
@@ -259,6 +259,11 @@
     map.zoom=chosen;draw();
   }
   function mapEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function publicLineLabel(code, labels){
+    const raw=String((labels||{})[String(code)]??map.lineLabels[String(code)]??map.availableLineLabels[String(code)]??'').trim();
+    const clean=raw.replace(/^l[ií]nea\s*/i,'').trim();
+    return clean||String(code);
+  }
   function openStopPopup(stop){
     const popup=document.getElementById('mapStopPopup');if(!popup)return;
     map.pendingStop=stop;
@@ -269,7 +274,7 @@
     document.getElementById('mapPopupLocation').textContent=uniqueLocations.join(' · ')||'UBICACIÓN DE PARADA';
     const lines=document.getElementById('mapPopupLines');
     const availableLines=[...new Set((stop.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
-    const renderLineChoices=choices=>{lines.innerHTML=choices.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">CONSULTAR LÍNEA '+n+'</button>').join('')||'<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';};
+    const renderLineChoices=choices=>{lines.innerHTML=choices.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">CONSULTAR LÍNEA '+mapEscape(publicLineLabel(n))+'</button>').join('')||'<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';};
     if(availableLines.length)renderLineChoices(availableLines);
     else{
       lines.innerHTML='<small>BUSCANDO LÍNEAS QUE PASAN POR ESTA PARADA...</small>';
@@ -357,6 +362,19 @@
     }catch(_){state.textContent='ERROR LEYENDO RECORRIDO';}
   };
   window.onNativeMapRouteError=payload=>{let msg='NO SE PUDO CARGAR EL RECORRIDO';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
+  window.onNativeContinuousLocation=function(payload){
+    let r={};try{r=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
+    const lat=Number(r.latitude),lng=Number(r.longitude);
+    if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+    if(document.querySelector('[data-screen="mapa"]')?.classList.contains('active')){
+      map.userLocation={lat,lng};
+      draw();
+    }
+    if(document.querySelector('[data-screen="paradas"]')?.classList.contains('active')){
+      nearbyState.textContent='GPS: ACTIVO · UBICACIÓN ACTUALIZADA';
+    }
+  };
+
   window.onNativeLocation=function(payload){
     let r={};try{r=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
     if(r.purpose==='map'){
@@ -376,7 +394,8 @@
     if(r.purpose==='nearby'){locateBtn.disabled=false;nearbyState.textContent='GPS: '+(r.message||'SIN SEÑAL');}
   };
   window.onNativeMapStops=payload=>{
-    try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.stops=raw.map(s=>({id:String(s.identifier||s.code),code:Number(s.code)||0,identifier:String(s.identifier||s.code||''),name:String(s.description||('PARADA '+s.code)),lat:Number(s.latitude),lng:Number(s.longitude),street:String(s.street||''),intersection:String(s.intersection||''),lines:(()=>{const found=[...(Array.isArray(s.lineCodes)?s.lineCodes:[]).map(Number),Number(s.lineCode)];return [...new Set(found.filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);})()})).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&(s.lat!==0||s.lng!==0));
+    try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];raw.forEach(s=>{if(s?.lineLabels&&typeof s.lineLabels==='object')Object.assign(map.lineLabels,s.lineLabels);});
+      map.stops=raw.map(s=>({id:String(s.identifier||s.code),code:Number(s.code)||0,identifier:String(s.identifier||s.code||''),name:String(s.description||('PARADA '+s.code)),lat:Number(s.latitude),lng:Number(s.longitude),street:String(s.street||''),intersection:String(s.intersection||''),lines:(()=>{const found=[...(Array.isArray(s.lineCodes)?s.lineCodes:[]).map(Number),Number(s.lineCode)];return [...new Set(found.filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);})()})).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&(s.lat!==0||s.lng!==0));
       state.textContent='GPS ACTIVO · '+map.stops.length+' PARADAS';draw();
     }catch(_){state.textContent='ERROR LEYENDO PARADAS';}
   };
@@ -385,6 +404,9 @@
     try{
       const raw=typeof payload==='string'?JSON.parse(payload):payload||[];
       map.availableLines=[...new Set(raw.map(item=>Number(item.code)).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
+      map.availableLineLabels={};
+      raw.forEach(item=>{const code=Number(item.code);if(Number.isFinite(code)&&code>0)map.availableLineLabels[String(code)]=String(item.name||'').replace(/^l[ií]nea\s*/i,'').trim()||String(code);});
+      Object.assign(map.lineLabels,map.availableLineLabels);
       map.availableLinesLoading=false;
       const popup=document.getElementById('mapStopPopup'), lines=document.getElementById('mapPopupLines');
       if(popup&&!popup.hidden&&map.pendingStop&&!(map.pendingStop.lines||[]).length&&lines){
@@ -404,11 +426,12 @@
       const stop=map.pendingStop;
       if(!stop||String(stop.identifier)!==String(result?.identifier))return false;
       const lines=[...new Set((result?.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
+      if(result?.lineLabels&&typeof result.lineLabels==='object')Object.assign(map.lineLabels,result.lineLabels);
       stop.lines=lines;
       const box=document.getElementById('mapPopupLines');
       if(!box)return true;
       if(!lines.length){box.innerHTML='<small>NO SE PUDIERON CONFIRMAR LÍNEAS PARA ESTA PARADA.</small>';return true;}
-      box.innerHTML='<small>LÍNEAS QUE PASAN POR ESTA PARADA</small>'+lines.map(line=>'<button class="map-popup-line" data-map-stop-line="'+line+'" type="button">CONSULTAR LÍNEA '+line+'</button>').join('');
+      box.innerHTML='<small>LÍNEAS QUE PASAN POR ESTA PARADA</small>'+lines.map(line=>'<button class="map-popup-line" data-map-stop-line="'+line+'" type="button">CONSULTAR LÍNEA '+mapEscape(publicLineLabel(line,result?.lineLabels))+'</button>').join('');
       return true;
     },
     handleArrivals(payload){if(!map.pendingMapArrival)return false;let items=[];try{items=typeof payload==='string'?JSON.parse(payload):payload||[];}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.innerHTML=items.length?items.map(a=>'<div class="map-popup-arrival"><b>'+mapEscape(a.line||'COLECTIVO')+'</b><span>'+mapEscape(a.destination||'SERVICIO')+'</span><strong>'+mapEscape(a.minutes==null?'--':a.minutes)+' MIN</strong></div>').join(''):'<small>SMARTMOVE NO DEVOLVIÓ ARRIBOS PARA ESTA LÍNEA</small>';map.pendingMapArrival=null;return true;},
@@ -444,9 +467,18 @@
     return Math.round(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)));
   }
   function formatDistance(m){return m<1000?Math.max(1,m)+' M':(m/1000).toFixed(1).replace('.',',')+' KM';}
-  function lineMarkup(lines){return '<div class="line-badges">'+lines.map(n=>'<span class="line-badge-mini">LÍNEA '+n+'</span>').join('')+'</div>';}
+  function lineMarkup(lines,labels){
+    const source=labels||window.TuColectivoLineLabels||{};
+    return '<div class="line-badges">'+lines.map(n=>'<span class="line-badge-mini">LÍNEA '+escapeHtml(publicNearbyLineLabel(n,source))+'</span>').join('')+'</div>';
+  }
+  function publicNearbyLineLabel(code,labels){
+    const raw=String((labels||{})[String(code)]??'').trim();
+    return raw.replace(/^l[ií]nea\s*/i,'').trim()||String(code);
+  }
 
   function normalizeStop(stop){
+    const labels=(stop&&stop.lineLabels&&typeof stop.lineLabels==='object')?stop.lineLabels:{};
+    Object.assign(window.TuColectivoLineLabels||{},labels);
     const lines=Array.isArray(stop.lineCodes)?stop.lineCodes.map(Number).filter(Number.isFinite):[];
     const lineCode=Number(stop.lineCode);
     if(lineCode>0&&!lines.includes(lineCode))lines.push(lineCode);
@@ -459,12 +491,14 @@
       lng:Number(stop.longitude),
       street:String(stop.street||''),
       intersection:String(stop.intersection||''),
-      lines:lines.sort((a,b)=>a-b)
+      lines:lines.sort((a,b)=>a-b),
+      lineLabels:labels
     };
   }
 
   function renderNearby(rawStops,position){
     const here={lat:position.coords.latitude,lng:position.coords.longitude};
+    window.TuColectivoLineLabels=window.TuColectivoLineLabels||{};
     const stops=rawStops.map(normalizeStop).filter(stop=>Number.isFinite(stop.lat)&&Number.isFinite(stop.lng));
     window.TuColectivoStops=stops;
     const ranked=stops.map(stop=>({...stop,distance:meters(here,stop)})).sort((a,b)=>a.distance-b.distance).slice(0,5);
@@ -473,7 +507,7 @@
       nearbyList.innerHTML='<div class="nearby-empty"><strong>NO HAY PARADAS CERCANAS_</strong><span>SMARTMOVE NO DEVOLVIÓ PARADAS PARA ESTA UBICACIÓN</span></div>';
       return;
     }
-    nearbyList.innerHTML=ranked.map(stop=>'<div class="data-card nearby-stop" data-stop-id="'+stop.id+'" role="button" tabindex="0"><b>'+escapeHtml(stop.name)+'</b><span>'+(stop.lines.length?stop.lines.length+' '+(stop.lines.length===1?'LÍNEA':'LÍNEAS')+' CONFIRMADAS':'BUSCANDO LÍNEAS...')+'</span>'+lineMarkup(stop.lines)+'<em>'+formatDistance(stop.distance)+'</em></div>').join('');
+    nearbyList.innerHTML=ranked.map(stop=>'<div class="data-card nearby-stop" data-stop-id="'+stop.id+'" role="button" tabindex="0"><b>'+escapeHtml(stop.name)+'</b><span>'+(stop.lines.length?stop.lines.length+' '+(stop.lines.length===1?'LÍNEA':'LÍNEAS')+' CONFIRMADAS':'BUSCANDO LÍNEAS...')+'</span>'+lineMarkup(stop.lines,stop.lineLabels)+'<em>'+formatDistance(stop.distance)+'</em></div>').join('');
     nearbyState.textContent='GPS: ACTIVO · '+ranked.length+' PARADAS';
     nearbyState.style.color='var(--cy)';
     ranked.filter(stop=>!stop.lines.length).forEach(stop=>{
@@ -513,9 +547,9 @@
 
   function showArrival(stop,line){
     window.TuColectivoCurrentNearbyArrival={stop,line:Number(line)};
-    arrivalStop.innerHTML='<strong>'+escapeHtml(stop.name)+'</strong><span>LÍNEA '+Number(line)+' · PARADA SELECCIONADA</span><button class="arrival-favorite-toggle" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button>';
+    arrivalStop.innerHTML='<strong>'+escapeHtml(stop.name)+'</strong><span>LÍNEA '+escapeHtml(publicNearbyLineLabel(Number(line),stop.lineLabels))+' · PARADA SELECCIONADA</span><button class="arrival-favorite-toggle" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button>';
     arrivalList.innerHTML='<div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>OBTENIENDO DATOS REALES DE SMARTMOVE</span></div>';
-    arrivalsMeta.textContent='LÍNEA '+Number(line);
+    arrivalsMeta.textContent='LÍNEA '+publicNearbyLineLabel(Number(line),stop.lineLabels);
     window.TuColectivo.navigate('arribos');
     syncNearbyArrivalFavorite();
     if(window.TuColectivoNative&&typeof window.TuColectivoNative.loadArrivals==='function'){
@@ -562,7 +596,7 @@
       if(summary)summary.textContent=lines.length?lines.length+' '+(lines.length===1?'LÍNEA':'LÍNEAS')+' CONFIRMADAS':'LÍNEAS NO CONFIRMADAS';
       const oldMarkup=card.querySelector('.line-badges');
       if(oldMarkup)oldMarkup.remove();
-      const markup=lineMarkup(lines);
+      const markup=lineMarkup(lines,result.lineLabels||stop.lineLabels||window.TuColectivoLineLabels);
       if(markup)card.insertAdjacentHTML('beforeend',markup);
     }
   };
@@ -582,7 +616,7 @@
       nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>SMARTMOVE NO PROPORCIONÓ LÍNEAS CONFIRMADAS PARA ESTA PARADA. NO SE MOSTRARÁN LÍNEAS INVENTADAS.</span></div>';
       return;
     }
-    nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>SELECCIONÁ UNA LÍNEA CONFIRMADA PARA VER ARRIBOS</span>'+lineMarkup(stop.lines)+'</div>'+stop.lines.map(line=>'<button class="data-card stop-line-choice" data-stop-id="'+stop.id+'" data-line="'+line+'" type="button"><b>LÍNEA '+line+'</b><span>VER ARRIBOS DE ESTA PARADA</span><em>›</em></button>').join('');
+    nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>SELECCIONÁ UNA LÍNEA CONFIRMADA PARA VER ARRIBOS</span>'+lineMarkup(stop.lines,stop.lineLabels)+'</div>'+stop.lines.map(line=>'<button class="data-card stop-line-choice" data-stop-id="'+stop.id+'" data-line="'+line+'" type="button"><b>LÍNEA '+escapeHtml(publicNearbyLineLabel(line,stop.lineLabels))+'</b><span>VER ARRIBOS DE ESTA PARADA</span><em>›</em></button>').join('');
   }
 
   locateBtn.addEventListener('click',()=>{
