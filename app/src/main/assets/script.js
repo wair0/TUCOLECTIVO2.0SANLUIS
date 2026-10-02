@@ -313,6 +313,11 @@
     map.zoom=chosen;draw();
   }
   function mapEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function mapArrivalDestination(value){
+    const raw=String(value||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim();
+    if(!raw||/^(?:A{1,2}|N\/?A|S\/?D|DESTINO|SERVICIO)$/i.test(raw))return 'DESTINO NO INFORMADO';
+    return 'HACIA '+raw.toUpperCase();
+  }
   function publicLineLabel(code, labels){
     const source=labels||map.lineLabels||map.availableLineLabels||window.TuColectivoLineLabels||{};
     return window.TuColectivoPublicLineLabel
@@ -511,7 +516,7 @@
       box.innerHTML='<small>LÍNEAS QUE PASAN POR ESTA PARADA</small>'+lines.map(line=>'<button class="map-popup-line" data-map-stop-line="'+line+'" type="button">CONSULTAR LÍNEA '+mapEscape(publicLineLabel(line,result?.lineLabels))+'</button>').join('');
       return true;
     },
-    handleArrivals(payload){if(!map.pendingMapArrival)return false;let items=[];try{items=typeof payload==='string'?JSON.parse(payload):payload||[];}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.innerHTML=items.length?items.map(a=>'<div class="map-popup-arrival"><b>'+mapEscape(a.line||'COLECTIVO')+'</b><span>'+mapEscape(a.destination||'SERVICIO')+'</span><strong>'+mapEscape(a.minutes==null?'--':a.minutes)+' MIN</strong></div>').join(''):'<small>SMARTMOVE NO DEVOLVIÓ ARRIBOS PARA ESTA LÍNEA</small>';map.pendingMapArrival=null;return true;},
+    handleArrivals(payload){if(!map.pendingMapArrival)return false;let items=[];try{items=typeof payload==='string'?JSON.parse(payload):payload||[];}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.innerHTML=items.length?items.map(a=>'<div class="map-popup-arrival"><b>'+mapEscape(a.line||'COLECTIVO')+'</b><span>'+mapEscape(mapArrivalDestination(a.destination))+'</span><strong>'+mapEscape(a.minutes==null?'--':a.minutes)+' MIN</strong></div>').join(''):'<small>SMARTMOVE NO DEVOLVIÓ ARRIBOS PARA ESTA LÍNEA</small>';map.pendingMapArrival=null;return true;},
     handleArrivalsError(payload){if(!map.pendingMapArrival)return false;let msg='NO SE PUDIERON CARGAR LOS ARRIBOS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.textContent=msg;map.pendingMapArrival=null;return true;}
   };
   window.setInterval(()=>{const screen=document.querySelector('[data-screen="mapa"]');if(screen&&screen.classList.contains('active')&&window.TuColectivoNative&&typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode||0);},10000);
@@ -1042,7 +1047,7 @@
       // Cada arribo se evalúa de forma independiente: solo esta línea pasa a ARRIBANDO.
       const arriving=Number.isFinite(m)&&m<=1;
       const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
-      const rawDestination=String(x.destination||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\\u200B-\\u200D\\uFEFF]/g,' ').replace(/\\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
+      const rawDestination=String(x.destination||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
       const unknownDestination=!rawDestination||/^(?:A{1,2}|N\\/?A|S\\/?D|DESTINO|SERVICIO)$/i.test(rawDestination);
       const destination=unknownDestination?'':rawDestination;
       const publicLine=window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(x.line||currentLine?.code||currentLine?.name,window.TuColectivoLineLabels):String(x.line||currentLine?.name||'');
