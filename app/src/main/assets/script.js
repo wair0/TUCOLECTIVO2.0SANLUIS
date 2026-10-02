@@ -431,7 +431,7 @@
       draw();
     }
     if(document.querySelector('[data-screen="paradas"]')?.classList.contains('active')){
-      nearbyState.textContent='GPS: ACTIVO · UBICACIÓN ACTUALIZADA';
+      nearbyState.textContent='';
     }
   };
 
@@ -440,23 +440,23 @@
     if(r.purpose==='map'){
       map.userLocation={lat:Number(r.latitude),lng:Number(r.longitude)};
       setCenter(map.userLocation.lat,map.userLocation.lng);
-      state.textContent='UBICACIÓN SINCRONIZADA · CENTRADO EN TU POSICIÓN';
+      state.textContent='';
       if(map.loadStopsAfterLocation&&window.TuColectivoNative?.loadMapDataAtLocation){
         map.loadStopsAfterLocation=false;
         window.TuColectivoNative.loadMapDataAtLocation(map.userLocation.lat,map.userLocation.lng,map.routeLineCode||0);
       }
     }
-    if(r.purpose==='nearby')nearbyState.textContent='GPS: BUSCANDO PARADAS...';
+    if(r.purpose==='nearby')nearbyState.textContent='';
   };
   window.onNativeLocationError=function(payload){
     let r={};try{r=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
     if(r.purpose==='map')state.textContent=r.message||'GPS NO DISPONIBLE';
-    if(r.purpose==='nearby'){locateBtn.disabled=false;nearbyState.textContent='GPS: '+(r.message||'SIN SEÑAL');}
+    if(r.purpose==='nearby'){locateBtn.disabled=false;nearbyState.textContent='';}
   };
   window.onNativeMapStops=payload=>{
     try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];raw.forEach(s=>{if(s?.lineLabels&&typeof s.lineLabels==='object')Object.assign(map.lineLabels,s.lineLabels);});
       map.stops=raw.map(s=>({id:String(s.identifier||s.code),code:Number(s.code)||0,identifier:String(s.identifier||s.code||''),name:String(s.description||('PARADA '+s.code)),lat:Number(s.latitude),lng:Number(s.longitude),street:String(s.street||''),intersection:String(s.intersection||''),lines:(()=>{const found=[...(Array.isArray(s.lineCodes)?s.lineCodes:[]).map(Number),Number(s.lineCode)];return [...new Set(found.filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);})()})).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&(s.lat!==0||s.lng!==0));
-      state.textContent='GPS ACTIVO · '+map.stops.length+' PARADAS';draw();
+      state.textContent='';draw();
     }catch(_){state.textContent='ERROR LEYENDO PARADAS';}
   };
   window.onNativeMapStopsError=payload=>{let msg='NO SE PUDIERON CARGAR LAS PARADAS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
@@ -587,12 +587,12 @@
     window.TuColectivoStops=stops;
     const ranked=stops.map(stop=>({...stop,distance:meters(here,stop)})).sort((a,b)=>a.distance-b.distance).slice(0,5);
     if(!ranked.length){
-      nearbyState.textContent='GPS: SIN PARADAS';
+      nearbyState.textContent='';
       nearbyList.innerHTML='<div class="nearby-empty"><strong>NO HAY PARADAS CERCANAS_</strong><span>SMARTMOVE NO DEVOLVIÓ PARADAS PARA ESTA UBICACIÓN</span></div>';
       return;
     }
     nearbyList.innerHTML=ranked.map(stop=>'<div class="data-card nearby-stop" data-stop-id="'+stop.id+'" role="button" tabindex="0"><b>'+escapeHtml(stop.name)+'</b><span>'+(stop.lines.length?stop.lines.length+' '+(stop.lines.length===1?'LÍNEA':'LÍNEAS')+' CONFIRMADAS':'BUSCANDO LÍNEAS...')+'</span>'+lineMarkup(stop.lines,stop.lineLabels)+'<em>'+formatDistance(stop.distance)+'</em></div>').join('');
-    nearbyState.textContent='GPS: ACTIVO · '+ranked.length+' PARADAS';
+    nearbyState.textContent='';
     nearbyState.style.color='var(--cy)';
     ranked.filter(stop=>!stop.lines.length).forEach(stop=>{
       window.TuColectivoNative?.resolveNearbyStopLines?.(stop.identifier,stop.lat,stop.lng);
@@ -608,11 +608,11 @@
       }
       if(window.TuColectivoPendingPosition) renderNearby(stops,window.TuColectivoPendingPosition);
       else {
-        nearbyState.textContent='GPS: SIN POSICIÓN';
+        nearbyState.textContent='';
         nearbyList.innerHTML='<div class="nearby-empty"><strong>UBICACIÓN NO DISPONIBLE_</strong><span>VOLVÉ A LOCALIZAR LAS PARADAS</span></div>';
       }
     }catch(error){
-      nearbyState.textContent='GPS: DATOS INVÁLIDOS';
+      nearbyState.textContent='';
       nearbyList.innerHTML='<div class="nearby-empty"><strong>ERROR DE DATOS_</strong><span>NO SE PUDIERON LEER LAS PARADAS DE SMARTMOVE</span></div>';
     }finally{
       locateBtn.disabled=false;
@@ -625,7 +625,7 @@
     try{const data=typeof payload==='string'?JSON.parse(payload):payload;if(data&&data.message)message=data.message;}catch(_){}
     locateBtn.disabled=false;
     window.TuColectivoPendingPosition=null;
-    nearbyState.textContent='GPS: ERROR SMARTMOVE';
+    nearbyState.textContent='';
     nearbyList.innerHTML='<div class="nearby-empty"><strong>NO SE PUDIERON LOCALIZAR PARADAS_</strong><span>'+message+'</span></div>';
   };
 
@@ -717,9 +717,9 @@
   }
 
   locateBtn.addEventListener('click',()=>{
-    nearbyState.textContent='GPS: LOCALIZANDO...'; locateBtn.disabled=true;
+    nearbyState.textContent=''; locateBtn.disabled=true;
     if(window.TuColectivoNative&&typeof window.TuColectivoNative.requestNearbyLocation==='function')window.TuColectivoNative.requestNearbyLocation();
-    else { locateBtn.disabled=false; nearbyState.textContent='GPS: UBICACIÓN NATIVA NO DISPONIBLE'; }
+    else { locateBtn.disabled=false; nearbyState.textContent=''; }
   });
 
   nearbyList.addEventListener('click',e=>{
