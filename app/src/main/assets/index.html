@@ -67,7 +67,7 @@
 
 <main id="app" class="app-shell">
   <section class="screen active" data-screen="inicio">
-    <div class="screen-head"><span>INICIO</span></div>
+    <div class="screen-head" aria-label="Inicio"></div>
     <div class="grid home-design-grid">
       <button class="card card-lineas" data-go="lineas"><svg class="ic"><use href="#i-bus"/></svg><span><b>LÍNEAS</b><small>RECORRIDOS</small></span></button>
       <button class="card card-mapa" data-go="mapa"><svg class="ic"><use href="#i-map"/></svg><span><b>MAPA</b><small>VISTA GLOBAL</small></span></button>
@@ -78,7 +78,7 @@
   </section>
 
   <section class="screen" data-screen="lineas">
-    <div class="screen-head"><span>LÍNEAS</span><small>14 RUTAS</small></div>
+    <div class="screen-head" aria-label="Líneas"></div>
     
     <div class="lineas-grid">
       <button class="line-card" data-line="1"><span class="line-badge">01</span><div><b>LÍNEA 1</b><small>RECORRIDO ACTIVO</small></div><em><strong>5</strong> MIN</em></button>
@@ -99,7 +99,7 @@
   </section>
 
   <section class="screen" data-screen="mapa">
-    <div class="screen-head"><span>MAPA</span><small>RED_TRANSPUNTANO</small></div>
+    <div class="screen-head" aria-label="Mapa"></div>
     <div class="map-wrap" id="map-wrap">
       <canvas id="mapCanvas" aria-label="Mapa de San Luis"></canvas>
       <div class="map-topbar">
@@ -126,7 +126,7 @@
   </section>
 
   <section class="screen" data-screen="paradas">
-    <div class="screen-head"><span>PARADAS CERCANAS</span><small id="nearbyState">GPS: PENDIENTE</small></div>
+    <div class="screen-head" aria-label="Paradas cercanas"></div>
     <button id="locateStops" class="locate-stops" type="button">
       <span class="locate-icon">◎</span>
       <span><strong>LOCALIZAR PARADAS</strong><small>MEDIANTE UBICACIÓN</small></span>
@@ -138,16 +138,13 @@
   </section>
 
   <section class="screen" data-screen="arribos">
-    <div class="screen-head">
-<span>ARRIBOS</span>
-      <small id="arrivalsMeta">PARADA</small>
-    </div>
+    <div class="screen-head" aria-label="Arribos"></div>
     <div id="arrivalStop" class="arrival-stop"></div>
     <div id="arrivalList" class="arrival-list"></div>
   </section>
 
   <section class="screen" data-screen="favoritos">
-    <div class="screen-head"><span>FAVORITOS</span><small>ACCESOS RÁPIDOS</small></div>
+    <div class="screen-head" aria-label="Favoritos"></div>
     <div class="notification-schedule">
       <strong>HORARIO DE ALERTAS</strong>
       <p>Elegí cuándo querés recibir avisos. Fuera de esta franja no se consultarán arribos ni se emitirán alertas.</p>
