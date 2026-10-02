@@ -505,6 +505,7 @@
   const arrivalStop=document.getElementById('arrivalStop');
   const arrivalsMeta=document.getElementById('arrivalsMeta');
   const arrivalsBack=document.getElementById('arrivalsBack');
+  let pendingStopSelectionId=null;
   if(!locateBtn||!nearbyList)return;
 
   function meters(a,b){
@@ -647,15 +648,25 @@
       const markup=lineMarkup(lines,result.lineLabels||stop.lineLabels||window.TuColectivoLineLabels);
       if(markup)card.insertAdjacentHTML('beforeend',markup);
     }
+    if(pendingStopSelectionId===String(result.identifier)){
+      pendingStopSelectionId=null;
+      if(lines.length){
+        chooseStop(stop);
+      }else{
+        nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>SMARTMOVE NO CONFIRMÓ LÍNEAS PARA ESTA PARADA. VOLVÉ A LOCALIZAR LAS PARADAS PARA REINTENTAR.</span></div>';
+      }
+    }
   };
 
   function chooseStop(stop){
-    if(stop.lines.length===1){showArrival(stop,stop.lines[0]);return;}
+    if(stop.lines.length===1){pendingStopSelectionId=null;showArrival(stop,stop.lines[0]);return;}
     if(!stop.lines.length){
+      pendingStopSelectionId=String(stop.identifier);
       nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>BUSCANDO LÍNEAS QUE PASAN POR ESTA PARADA...</span></div>';
       if(window.TuColectivoNative?.resolveNearbyStopLines){
         window.TuColectivoNative.resolveNearbyStopLines(stop.identifier,stop.lat,stop.lng);
       }else{
+        pendingStopSelectionId=null;
         nearbyList.innerHTML='<div class="nearby-empty"><strong>'+escapeHtml(stop.name)+'</strong><span>NO SE PUDIERON CONSULTAR LAS LÍNEAS DE ESTA PARADA.</span></div>';
       }
       return;
