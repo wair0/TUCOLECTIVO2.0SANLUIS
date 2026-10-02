@@ -113,11 +113,7 @@ class SmartMoveApi {
             val arrival = item.optStringAny("Arribo", "arribo", "Tiempo", "tiempo").orEmpty()
             TransitArrival(
                 line = item.optStringAny("DescripcionLinea", "descripcionLinea", "Linea", "linea").orEmpty().ifBlank { line.toString() },
-                destination = item.optStringAny(
-                    "DescripcionBandera", "descripcionBandera",
-                    "DescripcionCartelBandera", "descripcionCartelBandera",
-                    "Bandera", "bandera", "Destino", "destino"
-                ).orEmpty(),
+                destination = arrivalDestination(item),
                 minutes = parseMinutes(arrival),
                 status = arrival,
                 vehicleId = item.optStringAny("IdentificadorCoche", "identificadorCoche", "Coche", "coche").orEmpty(),
@@ -358,6 +354,30 @@ class SmartMoveApi {
             }
         }
         return codes.toList()
+    }
+
+    private fun arrivalDestination(item: JSONObject): String {
+        val candidates = listOf(
+            "DescripcionCartelBandera", "descripcionCartelBandera",
+            "Destino", "destino",
+            "DescripcionBandera", "descripcionBandera",
+            "Bandera", "bandera"
+        ).mapNotNull { key ->
+            item.optStringAny(key)?.trim()?.takeIf { it.isNotEmpty() }
+        }
+
+        fun isPlaceholder(value: String): Boolean {
+            val normalized = value
+                .uppercase(Locale.ROOT)
+                .replace(Regex("""[^A-ZÁÉÍÓÚÜÑ]+"""), " ")
+                .trim()
+            if (normalized.isEmpty()) return true
+            val words = normalized.split(Regex("""\s+""")).filter { it.isNotEmpty() }
+            return words.isNotEmpty() &&
+                words.all { it.length <= 2 && it.all { ch -> ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑ" } }
+        }
+
+        return candidates.firstOrNull { !isPlaceholder(it) } ?: candidates.firstOrNull().orEmpty()
     }
 
     private fun parseMinutes(value: String): Int? {
