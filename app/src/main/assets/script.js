@@ -982,7 +982,13 @@
     const a=Array.isArray(items)?items:[];
     if(!list)return;
     list.innerHTML=a.length?a.map(x=>{
-      const m=Number(x.minutes);
+      // SmartMove puede entregar los minutos como número o como texto (por ejemplo "1 MIN").
+      // Normalizamos ambos formatos para que 1 y 0 siempre entren en estado ARRIBANDO.
+      const rawMinutes=x.minutes;
+      const minuteMatch=typeof rawMinutes==='number'
+        ? rawMinutes
+        : Number.parseFloat(String(rawMinutes??'').replace(',', '.').match(/-?\\d+(?:\\.\\d+)?/)?.[0]||'');
+      const m=Number.isFinite(minuteMatch)?minuteMatch:NaN;
       // Cada arribo se evalúa de forma independiente: solo esta línea pasa a ARRIBANDO.
       const arriving=Number.isFinite(m)&&m<=1;
       const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
