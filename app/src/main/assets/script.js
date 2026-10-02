@@ -1048,7 +1048,7 @@
       const arriving=Number.isFinite(m)&&m<=1;
       const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
       const rawDestination=String(x.destination||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
-      const unknownDestination=!rawDestination||/^(?:A{1,2}|N\\/?A|S\\/?D|DESTINO|SERVICIO)$/i.test(rawDestination);
+      const unknownDestination=!rawDestination||/^(?:A{1,2}|N\/?A|S\/?D|DESTINO|SERVICIO)$/i.test(rawDestination);
       const destination=unknownDestination?'':rawDestination;
       const publicLine=window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(x.line||currentLine?.code||currentLine?.name,window.TuColectivoLineLabels):String(x.line||currentLine?.name||'');
       const arrivalLineTitle='LINEA '+publicLine;
