@@ -428,6 +428,7 @@
       const lines=[...new Set((result?.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
       if(result?.lineLabels&&typeof result.lineLabels==='object')Object.assign(map.lineLabels,result.lineLabels);
       stop.lines=lines;
+      stop.lineLabels=result?.lineLabels&&typeof result.lineLabels==='object'?result.lineLabels:(stop.lineLabels||{});
       const box=document.getElementById('mapPopupLines');
       if(!box)return true;
       if(!lines.length){box.innerHTML='<small>NO SE PUDIERON CONFIRMAR LÍNEAS PARA ESTA PARADA.</small>';return true;}
