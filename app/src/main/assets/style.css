@@ -26,9 +26,7 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
 .app-shell{min-height:100vh;padding:calc(var(--hh) + var(--top) + 20px) 12px calc(76px + env(safe-area-inset-bottom));position:relative}
 .screen{display:none;animation:screenIn .28s steps(5) both}
 .screen.active{display:block}
-.screen-head{display:flex;align-items:end;justify-content:space-between;gap:10px;padding:8px 4px 12px;border-bottom:1px solid rgba(0,240,255,.65);text-shadow:0 0 8px var(--cy)}
-.screen-head span{font-size:clamp(18px,6vw,26px);font-weight:700;letter-spacing:.12em;color:#eaffff}
-.screen-head small{font-size:9px;color:var(--vt);letter-spacing:.12em}
+.screen-head{display:none!important}
 .home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
 .home-card{position:relative;min-height:128px;padding:16px 12px 14px;text-align:left;color:var(--tx);background:linear-gradient(145deg,rgba(0,240,255,.12),rgba(160,32,255,.12));border:1px solid var(--cy);box-shadow:inset 0 0 18px rgba(0,240,255,.12),0 0 10px rgba(160,32,255,.14);clip-path:polygon(0 0,calc(100% - 15px) 0,100% 15px,100% 100%,15px 100%,0 calc(100% - 15px));overflow:hidden;transition:transform .1s,background .1s,box-shadow .1s}
 .home-card::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(0,240,255,.035) 6px);pointer-events:none}
