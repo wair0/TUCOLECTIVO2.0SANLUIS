@@ -86,25 +86,55 @@
     search();
   }));
 
-  $('#sync').addEventListener('click', () => {
+  let lineSyncPending = false;
+  let lineSyncTimer = null;
+  function finishLineSync(success, count, message) {
+    if (!lineSyncPending) return;
+    lineSyncPending = false;
+    if (lineSyncTimer !== null) clearTimeout(lineSyncTimer);
+    lineSyncTimer = null;
     const b = $('#sync');
     const label = b.querySelector('b');
     const detail = b.querySelector('small');
+    b.classList.remove('run', 'done');
+    if (success) {
+      b.classList.add('done');
+      label.textContent = 'LÍNEAS ACTUALIZADAS';
+      detail.textContent = count + (count === 1 ? ' LÍNEA CONFIRMADA' : ' LÍNEAS CONFIRMADAS');
+      setStatus(detail.textContent, 'ok');
+      emit('app:status', { text: detail.textContent, state: 'ok' });
+    } else {
+      label.textContent = 'ERROR AL SINCRONIZAR';
+      detail.textContent = message || 'NO SE PUDIERON CARGAR LAS LÍNEAS';
+      setStatus('ERROR DE SINCRONIZACIÓN', 'error');
+      emit('app:status', { text: detail.textContent, state: 'error' });
+    }
+  }
+  window.TuColectivoLineSyncResult = finishLineSync;
 
+  $('#sync').addEventListener('click', () => {
+    if (lineSyncPending) return;
+    const b = $('#sync');
+    const label = b.querySelector('b');
+    const detail = b.querySelector('small');
+    if (!window.TuColectivoNative || typeof window.TuColectivoNative.loadLines !== 'function') {
+      label.textContent = 'SERVICIO NO DISPONIBLE';
+      detail.textContent = 'NO HAY CONEXIÓN CON SMARTMOVE';
+      setStatus('SIN CONEXIÓN CON SMARTMOVE', 'error');
+      return;
+    }
+    lineSyncPending = true;
     b.classList.remove('done');
     b.classList.add('run');
     label.textContent = 'SINCRONIZANDO...';
-    detail.textContent = 'ACTUALIZANDO LÍNEAS';
-    setStatus('SINCRONIZANDO...', 'busy');
-
-    setTimeout(() => {
-      b.classList.remove('run');
-      b.classList.add('done');
-      label.textContent = 'LÍNEAS ACTUALIZADAS';
-      detail.textContent = '14 LÍNEAS';
-      setStatus('14 LÍNEAS', 'ok');
-      emit('app:status', { text: '14 LÍNEAS', state: 'ok' });
-    }, 2200);
+    detail.textContent = 'CONSULTANDO SMARTMOVE';
+    setStatus('SINCRONIZANDO LÍNEAS...', 'busy');
+    lineSyncTimer = setTimeout(() => finishLineSync(false, 0, 'SMARTMOVE NO RESPONDIÓ A TIEMPO'), 35000);
+    try {
+      window.TuColectivoNative.loadLines();
+    } catch (_) {
+      finishLineSync(false, 0, 'NO SE PUDO INICIAR LA CONSULTA');
+    }
   });
 
   document.addEventListener('app:status', e => setStatus(e.detail.text, e.detail.state));
@@ -623,7 +653,10 @@
     if(!arrivalList)return;
     arrivalList.innerHTML=items.length?items.map(item=>{
       const m=Number(item.minutes),duration=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
-      return '<div class="arrival-card"><div class="arrival-copy"><b>'+escapeHtml(item.line||('LÍNEA '+(window.TuColectivoCurrentNearbyArrival?.line||'')))+'</b><span>'+escapeHtml(String(item.destination||'SERVICIO').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim())+'</span></div><em class="arrival-time" style="--arrival-duration:'+duration+'s"><strong>'+escapeHtml(item.minutes==null?'--':item.minutes)+'</strong><small>MIN</small></em></div>';
+      const rawDestination=String(item.destination||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
+      const unknownDestination=!rawDestination||/^(?:A{1,2}|N\/?A|S\/?D|DESTINO|SERVICIO)$/i.test(rawDestination);
+      const destinationLabel=unknownDestination?'DESTINO NO INFORMADO':'HACIA '+rawDestination.toUpperCase();
+      return '<div class="arrival-card"><div class="arrival-copy"><b>'+escapeHtml(item.line||('LÍNEA '+(window.TuColectivoCurrentNearbyArrival?.line||'')))+'</b><span>'+escapeHtml(destinationLabel)+'</span></div><em class="arrival-time" style="--arrival-duration:'+duration+'s"><strong>'+escapeHtml(item.minutes==null?'--':item.minutes)+'</strong><small>MIN</small></em></div>';
     }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
   };
   window.onNativeNearbyArrivalsError=function(payload){
@@ -970,6 +1003,7 @@
         const code=Number(item.code);
         if(Number.isFinite(code)&&code>0) window.TuColectivoLineLabels[String(code)]=String(item.name||'').trim();
       });
+      window.TuColectivoLineSyncResult?.(true, items.length);
       renderLines(items.map(item=>({
         ...item,
         name:window.TuColectivoPublicLineLabel
@@ -978,7 +1012,12 @@
       })));
     }catch(_){showError('LÍNEAS','RESPUESTA INVÁLIDA');}
   };
-  window.onNativeLinesError=p=>{try{showError('LÍNEAS',JSON.parse(p).message);}catch(_){showError('LÍNEAS','ERROR SMARTMOVE');}};
+  window.onNativeLinesError=p=>{
+    let message='ERROR SMARTMOVE';
+    try{message=JSON.parse(p).message||message;}catch(_){}
+    window.TuColectivoLineSyncResult?.(false, 0, message);
+    showError('LÍNEAS',message);
+  };
   const cleanStreetName=name=>String(name??'').replace(/\s*(?:,|-)?\s*SAN LUIS\s*$/i,'').trim();
   window.onNativeStreets=p=>{
     const a=JSON.parse(p).map(x=>({...x,name:cleanStreetName(x.name)}));
@@ -1003,10 +1042,12 @@
       // Cada arribo se evalúa de forma independiente: solo esta línea pasa a ARRIBANDO.
       const arriving=Number.isFinite(m)&&m<=1;
       const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
-      const destination=String(x.destination||'SERVICIO').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\\u200B-\\u200D\\uFEFF]/g,' ').replace(/\\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
+      const rawDestination=String(x.destination||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\\u200B-\\u200D\\uFEFF]/g,' ').replace(/\\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
+      const unknownDestination=!rawDestination||/^(?:A{1,2}|N\\/?A|S\\/?D|DESTINO|SERVICIO)$/i.test(rawDestination);
+      const destination=unknownDestination?'':rawDestination;
       const publicLine=window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(x.line||currentLine?.code||currentLine?.name,window.TuColectivoLineLabels):String(x.line||currentLine?.name||'');
       const arrivalLineTitle='LINEA '+publicLine;
-      const arrivalDestination='HACIA '+destination.toUpperCase();
+      const arrivalDestination=destination?'HACIA '+destination.toUpperCase():'DESTINO NO INFORMADO';
       if(arriving){
         return '<div class="arrival-card arrival-arriving"><div class="arrival-copy"><b>'+esc(arrivalLineTitle)+'</b><span>'+esc(arrivalDestination)+'</span></div><em class="arrival-time arrival-time-arriving"><strong>ARRIBANDO</strong></em></div>';
       }
