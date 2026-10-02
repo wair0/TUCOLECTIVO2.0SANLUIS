@@ -540,8 +540,8 @@
   const arrivalStop=document.getElementById('arrivalStop');
   const arrivalsMeta=document.getElementById('arrivalsMeta');
   const arrivalsBack=document.getElementById('arrivalsBack');
-  const setNearbyState=text=>{if(nearbyState)setNearbyState(text||''});
-  const setArrivalsMeta=text=>{if(arrivalsMeta)setArrivalsMeta(text||''});
+  const setNearbyState=text=>{if(nearbyState)nearbyState.textContent=text||''};
+  const setArrivalsMeta=text=>{if(arrivalsMeta)arrivalsMeta.textContent=text||''};
   let pendingStopSelectionId=null;
   if(!locateBtn||!nearbyList)return;
 
