@@ -216,7 +216,14 @@ class MainActivity : AppCompatActivity() {
     private fun normalizePublicLineLabel(raw: String, code: Int): String {
         val cleaned = raw.trim().replace(Regex("(?i)^l[ií]nea\\s*"), "").trim()
         if (cleaned.isBlank()) return if (code > 0) publicLineLabel(code) else "SERVICIO"
-        if (cleaned.matches(Regex("\\d+")) && code > 0) return publicLineLabel(code)
+        // Algunos registros de SmartMove traen "N" como etiqueta vacía de línea.
+        // En ese caso usamos el código solicitado y su nombre público del catálogo.
+        if (
+            code > 0 && (
+                cleaned.matches(Regex("\\d+")) ||
+                cleaned.matches(Regex("(?i)(?:N|N/A|NA|S/D|SD|SIN DATO|DESCONOCIDA)"))
+            )
+        ) return publicLineLabel(code)
         return cleaned
     }
 
