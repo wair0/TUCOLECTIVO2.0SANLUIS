@@ -202,11 +202,18 @@ class MainActivity : AppCompatActivity() {
         codes.filter { it > 0 }.distinct().forEach { code -> put(code.toString(), publicLineLabel(code, catalog)) }
     }.toString()
 
-    private fun arrivalJson(items: List<TransitArrival>) = JSONArray().apply {
+    private fun normalizePublicLineLabel(raw: String, code: Int): String {
+        val cleaned = raw.trim().replace(Regex("(?i)^l[ií]nea\\s*"), "").trim()
+        if (cleaned.isBlank()) return if (code > 0) publicLineLabel(code) else "SERVICIO"
+        if (cleaned.matches(Regex("\\d+")) && code > 0) return publicLineLabel(code)
+        return cleaned
+    }
+
+    private fun arrivalJson(items: List<TransitArrival>, fallbackLineCode: Int = 0) = JSONArray().apply {
         items.forEach { arrival ->
             put(
                 JSONObject()
-                    .put("line", arrival.line)
+                    .put("line", normalizePublicLineLabel(arrival.line, fallbackLineCode))
                     .put("destination", arrival.destination)
                     .put("minutes", arrival.minutes)
                     .put("status", arrival.status)
@@ -257,7 +264,7 @@ class MainActivity : AppCompatActivity() {
                             }
                             vehicles[id] = JSONObject()
                                 .put("id", id)
-                                .put("line", arrival.line.ifBlank { "LÍNEA " + code })
+                                .put("line", normalizePublicLineLabel(arrival.line, code))
                                 .put("destination", arrival.destination)
                                 .put("lat", lat)
                                 .put("lng", lng)
@@ -528,8 +535,8 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface fun loadArrivals(identifier: String, lineCode: Int) {
             executor.execute {
-                runCatching { api.getArrivals(identifier, lineCode) }
-                    .onSuccess { dispatch("onNativeArrivals", arrivalJson(it)) }
+                runCatching { api.getArrivals(identifier.ifBlank { lineCode.toString() }, lineCode) }
+                    .onSuccess { dispatch("onNativeArrivals", arrivalJson(it, lineCode)) }
                     .onFailure { dispatch("onNativeArrivalsError", JSONObject().put("message", it.message ?: "No se pudieron cargar los arribos").toString()) }
             }
         }
