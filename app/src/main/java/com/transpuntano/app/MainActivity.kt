@@ -51,6 +51,9 @@ class MainActivity : AppCompatActivity() {
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
     @Volatile private var pendingLocationPurpose: String? = null
+    @Volatile private var continuousLocationActive = false
+    private var continuousLocationManager: LocationManager? = null
+    private val continuousLocationListeners = mutableListOf<LocationListener>()
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); showSplash() }
@@ -75,6 +78,10 @@ class MainActivity : AppCompatActivity() {
             loadUrl("file:///android_asset/index.html")
         }
         setContentView(webView)
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            startContinuousLocationTracking()
+        }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 webView.evaluateJavascript("window.TuColectivo && window.TuColectivo.handleBack ? window.TuColectivo.handleBack() : false") { result ->
@@ -158,9 +165,23 @@ class MainActivity : AppCompatActivity() {
         items.forEach { put(JSONObject().put("code", it.code).put("name", it.name)) }
     }.toString()
 
-    private fun stopJson(items: List<TransitStop>) = JSONArray().apply {
+    private fun publicLineLabel(code: Int, catalog: List<TransitLine> = transitLinesCache): String {
+        val raw = catalog.firstOrNull { it.code == code }?.name.orEmpty().trim()
+        return raw
+            .replace(Regex("(?i)^l[ií]nea\\s*"), "")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+            .ifBlank { code.toString() }
+    }
+
+    private fun stopJson(items: List<TransitStop>, catalog: List<TransitLine> = transitLinesCache) = JSONArray().apply {
         items.forEach { stop ->
             val lineCodes = JSONArray().apply { stop.lineCodes.forEach { put(it) } }
+            val lineLabels = JSONObject().apply {
+                stop.lineCodes.filter { it > 0 }.distinct().forEach { code ->
+                    put(code.toString(), publicLineLabel(code, catalog))
+                }
+            }
             put(
                 JSONObject()
                     .put("code", stop.code)
@@ -172,8 +193,13 @@ class MainActivity : AppCompatActivity() {
                     .put("intersection", stop.intersection)
                     .put("lineCode", stop.lineCode)
                     .put("lineCodes", lineCodes)
+                    .put("lineLabels", lineLabels)
             )
         }
+    }.toString()
+
+    private fun lineLabelsJson(codes: List<Int>, catalog: List<TransitLine> = transitLinesCache) = JSONObject().apply {
+        codes.filter { it > 0 }.distinct().forEach { code -> put(code.toString(), publicLineLabel(code, catalog)) }
     }.toString()
 
     private fun arrivalJson(items: List<TransitArrival>) = JSONArray().apply {
@@ -216,11 +242,11 @@ class MainActivity : AppCompatActivity() {
                 val vehicles = linkedMapOf<String, JSONObject>()
                 for (stop in mapNearbyStops) {
                     val codes = if (lineCode > 0) {
-                        if (lineCode in stop.lineCodes) listOf(lineCode) else emptyList()
+                        listOf(lineCode)
                     } else stop.lineCodes.filter { it > 0 }.distinct()
                     for (code in codes) {
                         val arrivals = runCatching {
-                            api.getArrivals(stop.identifier, code, timeoutMs = 5_000)
+                            api.getArrivals(stop.identifier.ifBlank { stop.code.toString() }, code, timeoutMs = 5_000)
                         }.getOrDefault(emptyList())
                         for (arrival in arrivals) {
                             val lat = arrival.latitude ?: continue
@@ -249,8 +275,52 @@ class MainActivity : AppCompatActivity() {
     }
 
     @SuppressLint("MissingPermission")
+    private fun startContinuousLocationTracking() {
+        if (continuousLocationActive) return
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) return
+        val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+            .filter { runCatching { manager.isProviderEnabled(it) }.getOrDefault(false) }
+        if (providers.isEmpty()) return
+        continuousLocationManager = manager
+        continuousLocationListeners.clear()
+        providers.forEach { provider ->
+            val listener = object : LocationListener {
+                override fun onLocationChanged(location: Location) {
+                    dispatch(
+                        "onNativeContinuousLocation",
+                        JSONObject()
+                            .put("latitude", location.latitude)
+                            .put("longitude", location.longitude)
+                            .put("accuracy", location.accuracy)
+                            .put("provider", location.provider ?: provider)
+                            .toString()
+                    )
+                }
+            }
+            runCatching {
+                // Mantener una solicitud activa mientras la Activity está visible hace
+                // que Android mantenga el indicador de ubicación y entregue nuevas posiciones.
+                manager.requestLocationUpdates(provider, 5_000L, 5f, listener, Looper.getMainLooper())
+                continuousLocationListeners += listener
+            }
+        }
+        continuousLocationActive = continuousLocationListeners.isNotEmpty()
+    }
+
+    private fun stopContinuousLocationTracking() {
+        val manager = continuousLocationManager ?: return
+        continuousLocationListeners.forEach { listener -> runCatching { manager.removeUpdates(listener) } }
+        continuousLocationListeners.clear()
+        continuousLocationManager = null
+        continuousLocationActive = false
+    }
+
+    @SuppressLint("MissingPermission")
     private fun requestNativeLocation(purpose: String) {
         pendingLocationPurpose = purpose
+        startContinuousLocationTracking()
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST)
@@ -389,7 +459,11 @@ class MainActivity : AppCompatActivity() {
                 try {
                     val cacheKey = identifier.ifBlank { "%.6f,%.6f".format(java.util.Locale.US, latitude, longitude) }
                     resolvedStopLines[cacheKey]?.let { cached ->
-                        dispatch("onNativeNearbyStopLines", JSONObject().put("identifier", identifier).put("lines", JSONArray(cached)).toString())
+                        dispatch("onNativeNearbyStopLines", JSONObject()
+                            .put("identifier", identifier)
+                            .put("lines", JSONArray(cached))
+                            .put("lineLabels", JSONObject(lineLabelsJson(cached)))
+                            .toString())
                         return@execute
                     }
 
@@ -414,7 +488,8 @@ class MainActivity : AppCompatActivity() {
 
                         val tasks = candidates.map { line ->
                             java.util.concurrent.Callable {
-                                val arrivals = runCatching { api.getArrivals(identifier, line.code, timeoutMs = 2_500) }.getOrDefault(emptyList())
+                                val arrivalIdentifier = exact?.identifier?.takeIf { it.isNotBlank() } ?: exact?.code?.toString() ?: identifier
+                                val arrivals = runCatching { api.getArrivals(arrivalIdentifier, line.code, timeoutMs = 2_500) }.getOrDefault(emptyList())
                                 if (arrivals.isNotEmpty()) {
                                     line.code to true
                                 } else {
@@ -435,9 +510,18 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     if (matched.isNotEmpty()) resolvedStopLines[cacheKey] = matched
-                    dispatch("onNativeNearbyStopLines", JSONObject().put("identifier", identifier).put("lines", JSONArray(matched)).toString())
+                    dispatch("onNativeNearbyStopLines", JSONObject()
+                        .put("identifier", identifier)
+                        .put("lines", JSONArray(matched))
+                        .put("lineLabels", JSONObject(lineLabelsJson(matched)))
+                        .toString())
                 } catch (e: Exception) {
-                    dispatch("onNativeNearbyStopLines", JSONObject().put("identifier", identifier).put("lines", JSONArray()).put("message", e.message ?: "No se pudieron consultar las líneas asociadas a la parada").toString())
+                    dispatch("onNativeNearbyStopLines", JSONObject()
+                        .put("identifier", identifier)
+                        .put("lines", JSONArray())
+                        .put("lineLabels", JSONObject())
+                        .put("message", e.message ?: "No se pudieron consultar las líneas asociadas a la parada")
+                        .toString())
                 }
             }
         }
@@ -531,6 +615,7 @@ class MainActivity : AppCompatActivity() {
         pendingGeoCallback = null
         pendingGeoOrigin = null
         val pendingPurpose = pendingLocationPurpose
+        if (granted) startContinuousLocationTracking()
         if (granted && pendingPurpose != null) {
             requestNativeLocation(pendingPurpose)
         } else if (!granted && pendingPurpose != null) {
@@ -543,6 +628,7 @@ class MainActivity : AppCompatActivity() {
         pendingGeoCallback = null
         pendingGeoOrigin = null
         executor.shutdownNow()
+        stopContinuousLocationTracking()
         webView.stopLoading()
         webView.destroy()
         super.onDestroy()
