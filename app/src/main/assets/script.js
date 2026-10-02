@@ -981,6 +981,7 @@
   if(!lineScreen)return;
   const lineGrid=lineScreen.querySelector('.lineas-grid');
   const lineHead=lineScreen.querySelector('.screen-head small');
+  const setLineHead=text=>{if(lineHead)lineHead.textContent=text;};
   const nativeApi=window.TuColectivoNative;
   if(!lineGrid)return;
   let lines=[],currentLine=null,currentStreet=null,currentIntersection=null,currentStop=null;
@@ -988,7 +989,7 @@
   const loading=t=>lineGrid.innerHTML='<div class="nearby-empty"><strong>'+esc(t)+'</strong><span>CONSULTANDO SERVICIO SMARTMOVE_</span></div>';
   const renderLines=items=>{
     lines=Array.isArray(items)?items:[];
-    lineHead.textContent=lines.length+' RUTAS';
+    setLineHead(lines.length+' RUTAS');
     lineGrid.innerHTML=lines.map(l=>{const publicName=window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(l.code,window.TuColectivoLineLabels):String(l.name||l.code);const displayName='LINEA '+publicName;return '<button class="line-card" data-line="'+l.code+'"><span class="line-badge">'+esc(displayName)+'</span><div><b>'+esc(displayName)+'</b></div><em>›</em></button>';}).join('');
     if(!lines.length)loading('SIN LÍNEAS');
     if(window.TuColectivoFavorites?.render)window.TuColectivoFavorites.render();
@@ -1068,7 +1069,7 @@
   window.onNativeArrivalsError=p=>{if(window.TuColectivoMap?.handleArrivalsError(p))return;if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivalsError?.(p);return;}const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
   function showArrivals(stop){
     currentStop=stop;
-    lineHead.textContent='ARRIBOS';
+    setLineHead('ARRIBOS');
     const favKey=String(stop.identifier||stop.code)+'::'+Number(currentLine.code);
     window.TuColectivoCurrentLineArrival={stop:{id:String(stop.identifier||stop.code),identifier:String(stop.identifier||stop.code),code:Number(stop.code)||0,name:stop.description,street:stop.street||'',intersection:stop.intersection||'',lat:Number(stop.latitude),lng:Number(stop.longitude),lines:[Number(currentLine.code)]},line:Number(currentLine.code)};
     lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(stop.description)+'</strong><small class="line-sub-context">'+esc((stop.street||'')+' · '+(stop.intersection||''))+'</small></div><button class="arrival-favorite-toggle" data-line-arrival-favorite="true" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button><button class="arrival-refresh" type="button" data-arrival-refresh="true">↻ ACTUALIZAR MINUTOS</button><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div><button class="map-route-action" data-map-route-line="'+Number(currentLine.code)+'" type="button">⌖ VER RECORRIDO EN EL MAPA</button>';
@@ -1076,11 +1077,11 @@
     nativeApi.loadArrivals(stop.identifier,currentLine.code);
   }
   function loadLines(){if(nativeApi){loading('CARGANDO LÍNEAS');nativeApi.loadLines();}else showError('LÍNEAS','PUENTE ANDROID NO DISPONIBLE');}
-  function openLine(l){currentLine=l;lineHead.textContent=l.name.toUpperCase();showList(l.name,'CALLES PRINCIPALES',[], 'CARGANDO CALLES',()=>{});nativeApi.loadStreets(l.code);}
+  function openLine(l){currentLine=l;setLineHead(l.name.toUpperCase());showList(l.name,'CALLES PRINCIPALES',[], 'CARGANDO CALLES',()=>{});nativeApi.loadStreets(l.code);}
   function back(){
-    if(currentStop){currentStop=null;lineHead.textContent='PARADAS';nativeApi.loadStops(currentLine.code,currentStreet.code,currentIntersection.code);return true;}
-    if(currentIntersection){currentIntersection=null;lineHead.textContent=currentStreet.name;nativeApi.loadIntersections(currentLine.code,currentStreet.code);return true;}
-    if(currentStreet){currentStreet=null;lineHead.textContent=currentLine.name;nativeApi.loadStreets(currentLine.code);return true;}
+    if(currentStop){currentStop=null;setLineHead('PARADAS');nativeApi.loadStops(currentLine.code,currentStreet.code,currentIntersection.code);return true;}
+    if(currentIntersection){currentIntersection=null;setLineHead(currentStreet.name);nativeApi.loadIntersections(currentLine.code,currentStreet.code);return true;}
+    if(currentStreet){currentStreet=null;setLineHead(currentLine.name);nativeApi.loadStreets(currentLine.code);return true;}
     if(currentLine){currentLine=null;renderLines(lines);return true;}
     window.TuColectivo.navigate('inicio');
     return true;
