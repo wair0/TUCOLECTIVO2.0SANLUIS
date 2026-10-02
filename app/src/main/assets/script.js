@@ -199,7 +199,8 @@
     drawGrid(w,h);
     drawRoute(w,h,center);
     drawStops(w,h,center);
-    drawVehicles(w,h,center);
+    const animateVehicles=drawVehicles(w,h,center);
+    if(animateVehicles) requestAnimationFrame(draw);
     if(map.userLocation){const p=screenPoint(map.userLocation.lat,map.userLocation.lng,center,w,h);drawMarker(p.x,p.y);}
     zoomLabel.textContent='ZOOM '+map.zoom;
     if(loaded) state.textContent='MAPA EN LÍNEA';
@@ -239,17 +240,33 @@
     ctx.restore();
   }
   function drawVehicles(w,h,center){
+    const now=performance.now();
+    let needsAnimation=false;
     ctx.save();
     for(const vehicle of map.vehicles){
       if(!Number.isFinite(vehicle.lat)||!Number.isFinite(vehicle.lng))continue;
-      const p=screenPoint(vehicle.lat,vehicle.lng,center,w,h);
-      if(p.x< -24||p.x>w+24||p.y< -24||p.y>h+24)continue;
+      const motion=map.vehicleMotion?.get(vehicle.id);
+      let lat=vehicle.lat,lng=vehicle.lng;
+      if(motion){
+        const progress=Math.min(1,(now-motion.startedAt)/motion.duration);
+        const eased=progress<.5?2*progress*progress:1-Math.pow(-2*progress+2,2)/2;
+        lat=motion.fromLat+(motion.toLat-motion.fromLat)*eased;
+        lng=motion.fromLng+(motion.toLng-motion.fromLng)*eased;
+        if(progress<1)needsAnimation=true;
+      }
+      const p=screenPoint(lat,lng,center,w,h);
+      if(p.x< -28||p.x>w+28||p.y< -28||p.y>h+28)continue;
+      const pulse=.5+.5*Math.sin(now/420);
+      const radius=8.5+pulse*2;
+      ctx.beginPath();ctx.arc(p.x,p.y,radius+4,0,Math.PI*2);ctx.fillStyle='rgba(255,0,255,'+(0.05+pulse*.08)+')';ctx.fill();
       ctx.beginPath();ctx.arc(p.x,p.y,9,0,Math.PI*2);ctx.fillStyle='rgba(255,0,255,.22)';ctx.fill();
-      ctx.strokeStyle='#ff4dff';ctx.lineWidth=2;ctx.shadowColor='#ff00ff';ctx.shadowBlur=12;ctx.stroke();ctx.shadowBlur=0;
+      ctx.strokeStyle='#ff4dff';ctx.lineWidth=2;ctx.shadowColor='#ff00ff';ctx.shadowBlur=12+pulse*8;ctx.stroke();ctx.shadowBlur=0;
       ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('B',p.x,p.y+.5);
       if(map.zoom>=13){ctx.fillStyle='#ffd6ff';ctx.font='bold 8px Arial';ctx.fillText(String(vehicle.line||'BUS').replace(/^LÍNEA\s*/i,'L '),p.x,p.y+19);}
+      needsAnimation=true;
     }
     ctx.restore();
+    return needsAnimation;
   }
   function fitPoints(points){
     const valid=(points||[]).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
@@ -427,7 +444,28 @@
     const lines=document.getElementById('mapPopupLines');
     if(lines&&!map.availableLines.length)lines.innerHTML='<small>NO SE PUDIERON CARGAR LAS LÍNEAS. VOLVÉ A ABRIR LA PARADA PARA REINTENTAR.</small>';
   };
-  window.onNativeMapVehicles=payload=>{try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.vehicles=raw.map(v=>({id:String(v.id||v.vehicleId||''),line:publicLineLabel(v.line,window.TuColectivoLineLabels),destination:String(v.destination||''),lat:Number(v.lat??v.latitude),lng:Number(v.lng??v.longitude),gpsTimestamp:String(v.gpsTimestamp||'')})).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lng)&&(v.lat!==0||v.lng!==0));draw();}catch(_){state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
+  window.onNativeMapVehicles=payload=>{try{
+    const raw=typeof payload==='string'?JSON.parse(payload):payload||[];
+    map.vehicleMotion=map.vehicleMotion||new Map();
+    const now=performance.now();
+    const next=raw.map(v=>{
+      const id=String(v.id||v.vehicleId||'');
+      const lat=Number(v.lat??v.latitude),lng=Number(v.lng??v.longitude);
+      const lineCode=Number(v.lineCode||v.code||map.routeLineCode||0);
+      const previous=map.vehicles.find(item=>item.id===id);
+      if(previous&&Number.isFinite(previous.lat)&&Number.isFinite(previous.lng)&&
+         (Math.abs(previous.lat-lat)>0.0000001||Math.abs(previous.lng-lng)>0.0000001)){
+        map.vehicleMotion.set(id,{fromLat:previous.lat,fromLng:previous.lng,toLat:lat,toLng:lng,startedAt:now,duration:9000});
+      }else if(!previous){
+        map.vehicleMotion.delete(id);
+      }
+      return {id,lineCode,line:publicLineLabel(lineCode||v.line,window.TuColectivoLineLabels),destination:String(v.destination||''),lat,lng,gpsTimestamp:String(v.gpsTimestamp||'')};
+    }).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lng)&&(v.lat!==0||v.lng!==0));
+    const activeIds=new Set(next.map(v=>v.id));
+    [...map.vehicleMotion.keys()].forEach(id=>{if(!activeIds.has(id))map.vehicleMotion.delete(id);});
+    map.vehicles=next;
+    draw();
+  }catch(_){state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
   window.TuColectivoMap={
     showRoute(lineCode){map.routeLineCode=Number(lineCode)||0;map.routePoints=[];map.vehicles=[];map.loadStopsAfterLocation=true;state.textContent='CARGANDO RECORRIDO...';document.getElementById('mapStopPopup')?.setAttribute('hidden','');if(window.TuColectivoNative&&map.routeLineCode>0)window.TuColectivoNative.loadMapRoute(map.routeLineCode);window.TuColectivo.navigate('mapa');draw();},
     handleStopLines(result){
