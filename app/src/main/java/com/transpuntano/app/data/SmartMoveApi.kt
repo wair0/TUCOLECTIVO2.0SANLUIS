@@ -357,27 +357,59 @@ class SmartMoveApi {
     }
 
     private fun arrivalDestination(item: JSONObject): String {
-        val candidates = listOf(
-            "DescripcionCartelBandera", "descripcionCartelBandera",
+        // SmartMove ha devuelto en algunos registros códigos de cartel como "AA".
+        // No los presentamos como si fueran un barrio/destino: buscamos primero
+        // campos descriptivos conocidos y después alias equivalentes del servicio.
+        val preferredKeys = listOf(
+            "DescripcionDestino", "descripcionDestino",
             "Destino", "destino",
+            "DestinoFinal", "destinoFinal",
+            "NombreDestino", "nombreDestino",
+            "DestinoDescripcion", "destinoDescripcion",
+            "LocalidadDestino", "localidadDestino",
+            "DescripcionCartelBandera", "descripcionCartelBandera",
+            "DescripcionCartel", "descripcionCartel",
             "DescripcionBandera", "descripcionBandera",
-            "Bandera", "bandera"
-        ).mapNotNull { key ->
-            item.optStringAny(key)?.trim()?.takeIf { it.isNotEmpty() }
+            "NombreCartel", "nombreCartel",
+            "CartelBandera", "cartelBandera",
+            "Bandera", "bandera",
+            "Sentido", "sentido",
+            "Ramal", "ramal",
+            "Recorrido", "recorrido"
+        )
+        val candidates = mutableListOf<String>()
+        preferredKeys.forEach { key ->
+            item.optStringAny(key)?.trim()?.takeIf { it.isNotEmpty() }?.let(candidates::add)
+        }
+        val keys = item.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val normalizedKey = key.lowercase(Locale.ROOT)
+            if (
+                normalizedKey.contains("destino") ||
+                normalizedKey.contains("cartel") ||
+                normalizedKey.contains("bandera") ||
+                normalizedKey.contains("sentido") ||
+                normalizedKey.contains("ramal") ||
+                normalizedKey.contains("recorrido")
+            ) {
+                item.optStringAny(key)?.trim()?.takeIf { it.isNotEmpty() }?.let(candidates::add)
+            }
         }
 
         fun isPlaceholder(value: String): Boolean {
-            val normalized = value
-                .uppercase(Locale.ROOT)
-                .replace(Regex("""[^A-ZÁÉÍÓÚÜÑ]+"""), " ")
+            val normalized = value.uppercase(Locale.ROOT)
+                .replace(Regex("""[^A-ZÁÉÍÓÚÜÑ0-9]+"""), " ")
                 .trim()
             if (normalized.isEmpty()) return true
+            if (normalized in setOf("SERVICIO", "SIN DESTINO", "DESTINO", "N A", "NA", "S D")) return true
             val words = normalized.split(Regex("""\s+""")).filter { it.isNotEmpty() }
-            return words.isNotEmpty() &&
-                words.all { it.length <= 2 && it.all { ch -> ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑ" } }
+            return words.isNotEmpty() && words.all { word ->
+                word.length <= 2 && word.all { ch -> ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑ" }
+            }
         }
 
-        return candidates.firstOrNull { !isPlaceholder(it) } ?: candidates.firstOrNull().orEmpty()
+        return candidates.distinct().firstOrNull { !isPlaceholder(it) }.orEmpty()
     }
 
     private fun parseMinutes(value: String): Int? {
