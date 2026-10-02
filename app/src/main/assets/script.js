@@ -431,7 +431,7 @@
       draw();
     }
     if(document.querySelector('[data-screen="paradas"]')?.classList.contains('active')){
-      setNearbyState('');
+      if(nearbyState)nearbyState.textContent='';
     }
   };
 
@@ -595,7 +595,6 @@
     }
     nearbyList.innerHTML=ranked.map(stop=>'<div class="data-card nearby-stop" data-stop-id="'+stop.id+'" role="button" tabindex="0"><b>'+escapeHtml(stop.name)+'</b><span>'+(stop.lines.length?stop.lines.length+' '+(stop.lines.length===1?'LÍNEA':'LÍNEAS')+' CONFIRMADAS':'BUSCANDO LÍNEAS...')+'</span>'+lineMarkup(stop.lines,stop.lineLabels)+'<em>'+formatDistance(stop.distance)+'</em></div>').join('');
     setNearbyState('');
-    nearbyState.style.color='var(--cy)';
     ranked.filter(stop=>!stop.lines.length).forEach(stop=>{
       window.TuColectivoNative?.resolveNearbyStopLines?.(stop.identifier,stop.lat,stop.lng);
     });
