@@ -38,6 +38,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private val api = SmartMoveApi()
     private val executor = Executors.newFixedThreadPool(3)
+    // El GPS de colectivos no comparte cola con líneas/paradas/arribos.
+    // Esta separación replica la arquitectura que funcionaba en la rama nativa.
+    private val vehicleExecutor = Executors.newSingleThreadExecutor()
+    private val vehicleQueryExecutor = Executors.newFixedThreadPool(8)
     private val lineResolutionExecutor = Executors.newFixedThreadPool(8)
     private val resolvedStopLines = java.util.concurrent.ConcurrentHashMap<String, List<Int>>()
     private val routeCache = java.util.concurrent.ConcurrentHashMap<Int, List<Pair<Double, Double>>>()
@@ -244,37 +248,71 @@ class MainActivity : AppCompatActivity() {
     private fun refreshMapVehiclesNow(lineCode: Int = mapLineCode) {
         if (mapVehicleRefreshInProgress || mapNearbyStops.isEmpty()) return
         mapVehicleRefreshInProgress = true
-        executor.execute {
+
+        vehicleExecutor.execute {
             try {
-                val vehicles = linkedMapOf<String, JSONObject>()
-                for (stop in mapNearbyStops) {
-                    val codes = if (lineCode > 0) {
-                        listOf(lineCode)
-                    } else stop.lineCodes.filter { it > 0 }.distinct()
-                    for (code in codes) {
-                        val arrivals = runCatching {
-                            api.getArrivals(stop.identifier.ifBlank { stop.code.toString() }, code, timeoutMs = 5_000)
-                        }.getOrDefault(emptyList())
-                        for (arrival in arrivals) {
-                            val lat = arrival.latitude ?: continue
-                            val lng = arrival.longitude ?: continue
-                            if (lat == 0.0 || lng == 0.0) continue
-                            val id = arrival.vehicleId.ifBlank {
-                                "line-" + code + "-" + stop.code + "-" + lat + "-" + lng
+                val found = LinkedHashMap<String, JSONObject>()
+
+                // La rama nativa que funcionaba consultaba las paradas en paralelo.
+                // Una consulta lenta no puede bloquear toda la actualización GPS.
+                val tasks = mapNearbyStops.take(8).map { stop ->
+                    Callable {
+                        runCatching {
+                            val identifier = stop.identifier.ifBlank { stop.code.toString() }
+                            if (lineCode > 0) {
+                                runCatching {
+                                    api.getArrivals(identifier, lineCode, timeoutMs = 8_000)
+                                }.getOrElse {
+                                    if (identifier != stop.code.toString()) {
+                                        api.getArrivals(stop.code.toString(), lineCode, timeoutMs = 8_000)
+                                    } else {
+                                        emptyList()
+                                    }
+                                }
+                            } else {
+                                stop.lineCodes.filter { it > 0 }.distinct().flatMap { code ->
+                                    runCatching {
+                                        api.getArrivals(identifier, code, timeoutMs = 8_000)
+                                    }.getOrElse { emptyList() }
+                                }
                             }
-                            vehicles[id] = JSONObject()
-                                .put("id", id)
-                                .put("line", normalizePublicLineLabel(arrival.line, code))
-                                .put("destination", arrival.destination)
-                                .put("lat", lat)
-                                .put("lng", lng)
-                                .put("gpsTimestamp", arrival.gpsTimestamp)
-                        }
+                        }.getOrDefault(emptyList())
                     }
                 }
-                dispatch("onNativeMapVehicles", JSONArray().apply {
-                    vehicles.values.forEach { put(it) }
-                }.toString())
+
+                runCatching {
+                    vehicleQueryExecutor.invokeAll(
+                        tasks,
+                        9,
+                        TimeUnit.SECONDS
+                    )
+                }.getOrNull().orEmpty().forEach { future ->
+                    runCatching { future.get() }.getOrNull().orEmpty().forEach { arrival ->
+                        val lat = arrival.latitude ?: return@forEach
+                        val lng = arrival.longitude ?: return@forEach
+                        if (lat == 0.0 || lng == 0.0) return@forEach
+
+                        val code = lineCode
+                        val id = arrival.vehicleId.ifBlank {
+                            "line-" + code + "-" + lat + "-" + lng
+                        }
+
+                        found[id] = JSONObject()
+                            .put("id", id)
+                            .put("line", normalizePublicLineLabel(arrival.line, code))
+                            .put("destination", arrival.destination)
+                            .put("lat", lat)
+                            .put("lng", lng)
+                            .put("gpsTimestamp", arrival.gpsTimestamp)
+                    }
+                }
+
+                dispatch(
+                    "onNativeMapVehicles",
+                    JSONArray().apply {
+                        found.values.forEach { put(it) }
+                    }.toString()
+                )
             } finally {
                 mapVehicleRefreshInProgress = false
             }
@@ -635,6 +673,9 @@ class MainActivity : AppCompatActivity() {
         pendingGeoCallback = null
         pendingGeoOrigin = null
         executor.shutdownNow()
+        vehicleExecutor.shutdownNow()
+        vehicleQueryExecutor.shutdownNow()
+        lineResolutionExecutor.shutdownNow()
         stopContinuousLocationTracking()
         webView.stopLoading()
         webView.destroy()
