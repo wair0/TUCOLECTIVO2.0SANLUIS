@@ -158,7 +158,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun lineJson(items: List<TransitLine>) = JSONArray().apply {
-        items.forEach { put(JSONObject().put("code", it.code).put("name", it.name).put("raw", it.raw)) }
+        items.forEach {
+            put(
+                JSONObject()
+                    .put("code", it.code)
+                    .put("name", publicLineLabel(it.code, items))
+                    .put("raw", it.raw)
+            )
+        }
     }.toString()
 
     private fun streetJson(items: List<TransitStreet>) = JSONArray().apply {

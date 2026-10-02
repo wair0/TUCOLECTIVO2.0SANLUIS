@@ -117,6 +117,13 @@
     if (currentScreen !== 'inicio') { go('inicio'); return true; }
     return false;
   }
+  window.TuColectivoLineLabels = window.TuColectivoLineLabels || {};
+  window.TuColectivoPublicLineLabel = (code, labels) => {
+    const source = labels || window.TuColectivoLineLabels || {};
+    const raw = String(source[String(code)] ?? '').trim();
+    const clean = raw.replace(/^l[ií]nea\s*/i, '').replace(/\s+/g, ' ').trim();
+    return clean || String(code);
+  };
   window.TuColectivo = { setStatus, closeMenus: closeAll, navigate: go, handleBack };
 })();
 
@@ -260,9 +267,10 @@
   }
   function mapEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function publicLineLabel(code, labels){
-    const raw=String((labels||{})[String(code)]??map.lineLabels[String(code)]??map.availableLineLabels[String(code)]??'').trim();
-    const clean=raw.replace(/^l[ií]nea\s*/i,'').trim();
-    return clean||String(code);
+    const source=labels||map.lineLabels||map.availableLineLabels||window.TuColectivoLineLabels||{};
+    return window.TuColectivoPublicLineLabel
+      ? window.TuColectivoPublicLineLabel(code, source)
+      : String(code);
   }
   function openStopPopup(stop){
     const popup=document.getElementById('mapStopPopup');if(!popup)return;
@@ -357,7 +365,7 @@
   });
   window.onNativeMapRoute=payload=>{
     try{map.routePoints=(typeof payload==='string'?JSON.parse(payload):payload||[]).map(p=>({lat:Number(p.lat),lng:Number(p.lng)})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
-      state.textContent=map.routePoints.length>1?'RECORRIDO CARGADO · LÍNEA '+map.routeLineCode:'SIN GEOMETRÍA DE RECORRIDO';
+      state.textContent=map.routePoints.length>1?'RECORRIDO CARGADO · LÍNEA '+publicLineLabel(map.routeLineCode):'SIN GEOMETRÍA DE RECORRIDO';
       if(map.routePoints.length)fitPoints(map.routePoints.concat(map.stops));else draw();
     }catch(_){state.textContent='ERROR LEYENDO RECORRIDO';}
   };
@@ -419,7 +427,7 @@
     const lines=document.getElementById('mapPopupLines');
     if(lines&&!map.availableLines.length)lines.innerHTML='<small>NO SE PUDIERON CARGAR LAS LÍNEAS. VOLVÉ A ABRIR LA PARADA PARA REINTENTAR.</small>';
   };
-  window.onNativeMapVehicles=payload=>{try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.vehicles=raw.map(v=>({id:String(v.id||v.vehicleId||''),line:String(v.line||''),destination:String(v.destination||''),lat:Number(v.lat??v.latitude),lng:Number(v.lng??v.longitude),gpsTimestamp:String(v.gpsTimestamp||'')})).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lng)&&(v.lat!==0||v.lng!==0));draw();}catch(_){state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
+  window.onNativeMapVehicles=payload=>{try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];map.vehicles=raw.map(v=>({id:String(v.id||v.vehicleId||''),line:publicLineLabel(v.line,window.TuColectivoLineLabels),destination:String(v.destination||''),lat:Number(v.lat??v.latitude),lng:Number(v.lng??v.longitude),gpsTimestamp:String(v.gpsTimestamp||'')})).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lng)&&(v.lat!==0||v.lng!==0));draw();}catch(_){state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
   window.TuColectivoMap={
     showRoute(lineCode){map.routeLineCode=Number(lineCode)||0;map.routePoints=[];map.vehicles=[];map.loadStopsAfterLocation=true;state.textContent='CARGANDO RECORRIDO...';document.getElementById('mapStopPopup')?.setAttribute('hidden','');if(window.TuColectivoNative&&map.routeLineCode>0)window.TuColectivoNative.loadMapRoute(map.routeLineCode);window.TuColectivo.navigate('mapa');draw();},
     handleStopLines(result){
@@ -473,8 +481,9 @@
     return '<div class="line-badges">'+lines.map(n=>'<span class="line-badge-mini">LÍNEA '+escapeHtml(publicNearbyLineLabel(n,source))+'</span>').join('')+'</div>';
   }
   function publicNearbyLineLabel(code,labels){
-    const raw=String((labels||{})[String(code)]??'').trim();
-    return raw.replace(/^l[ií]nea\s*/i,'').trim()||String(code);
+    return window.TuColectivoPublicLineLabel
+      ? window.TuColectivoPublicLineLabel(code,labels)
+      : String(code);
   }
 
   function normalizeStop(stop){
@@ -770,7 +779,7 @@
     }
     if(favorites.arrivals.length){
       html+='<div class="favorite-group">ARRIBOS FAVORITOS</div>';
-      html+=favorites.arrivals.map(v=>'<div class="favorite-item" data-fav-type="arrivals" data-fav-id="'+v.key+'"><div><b>'+String(v.stop?.name||'PARADA').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</b><small>LÍNEA '+Number(v.line)+' · ARRIBOS EN TIEMPO REAL</small></div><button class="favorite-remove" type="button" aria-label="Quitar arribo de favoritos">×</button></div>').join('');
+      html+=favorites.arrivals.map(v=>'<div class="favorite-item" data-fav-type="arrivals" data-fav-id="'+v.key+'"><div><b>'+String(v.stop?.name||'PARADA').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</b><small>LÍNEA '+(window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(Number(v.line)):Number(v.line))+' · ARRIBOS EN TIEMPO REAL</small></div><button class="favorite-remove" type="button" aria-label="Quitar arribo de favoritos">×</button></div>').join('');
     }
     list.innerHTML=html;
   }
@@ -853,7 +862,7 @@
       setTimeout(()=>document.querySelector('.line-card[data-line="'+id+'"]')?.scrollIntoView({behavior:'smooth',block:'center'}),80);
     }else if(type==='arrivals'){
       const saved=favorites.arrivals.find(v=>v.key===id);
-      if(saved){window.TuColectivoCurrentNearbyArrival={stop:{...saved.stop,lines:saved.stop.lines||[saved.line]},line:Number(saved.line)};window.TuColectivo.navigate('arribos');const current=window.TuColectivoCurrentNearbyArrival;const box=document.getElementById('arrivalStop'),target=document.getElementById('arrivalList');box.innerHTML='<strong>'+String(current.stop.name).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</strong><span>LÍNEA '+current.line+' · PARADA FAVORITA</span><button class="arrival-favorite-toggle" type="button" aria-pressed="true">★ ARRIBO GUARDADO</button>';target.innerHTML='<div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>OBTENIENDO DATOS REALES DE SMARTMOVE</span></div>';window.TuColectivoNative?.loadArrivals(current.stop.identifier,current.line);}
+      if(saved){window.TuColectivoCurrentNearbyArrival={stop:{...saved.stop,lines:saved.stop.lines||[saved.line]},line:Number(saved.line)};window.TuColectivo.navigate('arribos');const current=window.TuColectivoCurrentNearbyArrival;const box=document.getElementById('arrivalStop'),target=document.getElementById('arrivalList');box.innerHTML='<strong>'+String(current.stop.name).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</strong><span>LÍNEA '+(window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(Number(current.line)):current.line)+' · PARADA FAVORITA</span><button class="arrival-favorite-toggle" type="button" aria-pressed="true">★ ARRIBO GUARDADO</button>';target.innerHTML='<div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>OBTENIENDO DATOS REALES DE SMARTMOVE</span></div>';window.TuColectivoNative?.loadArrivals(current.stop.identifier,current.line);}
     }else if(type==='stops'){
       window.TuColectivo.navigate('paradas');
       setTimeout(()=>{
@@ -904,7 +913,22 @@
     items.forEach(item=>{const b=document.createElement('button');b.type='button';b.className='data-card line-detail-card';b.innerHTML='<b>'+esc(item.name)+'</b>'+(itemLabel?'<span>'+esc(itemLabel)+'</span>':'')+'<em>›</em>';b.addEventListener('click',()=>onClick(item));lineGrid.appendChild(b);});
   };
   const showError=(title,msg)=>showList(title,'',[],msg,()=>{});
-  window.onNativeLines=p=>{try{renderLines(JSON.parse(p));}catch(_){showError('LÍNEAS','RESPUESTA INVÁLIDA');}};
+  window.onNativeLines=p=>{
+    try{
+      const items=JSON.parse(p);
+      window.TuColectivoLineLabels=window.TuColectivoLineLabels||{};
+      items.forEach(item=>{
+        const code=Number(item.code);
+        if(Number.isFinite(code)&&code>0) window.TuColectivoLineLabels[String(code)]=String(item.name||'').trim();
+      });
+      renderLines(items.map(item=>({
+        ...item,
+        name:window.TuColectivoPublicLineLabel
+          ? window.TuColectivoPublicLineLabel(item.code,window.TuColectivoLineLabels)
+          : item.name
+      })));
+    }catch(_){showError('LÍNEAS','RESPUESTA INVÁLIDA');}
+  };
   window.onNativeLinesError=p=>{try{showError('LÍNEAS',JSON.parse(p).message);}catch(_){showError('LÍNEAS','ERROR SMARTMOVE');}};
   const cleanStreetName=name=>String(name??'').replace(/\s*(?:,|-)?\s*SAN LUIS\s*$/i,'').trim();
   window.onNativeStreets=p=>{
