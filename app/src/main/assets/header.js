@@ -1,1 +1,46 @@
-(()=>{const root=document.getElementById('tch');if(!root)return;const rig=root.querySelector('.tch-rig'),title=root.querySelector('.tch-title'),text=title.dataset.text||title.textContent,still=matchMedia('(prefers-reduced-motion: reduce)').matches;document.addEventListener('pointerdown',e=>{const b=e.target.closest('.tch-btn,.tch-item,.tch-panel .chip,.tch-x');if(!b)return;if(navigator.vibrate)navigator.vibrate(8)});document.addEventListener('app:navigate',e=>document.querySelectorAll('.tch-item').forEach(i=>i.setAttribute('aria-current',String(i.dataset.go===e.detail.go))));if(still)return;function glitch(){title.classList.add('glitch');setTimeout(()=>title.classList.remove('glitch'),420);setTimeout(glitch,5000+Math.random()*5000)};const G='01<>/\\|#%$&*+=';(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{let k=0;setTimeout(()=>{const id=setInterval(()=>{title.textContent=[...text].map((c,i)=>c===' '||i<k?c:G[Math.random()*G.length|0]).join('');k+=.5;if(k>text.length){clearInterval(id);title.textContent=text;glitch()}},45)},500)});const lim=8,clamp=v=>Math.max(-lim,Math.min(lim,v));let tx=0,ty=0,cx=0,cy=0;addEventListener('pointermove',e=>{ty=clamp((e.clientX/innerWidth-.5)*2*lim);tx=clamp(-(e.clientY/innerHeight-.5)*2*lim*.6)},{passive:true});addEventListener('deviceorientation',e=>{if(e.gamma==null)return;ty=clamp(e.gamma/5);tx=clamp(((e.beta||45)-45)/-8)},{passive:true});(function tick(t){cx+=(tx-cx)*.08;cy+=(ty-cy)*.08;rig.style.setProperty('--rx',(cx+Math.sin(t/2200)*.8).toFixed(2)+'deg');rig.style.setProperty('--ry',(cy+Math.sin(t/3100)*2).toFixed(2)+'deg');requestAnimationFrame(tick)})(0)})();
+/* TU COLECTIVO 2.0 · HOLO-DECK
+   Efectos visuales seguros: no desplaza ni inclina el header.
+   La navegación y el estado siguen a cargo de script.js. */
+(() => {
+  'use strict';
+  const root = document.getElementById('tch');
+  if (!root) return;
+
+  const title = root.querySelector('.tch-title');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Mantener el header anclado a la pantalla: no usar giroscopio ni inclinación por puntero.
+  const rig = root.querySelector('.tch-rig');
+  if (rig) {
+    rig.style.setProperty('--rx', '0deg');
+    rig.style.setProperty('--ry', '0deg');
+    rig.style.transform = 'translateZ(0)';
+  }
+
+  // Feedback táctil discreto, sin interferir con las acciones existentes.
+  document.addEventListener('pointerdown', event => {
+    const button = event.target.closest('.tch-btn,.tch-item,.tch-panel .chip,.tch-x');
+    if (!button) return;
+    if (navigator.vibrate) {
+      try { navigator.vibrate(8); } catch (_) {}
+    }
+  }, { passive: true });
+
+  // Sincronizar el indicador de sección con la navegación de script.js.
+  document.addEventListener('app:navigate', event => {
+    const destination = event.detail && event.detail.go;
+    document.querySelectorAll('.tch-item').forEach(item => {
+      item.setAttribute('aria-current', String(item.dataset.go === destination));
+    });
+  });
+
+  // El título permanece visible durante el arranque; solo aplica un glitch breve opcional.
+  if (title && !reduceMotion) {
+    const glitch = () => {
+      title.classList.add('glitch');
+      window.setTimeout(() => title.classList.remove('glitch'), 420);
+      window.setTimeout(glitch, 7000);
+    };
+    window.setTimeout(glitch, 5000);
+  }
+})();
