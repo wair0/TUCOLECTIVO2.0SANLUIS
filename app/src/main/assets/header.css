@@ -286,3 +286,6 @@
   #tch .tch-title{max-width:42vw!important;font-size:11px!important}
   #tch .tch-cube{display:none!important}
 }
+
+/* Ajuste fino: subir el texto de estado 5 dp */
+#tch .tch-stat{bottom:12px!important}
