@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#05060f">
 <title>TU COLECTIVO 2.0</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="header.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -17,53 +18,24 @@
 </svg>
 
 
-<header class="hdr">
-  <div class="bar">
-    <div class="side">
-      <button class="btn" data-menu="m-nav" aria-label="Menú" aria-expanded="false">
-        <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h12M3 18h18"/></svg>
-      </button>
-    </div>
-    <h1 class="title" data-text="TU COLECTIVO 2.0">TU COLECTIVO 2.0</h1>
-    <div class="side r">
-      <button class="btn" data-menu="m-search" aria-label="Buscar" aria-expanded="false">
-        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
-      </button>
-      <button class="btn" data-menu="m-bell" aria-label="Notificaciones" aria-expanded="false">
-        <svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg><i class="dot"></i>
-      </button>
+<header class="tch" id="tch">
+  <div class="tch-rig">
+    <div class="tch-sil"><i class="tch-sh"></i></div>
+    <i class="tch-sh tch-bz"></i><i class="tch-sh tch-gv"></i><i class="tch-sh tch-ln"></i><i class="tch-sh tch-plate"></i>
+    <div class="tch-hw" aria-hidden="true"><i class="sc a"></i><i class="sc b"></i><i class="sc c"></i><i class="sc d"></i><i class="hz l"></i><i class="hz r"></i></div>
+    <div class="tch-bar">
+      <div class="tch-side"><span class="tch-key"><button class="tch-btn" data-menu="m-nav" aria-label="Menú" aria-expanded="false"><span class="tch-burger"><i></i><i></i><i></i></span></button></span><span class="tch-cube" aria-hidden="true"><b><i></i><i></i><i></i><i></i><i></i><i></i></b></span></div>
+      <div class="tch-mid"><h1 class="tch-title" data-text="TU COLECTIVO 2.0">TU COLECTIVO 2.0</h1></div>
+      <div class="tch-side r"><span class="tch-key"><button class="tch-btn" data-menu="m-search" aria-label="Buscar" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button></span><span class="tch-key"><button class="tch-btn" data-menu="m-bell" aria-label="Notificaciones" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg><i class="dot"></i></button></span></div>
+      <div class="tch-stat"><span class="tch-sig" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="status" class="tch-status" data-state="ok" role="status">SISTEMA LISTO</span></div>
     </div>
   </div>
-  <span id="status" class="status" data-state="ok">SISTEMA LISTO</span>
 </header>
-
-<nav class="panel" id="m-nav" aria-label="Menú principal">
-  <div class="ph">MENU_PRINCIPAL.EXE</div>
-  <button class="item" data-go="inicio">INICIO</button>
-  <button class="item" data-go="lineas">LÍNEAS<small>DE COLECTIVOS</small></button>
-  <button class="item" data-go="mapa">MAPA</button>
-  <button class="item" data-go="paradas">PARADAS CERCANAS</button>
-  <button class="item" data-go="favoritos">FAVORITOS</button>
-</nav>
-
-<section class="panel" id="m-search" aria-label="Búsqueda">
-  <div class="ph">BUSCAR_DATOS.SYS</div>
-  <label class="sbox"><b>&gt;</b><input id="q" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Línea o parada_"></label>
-  <div class="chips">
-    <button class="chip" data-f="todo" aria-pressed="true">TODO</button>
-    <button class="chip" data-f="lineas" aria-pressed="false">LÍNEAS</button>
-    <button class="chip" data-f="paradas" aria-pressed="false">PARADAS</button>
-    <button class="chip" data-f="cercanas" aria-pressed="false">CERCANAS</button>
-    <button class="chip" data-f="favoritos" aria-pressed="false">FAVORITOS</button>
-  </div>
-</section>
-
-<section class="panel" id="m-bell" aria-label="Notificaciones">
-  <div class="ph">ALERTAS_REALES.LOG</div>
-  <ul class="nl" id="recentAlertsList">
-    <li><b>SIN ALERTAS RECIENTES</b><span>Las alertas aparecerán cuando se aproximen los arribos guardados en Favoritos.</span></li>
-  </ul>
-</section>
+<nav class="panel tch-panel" id="m-nav" aria-label="Menú principal"><div class="tch-pin"><div class="tch-ph"><span class="tch-led"><i></i><i></i><i></i></span><b>MENU_PRINCIPAL.EXE</b><button class="tch-x" data-menu="m-nav" aria-label="Cerrar menú"></button></div>
+<button class="tch-item" data-go="inicio" style="--n:1"><span class="tch-ico"><svg viewBox="0 0 24 24"><path d="M11 3l9 8M3 11l9-8M5 10v10h5v-6h4v6h5V10"/></svg></span><span class="tch-lb"><b>INICIO</b><small>PANEL CENTRAL</small></span><i class="tch-chev"></i></button><button class="tch-item" data-go="lineas" style="--n:2"><span class="tch-ico"><svg viewBox="0 0 24 24"><path d="M5 4h14v13H5zM5 11h14M7 17v3M17 17v3M8.5 14h.01M15.5 14h.01"/></svg></span><span class="tch-lb"><b>LÍNEAS</b><small>RECORRIDOS</small></span><i class="tch-chev"></i></button><button class="tch-item" data-go="mapa" style="--n:3"><span class="tch-ico"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg></span><span class="tch-lb"><b>MAPA</b><small>VISTA GLOBAL</small></span><i class="tch-chev"></i></button><button class="tch-item" data-go="paradas" style="--n:4"><span class="tch-ico"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/></svg></span><span class="tch-lb"><b>PARADAS CERCANAS</b><small>RADAR</small></span><i class="tch-chev"></i></button><button class="tch-item" data-go="favoritos" style="--n:5"><span class="tch-ico"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><span class="tch-lb"><b>FAVORITOS</b><small>GUARDADOS</small></span><i class="tch-chev"></i></button>
+<div class="tch-ft"><span>NODO SAN LUIS</span><span>RED ACTIVA</span></div></div></nav>
+<section class="panel tch-panel" id="m-search" aria-label="Búsqueda"><div class="tch-pin"><div class="tch-ph"><span class="tch-led"><i></i><i></i><i></i></span><b>BUSCAR_DATOS.SYS</b><button class="tch-x" data-menu="m-search" aria-label="Cerrar búsqueda"></button></div><label class="tch-sb"><b>&gt;</b><input id="q" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Línea o parada_"></label><div class="tch-sub">FILTRAR POR</div><div class="tch-chips"><button class="chip" data-f="todo" aria-pressed="true"><span>TODO</span></button><button class="chip" data-f="lineas" aria-pressed="false"><span>LÍNEAS</span></button><button class="chip" data-f="paradas" aria-pressed="false"><span>PARADAS</span></button><button class="chip" data-f="cercanas" aria-pressed="false"><span>CERCANAS</span></button><button class="chip" data-f="favoritos" aria-pressed="false"><span>FAVORITOS</span></button></div></div></section>
+<section class="panel tch-panel" id="m-bell" aria-label="Notificaciones"><div class="tch-pin"><div class="tch-ph"><span class="tch-led"><i></i><i></i><i></i></span><b>ALERTAS_REALES.LOG</b><button class="tch-x" data-menu="m-bell" aria-label="Cerrar alertas"></button></div><ul id="recentAlertsList"><li><b>SIN ALERTAS RECIENTES</b><span>Las alertas aparecerán cuando se aproximen los arribos guardados en Favoritos.</span></li></ul></div></section>
 
 <main id="app" class="app-shell">
   <section class="screen active" data-screen="inicio">
@@ -169,5 +141,6 @@
 </nav>
 
 <script src="script.js"></script>
+<script src="header.js" defer></script>
 </body>
 </html>
