@@ -62,3 +62,73 @@
 @media(prefers-reduced-motion:reduce){
   .tch-rig,.tch-cube b,.tch-ln{animation:none!important}
 }
+
+
+/* Recuperación del lenguaje visual HOLO-DECK del diseño fuente */
+.tch-sil{
+  inset:0;
+  transform:translateZ(-6px);
+  filter:drop-shadow(0 2px 0 #3b1a8c) drop-shadow(0 4px 0 #26106a)
+    drop-shadow(0 6px 0 #170a46) drop-shadow(0 0 5px rgba(0,240,255,.8))
+    drop-shadow(0 0 16px rgba(160,32,255,.55));
+}
+.tch-sh{
+  --i:0px;
+  clip-path:polygon(var(--i) var(--i),calc(100% - var(--i)) var(--i),
+    calc(100% - var(--i)) calc(100% - 24px - var(--i)*.414),
+    calc(100% - 10px - var(--i)*.414) calc(100% - 14px - var(--i)),
+    calc(50% + 96px - var(--i)*.46) calc(100% - 14px - var(--i)),
+    calc(50% + 84px - var(--i)*.46) calc(100% - var(--i)),
+    calc(50% - 84px + var(--i)*.46) calc(100% - var(--i)),
+    calc(50% - 96px + var(--i)*.46) calc(100% - 14px - var(--i)),
+    calc(10px + var(--i)*.414) calc(100% - 14px - var(--i)),
+    var(--i) calc(100% - 24px - var(--i)*.414));
+}
+.tch-bz{background:linear-gradient(180deg,#d9f7ff,#4aa8ff 6%,#5a2bd0 40%,#1c0b55 90%)}
+.tch-gv{inset:4.5px;background:#04061a;transform:translateZ(1px)}
+.tch-ln{
+  inset:5.5px;
+  background:linear-gradient(90deg,var(--tch-cy),var(--tch-vi),var(--tch-pk),var(--tch-cy));
+  background-size:300% 100%;
+  transform:translateZ(2px);
+  animation:tchFlow 5s linear infinite;
+}
+.tch-plate{inset:7px;background:#0a1038;transform:translateZ(3px);box-shadow:inset 0 0 22px #000}
+.tch-hw .sc{width:6px;height:6px;background:#fff;box-shadow:0 0 6px var(--tch-cy),0 0 12px var(--tch-cy)}
+.tch-hw .hz{height:4px;background:repeating-linear-gradient(135deg,var(--tch-yl) 0 3px,#10132e 3px 6px);box-shadow:0 0 6px rgba(250,255,0,.4)}
+.tch-title{
+  letter-spacing:.07em;
+  text-shadow:1px 1px 0 #7a1fd6,2px 2px 0 #5b13a8,3px 3px 0 #430d80,
+    4px 5px 5px rgba(0,0,0,.6),0 0 14px rgba(0,240,255,.7);
+}
+.tch-title::before,.tch-title::after{
+  content:attr(data-text);position:absolute;left:0;top:0;width:100%;
+  opacity:0;pointer-events:none;text-shadow:none;
+}
+.tch-title::before{color:var(--tch-cy)}
+.tch-title::after{color:var(--tch-pk)}
+.tch-title.glitch::before{animation:tchHotfixGa .4s steps(1) both}
+.tch-title.glitch::after{animation:tchHotfixGb .4s steps(1) both}
+.tch-key{filter:drop-shadow(2px 3px 0 #2c0b5e) drop-shadow(0 0 5px rgba(0,240,255,.55))}
+.tch-btn{
+  border:0;
+  background:linear-gradient(135deg,var(--tch-cy),var(--tch-vi));
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+  transition:transform .18s cubic-bezier(.3,1.6,.5,1),filter .18s;
+}
+.tch-btn::before{inset:1px;background:#0b1236;clip-path:inherit}
+.tch-btn::after{content:"";position:absolute;inset:6px;border:1px solid #fff;opacity:0;pointer-events:none}
+.tch-btn.zap::after{animation:tchHotfixZap .45s ease-out}
+.tch-btn.on{color:#fff}
+.tch-btn.on::before{background:#14245c}
+.tch-btn svg{width:20px;height:20px;stroke-width:1.8;filter:drop-shadow(0 0 3px currentColor)}
+.tch .dot{top:8px;right:8px;width:7px;height:7px;border-radius:0;background:var(--tch-yl);box-shadow:0 0 8px var(--tch-yl);transform:rotate(45deg);z-index:13}
+.tch .dot::after{content:"";position:absolute;inset:-1px;border:1px solid var(--tch-yl);animation:tchHotfixPing 1.8s ease-out infinite}
+@keyframes tchHotfixZap{from{opacity:.9;transform:scale(.4)}to{opacity:0;transform:scale(1.25)}}
+@keyframes tchHotfixPing{from{transform:scale(1);opacity:.9}to{transform:scale(2.8);opacity:0}}
+@keyframes tchHotfixGa{0%{opacity:1;transform:translate(-3px,0);clip-path:inset(0 0 60% 0)}25%{transform:translate(3px,0);clip-path:inset(40% 0 20% 0)}50%{transform:translate(-2px,1px);clip-path:inset(70% 0 0 0)}75%{transform:translate(2px,0);clip-path:inset(10% 0 55% 0)}100%{opacity:0}}
+@keyframes tchHotfixGb{0%{opacity:1;transform:translate(3px,0);clip-path:inset(55% 0 0 0)}33%{transform:translate(-3px,0);clip-path:inset(0 0 70% 0)}66%{transform:translate(2px,-1px);clip-path:inset(30% 0 35% 0)}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){
+  .tch-ln,.tch-cube b,.tch-title.glitch::before,.tch-title.glitch::after,
+  .tch .dot::after{animation:none!important}
+}
