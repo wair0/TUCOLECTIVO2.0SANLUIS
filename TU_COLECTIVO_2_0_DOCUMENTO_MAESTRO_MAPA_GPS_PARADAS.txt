@@ -1,87 +1,233 @@
 TU COLECTIVO 2.0 SAN LUIS — DOCUMENTO MAESTRO DE CONTINUIDAD
-Fecha de actualización: 2026-10-01
+Fecha de actualización: 2026-10-04
 
 1. IDENTIFICACIÓN DEL PROYECTO
 Repositorio: https://github.com/wair0/TUCOLECTIVO2.0SANLUIS
 Rama de trabajo activa: native/cyberpunkwebview-ui
-Último commit de corrección: a66ddae87f0763e9aa87a6aeed2dabbd18ecc5b3
-Commit anterior que falló: 93766f3ee006af35f13ac02c64041b91230fb8fa
-Commit de referencia previo con build exitoso: 62088db1f75df8fd63fcb9329a008405dd47a0e6
-Workflow de compilación del último commit: https://github.com/wair0/TUCOLECTIVO2.0SANLUIS/actions/runs/36930433681
-Estado comprobado del workflow de a66ddae: SUCCESS. Esto confirma compilación del APK; no confirma todavía que el comportamiento del mapa funcione en un dispositivo real.
+Rama de referencia/protegida: native/cyberpunk-ui
+Commit actual de la rama activa: 45c8513865d9792c2b09bdb1a1ec54f813210670
+Mensaje: LIMPIAR ARCHIVOS HEREDADOS DE LA APP NATIVA
+Commit funcional de referencia para LÍNEAS: 5ca01a79aa52e7bdf718a3f00c0999fdbfef56cb
+Mensaje: CORREGIR PARADAS CERCANAS TRAS LIMPIEZA DE UI
 
 REGLA IMPORTANTE DE RAMAS
-Trabajar únicamente en native/cyberpunkwebview-ui para esta tarea.
-NO modificar la rama native/cyberpunk-ui: es la otra rama/app de referencia cuyo funcionamiento sirve para comparar el comportamiento esperado.
+Trabajar únicamente en native/cyberpunkwebview-ui.
+NO modificar native/cyberpunk-ui. Esa rama es la referencia de la otra app y debe permanecer intacta.
 
-2. OBJETIVO Y ESTADO GENERAL
-La tarea pendiente es recuperar en la app de la rama native/cyberpunkwebview-ui el funcionamiento correcto del mapa, la sección “Paradas cercanas”, el GPS y el recorrido/ubicación en tiempo real de los colectivos sobre el mapa, manteniendo la interfaz Cyberpunk/WebView.
+2. OBJETIVO ACTUAL
+La prioridad inmediata es conservar el funcionamiento estable de la sección:
+LÍNEAS → CALLES → INTERSECCIONES → PARADAS → ARRIBOS
 
-3. PROBLEMA REITERADO: MAPA Y PARADAS CERCANAS
-Síntomas informados por el usuario:
-- El mapa y la sección “Paradas cercanas” continúan sin mostrar de forma fiable qué líneas de colectivo pasan por cada parada.
-- El usuario indicó que varias paradas cercanas (cinco en el ejemplo reportado) correspondían a la misma línea, pero al seleccionar las paradas la app no mostraba la línea esperada ni conducía correctamente a la información de arribos.
-- En la app de esta rama, al pulsar paradas del mapa no aparece el indicador de ubicación precisa de Android en la barra de estado, aunque el permiso de ubicación precisa está habilitado para la app.
-- En la app de la otra rama, ese indicador sí aparece en el caso descrito por el usuario.
-- El indicador de Android es una pista para investigar diferencias en el flujo de ubicación; por sí solo no demuestra la causa definitiva.
+El funcionamiento completo de LÍNEAS debe partir de la estructura que existía en 5ca01a7, porque ese commit es el punto conocido donde el flujo funcionaba correctamente.
 
-4. DIFERENCIA FUNCIONAL CON LA OTRA RAMA/APP
-El usuario confirma que en la otra rama, native/cyberpunk-ui, funcionan:
-- El mapa.
-- La sección “Paradas cercanas”.
-- El GPS/ubicación del usuario.
-- El recorrido y la ubicación en tiempo real de los colectivos dibujados en el mapa.
+IMPORTANTE:
+- Restaurar la estructura y lógica funcional desde 5ca01a7.
+- NO restaurar el estilo visual antiguo de 5ca01a7.
+- La interfaz de toda la sección LÍNEAS debe conservar el diseño visual NEXUS actual.
+- El círculo animado de ARRIBOS debe seguir siendo el círculo NEXUS actual, no el círculo antiguo del commit 5ca01a7.
+- No reintroducir animaciones de scan en marcos/bordes de INICIO.
+- La animación especial de SINCRONIZAR LÍNEAS se conserva exclusivamente en ese botón.
+- MAPA queda fuera de esta tarea y no debe modificarse salvo solicitud explícita.
 
-En cambio, el problema se reproduce en la app de native/cyberpunkwebview-ui. La rama antigua debe utilizarse como referencia de comportamiento y de implementación, sin hacer commits ni cambios sobre ella.
+3. ESTADO ACTUAL DE LÍNEAS
+El baseline funcional elegido es 5ca01a7.
 
-5. HISTORIAL TÉCNICO RELEVANTE
-- ab2ce06471c156505fc4a2253affe582bdb9e882: primera implementación de coincidencia de líneas/segmentos de recorrido para paradas cercanas.
-- 34f744b9d0d60ed8a3af2aa4121287a18fcd9bfd: restauración de compatibilidad del parser de códigos de línea de SmartMove; reconoce campos como codigoLineaServicio y codigoServicio, además de variantes y colecciones de líneas/servicios.
-- 93766f3ee006af35f13ac02c64041b91230fb8fa: intento de restaurar el flujo de ubicación nativo para mapa y paradas cercanas. El build falló por una referencia Kotlin no resuelta a loadMapStopsAt en MainActivity.kt.
-- a66ddae87f0763e9aa87a6aeed2dabbd18ecc5b3: corrección de compilación; la llamada ahora deriva a TransitBridge().loadMapData(...). GitHub Actions terminó con SUCCESS.
+En ese snapshot, la FASE 11B contenía el flujo completo:
+LÍNEAS → CALLES → INTERSECCIONES → PARADAS → ARRIBOS.
 
-6. CAMBIO TÉCNICO ACTUAL
-En app/src/main/java/com/transpuntano/app/MainActivity.kt, dentro del flujo de entrega de ubicación nativa, la llamada incorrecta:
-    loadMapStopsAt(location.latitude, location.longitude, mapLineCode)
-se cambió por:
-    TransitBridge().loadMapData(location.latitude, location.longitude, mapLineCode)
+Callbacks principales:
+- window.onNativeLines
+- window.onNativeStreets
+- window.onNativeIntersections
+- window.onNativeStops
+- window.onNativeArrivals
 
-La intención de los cambios del commit 93766f3 y su corrección es que la ubicación se solicite mediante Android nativo en lugar de depender directamente de navigator.geolocation desde JavaScript:
-- El mapa solicita ubicación nativa con requestMapLocation(...).
-- La sección “Paradas cercanas” solicita ubicación nativa con requestNearbyLocation().
-- La app devuelve coordenadas y resultados a la interfaz WebView mediante callbacks JavaScript.
-- Para paradas cercanas, el flujo nativo consulta SmartMoveApi.getNearby(...).
+Llamadas nativas principales:
+- nativeApi.loadStreets(...)
+- nativeApi.loadIntersections(...)
+- nativeApi.loadStops(...)
+- nativeApi.loadArrivals(...)
 
-IMPORTANTE: aunque el build de a66ddae es exitoso, todavía hay que validar el comportamiento funcional real y no dar por resuelto el mapa solo porque compile.
+Estado histórico utilizado:
+- currentLine
+- currentStreet
+- currentIntersection
+- currentStop
 
-7. POSIBLE ÁREA CENTRAL DE INVESTIGACIÓN PENDIENTE
-La arquitectura debe asegurar que los objetos de parada recibidos desde SmartMove conserven los códigos reales de las líneas que sirven cada parada. No se debe asignar una línea a una parada únicamente como suposición por proximidad ni etiquetar automáticamente una parada con la línea seleccionada si los datos de origen no lo confirman.
-Investigar y contrastar:
-- La implementación nativa que funciona en native/cyberpunk-ui.
-- Cómo se obtienen las paradas cercanas y sus códigos de línea desde SmartMove.
-- Cómo stopJson(...) serializa los códigos de línea.
-- Cómo la interfaz JS procesa onNativeMapStops y onNativeNearbyStops.
-- Cómo la selección de una parada abre sus arribos y conserva la línea correcta.
-- Cómo se actualizan y dibujan los vehículos/recorridos en tiempo real.
-- El resultado de permisos de ubicación y la reanudación de la solicitud después de conceder permisos.
-No concluir que una hipótesis es la causa definitiva sin verificarla en código y/o con pruebas.
+Flujo histórico:
+1. openLine(l) establece currentLine y solicita las calles.
+2. onNativeStreets procesa y muestra CALLES.
+3. Al seleccionar una calle se solicitan INTERSECCIONES.
+4. Al seleccionar una intersección se solicitan PARADAS.
+5. Al seleccionar una parada se solicitan ARRIBOS.
+6. La consulta de arribos conserva la línea seleccionada.
 
-8. PLAN DE VERIFICACIÓN OBLIGATORIO
-1. Revisar el estado final de GitHub Actions para cada nuevo commit.
-2. Confirmar que los permisos de ubicación se solicitan y que, después de concederlos, la operación pendiente continúa.
-3. Confirmar que el GPS obtiene coordenadas reales en el mapa y en “Paradas cercanas”.
-4. Confirmar que las paradas cercanas muestran las líneas reales que les corresponden según SmartMove.
-5. Seleccionar una parada y verificar que abre la información de arribos correcta.
-6. Confirmar que el mapa dibuja y actualiza los recorridos/vehículos en tiempo real.
-7. Comparar el comportamiento con native/cyberpunk-ui sin modificar esa rama.
-8. Informar por separado: compilación, verificación estática del código y prueba funcional en dispositivo. No confundirlas.
+Este flujo es la referencia funcional. Si se vuelve a modularizar, debe conservar exactamente esa lógica de navegación, estado y comunicación nativa.
 
-9. ÚLTIMO ESTADO CONFIRMADO
+4. DISEÑO VISUAL NEXUS — REGLA DE PRESERVACIÓN
+La estructura funcional puede venir de 5ca01a7, pero la apariencia debe seguir siendo NEXUS.
+
+Conservar:
+- tarjetas NEXUS actuales;
+- tipografía actual;
+- espaciado y tamaños actuales;
+- bordes, sombras y fondos actuales;
+- botones y estados actuales;
+- jerarquía visual actual;
+- círculo animado NEXUS de ARRIBOS;
+- estilos actuales de CALLES, INTERSECCIONES y PARADAS.
+
+NO copiar desde 5ca01a7:
+- CSS antiguo de ARRIBOS;
+- círculo de arribos antiguo;
+- estilos Cyberpunk antiguos que hayan sido reemplazados;
+- animaciones scan eliminadas por rendimiento.
+
+5. CAMBIOS RECIENTES DEL REPOSITORIO
+
+A) RESTAURACIÓN DE BASE FUNCIONAL
+La rama fue llevada nuevamente al commit 5ca01a7 para recuperar la estructura funcional conocida de LÍNEAS.
+
+B) LIMPIEZA DE ASSETS AJENOS
+Se eliminaron de app/src/main/assets los archivos WEBP/B64 que pertenecían a la otra app:
+- background.webp
+- drawer_menu.webp
+- favoritos_cyberpunk.b64
+- favoritos_cyberpunk.webp
+- lineas_cyberpunk.b64
+- lineas_cyberpunk.webp
+- mapa_cyberpunk.b64
+- mapa_cyberpunk.webp
+- paradas_cercanas_cyberpunk.b64
+- paradas_cercanas_cyberpunk.webp
+- sincronizar_lineas.b64
+- sincronizar_lineas.webp
+
+C) LIMPIEZA DE ARCHIVOS HEREDADOS
+Commit: 45c8513865d9792c2b09bdb1a1ec54f813210670
+Mensaje: LIMPIAR ARCHIVOS HEREDADOS DE LA APP NATIVA
+
+Se eliminaron archivos de la antigua arquitectura nativa que ya no forman parte del flujo WebView actual:
+- app/build.gradle
+- app/src/main/assets/neon-circle.svg
+- app/src/main/res/layout/activity_main.xml
+- app/src/main/res/color/bottom_nav_selector.xml
+- app/src/main/res/menu/bottom_nav_menu.xml
+- app/src/main/res/drawable/nav_bell.xml
+- app/src/main/res/drawable/nav_cercanas.xml
+- app/src/main/res/drawable/nav_favoritos.xml
+- app/src/main/res/drawable/nav_home.xml
+- app/src/main/res/drawable/nav_lineas.xml
+- app/src/main/res/drawable/nav_mapa.xml
+- app/src/main/res/drawable/nav_menu.xml
+- app/src/main/res/drawable/nav_search.xml
+- generate_icons.py
+- archivos legacy adicionales de la arquitectura nativa identificados durante la auditoría.
+
+6. ARCHIVOS QUE DEBEN CONSERVARSE
+Arquitectura WebView/nativa actual:
+- app/src/main/java/com/tucolectivo/app/MainActivity.kt
+- app/src/main/java/com/transpuntano/app/data/SmartMoveApi.kt
+- app/src/main/java/com/transpuntano/app/data/TransitModels.kt
+- app/src/main/java/com/transpuntano/app/ArrivalNotificationService.kt
+- app/src/main/assets/index.html
+- app/src/main/assets/script.js
+- app/src/main/assets/style.css
+- app/src/main/assets/Cyberpunk.ttf
+- app/src/main/assets/background_cyberpunk.gif
+- módulos JS actuales de navegación, puente nativo, sincronización, notificaciones, favoritos y LÍNEAS cuando estén presentes en la rama.
+
+MainActivity.kt es especialmente importante porque mantiene el puente entre Android nativo, GPS, SmartMove, líneas, paradas, arribos y WebView.
+
+7. REGLAS DE LIMPIEZA
+No eliminar archivos únicamente por parecer antiguos.
+Antes de borrar cualquier archivo:
+1. comprobar referencias en código;
+2. comprobar AndroidManifest y Gradle;
+3. comprobar index.html y módulos JS;
+4. confirmar que no pertenece al puente nativo ni al flujo WebView;
+5. evitar tocar funcionalidades fuera del objetivo.
+
+app/build.gradle era una configuración duplicada y obsoleta; la configuración activa es app/build.gradle.kts.
+
+8. REGLAS DE RENDIMIENTO
+INICIO quedó demasiado pesado cuando se usaban animaciones scan en bordes/marcos.
+
+Por eso:
+- NO reintroducir scan animations en INICIO.
+- NO convertir todos los componentes en animaciones continuas.
+- Mantener animaciones solo donde tengan función clara.
+- SINCRONIZAR LÍNEAS conserva su animación especial.
+- ARRIBOS conserva el círculo NEXUS.
+- Priorizar fluidez del WebView y evitar trabajo continuo innecesario.
+
+9. PROBLEMA HISTÓRICO DE BLOQUEO EN LÍNEAS
+Se realizaron varios intentos de protección y modularización que no resolvieron definitivamente el bloqueo de LÍNEAS → CALLES.
+
+Por eso se eligió 5ca01a7 como baseline funcional en lugar de seguir acumulando parches.
+
+No volver a agregar protecciones o límites arbitrarios sin demostrar que son necesarios.
+Primero conservar el flujo funcional de 5ca01a7 y después aplicar el estilo NEXUS de forma controlada.
+
+10. PLAN DE TRABAJO SIGUIENTE
+FASE 1 — VALIDAR BASE FUNCIONAL
+- Confirmar LÍNEAS.
+- Abrir una línea.
+- Confirmar CALLES.
+- Seleccionar calle.
+- Confirmar INTERSECCIONES.
+- Seleccionar intersección.
+- Confirmar PARADAS.
+- Seleccionar parada.
+- Confirmar ARRIBOS.
+
+FASE 2 — REAPLICAR NEXUS SIN CAMBIAR LÓGICA
+- Mantener el JavaScript funcional de 5ca01a7.
+- Aplicar únicamente HTML/CSS visual NEXUS.
+- Mantener estados y callbacks.
+- Mantener el círculo animado NEXUS.
+- No copiar CSS visual antiguo desde 5ca01a7.
+
+FASE 3 — VALIDACIÓN
+Separar siempre:
+- compilación;
+- revisión estática del código;
+- prueba funcional en dispositivo.
+
+No considerar una función resuelta solamente porque compile.
+
+11. GITHUB ACTIONS
+Cada commit que modifique código debe comprobarse mediante GitHub Actions.
+No afirmar que un APK compila o que una prueba fue exitosa sin verificar el workflow correspondiente.
+
+12. MAPA / GPS
+El mapa queda fuera del trabajo actual.
+No tocar la arquitectura del mapa durante la restauración de LÍNEAS.
+
+Los problemas históricos de GPS, paradas cercanas, recorridos y vehículos en tiempo real deben investigarse por separado y compararse con native/cyberpunk-ui cuando corresponda.
+
+13. INSTRUCCIONES PARA CONTINUAR
+1. Trabajar solo sobre native/cyberpunkwebview-ui.
+2. Tomar 5ca01a7 como referencia funcional de LÍNEAS.
+3. No modificar native/cyberpunk-ui.
+4. No restaurar el estilo visual antiguo de 5ca01a7.
+5. Mantener NEXUS como capa visual actual.
+6. Mantener el círculo NEXUS de ARRIBOS.
+7. Mantener la animación especial de SINCRONIZAR LÍNEAS.
+8. No reintroducir scan animations en INICIO.
+9. No tocar MAPA.
+10. Hacer cambios pequeños y verificables.
+11. Revisar GitHub Actions después de cada cambio relevante.
+12. Si LÍNEAS vuelve a fallar, comparar primero contra 5ca01a7 antes de introducir nuevos parches.
+
+14. ÚLTIMO ESTADO CONFIRMADO
 - Rama activa: native/cyberpunkwebview-ui.
-- Commit actual de corrección: a66ddae87f0763e9aa87a6aeed2dabbd18ecc5b3.
-- Build de GitHub Actions: SUCCESS.
-- El fallo de compilación de 93766f3 fue identificado como referencia no resuelta a loadMapStopsAt y corregido.
-- La resolución funcional del mapa, GPS, paradas cercanas y vehículos en tiempo real sigue pendiente de comprobación en la app/dispositivo.
-- Rama native/cyberpunk-ui: intacta; es la referencia funcional reportada por el usuario.
+- HEAD: 45c8513865d9792c2b09bdb1a1ec54f813210670.
+- Último commit: LIMPIAR ARCHIVOS HEREDADOS DE LA APP NATIVA.
+- Baseline funcional de LÍNEAS: 5ca01a79aa52e7bdf718a3f00c0999fdbfef56cb.
+- Archivos WEBP/B64 ajenos eliminados.
+- Archivos legacy nativos no utilizados eliminados.
+- Rama native/cyberpunk-ui permanece protegida.
+- Próximo objetivo: validar LÍNEAS completa y reaplicar visual NEXUS sin alterar su funcionamiento.
 
 FIN DEL DOCUMENTO MAESTRO
