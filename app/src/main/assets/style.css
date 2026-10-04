@@ -94,6 +94,8 @@ small{font-size:10px}
 .line-card em strong{font-size:18px;color:var(--vt)}
 .data-card{flex-direction:column;align-items:flex-start;justify-content:center;gap:0;padding-right:48px}
 .data-card span{display:block;margin-top:4px;font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
+/* Unificar el rótulo de las tarjetas de detalle de LÍNEAS (incluida ARRIBOS). */
+.data-card.line-detail-card>b{font-size:15px!important;font-weight:800!important;letter-spacing:.03em!important;line-height:1.2!important;color:var(--ink)!important;}
 .data-card em{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:22px;font-weight:400;color:var(--vt)}
 .nearby-stop em{top:16px;transform:none;font-size:11px;font-weight:800;padding:3px 9px;background:var(--tint);border-radius:99px}
 .nearby-stop>b,.nearby-stop>span,.nearby-stop>.line-badges,.nearby-stop>em{pointer-events:none}
