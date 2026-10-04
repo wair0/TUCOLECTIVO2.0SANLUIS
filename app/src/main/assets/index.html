@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#05060f">
+<meta name="theme-color" content="#eef3fa">
 <title>TU COLECTIVO 2.0</title>
 <link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -38,16 +39,16 @@
 </header>
 
 <nav class="panel" id="m-nav" aria-label="Menú principal">
-  <div class="ph">MENU_PRINCIPAL.EXE</div>
+  <div class="ph">MENÚ PRINCIPAL</div>
   <button class="item" data-go="inicio">INICIO</button>
-  <button class="item" data-go="lineas">LÍNEAS<small>DE COLECTIVOS</small></button>
+  <button class="item" data-go="lineas">LÍNEAS</button>
   <button class="item" data-go="mapa">MAPA</button>
   <button class="item" data-go="paradas">PARADAS CERCANAS</button>
   <button class="item" data-go="favoritos">FAVORITOS</button>
+  <button class="item theme-item" id="themeToggle" type="button" role="switch" aria-checked="false"><span class="ti"><svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>MODO OSCURO<small>DESACTIVADO</small><i class="sw"></i></button>
 </nav>
-
 <section class="panel" id="m-search" aria-label="Búsqueda">
-  <div class="ph">BUSCAR_DATOS.SYS</div>
+  <div class="ph">BÚSQUEDA</div>
   <label class="sbox"><b>&gt;</b><input id="q" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Línea o parada_"></label>
   <div class="chips">
     <button class="chip" data-f="todo" aria-pressed="true">TODO</button>
@@ -59,7 +60,7 @@
 </section>
 
 <section class="panel" id="m-bell" aria-label="Notificaciones">
-  <div class="ph">ALERTAS_REALES.LOG</div>
+  <div class="ph">NOTIFICACIONES</div>
   <ul class="nl" id="recentAlertsList">
     <li><b>SIN ALERTAS RECIENTES</b><span>Las alertas aparecerán cuando se aproximen los arribos guardados en Favoritos.</span></li>
   </ul>
@@ -67,7 +68,7 @@
 
 <main id="app" class="app-shell">
   <section class="screen active" data-screen="inicio">
-    <div class="screen-head" aria-label="Inicio"></div>
+    <div class="screen-head"><span>INICIO</span></div>
     <div class="grid home-design-grid">
       <button class="card card-lineas" data-go="lineas"><svg class="ic"><use href="#i-bus"/></svg><span><b>LÍNEAS</b><small>RECORRIDOS</small></span></button>
       <button class="card card-mapa" data-go="mapa"><svg class="ic"><use href="#i-map"/></svg><span><b>MAPA</b><small>VISTA GLOBAL</small></span></button>
@@ -78,7 +79,7 @@
   </section>
 
   <section class="screen" data-screen="lineas">
-    <div class="screen-head" aria-label="Líneas"></div>
+    <div class="screen-head"><span>LÍNEAS</span><small>14 RUTAS</small></div>
     
     <div class="lineas-grid">
       <button class="line-card" data-line="1"><span class="line-badge">01</span><div><b>LÍNEA 1</b><small>RECORRIDO ACTIVO</small></div><em><strong>5</strong> MIN</em></button>
@@ -99,7 +100,7 @@
   </section>
 
   <section class="screen" data-screen="mapa">
-    <div class="screen-head" aria-label="Mapa"></div>
+    <div class="screen-head"><span>MAPA</span><small>VISTA GLOBAL</small></div>
     <div class="map-wrap" id="map-wrap">
       <canvas id="mapCanvas" aria-label="Mapa de San Luis"></canvas>
       <div class="map-topbar">
@@ -126,7 +127,7 @@
   </section>
 
   <section class="screen" data-screen="paradas">
-    <div class="screen-head" aria-label="Paradas cercanas"></div>
+    <div class="screen-head"><span>PARADAS CERCANAS</span><small>GPS</small></div>
     <button id="locateStops" class="locate-stops" type="button">
       <span class="locate-icon">◎</span>
       <span><strong>LOCALIZAR PARADAS</strong><small>MEDIANTE UBICACIÓN</small></span>
@@ -138,13 +139,16 @@
   </section>
 
   <section class="screen" data-screen="arribos">
-    <div class="screen-head" aria-label="Arribos"></div>
+    <div class="screen-head">
+<span>ARRIBOS</span>
+      <small id="arrivalsMeta">PARADA</small>
+    </div>
     <div id="arrivalStop" class="arrival-stop"></div>
     <div id="arrivalList" class="arrival-list"></div>
   </section>
 
   <section class="screen" data-screen="favoritos">
-    <div class="screen-head" aria-label="Favoritos"></div>
+    <div class="screen-head"><span>FAVORITOS</span><small>ACCESOS RÁPIDOS</small></div>
     <div class="notification-schedule">
       <strong>HORARIO DE ALERTAS</strong>
       <p>Elegí cuándo querés recibir avisos. Fuera de esta franja no se consultarán arribos ni se emitirán alertas.</p>
