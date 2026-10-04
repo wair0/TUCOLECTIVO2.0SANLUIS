@@ -88,11 +88,35 @@
 
   let lineSyncPending = false;
   let lineSyncTimer = null;
+  let lineSyncResultTimer = null;
+  let lineSyncStartedAt = 0;
+  const LINE_SYNC_ANIMATION_MS = 2200;
+
   function finishLineSync(success, count, message) {
     if (!lineSyncPending) return;
+
+    // SmartMove puede responder antes de que termine la animación CSS.
+    // En ese caso esperamos el tiempo restante para que la barra nunca salte
+    // de 0 a 100% instantáneamente.
+    if (success) {
+      const elapsed = performance.now() - lineSyncStartedAt;
+      const remaining = Math.max(0, LINE_SYNC_ANIMATION_MS - elapsed);
+      if (remaining > 0) {
+        if (lineSyncResultTimer !== null) clearTimeout(lineSyncResultTimer);
+        lineSyncResultTimer = setTimeout(() => {
+          lineSyncResultTimer = null;
+          finishLineSync(success, count, message);
+        }, remaining);
+        return;
+      }
+    }
+
     lineSyncPending = false;
     if (lineSyncTimer !== null) clearTimeout(lineSyncTimer);
     lineSyncTimer = null;
+    if (lineSyncResultTimer !== null) clearTimeout(lineSyncResultTimer);
+    lineSyncResultTimer = null;
+
     const b = $('#sync');
     const label = b.querySelector('b');
     const detail = b.querySelector('small');
@@ -124,6 +148,11 @@
       return;
     }
     lineSyncPending = true;
+    lineSyncStartedAt = performance.now();
+    if (lineSyncResultTimer !== null) {
+      clearTimeout(lineSyncResultTimer);
+      lineSyncResultTimer = null;
+    }
     b.classList.remove('done');
     b.classList.add('run');
     label.textContent = 'SINCRONIZANDO...';
