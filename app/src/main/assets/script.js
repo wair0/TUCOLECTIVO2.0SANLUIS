@@ -204,7 +204,7 @@
   const ctx = canvas.getContext('2d');
   const TILE = 256;
   const FALLBACK = {lat:-33.3017,lng:-66.3378};
-  const map = {lat:FALLBACK.lat,lng:FALLBACK.lng,zoom:14,drag:false,pointers:new Map(),last:null,baseDistance:0,baseZoom:14,userLocation:null,routePoints:[],stops:[],vehicles:[],routeLineCode:0,availableLines:[],availableLineLabels:{},lineLabels:{},availableLinesLoading:false,pointerStart:null,dragged:false};
+  const map = {lat:FALLBACK.lat,lng:FALLBACK.lng,zoom:14,drag:false,pointers:new Map(),last:null,baseDistance:0,baseZoom:14,userLocation:null,routePoints:[],stops:[],vehicles:[],routeLineCode:0,availableLines:[],availableLineLabels:{},lineLabels:{},availableLinesLoading:false,pointerStart:null,dragged:false,manualRouteRefreshViewport:null};
   const tiles = new Map();
 
   function worldSize(z){ return TILE * Math.pow(2,z); }
@@ -451,7 +451,12 @@
     try{map.routePoints=(typeof payload==='string'?JSON.parse(payload):payload||[]).map(p=>({lat:Number(p.lat),lng:Number(p.lng)})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
       state.textContent=map.routePoints.length>1?'RECORRIDO CARGADO · LÍNEA '+publicLineLabel(map.routeLineCode):'SIN GEOMETRÍA DE RECORRIDO';
       if(refreshLive&&map.routeLineCode>0){refreshLive.disabled=false;refreshLiveState.textContent='GPS';refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · RECORRIDO EN TIEMPO REAL';}
-      if(map.routePoints.length)fitPoints(map.routePoints.concat(map.stops));else draw();
+      if(map.manualRouteRefreshViewport){
+        const viewport=map.manualRouteRefreshViewport;
+        map.lat=viewport.lat;map.lng=viewport.lng;map.zoom=viewport.zoom;
+        map.manualRouteRefreshViewport=null;
+        draw();
+      }else if(map.routePoints.length)fitPoints(map.routePoints.concat(map.stops));else draw();
     }catch(_){state.textContent='ERROR LEYENDO RECORRIDO';}
   };
   window.onNativeMapRouteError=payload=>{let msg='NO SE PUDO CARGAR EL RECORRIDO';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
@@ -565,6 +570,7 @@
   if(refreshLive)refreshLive.addEventListener('click',()=>{
     if(!map.routeLineCode||!window.TuColectivoNative)return;
     map.manualVehicleRefresh=true;
+    map.manualRouteRefreshViewport={lat:map.lat,lng:map.lng,zoom:map.zoom};
     refreshLive.disabled=true;
     refreshLive.classList.add('is-refreshing');
     refreshLiveState.textContent='ACTUALIZANDO';
@@ -575,6 +581,28 @@
     else if(typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode);
     window.setTimeout(()=>{if(refreshLive&&map.manualVehicleRefresh){map.manualVehicleRefresh=false;refreshLive.classList.remove('is-refreshing');refreshLive.disabled=false;refreshLiveState.textContent='GPS';refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · ACTUALIZACIÓN SOLICITADA';}},12000);
   });
+  window.onNativeMapManualRefreshComplete=payload=>{
+    if(!refreshLive)return;
+    map.manualVehicleRefresh=false;
+    refreshLive.classList.remove('is-refreshing');
+    refreshLive.disabled=false;
+    refreshLiveState.textContent='GPS';
+    const stamp=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · GPS ACTUALIZADO '+stamp;
+    state.textContent='RECORRIDO ACTUALIZADO · GPS '+stamp;
+  };
+  window.onNativeMapManualRefreshError=payload=>{
+    if(!refreshLive)return;
+    let msg='NO SE PUDO ACTUALIZAR EL GPS';
+    try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}
+    map.manualVehicleRefresh=false;
+    map.manualRouteRefreshViewport=null;
+    refreshLive.classList.remove('is-refreshing');
+    refreshLive.disabled=false;
+    refreshLiveState.textContent='ERROR';
+    refreshLiveMeta.textContent=msg;
+    state.textContent=msg;
+  };
   window.setInterval(()=>{const screen=document.querySelector('[data-screen="mapa"]');if(screen&&screen.classList.contains('active')&&window.TuColectivoNative&&typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode||0);},10000);
   document.addEventListener('app:navigate',e=>{
     if(e.detail.go==='mapa'){
