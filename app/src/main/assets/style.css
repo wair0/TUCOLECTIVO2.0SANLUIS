@@ -129,7 +129,6 @@ small{font-size:10px}
 .arrival-time .arrival-ring-arc{stroke:var(--vt);filter:none}.arrival-time .arrival-ring-dot{fill:var(--cy);stroke:var(--sf);filter:none}
 .arrival-arriving{border-color:var(--bd2);background:linear-gradient(120deg,var(--sf),var(--tint))}
 .arrival-card .arrival-time-arriving{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:7px!important;flex:0 0 92px!important;width:92px!important;min-width:0!important;height:62px!important;padding:0 6px!important;border-radius:14px!important;background:var(--tint)!important;border:1px solid var(--bd2)!important}
-.arrival-card .arrival-time-arriving::before{content:"";display:block!important;width:8px;height:8px;border-radius:50%;background:var(--cy);box-shadow:0 0 0 4px rgba(15,181,201,.22),0 0 14px rgba(15,181,201,.45);animation:arrivingPulse 1.2s ease-in-out infinite}
 .arrival-card .arrival-time-arriving strong{position:static!important;left:auto!important;top:auto!important;transform:none!important;font-size:10px!important;font-weight:900!important;letter-spacing:.08em!important;line-height:1!important;color:var(--cy)!important;text-shadow:0 0 8px rgba(15,181,201,.28)!important;animation:arrivingText 1.5s ease-in-out infinite}
 
 /* MAPA */
