@@ -1143,6 +1143,7 @@
       // duplicada que conserve el mismo estado del backend.
       const backendStatus=String(x.status??'').trim().toUpperCase();
       const statusChanged=previous?.arrivingStatus!=null && backendStatus!==previous.arrivingStatus;
+      let arriving=Number.isFinite(m)&&m<=0;
 
       if(previous?.forcedArriving){
         if(statusChanged){
@@ -1154,8 +1155,6 @@
           arriving=true;
         }
       }
-
-      let arriving=Number.isFinite(m)&&m<=0;
       if(Number.isFinite(m)&&m===1 && !arriving){
         if(previous?.forcedArriving){
           arriving=true;
