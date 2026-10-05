@@ -43,3 +43,11 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
 }
+
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("tucolectivo2.0sanluis.apk")
+        }
+    }
+}
