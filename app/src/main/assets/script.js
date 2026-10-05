@@ -1028,7 +1028,7 @@
     const context=String(subtitle??'').trim();
     lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(title)+'</strong>'+(context?'<small class="line-sub-context">'+esc(context)+'</small>':'')+'</div>';
     if(!items.length){lineGrid.insertAdjacentHTML('beforeend','<div class="nearby-empty"><strong>'+esc(empty)+'</strong><span>NO HAY DATOS PARA ESTA SELECCIÓN_</span></div>');return;}
-    items.forEach(item=>{const b=document.createElement('button');b.type='button';b.className='data-card line-detail-card';b.innerHTML='<b class="line-detail-title" style="font-size:15px!important;font-weight:800!important;letter-spacing:.03em!important;line-height:1.2!important;color:var(--ink)!important">'+esc(item.name)+'</b>'+(itemLabel?'<span>'+esc(itemLabel)+'</span>':'')+'<em>›</em>';b.addEventListener('click',()=>onClick(item));lineGrid.appendChild(b);});
+    items.forEach(item=>{const b=document.createElement('button');b.type='button';b.className='data-card line-detail-card';const title=item.name||itemLabel||'';const secondary=item.name&&itemLabel?itemLabel:'';b.innerHTML='<b class="line-detail-title" style="font-size:15px!important;font-weight:800!important;letter-spacing:.03em!important;line-height:1.2!important;color:var(--ink)!important">'+esc(title)+'</b>'+(secondary?'<span>'+esc(secondary)+'</span>':'')+'<em>›</em>';b.addEventListener('click',()=>onClick(item));lineGrid.appendChild(b);});
   };
   const showError=(title,msg)=>showList(title,'',[],msg,()=>{});
   window.onNativeLines=p=>{
