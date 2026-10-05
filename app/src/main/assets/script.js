@@ -1137,22 +1137,35 @@
       const m=Number.isFinite(minuteMatch)?minuteMatch:NaN;
       const arrivalKey=arrivalIdentity(x);
       const previous=arrivingTimers.get(arrivalKey);
+      // SmartMove también devuelve el estado textual original en "status".
+      // Lo usamos como frontera real del estado: una vez que mostramos
+      // ARRIBANDO no volvemos a dibujar minutos por un repaint/respuesta
+      // duplicada que conserve el mismo estado del backend.
+      const backendStatus=String(x.status??'').trim().toUpperCase();
+      const statusChanged=previous?.arrivingStatus!=null && backendStatus!==previous.arrivingStatus;
 
-      if(Number.isFinite(m)&&m>1){
-        if(previous?.timer)clearTimeout(previous.timer);
-        arrivingTimers.delete(arrivalKey);
+      if(previous?.forcedArriving){
+        if(statusChanged){
+          if(previous.timer)clearTimeout(previous.timer);
+          arrivingTimers.delete(arrivalKey);
+        }else{
+          // Mantener ARRIBANDO mientras SmartMove siga reportando el mismo
+          // estado, aunque el valor numérico vuelva a ser 1, 2, etc.
+          arriving=true;
+        }
       }
 
       let arriving=Number.isFinite(m)&&m<=0;
-      if(Number.isFinite(m)&&m===1){
+      if(Number.isFinite(m)&&m===1 && !arriving){
         if(previous?.forcedArriving){
           arriving=true;
         }else if(!previous){
-          const state={forcedArriving:false,timer:null,firstOneAt:Date.now()};
+          const state={forcedArriving:false,timer:null,firstOneAt:Date.now(),arrivingStatus:null};
           state.timer=setTimeout(()=>{
             const current=arrivingTimers.get(arrivalKey);
             if(!current||current!==state)return;
             current.forcedArriving=true;
+            current.arrivingStatus=backendStatus;
             current.timer=null;
             arrivingTimers.set(arrivalKey,current);
             if(list.isConnected)renderLineArrivals(a,list);
