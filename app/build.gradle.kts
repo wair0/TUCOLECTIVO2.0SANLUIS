@@ -10,8 +10,8 @@ android {
         applicationId = "com.tucolectivo.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 30
-        versionName = "3.0.0-native"
+        versionCode = 1016
+        versionName = "1.1.6"
     }
     signingConfigs {
         create("release") {
