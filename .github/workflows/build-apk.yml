@@ -70,8 +70,10 @@ jobs:
       - name: Verify signed APK
         run: |
           APK="app/build/outputs/apk/release/tucolectivo2.0sanluis.apk"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
           test -f "$APK"
-          apksigner verify --verbose "$APK"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose "$APK"
           ls -lh "$APK"
 
       - name: Upload signed Release APK
