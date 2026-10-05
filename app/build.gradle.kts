@@ -25,7 +25,7 @@ android {
         release {
             isMinifyEnabled = false
             if (System.getenv("KEYSTORE_FILE") != null) {
-                signingConfig = signingConfigs.create("release") {
+                signingConfig = signingConfigs.getByName("release").apply {
                     storeFile = file(System.getenv("KEYSTORE_FILE")!!)
                     storePassword = System.getenv("KEYSTORE_PASSWORD")
                     keyAlias = System.getenv("KEY_ALIAS")
