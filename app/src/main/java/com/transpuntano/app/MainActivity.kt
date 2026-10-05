@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var mapLineCode: Int = 0
     @Volatile private var mapVehicleRefreshInProgress = false
     @Volatile private var pendingMapVehicleRefreshLine = 0
+    @Volatile private var pendingMapVehicleRefreshManual = false
     private var pendingArrivalNotifications: String? = null
     private var pendingArrivalStartTime: String = "18:00"
     private var pendingArrivalEndTime: String = "19:30"
@@ -260,10 +261,20 @@ class MainActivity : AppCompatActivity() {
         return earth * 2.0 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1.0 - a))
     }
 
-    private fun refreshMapVehiclesNow(lineCode: Int = mapLineCode) {
-        if (mapNearbyStops.isEmpty()) return
+    private fun refreshMapVehiclesNow(lineCode: Int = mapLineCode, manualRequest: Boolean = false) {
+        if (mapNearbyStops.isEmpty()) {
+            if (manualRequest) {
+                dispatch("onNativeMapManualRefreshError", JSONObject()
+                    .put("message", "NO HAY PARADAS DISPONIBLES PARA ACTUALIZAR EL GPS")
+                    .toString())
+            }
+            return
+        }
         if (mapVehicleRefreshInProgress) {
-            if (lineCode > 0) pendingMapVehicleRefreshLine = lineCode
+            if (lineCode > 0) {
+                pendingMapVehicleRefreshLine = lineCode
+                pendingMapVehicleRefreshManual = pendingMapVehicleRefreshManual || manualRequest
+            }
             return
         }
         mapVehicleRefreshInProgress = true
@@ -332,12 +343,23 @@ class MainActivity : AppCompatActivity() {
                         found.values.forEach { put(it) }
                     }.toString()
                 )
+                if (manualRequest) {
+                    dispatch(
+                        "onNativeMapManualRefreshComplete",
+                        JSONObject()
+                            .put("lineCode", lineCode)
+                            .put("vehicleCount", found.size)
+                            .toString()
+                    )
+                }
             } finally {
                 mapVehicleRefreshInProgress = false
                 val pendingLine = pendingMapVehicleRefreshLine
+                val pendingManual = pendingMapVehicleRefreshManual
                 pendingMapVehicleRefreshLine = 0
+                pendingMapVehicleRefreshManual = false
                 if (pendingLine > 0 && pendingLine == mapLineCode && mapNearbyStops.isNotEmpty()) {
-                    refreshMapVehiclesNow(pendingLine)
+                    refreshMapVehiclesNow(pendingLine, pendingManual)
                 }
             }
         }
@@ -487,8 +509,9 @@ class MainActivity : AppCompatActivity() {
             mapLineCode = lineCode
             if (mapVehicleRefreshInProgress) {
                 pendingMapVehicleRefreshLine = lineCode
+                pendingMapVehicleRefreshManual = true
             } else {
-                refreshMapVehiclesNow(lineCode)
+                refreshMapVehiclesNow(lineCode, manualRequest = true)
             }
         }
 
