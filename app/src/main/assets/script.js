@@ -1109,19 +1109,40 @@
   window.onNativeIntersectionsError=p=>showError('INTERSECCIONES',JSON.parse(p).message);
   window.onNativeStops=p=>{const a=JSON.parse(p);currentStop=null;showList('PARADAS','INTERSECCIÓN: '+(currentIntersection?.name||''),a,'SIN PARADAS',showArrivals,'ARRIBOS');};
   window.onNativeStopsError=p=>showError('PARADAS',JSON.parse(p).message);
+  const ARRIVING_DELAY_MS=35000;
+  const arrivingTimers=new Map();
   const renderLineArrivals=(items,list)=>{
     const a=Array.isArray(items)?items:[];
     if(!list)return;
-    list.innerHTML=a.length?a.map(x=>{
+    list.innerHTML=a.length?a.map((x,index)=>{
       // SmartMove puede entregar los minutos como número o como texto (por ejemplo "1 MIN").
-      // Normalizamos ambos formatos para que 1 y 0 siempre entren en estado ARRIBANDO.
+      // Normalizamos el valor y corregimos el caso en que el texto llegue con formato "1 MIN".
       const rawMinutes=x.minutes;
       const minuteMatch=typeof rawMinutes==='number'
         ? rawMinutes
-        : Number.parseFloat(String(rawMinutes??'').replace(',', '.').match(/-?\\d+(?:\\.\\d+)?/)?.[0]||'');
+        : Number.parseFloat(String(rawMinutes??'').replace(',', '.').match(/-?\d+(?:\.\d+)?/)?.[0]||'');
       const m=Number.isFinite(minuteMatch)?minuteMatch:NaN;
-      // Cada arribo se evalúa de forma independiente: solo esta línea pasa a ARRIBANDO.
-      const arriving=Number.isFinite(m)&&m<=1;
+      const arrivalKey=String(x.id??x.tripId??x.vehicleId??x.line??currentLine?.code??'')+'|'+String(x.destination??'').trim().toUpperCase()+'|'+index;
+      const previous=arrivingTimers.get(arrivalKey);
+      if(Number.isFinite(m)&&m>1){
+        if(previous?.timer)clearTimeout(previous.timer);
+        arrivingTimers.delete(arrivalKey);
+      }
+      let arriving=Number.isFinite(m)&&m<=0;
+      if(Number.isFinite(m)&&m===1){
+        if(previous?.forcedArriving){
+          arriving=true;
+        }else if(!previous){
+          const state={forcedArriving:false,timer:null};
+          state.timer=setTimeout(()=>{
+            state.forcedArriving=true;
+            state.timer=null;
+            arrivingTimers.set(arrivalKey,state);
+            if(list.isConnected)renderLineArrivals(a,list);
+          },ARRIVING_DELAY_MS);
+          arrivingTimers.set(arrivalKey,state);
+        }
+      }
       const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
       const rawDestination=String(x.destination||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
       const unknownDestination=!rawDestination||/^(?:A{1,2}|N\/?A|S\/?D|DESTINO|SERVICIO)$/i.test(rawDestination);
@@ -1198,15 +1219,15 @@
  .arrival-copy{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:7px;flex:1;padding-right:12px}
  .arrival-copy b{line-height:1.15!important}
  .arrival-copy span{line-height:1.15!important;white-space:normal!important}
- .arrival-time{position:relative!important;flex:0 0 70px!important;width:70px!important;height:70px!important;display:grid!important;place-items:center!important}
+ .arrival-time{position:relative!important;flex:0 0 70px!important;width:70px!important;height:70px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;box-sizing:border-box!important}
  .arrival-ring{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;overflow:visible!important;transform:rotate(-90deg)!important}
   .arrival-ring-orbit{transform-box:view-box!important;transform-origin:40px 40px!important;animation:arrivalNativeOrbit var(--arrival-duration,1.5s) linear infinite!important}
   .arrival-ring-dot{fill:var(--vt);stroke:var(--vt);stroke-width:1;filter:drop-shadow(0 0 5px var(--vt));animation:none!important}
  .arrival-ring-base{fill:none;stroke:var(--cy);stroke-width:4;filter:drop-shadow(0 0 5px var(--cy))}
  .arrival-ring-arc{fill:none;stroke:var(--vt);stroke-width:4;stroke-linecap:round;stroke-dasharray:56.2 163.7;filter:drop-shadow(0 0 6px var(--vt));transform-origin:40px 40px;animation:none!important}
- .arrival-time strong,.arrival-time small{position:absolute!important;left:50%!important;z-index:5!important;line-height:1!important;margin:0!important;white-space:nowrap!important}
- .arrival-time strong{top:50%!important;transform:translate(-50%,-50%)!important;font-size:15px!important}
- .arrival-time small{top:calc(50% + 10px)!important;transform:translateX(-50%)!important;font-size:6.5px!important}
+ .arrival-time strong,.arrival-time small{position:static!important;left:auto!important;z-index:5!important;line-height:1!important;margin:0!important;white-space:nowrap!important;transform:none!important}
+ .arrival-time strong{font-size:15px!important}
+ .arrival-time small{font-size:8px!important;letter-spacing:.04em!important}
  @keyframes arrivalNativeOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
  `;
  document.head.appendChild(css);
