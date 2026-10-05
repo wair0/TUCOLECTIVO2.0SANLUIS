@@ -1109,69 +1109,30 @@
   window.onNativeIntersectionsError=p=>showError('INTERSECCIONES',JSON.parse(p).message);
   window.onNativeStops=p=>{const a=JSON.parse(p);currentStop=null;showList('PARADAS','INTERSECCIÓN: '+(currentIntersection?.name||''),a,'SIN PARADAS',showArrivals,'ARRIBOS');};
   window.onNativeStopsError=p=>showError('PARADAS',JSON.parse(p).message);
-  const ARRIVING_DELAY_MS=35000;
-  const arrivingTimers=new Map();
-
-  // El backend devuelve minutos enteros y puede enviar varias veces el mismo
-  // arribo. El estado de "1 MIN" debe sobrevivir a los repaints del listado:
-  // no usamos el índice del array porque puede cambiar entre respuestas.
-  const arrivalIdentity=(x)=>{
-    const vehicle=String(x.vehicleId??x.tripId??x.id??'').trim();
-    if(vehicle)return 'vehicle:'+vehicle;
-    const line=String(x.line??currentLine?.code??'').trim().toUpperCase();
-    const destination=String(x.destination??'').trim().toUpperCase();
-    const stop=String(currentStop?.identifier??currentStop?.code??'').trim();
-    return 'route:'+line+'|'+destination+'|'+stop;
+  // ARRIBANDO es un estado derivado de la respuesta ACTUAL de SmartMove.
+  // No usamos temporizadores artificiales ni repintamos snapshots antiguos.
+  const normalizeArrivalStatus=(value)=>String(value??'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const statusMeansArriving=(value)=>{
+    const status=normalizeArrivalStatus(value);
+    return /ARRIBANDO|LLEGANDO|EN\s+PARADA|PROXIMO|PROXIMA|PR[OÓ]XIMO/.test(status);
   };
 
   const renderLineArrivals=(items,list)=>{
     const a=Array.isArray(items)?items:[];
     if(!list)return;
     list.innerHTML=a.length?a.map(x=>{
-      // SmartMove puede entregar los minutos como número o como texto (por ejemplo "1 MIN").
-      // Normalizamos el valor y corregimos el caso en que el texto llegue con formato "1 MIN".
+      // SmartMove puede entregar minutos como número o como texto ("1 MIN").
       const rawMinutes=x.minutes;
       const minuteMatch=typeof rawMinutes==='number'
         ? rawMinutes
         : Number.parseFloat(String(rawMinutes??'').replace(',', '.').match(/-?\d+(?:\.\d+)?/)?.[0]||'');
       const m=Number.isFinite(minuteMatch)?minuteMatch:NaN;
-      const arrivalKey=arrivalIdentity(x);
-      const previous=arrivingTimers.get(arrivalKey);
-      // SmartMove también devuelve el estado textual original en "status".
-      // Lo usamos como frontera real del estado: una vez que mostramos
-      // ARRIBANDO no volvemos a dibujar minutos por un repaint/respuesta
-      // duplicada que conserve el mismo estado del backend.
-      const backendStatus=String(x.status??'').trim().toUpperCase();
-      const statusChanged=previous?.arrivingStatus!=null && backendStatus!==previous.arrivingStatus;
-      let arriving=Number.isFinite(m)&&m<=0;
 
-      if(previous?.forcedArriving){
-        if(statusChanged){
-          if(previous.timer)clearTimeout(previous.timer);
-          arrivingTimers.delete(arrivalKey);
-        }else{
-          // Mantener ARRIBANDO mientras SmartMove siga reportando el mismo
-          // estado, aunque el valor numérico vuelva a ser 1, 2, etc.
-          arriving=true;
-        }
-      }
-      if(Number.isFinite(m)&&m===1 && !arriving){
-        if(previous?.forcedArriving && !statusChanged){
-          arriving=true;
-        }else if(!previous || statusChanged){
-          const state={forcedArriving:false,timer:null,firstOneAt:Date.now(),arrivingStatus:null};
-          state.timer=setTimeout(()=>{
-            const current=arrivingTimers.get(arrivalKey);
-            if(!current||current!==state)return;
-            current.forcedArriving=true;
-            current.arrivingStatus=backendStatus;
-            current.timer=null;
-            arrivingTimers.set(arrivalKey,current);
-            if(list.isConnected)renderLineArrivals(a,list);
-          },ARRIVING_DELAY_MS);
-          arrivingTimers.set(arrivalKey,state);
-        }
-      }
+      // La transición es determinista: SmartMove puede declarar ARRIBANDO
+      // explícitamente o, como respaldo, llegar a 1 MIN. En ambos casos
+      // desaparece inmediatamente el círculo porque se renderiza otro nodo.
+      const arriving=statusMeansArriving(x.status)||Number.isFinite(m)&&m<=1;
+
       const d=Number.isFinite(m)?Math.max(1.2,Math.min(18,m*.35)):8;
       const rawDestination=String(x.destination||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
       const unknownDestination=!rawDestination||/^(?:A{1,2}|N\/?A|S\/?D|DESTINO|SERVICIO)$/i.test(rawDestination);
@@ -1243,10 +1204,7 @@
  .arrival-refresh:disabled{opacity:.55!important}
  .arrival-arriving .arrival-copy{padding-right:8px}
  .arrival-time-arriving{flex:0 0 auto!important;width:auto!important;min-width:92px!important;height:42px!important}
- .arrival-time-arriving strong{position:static!important;transform:none!important;font-size:15px!important;letter-spacing:.08em!important;color:#00f0ff!important;text-shadow:0 0 8px rgba(0,240,255,.8)!important;animation:arrivalArrivingPulse 1.6s ease-in-out infinite!important;will-change:opacity,transform,text-shadow!important}
- @media (prefers-color-scheme: light){
-   .arrival-time-arriving strong{color:#007c91!important;text-shadow:0 0 7px rgba(0,124,145,.35)!important}
- }
+ .arrival-time-arriving strong{position:static!important;transform:none!important;font-size:15px!important;letter-spacing:.08em!important;color:var(--cy)!important;text-shadow:0 0 8px var(--cy)!important;animation:arrivalArrivingPulse 1.6s ease-in-out infinite!important;will-change:opacity,transform,text-shadow!important}
  @media (prefers-reduced-motion: reduce){
    .arrival-time-arriving strong{animation:none!important}
  }
@@ -1271,3 +1229,4 @@
  `;
  document.head.appendChild(css);
 })();
+
