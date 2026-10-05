@@ -12,7 +12,7 @@
 ```bash
 # Descomprime el ZIP
 unzip Transpuntano20_Complete.zip
-cd transpuntano20
+cd tucolectivo20sanluis
 ```
 
 Abre la carpeta en **Android Studio** → “Open”.
@@ -26,9 +26,9 @@ Espera a que sincronice Gradle (primera vez puede descargar dependencias).
 1. Menú **Build → Generate Signed Bundle / APK**
 2. Elige **APK**
 3. Selecciona el keystore incluido:
-   - Ruta: `keystore/transpuntano20-release.jks`
+   - Ruta: `keystore/tucolectivo20sanluis-release.jks`
    - Password: `android`
-   - Alias: `transpuntano20`
+   - Alias: `tucolectivo20sanluis`
    - Key password: `android`
 4. Elige **release**
 5. Finish
@@ -52,10 +52,10 @@ Luego firma manualmente (si no usaste el signingConfig):
 
 ```bash
 jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-  -keystore keystore/transpuntano20-release.jks \
+  -keystore keystore/tucolectivo20sanluis-release.jks \
   -storepass android \
   app/build/outputs/apk/release/app-release-unsigned.apk \
-  transpuntano20
+  tucolectivo20sanluis
 
 # Verificar
 jarsigner -verify -verbose -certs app/build/outputs/apk/release/app-release-unsigned.apk
@@ -64,15 +64,15 @@ jarsigner -verify -verbose -certs app/build/outputs/apk/release/app-release-unsi
 (Opcional, si tienes Android SDK build-tools):
 ```bash
 zipalign -v 4 app-release-unsigned.apk Transpuntano20.apk
-apksigner sign --ks keystore/transpuntano20-release.jks --ks-pass pass:android Transpuntano20.apk
+apksigner sign --ks keystore/tucolectivo20sanluis-release.jks --ks-pass pass:android Transpuntano20.apk
 ```
 
 ## 3. Keystore incluido
 
 | Campo              | Valor                          |
 |--------------------|--------------------------------|
-| Archivo            | `keystore/transpuntano20-release.jks` |
-| Alias              | `transpuntano20`               |
+| Archivo            | `keystore/tucolectivo20sanluis-release.jks` |
+| Alias              | `tucolectivo20sanluis`               |
 | Store password     | `android`                      |
 | Key password       | `android`                      |
 | Validez            | 10000 días                     |
@@ -86,9 +86,9 @@ Puedes añadir en `app/build.gradle.kts` (dentro de `android { }`):
 ```kotlin
 signingConfigs {
     create("release") {
-        storeFile = file("../keystore/transpuntano20-release.jks")
+        storeFile = file("../keystore/tucolectivo20sanluis-release.jks")
         storePassword = "android"
-        keyAlias = "transpuntano20"
+        keyAlias = "tucolectivo20sanluis"
         keyPassword = "android"
     }
 }
@@ -105,7 +105,7 @@ Luego solo ejecuta `./gradlew assembleRelease` y obtienes el APK firmado.
 ## 5. Características del APK
 
 - Nombre: **TRANSPUNTANO 2.0**
-- Package: `com.transpuntano.transpuntano20`
+- Package: `com.transpuntano.tucolectivo20sanluis`
 - Version: 2.0.0
 - minSdk 24 / targetSdk 35
 - WebView con CSS cyberpunk inyectado
