@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var mapNearbyStops: List<TransitStop> = emptyList()
     @Volatile private var mapLineCode: Int = 0
     @Volatile private var mapVehicleRefreshInProgress = false
+    @Volatile private var pendingMapVehicleRefreshLine = 0
     private var pendingArrivalNotifications: String? = null
     private var pendingArrivalStartTime: String = "18:00"
     private var pendingArrivalEndTime: String = "19:30"
@@ -260,7 +261,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshMapVehiclesNow(lineCode: Int = mapLineCode) {
-        if (mapVehicleRefreshInProgress || mapNearbyStops.isEmpty()) return
+        if (mapNearbyStops.isEmpty()) return
+        if (mapVehicleRefreshInProgress) {
+            if (lineCode > 0) pendingMapVehicleRefreshLine = lineCode
+            return
+        }
         mapVehicleRefreshInProgress = true
 
         vehicleExecutor.execute {
@@ -329,6 +334,11 @@ class MainActivity : AppCompatActivity() {
                 )
             } finally {
                 mapVehicleRefreshInProgress = false
+                val pendingLine = pendingMapVehicleRefreshLine
+                pendingMapVehicleRefreshLine = 0
+                if (pendingLine > 0 && pendingLine == mapLineCode && mapNearbyStops.isNotEmpty()) {
+                    refreshMapVehiclesNow(pendingLine)
+                }
             }
         }
     }
@@ -471,6 +481,15 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun refreshMapVehicles(lineCode: Int) {
             mapLineCode = lineCode
             refreshMapVehiclesNow(lineCode)
+        }
+
+        @JavascriptInterface fun refreshMapVehiclesManual(lineCode: Int) {
+            mapLineCode = lineCode
+            if (mapVehicleRefreshInProgress) {
+                pendingMapVehicleRefreshLine = lineCode
+            } else {
+                refreshMapVehiclesNow(lineCode)
+            }
         }
 
         @JavascriptInterface fun loadLines() {
