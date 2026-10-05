@@ -1243,7 +1243,13 @@
  .arrival-refresh:disabled{opacity:.55!important}
  .arrival-arriving .arrival-copy{padding-right:8px}
  .arrival-time-arriving{flex:0 0 auto!important;width:auto!important;min-width:92px!important;height:42px!important}
- .arrival-time-arriving strong{position:static!important;transform:none!important;font-size:15px!important;letter-spacing:.08em!important;color:var(--vt)!important;text-shadow:0 0 8px var(--vt)!important}
+ .arrival-time-arriving strong{position:static!important;transform:none!important;font-size:15px!important;letter-spacing:.08em!important;color:#00f0ff!important;text-shadow:0 0 8px rgba(0,240,255,.8)!important;animation:arrivalArrivingPulse 1.6s ease-in-out infinite!important;will-change:opacity,transform,text-shadow!important}
+ @media (prefers-color-scheme: light){
+   .arrival-time-arriving strong{color:#007c91!important;text-shadow:0 0 7px rgba(0,124,145,.35)!important}
+ }
+ @media (prefers-reduced-motion: reduce){
+   .arrival-time-arriving strong{animation:none!important}
+ }
 
  .arrival-copy{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:7px;flex:1;padding-right:12px}
  .arrival-copy b{line-height:1.15!important}
@@ -1258,6 +1264,10 @@
  .arrival-time strong{font-size:15px!important}
  .arrival-time small{font-size:8px!important;letter-spacing:.04em!important}
  @keyframes arrivalNativeOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+ @keyframes arrivalArrivingPulse{
+   0%,100%{opacity:1;transform:scale(1);text-shadow:0 0 6px currentColor}
+   50%{opacity:.72;transform:scale(1.035);text-shadow:0 0 13px currentColor,0 0 22px currentColor}
+ }
  `;
  document.head.appendChild(css);
 })();
