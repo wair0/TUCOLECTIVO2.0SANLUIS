@@ -459,7 +459,7 @@
       }else if(map.routePoints.length)fitPoints(map.routePoints.concat(map.stops));else draw();
     }catch(_){state.textContent='ERROR LEYENDO RECORRIDO';}
   };
-  window.onNativeMapRouteError=payload=>{let msg='NO SE PUDO CARGAR EL RECORRIDO';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
+  window.onNativeMapRouteError=payload=>{map.manualRouteRefreshViewport=null;let msg='NO SE PUDO CARGAR EL RECORRIDO';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
   window.onNativeContinuousLocation=function(payload){
     let r={};try{r=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
     const lat=Number(r.latitude),lng=Number(r.longitude);
