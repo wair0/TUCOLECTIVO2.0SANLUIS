@@ -537,15 +537,6 @@
     const activeIds=new Set(next.map(v=>v.id));
     [...map.vehicleMotion.keys()].forEach(id=>{if(!activeIds.has(id))map.vehicleMotion.delete(id);});
     map.vehicles=next;
-    if(refreshLive&&map.manualVehicleRefresh){
-      map.manualVehicleRefresh=false;
-      refreshLive.classList.remove('is-refreshing');
-      refreshLive.disabled=false;
-      refreshLiveState.textContent='GPS';
-      const stamp=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-      refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · GPS ACTUALIZADO '+stamp;
-    }
-    draw();
   }catch(_){
     if(refreshLive&&map.manualVehicleRefresh){map.manualVehicleRefresh=false;refreshLive.classList.remove('is-refreshing');refreshLive.disabled=false;refreshLiveState.textContent='ERROR';refreshLiveMeta.textContent='NO SE PUDO ACTUALIZAR EL GPS';}
     state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
@@ -579,7 +570,6 @@
     if(typeof window.TuColectivoNative.loadMapRoute==='function')window.TuColectivoNative.loadMapRoute(map.routeLineCode);
     if(typeof window.TuColectivoNative.refreshMapVehiclesManual==='function')window.TuColectivoNative.refreshMapVehiclesManual(map.routeLineCode);
     else if(typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode);
-    window.setTimeout(()=>{if(refreshLive&&map.manualVehicleRefresh){map.manualVehicleRefresh=false;refreshLive.classList.remove('is-refreshing');refreshLive.disabled=false;refreshLiveState.textContent='GPS';refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · ACTUALIZACIÓN SOLICITADA';}},12000);
   });
   window.onNativeMapManualRefreshComplete=payload=>{
     if(!refreshLive)return;
