@@ -1156,9 +1156,9 @@
         }
       }
       if(Number.isFinite(m)&&m===1 && !arriving){
-        if(previous?.forcedArriving){
+        if(previous?.forcedArriving && !statusChanged){
           arriving=true;
-        }else if(!previous){
+        }else if(!previous || statusChanged){
           const state={forcedArriving:false,timer:null,firstOneAt:Date.now(),arrivingStatus:null};
           state.timer=setTimeout(()=>{
             const current=arrivingTimers.get(arrivalKey);
