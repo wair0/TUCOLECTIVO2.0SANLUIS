@@ -198,6 +198,9 @@
   const locate = document.getElementById('mapLocate');
   const plus = document.getElementById('mapPlus');
   const minus = document.getElementById('mapMinus');
+  const refreshLive = document.getElementById('mapRefreshLive');
+  const refreshLiveMeta = document.getElementById('mapRefreshLiveMeta');
+  const refreshLiveState = document.getElementById('mapRefreshLiveState');
   const ctx = canvas.getContext('2d');
   const TILE = 256;
   const FALLBACK = {lat:-33.3017,lng:-66.3378};
@@ -320,8 +323,8 @@
       ctx.beginPath();ctx.arc(p.x,p.y,radius+4,0,Math.PI*2);ctx.fillStyle='rgba(255,0,255,'+(0.05+pulse*.08)+')';ctx.fill();
       ctx.beginPath();ctx.arc(p.x,p.y,9,0,Math.PI*2);ctx.fillStyle='rgba(255,0,255,.22)';ctx.fill();
       ctx.strokeStyle='#ff4dff';ctx.lineWidth=2;ctx.shadowColor='#ff00ff';ctx.shadowBlur=12+pulse*8;ctx.stroke();ctx.shadowBlur=0;
-      ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('B',p.x,p.y+.5);
-      if(map.zoom>=13){ctx.fillStyle='#ffd6ff';ctx.font='bold 8px Arial';ctx.fillText(String(vehicle.line||'BUS').replace(/^LÍNEA\s*/i,'L '),p.x,p.y+19);}
+      const vehicleLabel=publicLineLabel(vehicle.lineCode||vehicle.line,window.TuColectivoLineLabels);
+      ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(vehicleLabel||'?',p.x,p.y+.5);
       needsAnimation=true;
     }
     ctx.restore();
@@ -447,6 +450,7 @@
   window.onNativeMapRoute=payload=>{
     try{map.routePoints=(typeof payload==='string'?JSON.parse(payload):payload||[]).map(p=>({lat:Number(p.lat),lng:Number(p.lng)})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
       state.textContent=map.routePoints.length>1?'RECORRIDO CARGADO · LÍNEA '+publicLineLabel(map.routeLineCode):'SIN GEOMETRÍA DE RECORRIDO';
+      if(refreshLive&&map.routeLineCode>0){refreshLive.disabled=false;refreshLiveState.textContent='GPS';refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · RECORRIDO EN TIEMPO REAL';}
       if(map.routePoints.length)fitPoints(map.routePoints.concat(map.stops));else draw();
     }catch(_){state.textContent='ERROR LEYENDO RECORRIDO';}
   };
@@ -528,10 +532,20 @@
     const activeIds=new Set(next.map(v=>v.id));
     [...map.vehicleMotion.keys()].forEach(id=>{if(!activeIds.has(id))map.vehicleMotion.delete(id);});
     map.vehicles=next;
+    if(refreshLive&&map.manualVehicleRefresh){
+      map.manualVehicleRefresh=false;
+      refreshLive.classList.remove('is-refreshing');
+      refreshLive.disabled=false;
+      refreshLiveState.textContent='GPS';
+      const stamp=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · GPS ACTUALIZADO '+stamp;
+    }
     draw();
-  }catch(_){state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
+  }catch(_){
+    if(refreshLive&&map.manualVehicleRefresh){map.manualVehicleRefresh=false;refreshLive.classList.remove('is-refreshing');refreshLive.disabled=false;refreshLiveState.textContent='ERROR';refreshLiveMeta.textContent='NO SE PUDO ACTUALIZAR EL GPS';}
+    state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
   window.TuColectivoMap={
-    showRoute(lineCode){map.routeLineCode=Number(lineCode)||0;map.routePoints=[];map.vehicles=[];map.loadStopsAfterLocation=true;state.textContent='CARGANDO RECORRIDO...';document.getElementById('mapStopPopup')?.setAttribute('hidden','');if(window.TuColectivoNative&&map.routeLineCode>0)window.TuColectivoNative.loadMapRoute(map.routeLineCode);window.TuColectivo.navigate('mapa');draw();},
+    showRoute(lineCode){map.routeLineCode=Number(lineCode)||0;map.routePoints=[];map.vehicles=[];map.manualVehicleRefresh=false;if(refreshLive){refreshLive.disabled=map.routeLineCode<=0;refreshLive.classList.remove('is-refreshing');refreshLiveState.textContent='GPS';refreshLiveMeta.textContent=map.routeLineCode>0?'LÍNEA '+publicLineLabel(map.routeLineCode)+' · RECORRIDO EN TIEMPO REAL':'SELECCIONÁ UNA LÍNEA DESDE ARRIBOS';}map.loadStopsAfterLocation=true;state.textContent='CARGANDO RECORRIDO...';document.getElementById('mapStopPopup')?.setAttribute('hidden','');if(window.TuColectivoNative&&map.routeLineCode>0)window.TuColectivoNative.loadMapRoute(map.routeLineCode);window.TuColectivo.navigate('mapa');draw();},
     handleStopLines(result){
       const stop=map.pendingStop;
       if(!stop||String(stop.identifier)!==String(result?.identifier))return false;
@@ -548,6 +562,19 @@
     handleArrivals(payload){if(!map.pendingMapArrival)return false;let items=[];try{items=typeof payload==='string'?JSON.parse(payload):payload||[];}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.innerHTML=items.length?items.map(a=>'<div class="map-popup-arrival"><b>'+mapEscape(a.line||'COLECTIVO')+'</b><span>'+mapEscape(mapArrivalDestination(a.destination))+'</span><strong>'+mapEscape(a.minutes==null?'--':a.minutes)+' MIN</strong></div>').join(''):'<small>SMARTMOVE NO DEVOLVIÓ ARRIBOS PARA ESTA LÍNEA</small>';map.pendingMapArrival=null;return true;},
     handleArrivalsError(payload){if(!map.pendingMapArrival)return false;let msg='NO SE PUDIERON CARGAR LOS ARRIBOS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.textContent=msg;map.pendingMapArrival=null;return true;}
   };
+  if(refreshLive)refreshLive.addEventListener('click',()=>{
+    if(!map.routeLineCode||!window.TuColectivoNative)return;
+    map.manualVehicleRefresh=true;
+    refreshLive.disabled=true;
+    refreshLive.classList.add('is-refreshing');
+    refreshLiveState.textContent='ACTUALIZANDO';
+    refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · CONSULTANDO GPS...';
+    state.textContent='ACTUALIZANDO RECORRIDO EN TIEMPO REAL...';
+    if(typeof window.TuColectivoNative.loadMapRoute==='function')window.TuColectivoNative.loadMapRoute(map.routeLineCode);
+    if(typeof window.TuColectivoNative.refreshMapVehiclesManual==='function')window.TuColectivoNative.refreshMapVehiclesManual(map.routeLineCode);
+    else if(typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode);
+    window.setTimeout(()=>{if(refreshLive&&map.manualVehicleRefresh){map.manualVehicleRefresh=false;refreshLive.classList.remove('is-refreshing');refreshLive.disabled=false;refreshLiveState.textContent='GPS';refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · ACTUALIZACIÓN SOLICITADA';}},12000);
+  });
   window.setInterval(()=>{const screen=document.querySelector('[data-screen="mapa"]');if(screen&&screen.classList.contains('active')&&window.TuColectivoNative&&typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode||0);},10000);
   document.addEventListener('app:navigate',e=>{
     if(e.detail.go==='mapa'){
