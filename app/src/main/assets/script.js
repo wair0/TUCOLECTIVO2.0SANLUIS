@@ -1111,10 +1111,23 @@
   window.onNativeStopsError=p=>showError('PARADAS',JSON.parse(p).message);
   const ARRIVING_DELAY_MS=35000;
   const arrivingTimers=new Map();
+
+  // El backend devuelve minutos enteros y puede enviar varias veces el mismo
+  // arribo. El estado de "1 MIN" debe sobrevivir a los repaints del listado:
+  // no usamos el índice del array porque puede cambiar entre respuestas.
+  const arrivalIdentity=(x)=>{
+    const vehicle=String(x.vehicleId??x.tripId??x.id??'').trim();
+    if(vehicle)return 'vehicle:'+vehicle;
+    const line=String(x.line??currentLine?.code??'').trim().toUpperCase();
+    const destination=String(x.destination??'').trim().toUpperCase();
+    const stop=String(currentStop?.identifier??currentStop?.code??'').trim();
+    return 'route:'+line+'|'+destination+'|'+stop;
+  };
+
   const renderLineArrivals=(items,list)=>{
     const a=Array.isArray(items)?items:[];
     if(!list)return;
-    list.innerHTML=a.length?a.map((x,index)=>{
+    list.innerHTML=a.length?a.map(x=>{
       // SmartMove puede entregar los minutos como número o como texto (por ejemplo "1 MIN").
       // Normalizamos el valor y corregimos el caso en que el texto llegue con formato "1 MIN".
       const rawMinutes=x.minutes;
@@ -1122,22 +1135,26 @@
         ? rawMinutes
         : Number.parseFloat(String(rawMinutes??'').replace(',', '.').match(/-?\d+(?:\.\d+)?/)?.[0]||'');
       const m=Number.isFinite(minuteMatch)?minuteMatch:NaN;
-      const arrivalKey=String(x.id??x.tripId??x.vehicleId??x.line??currentLine?.code??'')+'|'+String(x.destination??'').trim().toUpperCase()+'|'+index;
+      const arrivalKey=arrivalIdentity(x);
       const previous=arrivingTimers.get(arrivalKey);
+
       if(Number.isFinite(m)&&m>1){
         if(previous?.timer)clearTimeout(previous.timer);
         arrivingTimers.delete(arrivalKey);
       }
+
       let arriving=Number.isFinite(m)&&m<=0;
       if(Number.isFinite(m)&&m===1){
         if(previous?.forcedArriving){
           arriving=true;
         }else if(!previous){
-          const state={forcedArriving:false,timer:null};
+          const state={forcedArriving:false,timer:null,firstOneAt:Date.now()};
           state.timer=setTimeout(()=>{
-            state.forcedArriving=true;
-            state.timer=null;
-            arrivingTimers.set(arrivalKey,state);
+            const current=arrivingTimers.get(arrivalKey);
+            if(!current||current!==state)return;
+            current.forcedArriving=true;
+            current.timer=null;
+            arrivingTimers.set(arrivalKey,current);
             if(list.isConnected)renderLineArrivals(a,list);
           },ARRIVING_DELAY_MS);
           arrivingTimers.set(arrivalKey,state);
