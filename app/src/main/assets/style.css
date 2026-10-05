@@ -129,8 +129,8 @@ small{font-size:10px}
 .arrival-time .arrival-ring-arc{stroke:var(--vt);filter:none}.arrival-time .arrival-ring-dot{fill:var(--cy);stroke:var(--sf);filter:none}
 .arrival-arriving{border-color:var(--bd2);background:linear-gradient(120deg,var(--sf),var(--tint))}
 .arrival-card .arrival-time-arriving{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:7px!important;flex:0 0 92px!important;width:92px!important;min-width:0!important;height:62px!important;padding:0 6px!important;border-radius:14px!important;background:var(--tint)!important;border:1px solid var(--bd2)!important}
-.arrival-card .arrival-time-arriving::before{content:"";display:block!important;width:8px;height:8px;border-radius:50%;background:var(--cy);box-shadow:0 0 0 4px rgba(15,181,201,.22);animation:breathe 1.2s ease-in-out infinite}
-.arrival-card .arrival-time-arriving strong{position:static!important;left:auto!important;top:auto!important;transform:none!important;font-size:10px!important;font-weight:800!important;letter-spacing:.04em!important;line-height:1!important;color:var(--vt)!important;text-shadow:none!important}
+.arrival-card .arrival-time-arriving::before{content:"";display:block!important;width:8px;height:8px;border-radius:50%;background:var(--cy);box-shadow:0 0 0 4px rgba(15,181,201,.22),0 0 14px rgba(15,181,201,.45);animation:arrivingPulse 1.2s ease-in-out infinite}
+.arrival-card .arrival-time-arriving strong{position:static!important;left:auto!important;top:auto!important;transform:none!important;font-size:10px!important;font-weight:900!important;letter-spacing:.08em!important;line-height:1!important;color:var(--cy)!important;text-shadow:0 0 8px rgba(15,181,201,.28)!important;animation:arrivingText 1.5s ease-in-out infinite}
 
 /* MAPA */
 .map-wrap{position:relative;height:calc(100dvh - var(--hh) - var(--top) - 236px - env(safe-area-inset-bottom));min-height:240px;overflow:hidden;background:var(--map);border:1px solid var(--ln);border-radius:22px;box-shadow:var(--sh)}
@@ -202,7 +202,7 @@ html[data-theme=dark] body,html[data-theme=dark] .app-shell{color:var(--ink)}
 html,body{transition:background-color .25s}
 @keyframes aurora{to{transform:translate3d(3%,2%,0) scale(1.08)}}
 @keyframes flow{to{background-position:-200% 0}}
-@keyframes breathe{50%{opacity:.35}}
+@keyframes breathe{50%{opacity:.35}}\n@keyframes arrivingPulse{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.22);opacity:1}}\n@keyframes arrivingText{0%,100%{opacity:.82;transform:translateY(0);text-shadow:0 0 6px rgba(15,181,201,.2)}50%{opacity:1;transform:translateY(-1px);text-shadow:0 0 12px rgba(15,181,201,.5)}}
 @keyframes pop{50%{transform:scale(1.04)}}
 @keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes fill{to{width:100%}}@keyframes spin{to{transform:rotate(-360deg)}}
