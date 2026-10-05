@@ -59,6 +59,14 @@ jobs:
           chmod +x ./gradlew
           ./gradlew :app:assembleRelease --no-daemon --stacktrace
 
+      - name: Rename Release APK
+        run: |
+          SRC="app/build/outputs/apk/release/app-release.apk"
+          DST="app/build/outputs/apk/release/tucolectivo2.0sanluis.apk"
+          test -f "$SRC"
+          mv "$SRC" "$DST"
+          ls -lh "$DST"
+
       - name: Verify signed APK
         run: |
           APK="app/build/outputs/apk/release/tucolectivo2.0sanluis.apk"
