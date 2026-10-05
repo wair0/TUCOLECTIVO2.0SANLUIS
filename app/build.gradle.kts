@@ -15,9 +15,9 @@ android {
     }
     signingConfigs {
         create("release") {
-            storeFile = file("../keystore/transpuntano20-release.jks")
+            storeFile = file("../keystore/tucolectivo20sanluis-release.jks")
             storePassword = "android"
-            keyAlias = "transpuntano20"
+            keyAlias = "tucolectivo20sanluis"
             keyPassword = "android"
         }
     }
