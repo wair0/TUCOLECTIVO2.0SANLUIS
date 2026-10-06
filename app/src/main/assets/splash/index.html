@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TU COLECTIVO 2.0 SAN LUIS</title>
+<link rel="stylesheet" href="css/splash.css">
+</head>
+<body>
+<main class="splash" id="splash">
+  <section class="scene">
+    <img src="assets/scene.svg" alt="">
+    <div class="grid"></div>
+    <div class="hud"><span>● SISTEMA ACTIVO</span><span>V1.1.10</span></div>
+  </section>
+  <section class="main">
+    <header class="brand">
+      <h1>TU COLECTIVO <span>2.0</span></h1>
+      <p>SAN LUIS</p>
+    </header>
+    <div class="load">
+      <div class="meta"><span>INICIALIZANDO</span><span class="pct"><span id="pct">0</span>%</span></div>
+      <div class="bar"><div class="fill" id="fill"></div></div>
+      <div class="steps" id="steps"></div>
+      <div class="status">&gt; <span id="statusText"></span><i></i></div>
+    </div>
+  </section>
+</main>
+<script>
+window.SPLASH_CONFIG={duration:9000,loop:false};
+document.addEventListener("splash:complete",function(){
+  if(window.TuColectivoSplashNative&&window.TuColectivoSplashNative.complete) window.TuColectivoSplashNative.complete();
+});
+</script>
+<script src="js/splash.js"></script>
+</body>
+</html>

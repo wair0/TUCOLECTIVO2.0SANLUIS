@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
+    @Volatile private var appStarted = false
     private val api = SmartMoveApi()
     private val executor = Executors.newFixedThreadPool(3)
     // El GPS de colectivos no comparte cola con líneas/paradas/arribos.
@@ -66,24 +67,36 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun startApp() {
-        webView = WebView(this).apply {
-            settings.javaScriptEnabled = true; settings.domStorageEnabled = true
-            settings.allowFileAccess = true; settings.allowContentAccess = true
-            settings.loadsImagesAutomatically = true; settings.textZoom = 100
-            settings.setSupportZoom(false); settings.builtInZoomControls = false
-            settings.displayZoomControls = false; settings.setGeolocationEnabled(true)
-            addJavascriptInterface(TransitBridge(), "TuColectivoNative")
-            webViewClient = WebViewClient()
-            webChromeClient = object : WebChromeClient() {
-                override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
-                    if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) callback.invoke(origin, true, false)
-                    else { pendingGeoOrigin=origin; pendingGeoCallback=callback; requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST) }
+        if (appStarted) return
+        appStarted = true
+        webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.allowFileAccess = true
+        webView.settings.allowContentAccess = true
+        webView.settings.loadsImagesAutomatically = true
+        webView.settings.textZoom = 100
+        webView.settings.setSupportZoom(false)
+        webView.settings.builtInZoomControls = false
+        webView.settings.displayZoomControls = false
+        webView.settings.setGeolocationEnabled(true)
+        webView.addJavascriptInterface(TransitBridge(), "TuColectivoNative")
+        webView.webViewClient = WebViewClient()
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
+                if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    callback.invoke(origin, true, false)
+                } else {
+                    pendingGeoOrigin = origin
+                    pendingGeoCallback = callback
+                    requestPermissions(
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                        LOCATION_PERMISSION_REQUEST
+                    )
                 }
             }
-            loadUrl("file:///android_asset/index.html")
         }
-        setContentView(webView)
+        webView.loadUrl("file:///android_asset/index.html")
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             startContinuousLocationTracking()
@@ -98,60 +111,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSplash() {
-        val root=FrameLayout(this); root.setBackgroundColor(0xFF050316.toInt())
-        root.addView(AnimatedGifBackgroundView(this),FrameLayout.LayoutParams(-1,-1))
-        val overlay=FrameLayout(this); root.addView(overlay,FrameLayout.LayoutParams(-1,-1))
-        val title=TextView(this).apply{
-            text="TU COLECTIVO 2.0 SAN LUIS"; setTextColor(0xFFFF1744.toInt()); textSize=25f; gravity=Gravity.CENTER
-            typeface=runCatching{Typeface.createFromAsset(assets,"fonts/cyberpunk.ttf")}.getOrDefault(Typeface.create(Typeface.MONOSPACE,Typeface.BOLD))
-            setShadowLayer(14f,0f,0f,0xFFFF1744.toInt())
+        webView = WebView(this).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.allowFileAccess = true
+            settings.allowContentAccess = true
+            settings.loadsImagesAutomatically = true
+            settings.setSupportZoom(false)
+            settings.builtInZoomControls = false
+            settings.displayZoomControls = false
+            addJavascriptInterface(SplashBridge(), "TuColectivoSplashNative")
+            webViewClient = WebViewClient()
         }
-        overlay.addView(title,FrameLayout.LayoutParams(-1,-2,Gravity.CENTER).apply{leftMargin=18;rightMargin=18;topMargin=-55})
-        overlay.addView(SplashProgressView(this,10000L),FrameLayout.LayoutParams(-1,46,Gravity.CENTER).apply{leftMargin=42;rightMargin=42;topMargin=45})
-        val statusMessages=arrayOf("ACTIVANDO SISTEMA...","CARGANDO LINEAS...","CARGANDO MAPA...","CARGANDO PARADAS CERCANAS...","CARGANDO FAVORITOS...","SINCRONIZANDO GPS...")
-        val status=TextView(this).apply{
-            text=statusMessages[0]; setTextColor(0xFFFF1744.toInt()); textSize=13f; gravity=Gravity.CENTER
-            typeface=runCatching{Typeface.createFromAsset(assets,"fonts/cyberpunk.ttf")}.getOrDefault(Typeface.create(Typeface.MONOSPACE,Typeface.BOLD))
-            setShadowLayer(10f,0f,0f,0xFFFF1744.toInt()); alpha=1f
-        }
-        overlay.addView(status,FrameLayout.LayoutParams(-1,-2,Gravity.CENTER).apply{leftMargin=18;rightMargin=18;topMargin=105})
-        val statusHandler=Handler(Looper.getMainLooper())
-        val statusInterval=1500L
-        var statusIndex=0
-        val statusRunnable=object:Runnable{
-            override fun run(){
-                if(!status.isAttachedToWindow)return
-                status.animate().alpha(0f).setDuration(180L).withEndAction{
-                    statusIndex++
-                    if(statusIndex<statusMessages.size){
-                        status.text=statusMessages[statusIndex]
-                        status.animate().alpha(1f).setDuration(180L).start()
-                        statusHandler.postDelayed(this,statusInterval-360L)
-                    }
-                }.start()
+        setContentView(webView)
+        webView.loadUrl("file:///android_asset/splash/index.html")
+    }
+
+    private inner class SplashBridge {
+        @JavascriptInterface
+        fun complete() {
+            runOnUiThread {
+                if (!isFinishing && !isDestroyed) startApp()
             }
         }
-        statusHandler.postDelayed(statusRunnable,statusInterval)
-        setContentView(root); Handler(Looper.getMainLooper()).postDelayed({startApp()},10000L)
-    }
-
-    private class SplashProgressView(context: android.content.Context,private val durationMs:Long):View(context){
-        private val paint=Paint(Paint.ANTI_ALIAS_FLAG); private val started=SystemClock.uptimeMillis()
-        private val tick=object:Runnable{override fun run(){if(!isAttachedToWindow)return;invalidate();postOnAnimation(this)}}
-        init{postOnAnimation(tick)}
-        override fun onDetachedFromWindow(){removeCallbacks(tick);super.onDetachedFromWindow()}
-        override fun onDraw(c:Canvas){val p=((SystemClock.uptimeMillis()-started).toFloat()/durationMs).coerceIn(0f,1f);val w=width.toFloat();val y=height*.5f
-            paint.style=Paint.Style.STROKE;paint.strokeWidth=3f;paint.color=0xFFFF1744.toInt();c.drawRoundRect(2f,y-8f,w-2f,y+8f,8f,8f,paint)
-            paint.style=Paint.Style.FILL;paint.color=0xFFFF1744.toInt();c.drawRoundRect(5f,y-5f,5f+(w-10f)*p,y+5f,5f,5f,paint);paint.color=0xFFFF1744.toInt();c.drawCircle(5f+(w-10f)*p,y,5f,paint)}
-    }
-
-    private class AnimatedGifBackgroundView(context: android.content.Context):View(context){
-        private var movie:android.graphics.Movie?=null; private var startedAt=0L
-        private val invalidator=object:Runnable{override fun run(){if(!isAttachedToWindow)return;invalidate();postOnAnimation(this)}}
-        init{setWillNotDraw(false);isClickable=false;isFocusable=false;setLayerType(View.LAYER_TYPE_SOFTWARE,null);movie=runCatching{context.assets.open("background_cyberpunk.gif").use{android.graphics.Movie.decodeStream(it)}}.getOrNull()}
-        override fun onAttachedToWindow(){super.onAttachedToWindow();startedAt=SystemClock.uptimeMillis();postOnAnimation(invalidator)}
-        override fun onDetachedFromWindow(){removeCallbacks(invalidator);super.onDetachedFromWindow()}
-        override fun onDraw(c:Canvas){val gif=movie?:return;if(width<=0||height<=0)return;val duration=gif.duration().takeIf{it>0}?:12000;gif.setTime(((SystemClock.uptimeMillis()-startedAt)%duration).toInt());val mw=gif.width().toFloat();val mh=gif.height().toFloat();if(mw<=0f||mh<=0f)return;val scale=maxOf(width/mw,height/mh);val dw=mw*scale;val dh=mh*scale;c.save();c.translate((width-dw)*.5f,(height-dh)*.5f);c.scale(scale,scale);gif.draw(c,0f,0f);c.restore()}
     }
 
     private fun dispatch(functionName: String, payload: String) {

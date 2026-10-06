@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 520">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#040913"/><stop offset="1" stop-color="#10284a"/></linearGradient>
+<linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#0d1d36"/><stop offset="1" stop-color="#030711"/></linearGradient>
+<filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="450" height="520" fill="url(#sky)"/>
+<g stroke="#22d3ee" opacity=".8" fill="none"><path d="M0 300h450"/><path d="M0 330h450"/><path d="M0 360h450"/><path d="M0 390h450"/></g>
+<g fill="#102d50" stroke="#22d3ee" stroke-width="2"><path d="M0 280V185h45v35h22v-62h34v122h20v-83h41v83h22v-48h34v48h25v-92h43v92h18v-65h38v65h24v-110h38v110h26v-46h40v46"/></g>
+<g stroke="#ff20d9" stroke-width="3" opacity=".8"><path d="M0 305h450"/><path d="M0 330h450"/></g>
+<g filter="url(#glow)"><circle cx="225" cy="125" r="46" fill="#07152b" stroke="#22d3ee" stroke-width="5"/><path d="M225 82c-16 0-29 12-29 27 0 22 29 53 29 53s29-31 29-53c0-15-13-27-29-27z" fill="#22d3ee"/><circle cx="225" cy="109" r="10" fill="#06101f"/></g>
+<g transform="translate(105 185)" filter="url(#glow)"><rect width="240" height="190" rx="26" fill="#071427" stroke="#22d3ee" stroke-width="5"/><rect x="27" y="42" width="186" height="72" rx="9" fill="#0b2445" stroke="#3b82f6" stroke-width="3"/><path d="M36 55h168M36 102h168" stroke="#22d3ee" opacity=".55"/><rect x="82" y="14" width="76" height="22" rx="5" fill="#ff20d9"/><circle cx="56" cy="145" r="18" fill="#02060e" stroke="#7dd3fc" stroke-width="4"/><circle cx="184" cy="145" r="18" fill="#02060e" stroke="#7dd3fc" stroke-width="4"/><path d="M25 120h190M80 165h80" stroke="#ff20d9" stroke-width="4"/><path d="M0 63h-20v43h20M240 63h20v43h-20" fill="#071427" stroke="#22d3ee" stroke-width="4"/></g>
+<path d="M0 410h450v110H0z" fill="url(#road)"/><g stroke="#22d3ee" opacity=".45"><path d="M40 520l170-110M410 520L240 410"/><path d="M110 520l100-110M340 520L240 410"/></g>
+<g fill="#22d3ee"><circle cx="60" cy="438" r="3"/><circle cx="390" cy="438" r="3"/><circle cx="120" cy="470" r="2"/><circle cx="330" cy="470" r="2"/></g></svg>
