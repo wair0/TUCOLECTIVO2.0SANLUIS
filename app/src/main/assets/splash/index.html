@@ -11,7 +11,8 @@
   <section class="scene">
     <img src="assets/scene.svg" alt="">
     <div class="grid"></div>
-    <div class="hud"><span>● SISTEMA ACTIVO</span><span>V1.1.10</span></div>
+    <div class="hud"><span></span><span>V1.1.10</span></div>
+    <div class="br tl"></div><div class="br tr"></div>
   </section>
   <section class="main">
     <header class="brand">
@@ -19,19 +20,14 @@
       <p>SAN LUIS</p>
     </header>
     <div class="load">
-      <div class="meta"><span>INICIALIZANDO</span><span class="pct"><span id="pct">0</span>%</span></div>
-      <div class="bar"><div class="fill" id="fill"></div></div>
+      <div class="meta"><span>PROGRESO</span><span class="pct"><span id="pct">0</span><small>%</small></span></div>
+      <div class="bar"><div class="fill" id="fill"></div><div class="ticks"></div></div>
       <div class="steps" id="steps"></div>
-      <div class="status">&gt; <span id="statusText"></span><i></i></div>
+      <div class="status"><span id="statusText"></span><span class="cur"></span></div>
     </div>
   </section>
 </main>
-<script>
-window.SPLASH_CONFIG={duration:9000,loop:false};
-document.addEventListener("splash:complete",function(){
-  if(window.TuColectivoSplashNative&&window.TuColectivoSplashNative.complete) window.TuColectivoSplashNative.complete();
-});
-</script>
+<script>window.SPLASH_CONFIG={loop:true};</script>
 <script src="js/splash.js"></script>
 </body>
 </html>
