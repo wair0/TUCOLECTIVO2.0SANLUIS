@@ -177,10 +177,10 @@ class MainActivity : AppCompatActivity() {
                 return
             }
 
-            // Center-crop: the original 450x800 GIF keeps its aspect ratio,
-            // fills the complete display and intentionally crops only the excess
-            // edges instead of leaving black bands.
-            val scale = maxOf(
+            // Fit-center: keep the original 450x800 GIF proportional and
+            // fully inside the display bounds. The splash must never overflow
+            // or be clipped by the screen edges.
+            val scale = minOf(
                 width.toFloat() / movieWidth.toFloat(),
                 height.toFloat() / movieHeight.toFloat()
             )
