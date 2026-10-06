@@ -297,3 +297,11 @@ html[data-theme=dark] .card.sync .prog{
   background:#ff1744!important;
   box-shadow:0 0 12px rgba(255,23,68,.55);
 }
+
+
+/* LIMPIEZA DE TITULOS DE SECCIONES Y SUBTEXTOS DEL INICIO */
+.screen-head{display:none!important}
+.home-design-grid .card-lineas small,
+.home-design-grid .card-mapa small,
+.home-design-grid .card-paradas small,
+.home-design-grid .card-favoritos small{display:none!important}
