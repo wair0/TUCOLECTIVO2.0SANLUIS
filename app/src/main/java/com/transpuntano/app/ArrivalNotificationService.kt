@@ -181,10 +181,12 @@ class ArrivalNotificationService : Service() {
         minutes: Int
     ) {
         val manager = getSystemService(NotificationManager::class.java)
+        val stop = favorite.optJSONObject("stop")
+        val identifier = stop?.optString("identifier", stop.optString("id", "")).orEmpty()
         val favoriteKey = favorite.optString("key", "$identifier::$line")
         val notificationId = LIVE_NOTIFICATION_BASE_ID + (favoriteKey.hashCode().toLong().and(0x7fffffff).toInt() % 10000)
         liveNotificationIds.add(notificationId)
-        val stopName = favorite.optJSONObject("stop")?.optString("name", "Tu parada") ?: "Tu parada"
+        val stopName = stop?.optString("name", "Tu parada") ?: "Tu parada"
         val publicDestination = destination.trim().ifBlank { "Destino no informado" }
         val timeLabel = if (minutes <= 0) "ARRIBANDO" else "FALTAN $minutes MIN"
         val openApp = PendingIntent.getActivity(
