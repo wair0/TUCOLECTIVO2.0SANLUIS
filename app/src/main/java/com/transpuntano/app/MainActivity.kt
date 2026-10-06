@@ -17,8 +17,10 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import android.widget.VideoView
 import android.webkit.GeolocationPermissions
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -138,11 +140,59 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSplash() {
-        setContentView(GifSplashView(this) {
-            if (!isFinishing && !isDestroyed) {
-                startApp()
+        val mp4ResId = resources.getIdentifier("splash_mp4", "raw", packageName)
+        if (mp4ResId != 0) {
+            setContentView(Mp4SplashView(this, mp4ResId) {
+                if (!isFinishing && !isDestroyed) startApp()
+            })
+        } else {
+            setContentView(GifSplashView(this) {
+                if (!isFinishing && !isDestroyed) startApp()
+            })
+        }
+    }
+
+    private class Mp4SplashView(
+        context: Context,
+        @androidx.annotation.RawRes private val videoResId: Int,
+        private val onFinished: () -> Unit
+    ) : FrameLayout(context) {
+        private val videoView = VideoView(context)
+        private var finished = false
+
+        init {
+            setBackgroundColor(0xFF000000.toInt())
+            videoView.setBackgroundColor(0xFF000000.toInt())
+            videoView.layoutParams = LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            addView(videoView)
+            videoView.setOnPreparedListener { player ->
+                player.isLooping = false
+                videoView.start()
             }
-        })
+            videoView.setOnCompletionListener { finishOnce() }
+            videoView.setOnErrorListener { _, _, _ ->
+                post {
+                    if (!finished) {
+                        removeView(videoView)
+                        addView(GifSplashView(context) { finishOnce() }, LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        ))
+                    }
+                }
+                true
+            }
+            videoView.setVideoURI(android.net.Uri.parse("android.resource://$packageName/$videoResId"))
+        }
+
+        private fun finishOnce() {
+            if (finished) return
+            finished = true
+            post { onFinished() }
+        }
     }
 
     private class GifSplashView(
