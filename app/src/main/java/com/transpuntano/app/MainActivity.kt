@@ -9,6 +9,7 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.os.Looper
 import android.os.SystemClock
 import android.graphics.Canvas
@@ -164,7 +165,10 @@ class MainActivity : AppCompatActivity() {
         private var prepared = false
 
         private val fallbackRunnable = Runnable {
-            if (!finished && !prepared) showGifFallback()
+            if (!finished && !prepared) {
+                Log.w("Mp4SplashView", "MP4 no se preparo dentro del timeout; usando GIF fallback")
+                showGifFallback()
+            }
         }
 
         init {
@@ -179,27 +183,31 @@ class MainActivity : AppCompatActivity() {
             videoView.setOnPreparedListener { player ->
                 if (finished) return@setOnPreparedListener
                 prepared = true
+                Log.d("Mp4SplashView", "MP4 preparado correctamente")
                 fallbackHandler.removeCallbacks(fallbackRunnable)
                 player.isLooping = false
                 videoView.start()
+                Log.d("Mp4SplashView", "MP4 reproduccion iniciada")
             }
 
             videoView.setOnCompletionListener {
+                Log.d("Mp4SplashView", "MP4 finalizado")
                 finishOnce()
             }
 
-            videoView.setOnErrorListener { _, _, _ ->
+            videoView.setOnErrorListener { _, what, extra ->
+                Log.e("Mp4SplashView", "Error reproduciendo MP4: what=$what extra=$extra")
                 showGifFallback()
                 true
             }
 
             videoView.setVideoURI(
                 android.net.Uri.parse(
-                    "android.resource://" + context.packageName + "/raw/splash_mp4"
+                    "android.resource://" + context.packageName + "/" + videoResId
                 )
             )
 
-            fallbackHandler.postDelayed(fallbackRunnable, 5000L)
+            fallbackHandler.postDelayed(fallbackRunnable, 15000L)
         }
 
         private fun showGifFallback() {
