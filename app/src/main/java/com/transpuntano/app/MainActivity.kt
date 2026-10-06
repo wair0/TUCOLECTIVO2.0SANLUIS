@@ -185,7 +185,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 true
             }
-            videoView.setVideoURI(android.net.Uri.parse("android.resource://$packageName/$videoResId"))
+            videoView.setVideoURI(android.net.Uri.parse("android.resource://${context.packageName}/$videoResId"))
         }
 
         private fun finishOnce() {
