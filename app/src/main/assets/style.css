@@ -208,3 +208,40 @@ html,body{transition:background-color .25s}
 @media(max-width:360px){.btn{width:34px;height:34px}.btn svg{width:18px;height:18px}.title{letter-spacing:.02em}.card{min-height:124px;padding:13px}.card b{font-size:12px}.nav-btn small{font-size:7px}.grid{gap:9px}}
 @media(min-width:700px){.app-shell{max-width:720px;margin:auto}.bottom-nav{max-width:704px;left:50%;right:auto;width:calc(100% - 20px);transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ARRIBOS — NEON ADAPTABLE A MODO CLARO/OSCURO */
+:root{
+  --arrival-red:#e60032;
+  --arrival-green:#00a63c;
+  --arrival-cyan:#008fbd;
+}
+html[data-theme=dark]{
+  --arrival-red:#ff3158;
+  --arrival-green:#39ff88;
+  --arrival-cyan:#37e8ff;
+}
+.arrival-card .arrival-copy span{
+  color:var(--arrival-cyan)!important;
+  text-shadow:0 0 7px color-mix(in srgb,var(--arrival-cyan) 55%,transparent)!important;
+}
+.arrival-card .arrival-time:not(.arrival-time-arriving) strong,
+.arrival-card .arrival-time:not(.arrival-time-arriving) small{
+  color:var(--arrival-green)!important;
+  text-shadow:0 0 7px color-mix(in srgb,var(--arrival-green) 58%,transparent)!important;
+}
+.arrival-card.arrival-arriving{
+  border-color:color-mix(in srgb,var(--arrival-red) 72%,var(--ln))!important;
+}
+.arrival-card .arrival-time-arriving{
+  background:color-mix(in srgb,var(--arrival-red) 10%,var(--sf))!important;
+  border-color:color-mix(in srgb,var(--arrival-red) 58%,var(--ln))!important;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--arrival-red) 18%,transparent),0 0 14px color-mix(in srgb,var(--arrival-red) 24%,transparent)!important;
+  animation:arrivalWarningBox 1.05s ease-in-out infinite!important;
+}
+@keyframes arrivalWarningBox{
+  0%,100%{opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--arrival-red) 18%,transparent),0 0 10px color-mix(in srgb,var(--arrival-red) 20%,transparent)}
+  50%{opacity:.78;box-shadow:0 0 0 2px color-mix(in srgb,var(--arrival-red) 34%,transparent),0 0 22px color-mix(in srgb,var(--arrival-red) 48%,transparent)}
+}
+@media(prefers-reduced-motion:reduce){
+  .arrival-card .arrival-time-arriving{animation:none!important}
+}

@@ -1209,7 +1209,7 @@
  .arrival-refresh:disabled{opacity:.55!important}
  .arrival-arriving .arrival-copy{padding-right:8px}
  .arrival-time-arriving{flex:0 0 auto!important;width:auto!important;min-width:92px!important;height:42px!important}
- .arrival-time-arriving strong{position:static!important;transform:none!important;font-size:15px!important;letter-spacing:.08em!important;color:var(--cy)!important;text-shadow:0 0 8px var(--cy)!important;animation:arrivalArrivingPulse 1.6s ease-in-out infinite!important;will-change:opacity,transform,text-shadow!important}
+ .arrival-time-arriving strong{position:static!important;transform:none!important;font-size:15px!important;letter-spacing:.08em!important;color:var(--arrival-red)!important;text-shadow:0 0 8px var(--arrival-red),0 0 18px color-mix(in srgb,var(--arrival-red) 45%,transparent)!important;animation:arrivalArrivingPulse 1.05s ease-in-out infinite!important;will-change:opacity,transform,text-shadow!important}
  @media (prefers-reduced-motion: reduce){
    .arrival-time-arriving strong{animation:none!important}
  }
@@ -1228,8 +1228,8 @@
  .arrival-time small{font-size:8px!important;letter-spacing:.04em!important}
  @keyframes arrivalNativeOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
  @keyframes arrivalArrivingPulse{
-   0%,100%{opacity:1;transform:scale(1);text-shadow:0 0 6px currentColor}
-   50%{opacity:.72;transform:scale(1.035);text-shadow:0 0 13px currentColor,0 0 22px currentColor}
+   0%,100%{opacity:1;transform:scale(1);text-shadow:0 0 6px currentColor,0 0 14px currentColor}
+   50%{opacity:.62;transform:scale(1.07);text-shadow:0 0 12px currentColor,0 0 26px currentColor,0 0 38px color-mix(in srgb,currentColor 42%,transparent)}
  }
  `;
  document.head.appendChild(css);
