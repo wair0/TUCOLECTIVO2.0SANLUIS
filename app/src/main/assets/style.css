@@ -256,3 +256,140 @@ html[data-theme=dark]{
   0%,100%{opacity:1;transform:scale(1);text-shadow:0 0 8px var(--arrival-red),0 0 18px var(--arrival-red)}
   50%{opacity:.9;transform:scale(1.05);text-shadow:0 0 12px var(--arrival-red),0 0 24px var(--arrival-red),0 0 38px color-mix(in srgb,var(--arrival-red) 46%,transparent)}
 }
+
+
+/* TEXTO HIGH-TECH CORPORATIVO — SIN BLANCOS/NEGROS PUROS */
+/* Cada función usa una tinta distinta; se conserva la jerarquía visual. */
+:root{
+  --text-main:#12345f;
+  --text-secondary:#315d86;
+  --text-blue:#1558d6;
+  --text-cyan:#007f9f;
+  --text-violet:#6038c9;
+  --text-amber:#996000;
+  --text-green:#087a36;
+  --text-red:#b4002d;
+  --text-magenta:#a02a8a;
+  --text-on-color:#d8f7ff;
+  --ink:#12345f;
+  --mut:#315d86;
+}
+html[data-theme=dark]{
+  --text-main:#b9dcff;
+  --text-secondary:#86b5d9;
+  --text-blue:#76a8ff;
+  --text-cyan:#58eaff;
+  --text-violet:#b59bff;
+  --text-amber:#ffc45c;
+  --text-green:#62ff9a;
+  --text-red:#ff5879;
+  --text-magenta:#ff7bd8;
+  --text-on-color:#d9f8ff;
+  --ink:#b9dcff;
+  --mut:#86b5d9;
+}
+
+/* Textos estructurales */
+body,
+.screen-head span,
+.line-sub-head>strong,
+.data-card.line-detail-card>b,
+.arrival-copy b,
+.arrival-stop strong,
+.map-stop-popup>strong,
+.notification-schedule>strong,
+.favorite-item b{
+  color:var(--text-main)!important;
+}
+.screen-head small,
+.line-badge-mini,
+.map-route-action,
+.map-popup-line,
+.map-popup-arrival strong,
+.line-card em strong,
+.map-controls button,
+.map-refresh-card,
+.map-refresh-card>b,
+.favorite-group{
+  color:var(--text-blue)!important;
+}
+.screen-head small,
+.item small,
+.nl span,
+.line-sub-context,
+.data-card span,
+.nearby-empty span,
+.favorites-empty span,
+.arrival-stop>span,
+.map-attribution,
+.map-refresh-copy small,
+.map-stop-popup>small,
+.map-popup-lines>small,
+.map-popup-arrivals>small,
+.map-popup-arrival span,
+.notification-schedule p,
+.notification-schedule>small,
+.notification-time-fields label,
+.notification-note,
+.favorite-item small,
+.arrival-time small{
+  color:var(--text-secondary)!important;
+}
+
+/* Variantes funcionales */
+.title{
+  background:linear-gradient(90deg,var(--text-blue),var(--text-violet) 55%,var(--text-cyan));
+  -webkit-background-clip:text;
+  background-clip:text;
+}
+.ph{color:var(--text-violet)!important}
+.sbox b{color:var(--text-blue)!important}
+.nl time{color:var(--text-cyan)!important}
+.card b{color:var(--text-main)!important}
+.card small{color:var(--text-secondary)!important}
+.line-card b,.data-card b{color:var(--text-blue)!important}
+.line-card em,.data-card em{color:var(--text-secondary)!important}
+.line-card em strong{color:var(--text-blue)!important}
+.line-sub-head>strong{color:var(--text-blue)!important}
+.nearby-empty strong,.favorites-empty strong{color:var(--text-cyan)!important}
+.map-topbar span{color:var(--text-cyan)!important}
+.map-refresh-copy strong{color:var(--text-cyan)!important}
+.map-popup-close{color:var(--text-secondary)!important}
+.notification-schedule>strong{color:var(--text-violet)!important}
+.notification-time-fields label{color:var(--text-amber)!important}
+.favorite-group{color:var(--text-magenta)!important}
+.favorite-item b{color:var(--text-violet)!important}
+.favorite-remove{color:var(--text-secondary)!important}
+.nav-btn{color:var(--text-secondary)!important}
+.nav-btn.active{color:var(--text-blue)!important}
+
+/* Arribos: colores semánticos ya definidos, reforzados también en modo claro. */
+.arrival-card .arrival-copy b{color:var(--text-main)!important}
+.arrival-card .arrival-copy span{color:var(--arrival-cyan)!important}
+.arrival-card .arrival-time:not(.arrival-time-arriving) strong,
+.arrival-card .arrival-time:not(.arrival-time-arriving) small{color:var(--arrival-green)!important}
+
+/* Eliminar blanco puro de controles con fondo de color. */
+.chip[aria-pressed=true],
+.arrival-favorite-toggle[aria-pressed=true],
+.notification-toggle{
+  color:var(--text-on-color)!important;
+}
+.grid .card.sync,
+.locate-stops{
+  color:var(--text-on-color)!important;
+}
+.grid .card.sync .ic{
+  stroke:var(--text-cyan)!important;
+}
+.locate-stops small{color:var(--text-cyan)!important}
+.locate-stops>b{color:var(--text-amber)!important}
+.notification-toggle.enabled{color:var(--text-cyan)!important}
+.item:active,.item:hover{color:var(--text-blue)!important}
+
+/* Iconografía y estados: tampoco usar blanco puro. */
+.btn{color:var(--text-blue)!important}
+.item .ti{color:var(--text-cyan)!important}
+.card .ic{stroke:var(--text-blue)}
+.card-mapa .ic,.card-favoritos .ic{stroke:var(--text-cyan)}
+.arrival-time{color:var(--text-main)}
