@@ -29,13 +29,15 @@ class ArrivalNotificationService : Service() {
         private const val SERVICE_CHANNEL = "arrival_monitor_service"
         private const val ALERT_CHANNEL = "arrival_alerts_v2"
         private const val SERVICE_ID = 4201
-        private const val POLL_INTERVAL_MS = 30_000L
+        private const val LIVE_NOTIFICATION_BASE_ID = 30000
+        private const val POLL_INTERVAL_MS = 10_000L
         private val THRESHOLDS = listOf(10, 5, 3, 1, 0)
     }
 
     private val api = SmartMoveApi()
     private val handler = Handler(Looper.getMainLooper())
     private val executor = Executors.newSingleThreadExecutor()
+    private val liveNotificationIds = mutableSetOf<Int>()
     @Volatile private var polling = false
     @Volatile private var destroyed = false
 
@@ -135,7 +137,7 @@ class ArrivalNotificationService : Service() {
                 return
             }
             if (nowMinute < startMinute) {
-                schedulePoll(30_000L)
+                schedulePoll(POLL_INTERVAL_MS)
                 return
             }
             polling = true
@@ -151,6 +153,7 @@ class ArrivalNotificationService : Service() {
                         val arrivals = runCatching { api.getArrivals(identifier, line, timeoutMs = 8_000) }.getOrDefault(emptyList())
                         for (arrival in arrivals) {
                             val minutes = arrival.minutes ?: if (arrival.status.contains("arrib", true)) 0 else continue
+                            updateLiveArrivalNotification(favorite, line, identifier, arrival.vehicleId, arrival.destination, minutes)
                             evaluateArrival(favorite, line, identifier, arrival.vehicleId, arrival.destination, minutes)
                         }
                     }
@@ -167,6 +170,45 @@ class ArrivalNotificationService : Service() {
     private fun parseTime(value: String): Int? {
         val match = Regex("^(?:([01]\\d|2[0-3])):([0-5]\\d)$").matchEntire(value) ?: return null
         return match.groupValues[1].toInt() * 60 + match.groupValues[2].toInt()
+    }
+
+    private fun updateLiveArrivalNotification(
+        favorite: JSONObject,
+        line: Int,
+        identifier: String,
+        vehicleId: String,
+        destination: String,
+        minutes: Int
+    ) {
+        val manager = getSystemService(NotificationManager::class.java)
+        val favoriteKey = favorite.optString("key", "$identifier::$line")
+        val notificationId = LIVE_NOTIFICATION_BASE_ID + (favoriteKey.hashCode().toLong().and(0x7fffffff).toInt() % 10000)
+        liveNotificationIds.add(notificationId)
+        val stopName = favorite.optJSONObject("stop")?.optString("name", "Tu parada") ?: "Tu parada"
+        val publicDestination = destination.trim().ifBlank { "Destino no informado" }
+        val timeLabel = if (minutes <= 0) "ARRIBANDO" else "FALTAN $minutes MIN"
+        val openApp = PendingIntent.getActivity(
+            this, notificationId, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0
+        )
+        val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("LÍNEA $line · $timeLabel")
+            .setContentText("$stopName · $publicDestination")
+            .setStyle(
+                NotificationCompat.BigTextStyle().bigText(
+                    "$stopName · $publicDestination\n$timeLabel"
+                )
+            )
+            .setContentIntent(openApp)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(false)
+            .setCategory(Notification.CATEGORY_TRANSPORT)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setSilent(true)
+            .build()
+        runCatching { manager.notify(notificationId, notification) }
     }
 
     private fun evaluateArrival(favorite: JSONObject, line: Int, identifier: String, vehicleId: String, destination: String, minutes: Int) {
@@ -247,6 +289,10 @@ class ArrivalNotificationService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        getSystemService(NotificationManager::class.java)?.let { manager ->
+            liveNotificationIds.forEach { runCatching { manager.cancel(it) } }
+        }
+        liveNotificationIds.clear()
         destroyed = true
         handler.removeCallbacksAndMessages(null)
         executor.shutdownNow()
