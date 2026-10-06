@@ -64,11 +64,16 @@ class MainActivity : AppCompatActivity() {
     private val continuousLocationListeners = mutableListOf<LocationListener>()
 
     @SuppressLint("SetJavaScriptEnabled")
-    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); showSplash() }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        webView = WebView(this)
+        showSplash()
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun startApp() {
         if (appStarted) return
+        setContentView(webView)
         appStarted = true
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
