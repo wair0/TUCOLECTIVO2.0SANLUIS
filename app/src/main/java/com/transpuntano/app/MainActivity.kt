@@ -166,9 +166,9 @@ class MainActivity : AppCompatActivity() {
             canvas.scale(scale, scale)
 
             val elapsed = SystemClock.uptimeMillis() - startTime
-            val duration = movie.duration().takeIf { it > 0 } ?: 1
+            val duration = movie.duration().toLong().takeIf { it > 0L } ?: 1L
 
-            movie.setTime(elapsed.coerceAtMost(duration))
+            movie.setTime(elapsed.coerceAtMost(duration).toInt())
             movie.draw(canvas, 0f, 0f, paint)
 
             canvas.restore()
