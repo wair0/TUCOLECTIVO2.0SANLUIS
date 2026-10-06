@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@android:color/transparent" />
-    <foreground android:drawable="@drawable/icon" />
+    <foreground>
+        <inset
+            android:insetLeft="21dp"
+            android:insetTop="21dp"
+            android:insetRight="21dp"
+            android:insetBottom="21dp">
+            <bitmap android:src="@drawable/icon" />
+        </inset>
+    </foreground>
 </adaptive-icon>

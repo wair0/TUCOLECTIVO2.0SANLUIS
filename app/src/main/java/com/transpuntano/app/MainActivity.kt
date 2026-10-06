@@ -67,12 +67,28 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         webView = WebView(this)
+        enterSplashFullscreen()
         showSplash()
+    }
+
+    private fun enterSplashFullscreen() {
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+    }
+
+    private fun exitSplashFullscreen() {
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun startApp() {
         if (appStarted) return
+        exitSplashFullscreen()
         setContentView(webView)
         appStarted = true
         webView.settings.javaScriptEnabled = true
@@ -86,7 +102,12 @@ class MainActivity : AppCompatActivity() {
         webView.settings.displayZoomControls = false
         webView.settings.setGeolocationEnabled(true)
         webView.addJavascriptInterface(TransitBridge(), "TuColectivoNative")
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+                installSearchBridge(view)
+            }
+        }
         webView.webChromeClient = object : WebChromeClient() {
             override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
                 if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
@@ -141,7 +162,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
             setBackgroundColor(0xFF000000.toInt())
         }
 
@@ -156,7 +177,10 @@ class MainActivity : AppCompatActivity() {
                 return
             }
 
-            val scale = minOf(
+            // Center-crop: the original 450x800 GIF keeps its aspect ratio,
+            // fills the complete display and intentionally crops only the excess
+            // edges instead of leaving black bands.
+            val scale = maxOf(
                 width.toFloat() / movieWidth.toFloat(),
                 height.toFloat() / movieHeight.toFloat()
             )
@@ -186,6 +210,98 @@ class MainActivity : AppCompatActivity() {
 
             postInvalidateOnAnimation()
         }
+    }
+
+    private fun installSearchBridge(view: WebView) {
+        view.evaluateJavascript(
+            """
+            (() => {
+              if (window.__tuColectivoSearchBridgeInstalled) return;
+              window.__tuColectivoSearchBridgeInstalled = true;
+              const normalize = value => String(value ?? '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim()
+                .toUpperCase();
+
+              const render = (query) => {
+                const q = normalize(query);
+                const panel = document.getElementById('m-search');
+                if (!panel) return;
+                let box = document.getElementById('nativeSearchResults');
+                if (!box) {
+                  box = document.createElement('div');
+                  box.id = 'nativeSearchResults';
+                  box.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:10px;';
+                  panel.appendChild(box);
+                }
+                box.innerHTML = '';
+
+                const cards = Array.from(document.querySelectorAll('.line-card'));
+                const matches = cards.filter(card => {
+                  const code = normalize(card.dataset.line);
+                  const label = normalize(
+                    card.querySelector('b')?.textContent ||
+                    card.textContent
+                  );
+                  if (!q) return false;
+                  return code === q || label === q || label.includes('LINEA ' + q);
+                });
+
+                if (!matches.length) {
+                  box.innerHTML = '<div style="padding:10px;opacity:.8">BUSCANDO EN LÍNEAS...</div>';
+                  if (window.TuColectivoNative?.loadLines) {
+                    try { window.TuColectivoNative.loadLines(); } catch (_) {}
+                  }
+                  let tries = 0;
+                  const retry = () => {
+                    if (!box.isConnected || !q || tries++ > 12) return;
+                    const fresh = Array.from(document.querySelectorAll('.line-card')).filter(card => {
+                      const code = normalize(card.dataset.line);
+                      const label = normalize(card.querySelector('b')?.textContent || card.textContent);
+                      return code === q || label === q || label.includes('LINEA ' + q);
+                    });
+                    if (fresh.length) {
+                      box.innerHTML = '';
+                      fresh.forEach(card => {
+                        const result = document.createElement('button');
+                        result.type = 'button';
+                        result.textContent = card.querySelector('b')?.textContent?.trim() || ('LINEA ' + card.dataset.line);
+                        result.style.cssText = 'min-height:42px;text-align:left;padding:10px 12px;background:rgba(0,240,255,.08);border:1px solid rgba(0,240,255,.45);color:inherit;border-radius:8px;font:inherit;font-weight:800;';
+                        result.addEventListener('click', () => {
+                          document.querySelector('[data-menu="m-search"]')?.click();
+                          card.scrollIntoView({behavior:'smooth',block:'center'});
+                          card.click();
+                        });
+                        box.appendChild(result);
+                      });
+                      return;
+                    }
+                    setTimeout(retry, 180);
+                  };
+                  setTimeout(retry, 180);
+                  return;
+                }
+
+                matches.forEach(card => {
+                  const result = document.createElement('button');
+                  result.type = 'button';
+                  result.textContent = card.querySelector('b')?.textContent?.trim() || ('LINEA ' + card.dataset.line);
+                  result.style.cssText = 'min-height:42px;text-align:left;padding:10px 12px;background:rgba(0,240,255,.08);border:1px solid rgba(0,240,255,.45);color:inherit;border-radius:8px;font:inherit;font-weight:800;';
+                  result.addEventListener('click', () => {
+                    document.querySelector('[data-menu="m-search"]')?.click();
+                    card.scrollIntoView({behavior:'smooth',block:'center'});
+                    card.click();
+                  });
+                  box.appendChild(result);
+                });
+              };
+
+              document.addEventListener('app:search', event => render(event.detail?.q || ''));
+            })();
+            """.trimIndent(),
+            null
+        )
     }
 
     private fun dispatch(functionName: String, payload: String) {
