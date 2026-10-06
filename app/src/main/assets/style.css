@@ -1,5 +1,5 @@
 /* TU COLECTIVO 2.0 — NEXUS: high-tech corporativo / utopía futurista (100% offline, sin dependencias) */
-:root{color-scheme:light;--cy:#0fb5c9;--vt:#2563ff;--vi:#6d5cff;--bg:#eef3fa;--sf:#fff;--ink:#0b1b3a;--mut:#5d6d8c;--ln:#d8e2f2;--tint:#eaf1ff;--tint2:#f7faff;--glass:rgba(255,255,255,.84);--glass2:rgba(255,255,255,.95);--glass3:rgba(255,255,255,.6);--field:#f4f7fc;--soft:#f1f5fb;--soft2:#f6f9fe;--bd2:#cfe0ff;--press:#dbe8ff;--dash:#c3d3ec;--map:#e4ecf8;--ring:#dbe6f7;--dot:rgba(11,27,58,.09);--ic1:#e7efff;--ic2:#e2fafd;--danger-bg:#fde3e8;--deep:#0b1b3a;--shadow-c:11,27,58;--a1:.18;--a2:.2;--a3:.14;--hh:64px;--top:0px;--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--sh:0 1px 2px rgba(var(--shadow-c),.05),0 8px 24px rgba(37,99,255,.08);--r:18px}
+:root{color-scheme:light;--cy:#0fb5c9;--vt:#2563ff;--vi:#6d5cff;--bg:#eef3fa;--sf:#fff;--ink:#0b1b3a;--mut:#4a5d7e;--ln:#d8e2f2;--tint:#eaf1ff;--tint2:#f7faff;--glass:rgba(255,255,255,.84);--glass2:rgba(255,255,255,.95);--glass3:rgba(255,255,255,.6);--field:#f4f7fc;--soft:#f1f5fb;--soft2:#f6f9fe;--bd2:#cfe0ff;--press:#dbe8ff;--dash:#c3d3ec;--map:#e4ecf8;--ring:#dbe6f7;--dot:rgba(11,27,58,.09);--ic1:#e7efff;--ic2:#e2fafd;--danger-bg:#fde3e8;--deep:#0b1b3a;--shadow-c:11,27,58;--a1:.18;--a2:.2;--a3:.14;--hh:64px;--top:0px;--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--sh:0 1px 2px rgba(var(--shadow-c),.05),0 8px 24px rgba(37,99,255,.08);--r:18px}
 @supports(top:env(safe-area-inset-top)){:root{--top:env(safe-area-inset-top)}}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
 body{min-height:100vh;background:var(--bg);color:var(--ink);font:14px/1.4 var(--sans);overflow-x:hidden;-webkit-user-select:none;user-select:none}
@@ -211,23 +211,23 @@ html,body{transition:background-color .25s}
 
 /* ARRIBOS — NEON ADAPTABLE A MODO CLARO/OSCURO */
 :root{
-  --arrival-red:#e60032;
-  --arrival-green:#00a63c;
-  --arrival-cyan:#008fbd;
+  --arrival-red:#c9002b;
+  --arrival-green:#008f32;
+  --arrival-cyan:#007fa9;
 }
 html[data-theme=dark]{
-  --arrival-red:#ff3158;
-  --arrival-green:#39ff88;
-  --arrival-cyan:#37e8ff;
+  --arrival-red:#ff1744;
+  --arrival-green:#39ff78;
+  --arrival-cyan:#25e1ff;
 }
 .arrival-card .arrival-copy span{
   color:var(--arrival-cyan)!important;
-  text-shadow:0 0 7px color-mix(in srgb,var(--arrival-cyan) 55%,transparent)!important;
+  text-shadow:0 0 8px var(--arrival-cyan),0 0 16px color-mix(in srgb,var(--arrival-cyan) 48%,transparent)!important;
 }
 .arrival-card .arrival-time:not(.arrival-time-arriving) strong,
 .arrival-card .arrival-time:not(.arrival-time-arriving) small{
   color:var(--arrival-green)!important;
-  text-shadow:0 0 7px color-mix(in srgb,var(--arrival-green) 58%,transparent)!important;
+  text-shadow:0 0 8px var(--arrival-green),0 0 16px color-mix(in srgb,var(--arrival-green) 48%,transparent)!important;
 }
 .arrival-card.arrival-arriving{
   border-color:color-mix(in srgb,var(--arrival-red) 72%,var(--ln))!important;
@@ -244,4 +244,15 @@ html[data-theme=dark]{
 }
 @media(prefers-reduced-motion:reduce){
   .arrival-card .arrival-time-arriving{animation:none!important}
+}
+
+/* INTENSIDAD EXTRA DE ARRIBANDO Y TEXTOS CLAVE */
+.arrival-card .arrival-time-arriving strong{
+  color:var(--arrival-red)!important;
+  font-weight:950!important;
+  text-shadow:0 0 8px var(--arrival-red),0 0 18px var(--arrival-red),0 0 30px color-mix(in srgb,var(--arrival-red) 52%,transparent)!important;
+}
+@keyframes arrivalArrivingPulse{
+  0%,100%{opacity:1;transform:scale(1);text-shadow:0 0 8px var(--arrival-red),0 0 18px var(--arrival-red)}
+  50%{opacity:.9;transform:scale(1.05);text-shadow:0 0 12px var(--arrival-red),0 0 24px var(--arrival-red),0 0 38px color-mix(in srgb,var(--arrival-red) 46%,transparent)}
 }
