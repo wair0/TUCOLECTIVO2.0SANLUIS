@@ -195,7 +195,7 @@ class MainActivity : AppCompatActivity() {
 
             videoView.setVideoURI(
                 android.net.Uri.parse(
-                    "android.resource://\${context.packageName}/raw/splash_mp4"
+                    "android.resource://" + context.packageName + "/raw/splash_mp4"
                 )
             )
 
