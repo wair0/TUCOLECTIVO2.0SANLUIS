@@ -305,3 +305,34 @@ html[data-theme=dark] .card.sync .prog{
 .home-design-grid .card-mapa small,
 .home-design-grid .card-paradas small,
 .home-design-grid .card-favoritos small{display:none!important}
+
+
+/* ICONOS DEL INICIO — NEON GLOW ANIMADO */
+.home-design-grid .card:not(.sync) .ic{
+  filter:drop-shadow(0 0 3px currentColor) drop-shadow(0 0 8px currentColor);
+  animation:homeIconGlow 2.4s ease-in-out infinite;
+  transform-origin:center;
+}
+.home-design-grid .card-lineas .ic{color:#2563ff;stroke:#2563ff}
+.home-design-grid .card-mapa .ic{color:#00a9c0;stroke:#00a9c0}
+.home-design-grid .card-paradas .ic{color:#e09a00;stroke:#e09a00}
+.home-design-grid .card-favoritos .ic{color:#9a4dff;stroke:#9a4dff}
+.home-design-grid .card:not(.sync):active .ic{
+  animation:homeIconPress .22s ease-out;
+}
+@keyframes homeIconGlow{
+  0%,100%{filter:drop-shadow(0 0 3px currentColor) drop-shadow(0 0 7px currentColor);opacity:.9}
+  50%{filter:drop-shadow(0 0 5px currentColor) drop-shadow(0 0 14px currentColor) drop-shadow(0 0 22px currentColor);opacity:1}
+}
+@keyframes homeIconPress{
+  0%{transform:scale(1)}
+  55%{transform:scale(1.14)}
+  100%{transform:scale(1)}
+}
+html[data-theme=dark] .home-design-grid .card-lineas .ic{color:#5b8dff;stroke:#5b8dff}
+html[data-theme=dark] .home-design-grid .card-mapa .ic{color:#22d3ee;stroke:#22d3ee}
+html[data-theme=dark] .home-design-grid .card-paradas .ic{color:#ffbd3b;stroke:#ffbd3b}
+html[data-theme=dark] .home-design-grid .card-favoritos .ic{color:#c084ff;stroke:#c084ff}
+@media(prefers-reduced-motion:reduce){
+  .home-design-grid .card:not(.sync) .ic{animation:none!important}
+}
