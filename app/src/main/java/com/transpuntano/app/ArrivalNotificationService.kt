@@ -29,7 +29,7 @@ class ArrivalNotificationService : Service() {
         private const val SERVICE_CHANNEL = "arrival_monitor_service"
         private const val ALERT_CHANNEL = "arrival_alerts_v2"
         private const val SERVICE_ID = 4201
-        private const val POLL_INTERVAL_MS = 45_000L
+        private const val POLL_INTERVAL_MS = 30_000L
         private val THRESHOLDS = listOf(10, 5, 3, 1, 0)
     }
 

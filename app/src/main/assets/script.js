@@ -842,7 +842,12 @@
   function syncArrivalNotificationConfig(){
     if(!notificationsEnabled)return;
     if(!favorites.arrivals.length){window.TuColectivoNative?.stopArrivalNotifications?.();return;}
-    window.TuColectivoNative?.setArrivalNotifications?.(JSON.stringify(favorites.arrivals),notificationSchedule.start,notificationSchedule.end);
+    const payload=JSON.stringify(favorites.arrivals);
+    if(window.TuColectivoNative?.updateArrivalNotificationFavorites){
+      window.TuColectivoNative.updateArrivalNotificationFavorites(payload);
+    }else{
+      window.TuColectivoNative?.setArrivalNotifications?.(payload,notificationSchedule.start,notificationSchedule.end);
+    }
   }
   function escapeNotificationText(value){
     return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1046,7 +1051,7 @@
   window.TuColectivoNative?.getArrivalNotificationState?.();
   window.setInterval(()=>{
     if(document.querySelector('[data-screen="favoritos"]')?.classList.contains('active'))window.TuColectivoNative?.getArrivalNotificationState?.();
-  },30000);
+  },15000);
 })();
 
 /* FASE 11B — LÍNEAS REALES + SUBSECCIONES DESDE SMARTMOVE NATIVO */

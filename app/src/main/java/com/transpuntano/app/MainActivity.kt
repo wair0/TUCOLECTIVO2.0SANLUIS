@@ -659,6 +659,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        @JavascriptInterface fun updateArrivalNotificationFavorites(favoritesJson: String) {
+            runOnUiThread {
+                val prefs = getSharedPreferences(ArrivalNotificationService.PREFS, MODE_PRIVATE)
+                if (!prefs.getBoolean("enabled", false)) return@runOnUiThread
+                runCatching { JSONArray(favoritesJson) }.onSuccess {
+                    prefs.edit().putString("favorites", favoritesJson).apply()
+                }
+            }
+        }
+
         @JavascriptInterface fun stopArrivalNotifications() {
             runOnUiThread {
                 getSharedPreferences(ArrivalNotificationService.PREFS, MODE_PRIVATE).edit().putBoolean("enabled", false).apply()
