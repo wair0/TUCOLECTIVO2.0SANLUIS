@@ -256,3 +256,44 @@ html[data-theme=dark]{
   0%,100%{opacity:1;transform:scale(1);text-shadow:0 0 8px var(--arrival-red),0 0 18px var(--arrival-red)}
   50%{opacity:.9;transform:scale(1.05);text-shadow:0 0 12px var(--arrival-red),0 0 24px var(--arrival-red),0 0 38px color-mix(in srgb,var(--arrival-red) 46%,transparent)}
 }
+
+
+/* TARJETA SINCRONIZAR LÍNEAS — NEUTRA CON PROGRESO ROJO */
+.grid .card.sync{
+  color:var(--ink)!important;
+  background:var(--sf)!important;
+  border:1px solid var(--ln)!important;
+  box-shadow:var(--sh)!important;
+}
+.grid .card.sync::before{
+  background:radial-gradient(closest-side,rgba(224,52,79,.12),transparent)!important;
+}
+.grid .card.sync .ic{
+  stroke:var(--ink)!important;
+  background:var(--soft)!important;
+  border-color:var(--ln)!important;
+}
+.grid .card.sync small{
+  color:var(--mut)!important;
+}
+.card.sync .prog{
+  background:#e0344f!important;
+  box-shadow:0 0 10px rgba(224,52,79,.45);
+}
+html[data-theme=dark] .grid .card.sync{
+  color:var(--ink)!important;
+  background:#05070c!important;
+  border-color:var(--ln)!important;
+}
+html[data-theme=dark] .grid .card.sync .ic{
+  stroke:var(--ink)!important;
+  background:#111827!important;
+  border-color:var(--ln)!important;
+}
+html[data-theme=dark] .grid .card.sync small{
+  color:var(--mut)!important;
+}
+html[data-theme=dark] .card.sync .prog{
+  background:#ff1744!important;
+  box-shadow:0 0 12px rgba(255,23,68,.55);
+}
