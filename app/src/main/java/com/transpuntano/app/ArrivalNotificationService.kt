@@ -153,8 +153,9 @@ class ArrivalNotificationService : Service() {
                         val arrivals = runCatching { api.getArrivals(identifier, line, timeoutMs = 8_000) }.getOrDefault(emptyList())
                         for (arrival in arrivals) {
                             val minutes = arrival.minutes ?: if (arrival.status.contains("arrib", true)) 0 else continue
-                            updateLiveArrivalNotification(favorite, line, identifier, arrival.vehicleId, arrival.destination, minutes)
-                            evaluateArrival(favorite, line, identifier, arrival.vehicleId, arrival.destination, minutes)
+                            val lineLabel = publicLineLabel(arrival.line, line)
+                            updateLiveArrivalNotification(favorite, line, lineLabel, arrival.destination, minutes)
+                            evaluateArrival(favorite, line, lineLabel, identifier, arrival.vehicleId, arrival.destination, minutes)
                         }
                     }
                 } catch (_: Exception) {
@@ -175,8 +176,7 @@ class ArrivalNotificationService : Service() {
     private fun updateLiveArrivalNotification(
         favorite: JSONObject,
         line: Int,
-        identifier: String,
-        vehicleId: String,
+        lineLabel: String,
         destination: String,
         minutes: Int
     ) {
@@ -193,7 +193,7 @@ class ArrivalNotificationService : Service() {
         )
         val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("LÍNEA $line · $timeLabel")
+            .setContentTitle("LÍNEA $lineLabel · $timeLabel")
             .setContentText("$stopName · $publicDestination")
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
@@ -211,7 +211,7 @@ class ArrivalNotificationService : Service() {
         runCatching { manager.notify(notificationId, notification) }
     }
 
-    private fun evaluateArrival(favorite: JSONObject, line: Int, identifier: String, vehicleId: String, destination: String, minutes: Int) {
+    private fun evaluateArrival(favorite: JSONObject, line: Int, lineLabel: String, identifier: String, vehicleId: String, destination: String, minutes: Int) {
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         val favoriteKey = favorite.optString("key", "$identifier::$line")
         val serviceIdentity = vehicleId.takeIf { it.isNotBlank() } ?: destination.trim().lowercase().ifBlank { "servicio" }
@@ -246,17 +246,17 @@ class ArrivalNotificationService : Service() {
                 else -> "EL COLECTIVO ESTÁ ARRIBANDO"
             }
             val stopName = favorite.optJSONObject("stop")?.optString("name", "Tu parada") ?: "Tu parada"
-            postArrivalNotification(signature, line, stopName, destination, label, minutes, stage)
+            postArrivalNotification(signature, lineLabel, line, stopName, destination, label, minutes, stage)
             fired.add(stage)
-            appendHistory(line, stopName, destination, label, minutes)
+            appendHistory(lineLabel, stopName, destination, label, minutes)
         }
         prefs.edit().putInt(lastKey, minutes).putString(firedKey, fired.joinToString(",")).apply()
     }
 
-    private fun postArrivalNotification(signature: String, line: Int, stop: String, destination: String, label: String, minutes: Int, stage: String) {
+    private fun postArrivalNotification(signature: String, lineLabel: String, line: Int, stop: String, destination: String, label: String, minutes: Int, stage: String) {
         val manager = getSystemService(NotificationManager::class.java)
         val id = 5000 + (signature.hashCode().toLong().and(0x7fffffff).toInt() % 100000) + stage.hashCode().let { kotlin.math.abs(it % 1000) }
-        val title = "LÍNEA $line · $label"
+        val title = "LÍNEA $lineLabel · $label"
         val text = listOf(stop, destination, if (minutes <= 0) "ARRIBANDO" else "$minutes min").filter { it.isNotBlank() }.joinToString(" · ")
         val openApp = PendingIntent.getActivity(
             this, id, Intent(this, MainActivity::class.java),
@@ -277,7 +277,13 @@ class ArrivalNotificationService : Service() {
         runCatching { manager.notify(id, notification) }
     }
 
-    private fun appendHistory(line: Int, stop: String, destination: String, label: String, minutes: Int) {
+    private fun publicLineLabel(raw: String?, fallbackCode: Int): String {
+        val value = raw?.trim().orEmpty()
+        val cleaned = value.replace(Regex("^l[ií]nea\\s*", RegexOption.IGNORE_CASE), "").trim()
+        return cleaned.ifBlank { fallbackCode.toString() }
+    }
+
+    private fun appendHistory(line: String, stop: String, destination: String, label: String, minutes: Int) {
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         val history = runCatching { JSONArray(prefs.getString("history", "[]")) }.getOrDefault(JSONArray())
         val next = JSONArray()
