@@ -336,3 +336,48 @@ html[data-theme=dark] .home-design-grid .card-favoritos .ic{color:#c084ff;stroke
 @media(prefers-reduced-motion:reduce){
   .home-design-grid .card:not(.sync) .ic{animation:none!important}
 }
+
+
+/* ICONOS DEL HEADER Y BARRA INFERIOR — NEON GLOW ANIMADO */
+.hdr .btn svg{
+  color:var(--vt);
+  stroke:currentColor;
+  filter:drop-shadow(0 0 3px currentColor) drop-shadow(0 0 8px currentColor);
+  animation:chromeIconGlow 2.4s ease-in-out infinite;
+  transform-origin:center;
+}
+.hdr .btn:nth-child(1) svg{color:#2563ff}
+.hdr .side.r .btn:first-child svg{color:#00a9c0}
+.hdr .side.r .btn:last-child svg{color:#e0344f}
+.hdr .btn:active svg{animation:chromeIconPress .22s ease-out}
+.bottom-nav .nav-icon .card-icon{
+  filter:drop-shadow(0 0 3px currentColor) drop-shadow(0 0 8px currentColor);
+  animation:chromeIconGlow 2.4s ease-in-out infinite;
+  transform-origin:center;
+}
+.bottom-nav .nav-btn:nth-child(1){color:#2563ff}
+.bottom-nav .nav-btn:nth-child(2){color:#6d5cff}
+.bottom-nav .nav-btn:nth-child(3){color:#00a9c0}
+.bottom-nav .nav-btn:nth-child(4){color:#e09a00}
+.bottom-nav .nav-btn:nth-child(5){color:#9a4dff}
+.bottom-nav .nav-btn:active .nav-icon{animation:chromeIconPress .22s ease-out}
+html[data-theme=dark] .hdr .btn:nth-child(1) svg{color:#5b8dff}
+html[data-theme=dark] .hdr .side.r .btn:first-child svg{color:#22d3ee}
+html[data-theme=dark] .hdr .side.r .btn:last-child svg{color:#ff4d6d}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(1){color:#5b8dff}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(2){color:#a78bfa}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(3){color:#22d3ee}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(4){color:#ffbd3b}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(5){color:#c084ff}
+@keyframes chromeIconGlow{
+  0%,100%{filter:drop-shadow(0 0 3px currentColor) drop-shadow(0 0 7px currentColor);opacity:.9}
+  50%{filter:drop-shadow(0 0 5px currentColor) drop-shadow(0 0 14px currentColor) drop-shadow(0 0 22px currentColor);opacity:1}
+}
+@keyframes chromeIconPress{
+  0%{transform:scale(1)}
+  55%{transform:scale(1.16)}
+  100%{transform:scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  .hdr .btn svg,.bottom-nav .nav-icon .card-icon{animation:none!important}
+}
