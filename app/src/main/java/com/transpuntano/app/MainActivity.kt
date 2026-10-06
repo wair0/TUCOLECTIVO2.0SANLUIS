@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.graphics.Canvas
+import android.graphics.Movie
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.Gravity
@@ -111,28 +112,74 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSplash() {
-        webView = WebView(this).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.allowFileAccess = true
-            settings.allowContentAccess = true
-            settings.loadsImagesAutomatically = true
-            settings.setSupportZoom(false)
-            settings.builtInZoomControls = false
-            settings.displayZoomControls = false
-            addJavascriptInterface(SplashBridge(), "TuColectivoSplashNative")
-            webViewClient = WebViewClient()
-        }
-        setContentView(webView)
-        webView.loadUrl("file:///android_asset/splash/index.html")
+        setContentView(GifSplashView(this) {
+            if (!isFinishing && !isDestroyed) {
+                startApp()
+            }
+        })
     }
 
-    private inner class SplashBridge {
-        @JavascriptInterface
-        fun complete() {
-            runOnUiThread {
-                if (!isFinishing && !isDestroyed) startApp()
+    private class GifSplashView(
+        context: Context,
+        private val onFinished: () -> Unit
+    ) : View(context) {
+
+        private val movie: Movie
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        private val startTime = SystemClock.uptimeMillis()
+        private var finished = false
+
+        init {
+            context.resources.openRawResource(R.drawable.splash).use { input ->
+                movie = requireNotNull(Movie.decodeStream(input)) {
+                    "No se pudo decodificar res/drawable-nodpi/splash.gif"
+                }
             }
+
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            setBackgroundColor(0xFF000000.toInt())
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+
+            val movieWidth = movie.width()
+            val movieHeight = movie.height()
+
+            if (movieWidth <= 0 || movieHeight <= 0 || width <= 0 || height <= 0) {
+                postInvalidateOnAnimation()
+                return
+            }
+
+            val scale = minOf(
+                width.toFloat() / movieWidth.toFloat(),
+                height.toFloat() / movieHeight.toFloat()
+            )
+
+            val drawWidth = movieWidth * scale
+            val drawHeight = movieHeight * scale
+            val left = (width - drawWidth) / 2f
+            val top = (height - drawHeight) / 2f
+
+            canvas.save()
+            canvas.translate(left, top)
+            canvas.scale(scale, scale)
+
+            val elapsed = SystemClock.uptimeMillis() - startTime
+            val duration = movie.duration().takeIf { it > 0 } ?: 1
+
+            movie.setTime(elapsed.coerceAtMost(duration))
+            movie.draw(canvas, 0f, 0f, paint)
+
+            canvas.restore()
+
+            if (elapsed >= duration && !finished) {
+                finished = true
+                post { onFinished() }
+                return
+            }
+
+            postInvalidateOnAnimation()
         }
     }
 
