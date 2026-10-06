@@ -338,19 +338,64 @@ html[data-theme=dark] .home-design-grid .card-favoritos .ic{color:#c084ff;stroke
 }
 
 
-/* ICONOS DEL HEADER Y BARRA INFERIOR — NEON GLOW ULTRAFINO */
+/* ICONOS DEL HEADER Y BARRA INFERIOR — GLOW FINO SIN TAPAR ICONOS */
 .hdr .btn svg{
   color:var(--vt);
   stroke:currentColor;
-  filter:drop-shadow(0 0 1px currentColor) drop-shadow(0 0 2px currentColor);
-  animation:chromeIconGlowUltra 3.2s ease-in-out infinite;
+  filter:drop-shadow(0 0 1px currentColor);
+  animation:chromeIconGlowClean 3.4s ease-in-out infinite;
   transform-origin:center;
-  opacity:1;
 }
 .hdr .side .btn svg{color:#2563ff}
 .hdr .side.r .btn:first-child svg{color:#00a9c0}
 .hdr .side.r .btn:last-child svg{color:#e0344f}
-.hdr .btn:active svg{animation:chromeIconPressUltra .24s ease-out}
+.hdr .btn:active svg{animation:chromeIconPressClean .22s ease-out}
+
+.bottom-nav .nav-icon .card-icon{
+  filter:drop-shadow(0 0 1px currentColor);
+  animation:chromeIconGlowClean 3.4s ease-in-out infinite;
+  transform-origin:center;
+}
+.bottom-nav .nav-icon{
+  animation:navTextGlowClean 3.4s ease-in-out infinite;
+  transform-origin:center;
+}
+.bottom-nav .nav-btn:nth-child(1){color:#2563ff}
+.bottom-nav .nav-btn:nth-child(2){color:#6d5cff}
+.bottom-nav .nav-btn:nth-child(3){color:#00a9c0}
+.bottom-nav .nav-btn:nth-child(4){color:#e09a00}
+.bottom-nav .nav-btn:nth-child(5){color:#9a4dff}
+.bottom-nav .nav-btn:active .card-icon{animation:chromeIconPressClean .22s ease-out}
+.bottom-nav .nav-btn:active .nav-icon{animation:navTextPressClean .22s ease-out}
+html[data-theme=dark] .hdr .side .btn svg{color:#5b8dff}
+html[data-theme=dark] .hdr .side.r .btn:first-child svg{color:#22d3ee}
+html[data-theme=dark] .hdr .side.r .btn:last-child svg{color:#ff4d6d}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(1){color:#5b8dff}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(2){color:#a78bfa}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(3){color:#22d3ee}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(4){color:#ffbd3b}
+html[data-theme=dark] .bottom-nav .nav-btn:nth-child(5){color:#c084ff}
+@keyframes chromeIconGlowClean{
+  0%,100%{filter:drop-shadow(0 0 0 currentColor);opacity:1}
+  50%{filter:drop-shadow(0 0 2px currentColor);opacity:1}
+}
+@keyframes navTextGlowClean{
+  0%,100%{opacity:1}
+  50%{opacity:.9}
+}
+@keyframes chromeIconPressClean{
+  0%{transform:scale(1)}
+  55%{transform:scale(1.04)}
+  100%{transform:scale(1)}
+}
+@keyframes navTextPressClean{
+  0%{transform:scale(1)}
+  55%{transform:scale(1.04)}
+  100%{transform:scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  .hdr .btn svg,.bottom-nav .nav-icon,.bottom-nav .nav-icon .card-icon{animation:none!important}
+}
 
 .bottom-nav .nav-icon,
 .bottom-nav .nav-icon .card-icon{
