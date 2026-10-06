@@ -157,8 +157,15 @@ class MainActivity : AppCompatActivity() {
         @androidx.annotation.RawRes private val videoResId: Int,
         private val onFinished: () -> Unit
     ) : FrameLayout(context) {
+
         private val videoView = VideoView(context)
+        private val fallbackHandler = Handler(Looper.getMainLooper())
         private var finished = false
+        private var prepared = false
+
+        private val fallbackRunnable = Runnable {
+            if (!finished && !prepared) showGifFallback()
+        }
 
         init {
             setBackgroundColor(0xFF000000.toInt())
@@ -168,33 +175,59 @@ class MainActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             addView(videoView)
+
             videoView.setOnPreparedListener { player ->
+                if (finished) return@setOnPreparedListener
+                prepared = true
+                fallbackHandler.removeCallbacks(fallbackRunnable)
                 player.isLooping = false
                 videoView.start()
             }
-            videoView.setOnCompletionListener { finishOnce() }
+
+            videoView.setOnCompletionListener {
+                finishOnce()
+            }
+
             videoView.setOnErrorListener { _, _, _ ->
-                post {
-                    if (!finished) {
-                        removeView(videoView)
-                        addView(GifSplashView(context) { finishOnce() }, LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        ))
-                    }
-                }
+                showGifFallback()
                 true
             }
-            videoView.setVideoURI(android.net.Uri.parse("android.resource://${context.packageName}/$videoResId"))
+
+            videoView.setVideoURI(
+                android.net.Uri.parse(
+                    "android.resource://\${context.packageName}/raw/splash_mp4"
+                )
+            )
+
+            fallbackHandler.postDelayed(fallbackRunnable, 5000L)
+        }
+
+        private fun showGifFallback() {
+            if (finished) return
+            fallbackHandler.removeCallbacks(fallbackRunnable)
+            removeView(videoView)
+            addView(
+                GifSplashView(context) { finishOnce() },
+                LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         }
 
         private fun finishOnce() {
             if (finished) return
             finished = true
+            fallbackHandler.removeCallbacks(fallbackRunnable)
             post { onFinished() }
         }
-    }
 
+        override fun onDetachedFromWindow() {
+            fallbackHandler.removeCallbacks(fallbackRunnable)
+            videoView.stopPlayback()
+            super.onDetachedFromWindow()
+        }
+    }
     private class GifSplashView(
         context: Context,
         private val onFinished: () -> Unit
