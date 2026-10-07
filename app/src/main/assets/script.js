@@ -210,6 +210,8 @@
     stops: [],
     vehicles: [],
     userLocation: null,
+    userMarker: null,
+    followUser: false,
     availableLines: [],
     availableLineLabels: {},
     lineLabels: {},
@@ -404,6 +406,7 @@
   }
 
   function locateUser() {
+    map.followUser = true;
     setState('LOCALIZANDO...');
     if (window.TuColectivoNative && typeof window.TuColectivoNative.requestMapLocation === 'function') {
       window.TuColectivoNative.requestMapLocation(map.routeLineCode || 0);
@@ -446,7 +449,10 @@
   leafletMap.on('zoomend', syncZoomLabel);
   leafletMap.on('zoomstart', () => { if (state?.textContent === 'MAPA EN LÍNEA') state.textContent = 'NAVEGANDO...'; });
   leafletMap.on('zoomend', () => { syncZoomLabel(); if (state?.textContent === 'NAVEGANDO...') state.textContent = 'MAPA EN LÍNEA'; });
-  leafletMap.on('dragstart', () => { if (state) state.textContent = 'NAVEGANDO...'; });
+  leafletMap.on('dragstart', () => {
+    map.followUser = false;
+    if (state) state.textContent = 'NAVEGANDO...';
+  });
   leafletMap.on('dragend', () => { if (state) state.textContent = 'MAPA EN LÍNEA'; });
   window.addEventListener('resize', () => setTimeout(() => leafletMap.invalidateSize({pan:false}), 60));
 
@@ -506,6 +512,9 @@
     if (document.querySelector('[data-screen="mapa"]')?.classList.contains('active')) {
       map.userLocation = {lat,lng};
       userMarker();
+      if (map.followUser) {
+        leafletMap.panTo([lat,lng], {animate:false});
+      }
     }
     if (document.querySelector('[data-screen="paradas"]')?.classList.contains('active') && typeof nearbyState !== 'undefined') {
       if (nearbyState) nearbyState.textContent = '';
@@ -520,7 +529,9 @@
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       map.userLocation = {lat,lng};
       userMarker();
-      leafletMap.setView([lat,lng], Math.max(leafletMap.getZoom(), 14), {animate:false});
+      if (map.followUser) {
+        leafletMap.setView([lat,lng], Math.max(leafletMap.getZoom(), 14), {animate:false});
+      }
       state.textContent = '';
       if (map.loadStopsAfterLocation && window.TuColectivoNative?.loadMapDataAtLocation) {
         map.loadStopsAfterLocation = false;
@@ -652,6 +663,7 @@
           : 'SELECCIONÁ UNA LÍNEA DESDE ARRIBOS';
       }
       map.loadStopsAfterLocation = true;
+      map.followUser = true;
       state.textContent = 'CARGANDO RECORRIDO...';
       if (window.TuColectivoNative && map.routeLineCode > 0) {
         window.TuColectivoNative.loadMapRoute(map.routeLineCode);
