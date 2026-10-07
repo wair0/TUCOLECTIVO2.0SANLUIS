@@ -1,0 +1,93 @@
+/* HIGH-TECH CORPORATIVO — tarjetas, botones e iconos. Usa los tokens de style.css, así sigue claro/oscuro. */
+.card,.line-card,.data-card,.arrival-card,.notification-schedule,.favorite-item,.map-wrap,.map-refresh-card,.map-stop-popup,.panel,.bottom-nav{
+  border-color:color-mix(in srgb,var(--vt) 22%,var(--ln));
+  background:
+    linear-gradient(180deg,color-mix(in srgb,var(--sf) 92%,#fff) 0%,var(--sf) 42%),
+    var(--sf);
+  box-shadow:0 1px 0 color-mix(in srgb,#fff 55%,transparent) inset,var(--sh);
+}
+html[data-theme=dark] .card,
+html[data-theme=dark] .line-card,
+html[data-theme=dark] .data-card,
+html[data-theme=dark] .arrival-card,
+html[data-theme=dark] .notification-schedule,
+html[data-theme=dark] .favorite-item,
+html[data-theme=dark] .map-wrap,
+html[data-theme=dark] .map-refresh-card,
+html[data-theme=dark] .map-stop-popup,
+html[data-theme=dark] .panel,
+html[data-theme=dark] .bottom-nav{
+  background:
+    linear-gradient(180deg,color-mix(in srgb,var(--sf) 86%,#1c305f) 0%,var(--sf) 48%),
+    var(--sf);
+  box-shadow:0 1px 0 rgba(91,141,255,.16) inset,0 10px 28px rgba(0,0,0,.28);
+}
+.card::after,.line-card::after,.data-card::after,.arrival-card::after,.favorite-item::after{
+  content:"";
+  position:absolute;
+  inset:7px;
+  border:1px solid color-mix(in srgb,var(--vt) 18%,transparent);
+  border-radius:inherit;
+  pointer-events:none;
+}
+.favorite-item{position:relative}
+.card .ic,.item .ti,.locate-icon,.map-refresh-icon,.map-controls button,.btn,.map-popup-close,.favorite-remove{
+  background:linear-gradient(160deg,color-mix(in srgb,var(--ic2) 70%,var(--sf)),var(--ic1));
+  border:1px solid color-mix(in srgb,var(--vt) 34%,var(--ln));
+  box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 6px 14px rgba(var(--shadow-c),.08);
+}
+html[data-theme=dark] .card .ic,
+html[data-theme=dark] .item .ti,
+html[data-theme=dark] .locate-icon,
+html[data-theme=dark] .map-refresh-icon,
+html[data-theme=dark] .map-controls button,
+html[data-theme=dark] .btn,
+html[data-theme=dark] .map-popup-close,
+html[data-theme=dark] .favorite-remove{
+  box-shadow:0 1px 0 rgba(91,141,255,.22) inset,0 8px 16px rgba(0,0,0,.28);
+}
+.btn svg,.card .ic,.item .ti svg,.bottom-nav .card-icon{
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.chip,.map-route-action,.arrival-favorite-toggle,.map-popup-line,.line-badge-mini,.nearby-stop em{
+  background:color-mix(in srgb,var(--tint) 82%,var(--sf));
+  border:1px solid color-mix(in srgb,var(--vt) 28%,var(--ln));
+  color:var(--vt);
+}
+.chip[aria-pressed=true],.arrival-favorite-toggle[aria-pressed=true],.notification-toggle{
+  color:#fff;
+  background:linear-gradient(135deg,var(--vt),var(--vi));
+  border-color:transparent;
+  box-shadow:0 8px 18px rgba(37,99,255,.22);
+}
+html[data-theme=dark] .chip[aria-pressed=true],
+html[data-theme=dark] .arrival-favorite-toggle[aria-pressed=true],
+html[data-theme=dark] .notification-toggle{
+  box-shadow:0 8px 18px rgba(0,0,0,.35);
+}
+.bottom-nav .nav-btn.active{
+  background:color-mix(in srgb,var(--tint) 88%,var(--sf));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--vt) 28%,transparent) inset;
+}
+.bottom-nav .nav-icon{
+  width:28px;
+  height:28px;
+  border-radius:9px;
+  background:color-mix(in srgb,var(--tint) 70%,transparent);
+  border:1px solid color-mix(in srgb,currentColor 28%,transparent);
+}
+.locate-stops{
+  color:#f4f7ff;
+  background:linear-gradient(125deg,#0d1b3d 0%,#16358a 58%,#2563ff 100%);
+  border:1px solid color-mix(in srgb,#7eb0ff 45%,transparent);
+}
+html[data-theme=dark] .locate-stops{
+  background:linear-gradient(125deg,#0a142c 0%,#1a3170 58%,#3d6dff 100%);
+  border-color:#35508f;
+}
+.locate-icon{
+  color:#fff;
+  background:rgba(255,255,255,.1);
+  border-color:rgba(255,255,255,.28);
+}
