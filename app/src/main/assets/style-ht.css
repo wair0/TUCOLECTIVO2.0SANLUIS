@@ -91,3 +91,69 @@ html[data-theme=dark] .locate-stops{
   background:rgba(255,255,255,.1);
   border-color:rgba(255,255,255,.28);
 }
+
+/* TARJETAS DE LÍNEAS — DISEÑO EXACTO ENTREGADO EN TARJETASLINEASCLAROOSCURO.zip.
+   El SVG es el arte final; CSS solo coloca el contenido dinámico de SmartMove encima. */
+.lineas-grid{gap:10px}
+.line-card{
+  position:relative;
+  display:block;
+  width:100%;
+  min-height:0;
+  height:auto;
+  aspect-ratio:1005 / 178;
+  padding:0;
+  overflow:hidden;
+  box-sizing:border-box;
+  text-align:left;
+  border:0!important;
+  border-radius:40px;
+  background:#fff url("tarjeta_linea_claro.svg") center center / 100% 100% no-repeat!important;
+  box-shadow:none!important;
+  color:#0F1B33;
+  transition:transform .15s;
+}
+.line-card::before,
+.line-card::after{
+  content:none!important;
+  display:none!important;
+}
+.line-card>div{
+  position:absolute;
+  left:3.4%;
+  right:18%;
+  top:50%;
+  display:flex;
+  align-items:center;
+  min-width:0;
+  margin:0;
+  transform:translateY(-50%);
+}
+.line-card b{
+  display:block;
+  min-width:0;
+  overflow:hidden;
+  font-size:22px!important;
+  line-height:1.1!important;
+  font-weight:800!important;
+  letter-spacing:.03em;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  color:#0F1B33!important;
+}
+.line-card .line-badge,
+.line-card em{
+  display:none!important;
+}
+.line-card:active{
+  transform:scale(.985);
+  border-color:transparent!important;
+  background-color:transparent!important;
+}
+html[data-theme=dark] .line-card{
+  background:#18254F url("tarjeta_linea_oscuro.svg") center center / 100% 100% no-repeat!important;
+  color:#fff;
+}
+html[data-theme=dark] .line-card b{
+  color:#fff!important;
+}
