@@ -157,3 +157,81 @@ html[data-theme=dark] .line-card{
 html[data-theme=dark] .line-card b{
   color:#fff!important;
 }
+
+/* SUBSECCIONES DE LÍNEAS — MISMO ARTE FINAL ENTREGADO EN TARJETASLINEASCLAROOSCURO.zip.
+   CALLES e INTERSECCIONES conservan su lógica y contenido dinámico;
+   solo se sustituye la piel visual por el mismo SVG exacto de las tarjetas. */
+
+.data-card.line-detail-card{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:2px;
+  width:100%;
+  min-height:0;
+  height:auto;
+  aspect-ratio:1005 / 178;
+  box-sizing:border-box;
+  padding:0 18% 0 3.4%;
+  overflow:hidden;
+  text-align:left;
+  border:0!important;
+  border-radius:40px;
+  background:#fff url("tarjeta_linea_claro.svg") center center / 100% 100% no-repeat!important;
+  box-shadow:none!important;
+  color:#0F1B33;
+}
+.data-card.line-detail-card::before,
+.data-card.line-detail-card::after{
+  content:none!important;
+  display:none!important;
+}
+.data-card.line-detail-card>b{
+  display:block;
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  margin:0;
+  font-size:18px!important;
+  line-height:1.1!important;
+  font-weight:800!important;
+  letter-spacing:.03em!important;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  color:#0F1B33!important;
+}
+.data-card.line-detail-card>span{
+  display:block!important;
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  margin:2px 0 0!important;
+  font-size:10px!important;
+  line-height:1.15!important;
+  font-weight:700!important;
+  letter-spacing:.06em!important;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  color:#3B4A68!important;
+}
+.data-card.line-detail-card>em{
+  display:none!important;
+}
+.data-card.line-detail-card:active{
+  transform:scale(.985);
+  border-color:transparent!important;
+  background-color:transparent!important;
+}
+
+html[data-theme=dark] .data-card.line-detail-card{
+  background:#18254F url("tarjeta_linea_oscuro.svg") center center / 100% 100% no-repeat!important;
+  color:#fff;
+}
+html[data-theme=dark] .data-card.line-detail-card>b{
+  color:#fff!important;
+}
+html[data-theme=dark] .data-card.line-detail-card>span{
+  color:#B9C7E5!important;
+}
