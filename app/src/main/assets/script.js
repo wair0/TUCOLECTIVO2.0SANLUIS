@@ -220,7 +220,9 @@
     pendingMapArrival: null,
     loadStopsAfterLocation: false,
     manualVehicleRefresh: false,
-    manualRouteRefreshViewport: null
+    manualRouteRefreshViewport: null,
+    routeEndpointLayer: L.layerGroup(),
+    stopRenderer: L.canvas({padding: 0.5})
   };
 
   const leafletMap = L.map(container, {
@@ -245,6 +247,7 @@
   }).addTo(leafletMap);
 
   const routeLayer = L.layerGroup().addTo(leafletMap);
+  const routeEndpointLayer = map.routeEndpointLayer.addTo(leafletMap);
   const stopsLayer = L.layerGroup().addTo(leafletMap);
   const vehiclesLayer = L.layerGroup().addTo(leafletMap);
 
@@ -298,7 +301,7 @@
         opacity: 1,
         fillColor: '#00f0ff',
         fillOpacity: 0.22,
-        renderer: L.canvas({padding: 0.5})
+        renderer: map.stopRenderer
       });
       marker.on('click', () => openStopPopup(stop));
       marker.addTo(stopsLayer);
@@ -316,6 +319,7 @@
 
   function drawRoute() {
     routeLayer.clearLayers();
+    routeEndpointLayer.clearLayers();
     if (!Array.isArray(map.routePoints) || map.routePoints.length < 2) return;
     const latLngs = map.routePoints.map(p => [p.lat, p.lng]);
     L.polyline(latLngs, {
@@ -332,6 +336,9 @@
       lineCap: 'round',
       lineJoin: 'round'
     }).addTo(routeLayer);
+    const endpointStyle = (color, fill) => ({radius: 6, color, weight: 2, fillColor: fill, fillOpacity: .85, interactive: false});
+    L.circleMarker(latLngs[0], endpointStyle('#00f0ff','#06222a')).addTo(routeEndpointLayer);
+    L.circleMarker(latLngs[latLngs.length - 1], endpointStyle('#ff4dff','#250625')).addTo(routeEndpointLayer);
   }
 
   function vehicleIcon(lineCode) {
@@ -421,7 +428,7 @@
     const renderLineChoices = choices => {
       lines.innerHTML = choices.map(n =>
         '<button class="map-popup-line" data-map-stop-line="' + n + '" type="button">CONSULTAR LÍNEA ' +
-        mapEscape(publicLineLabel(n)) + '</button>'
+        mapEscape((stop.lineLabels && stop.lineLabels[String(n)]) || publicLineLabel(n)) + '</button>'
       ).join('') || '<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';
     };
     if (availableLines.length) renderLineChoices(availableLines);
@@ -549,6 +556,7 @@
         })()
       })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lng) && (s.lat !== 0 || s.lng !== 0));
       renderStops();
+      if (map.routePoints.length > 1 && !map.userLocation) fitPoints(map.routePoints.concat(map.stops));
       if (state?.textContent === '') state.textContent = 'MAPA EN LÍNEA';
     } catch (_) {
       state.textContent = 'ERROR LEYENDO PARADAS';
@@ -626,11 +634,14 @@
     showRoute(lineCode) {
       map.routeLineCode = Number(lineCode) || 0;
       map.routePoints = [];
+      map.stops = [];
       map.vehicles = [];
       map.vehicleMotion.clear();
       vehiclesLayer.clearLayers();
       map.vehicleMarkers.clear();
       routeLayer.clearLayers();
+      routeEndpointLayer.clearLayers();
+      clearStopMarkers();
       document.getElementById('mapStopPopup')?.setAttribute('hidden','');
       if (refreshLive) {
         refreshLive.disabled = map.routeLineCode <= 0;
