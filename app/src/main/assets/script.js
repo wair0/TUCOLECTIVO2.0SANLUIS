@@ -187,11 +187,12 @@
 })();
 
 
-/* FASE 6 — MAPA */
+/* FASE 6 — MAPA / LEAFLET */
 (() => {
   'use strict';
-  const canvas = document.getElementById('mapCanvas');
-  if (!canvas) return;
+  const container = document.getElementById('mapCanvas');
+  if (!container || typeof L === 'undefined') return;
+
   const wrap = document.getElementById('map-wrap');
   const state = document.getElementById('mapState');
   const zoomLabel = document.getElementById('mapZoom');
@@ -201,408 +202,570 @@
   const refreshLive = document.getElementById('mapRefreshLive');
   const refreshLiveMeta = document.getElementById('mapRefreshLiveMeta');
   const refreshLiveState = document.getElementById('mapRefreshLiveState');
-  const ctx = canvas.getContext('2d');
-  const TILE = 256;
-  const FALLBACK = {lat:-33.3017,lng:-66.3378};
-  const map = {lat:FALLBACK.lat,lng:FALLBACK.lng,zoom:14,drag:false,pointers:new Map(),last:null,baseDistance:0,baseZoom:14,userLocation:null,routePoints:[],stops:[],vehicles:[],routeLineCode:0,availableLines:[],availableLineLabels:{},lineLabels:{},availableLinesLoading:false,pointerStart:null,dragged:false,manualRouteRefreshViewport:null};
-  const tiles = new Map();
+  const FALLBACK = [-33.3017, -66.3378];
 
-  function worldSize(z){ return TILE * Math.pow(2,z); }
-  function project(lat,lng,z){
-    const s=worldSize(z), x=(lng+180)/360*s;
-    const r=lat*Math.PI/180, y=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*s;
-    return {x,y};
+  const map = {
+    routeLineCode: 0,
+    routePoints: [],
+    stops: [],
+    vehicles: [],
+    userLocation: null,
+    availableLines: [],
+    availableLineLabels: {},
+    lineLabels: {},
+    vehicleMarkers: new Map(),
+    stopMarkers: [],
+    vehicleMotion: new Map(),
+    pendingStop: null,
+    pendingMapArrival: null,
+    loadStopsAfterLocation: false,
+    manualVehicleRefresh: false,
+    manualRouteRefreshViewport: null
+  };
+
+  const leafletMap = L.map(container, {
+    zoomControl: false,
+    attributionControl: true,
+    preferCanvas: true,
+    zoomSnap: 1,
+    zoomDelta: 1,
+    minZoom: 11,
+    maxZoom: 18,
+    zoomAnimation: true,
+    fadeAnimation: true,
+    markerZoomAnimation: true
+  }).setView(FALLBACK, 14);
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    minZoom: 0,
+    tileSize: 256,
+    attribution: '&copy; OpenStreetMap contributors',
+    crossOrigin: true
+  }).addTo(leafletMap);
+
+  const routeLayer = L.layerGroup().addTo(leafletMap);
+  const stopsLayer = L.layerGroup().addTo(leafletMap);
+  const vehiclesLayer = L.layerGroup().addTo(leafletMap);
+
+  const userIcon = L.divIcon({
+    className: 'tc-leaflet-user',
+    html: '<span></span>',
+    iconSize: [24,24],
+    iconAnchor: [12,12]
+  });
+
+  function setState(text) {
+    if (state) state.textContent = text || '';
   }
-  function unproject(x,y,z){
-    const s=worldSize(z), lng=x/s*360-180;
-    const n=Math.PI-2*Math.PI*y/s;
-    return {lat:180/Math.PI*Math.atan(Math.sinh(n)),lng};
+
+  function syncZoomLabel() {
+    if (zoomLabel) zoomLabel.textContent = 'ZOOM ' + Math.round(leafletMap.getZoom());
   }
-  function tileImage(x,y,z){
-    const n=Math.pow(2,z);
-    x=((x%n)+n)%n;
-    if(y<0||y>=n)return null;
-    const key=z+'/'+x+'/'+y;
-    if(tiles.has(key))return tiles.get(key);
-    const img=new Image();
-    img.decoding='async';
-    img.src='https://tile.openstreetmap.org/'+z+'/'+x+'/'+y+'.png';
-    tiles.set(key,img);
-    img.onload=draw;
-    img.onerror=()=>{state.textContent='MAPA SIN CONEXIÓN';draw();};
-    return img;
-  }
-  function resize(){
-    const dpr=Math.min(window.devicePixelRatio||1,2);
-    const r=wrap.getBoundingClientRect();
-    canvas.width=Math.max(1,Math.floor(r.width*dpr));
-    canvas.height=Math.max(1,Math.floor(r.height*dpr));
-    canvas.style.width=r.width+'px';canvas.style.height=r.height+'px';
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    draw();
-  }
-  function draw(){
-    const r=wrap.getBoundingClientRect();
-    const w=r.width,h=r.height;
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle='#07101c';ctx.fillRect(0,0,w,h);
-    const center=project(map.lat,map.lng,map.zoom);
-    const minX=Math.floor((center.x-w/2)/TILE)-1;
-    const maxX=Math.floor((center.x+w/2)/TILE)+1;
-    const minY=Math.floor((center.y-h/2)/TILE)-1;
-    const maxY=Math.floor((center.y+h/2)/TILE)+1;
-    let loaded=false;
-    for(let tx=minX;tx<=maxX;tx++) for(let ty=minY;ty<=maxY;ty++){
-      const img=tileImage(tx,ty,map.zoom);
-      const px=tx*TILE-center.x+w/2, py=ty*TILE-center.y+h/2;
-      if(img&&img.complete&&img.naturalWidth){ctx.drawImage(img,px,py,TILE,TILE);loaded=true;}
-    }
-    ctx.fillStyle='rgba(2,5,15,.28)';ctx.fillRect(0,0,w,h);
-    drawGrid(w,h);
-    drawRoute(w,h,center);
-    drawStops(w,h,center);
-    const animateVehicles=drawVehicles(w,h,center);
-    if(animateVehicles) requestAnimationFrame(draw);
-    if(map.userLocation){const p=screenPoint(map.userLocation.lat,map.userLocation.lng,center,w,h);drawMarker(p.x,p.y);}
-    zoomLabel.textContent='ZOOM '+map.zoom;
-    if(loaded) state.textContent='MAPA EN LÍNEA';
-  }
-  function drawGrid(w,h){
-    ctx.save();
-    ctx.strokeStyle='rgba(0,240,255,.08)';ctx.lineWidth=1;
-    const step=48;
-    for(let x=w/2%step;x<w;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
-    for(let y=h/2%step;y<h;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
-    ctx.restore();
-  }
-  function screenPoint(lat,lng,center,w,h){
-    const p=project(lat,lng,map.zoom),world=worldSize(map.zoom);
-    let dx=p.x-center.x;
-    if(dx>world/2)dx-=world;else if(dx< -world/2)dx+=world;
-    return {x:dx+w/2,y:p.y-center.y+h/2};
-  }
-  function drawRoute(w,h,center){
-    if(!Array.isArray(map.routePoints)||map.routePoints.length<2)return;
-    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.beginPath();
-    map.routePoints.forEach((point,i)=>{const p=screenPoint(point.lat,point.lng,center,w,h);if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});
-    ctx.strokeStyle='rgba(255,0,255,.28)';ctx.lineWidth=9;ctx.shadowColor='#ff00ff';ctx.shadowBlur=14;ctx.stroke();
-    ctx.strokeStyle='#ff4dff';ctx.lineWidth=3.5;ctx.shadowBlur=5;ctx.stroke();ctx.restore();
-  }
-  function drawStops(w,h,center){
-    ctx.save();
-    for(const stop of map.stops){
-      if(!Number.isFinite(stop.lat)||!Number.isFinite(stop.lng))continue;
-      const p=screenPoint(stop.lat,stop.lng,center,w,h);
-      if(p.x< -20||p.x>w+20||p.y< -20||p.y>h+20)continue;
-      ctx.beginPath();ctx.arc(p.x,p.y,6,0,Math.PI*2);ctx.fillStyle='rgba(0,240,255,.22)';ctx.fill();
-      ctx.lineWidth=2;ctx.strokeStyle='#00f0ff';ctx.shadowColor='#00f0ff';ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
-      // El código interno de la parada no se dibuja para mantener el mapa limpio.
-    }
-    ctx.restore();
-  }
-  function drawVehicles(w,h,center){
-    const now=performance.now();
-    let needsAnimation=false;
-    ctx.save();
-    for(const vehicle of map.vehicles){
-      if(!Number.isFinite(vehicle.lat)||!Number.isFinite(vehicle.lng))continue;
-      const motion=map.vehicleMotion?.get(vehicle.id);
-      let lat=vehicle.lat,lng=vehicle.lng;
-      if(motion){
-        const progress=Math.min(1,(now-motion.startedAt)/motion.duration);
-        const eased=progress<.5?2*progress*progress:1-Math.pow(-2*progress+2,2)/2;
-        lat=motion.fromLat+(motion.toLat-motion.fromLat)*eased;
-        lng=motion.fromLng+(motion.toLng-motion.fromLng)*eased;
-        if(progress<1)needsAnimation=true;
-      }
-      const p=screenPoint(lat,lng,center,w,h);
-      if(p.x< -28||p.x>w+28||p.y< -28||p.y>h+28)continue;
-      const pulse=.5+.5*Math.sin(now/420);
-      const radius=8.5+pulse*2;
-      ctx.beginPath();ctx.arc(p.x,p.y,radius+4,0,Math.PI*2);ctx.fillStyle='rgba(255,0,255,'+(0.05+pulse*.08)+')';ctx.fill();
-      ctx.beginPath();ctx.arc(p.x,p.y,9,0,Math.PI*2);ctx.fillStyle='rgba(255,0,255,.22)';ctx.fill();
-      ctx.strokeStyle='#ff4dff';ctx.lineWidth=2;ctx.shadowColor='#ff00ff';ctx.shadowBlur=12+pulse*8;ctx.stroke();ctx.shadowBlur=0;
-      const vehicleLabel=publicLineLabel(vehicle.lineCode||vehicle.line,window.TuColectivoLineLabels);
-      ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(vehicleLabel||'?',p.x,p.y+.5);
-      needsAnimation=true;
-    }
-    ctx.restore();
-    return needsAnimation;
-  }
-  function fitPoints(points){
-    const valid=(points||[]).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
-    if(!valid.length)return;
-    const minLat=Math.min(...valid.map(p=>p.lat)),maxLat=Math.max(...valid.map(p=>p.lat));
-    const minLng=Math.min(...valid.map(p=>p.lng)),maxLng=Math.max(...valid.map(p=>p.lng));
-    map.lat=(minLat+maxLat)/2;map.lng=(minLng+maxLng)/2;
-    const r=wrap.getBoundingClientRect(),pad=54;
-    let chosen=11;
-    for(let z=18;z>=11;z--){
-      const a=project(maxLat,minLng,z),b=project(minLat,maxLng,z);
-      if(Math.abs(b.x-a.x)<=Math.max(1,r.width-pad*2)&&Math.abs(b.y-a.y)<=Math.max(1,r.height-pad*2)){chosen=z;break;}
-    }
-    map.zoom=chosen;draw();
-  }
-  function mapEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function mapArrivalDestination(value){
-    const raw=String(value||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim();
-    if(!raw||/^(?:A{1,2}|N\/?A|S\/?D|DESTINO|SERVICIO)$/i.test(raw))return 'DESTINO NO INFORMADO';
-    return 'HACIA '+raw.toUpperCase();
-  }
-  function publicLineLabel(code, labels){
-    const source=labels||map.lineLabels||map.availableLineLabels||window.TuColectivoLineLabels||{};
+
+  function publicLineLabel(code, labels) {
+    const source = labels || map.lineLabels || map.availableLineLabels || window.TuColectivoLineLabels || {};
     return window.TuColectivoPublicLineLabel
       ? window.TuColectivoPublicLineLabel(code, source)
       : String(code);
   }
-  function openStopPopup(stop){
-    const popup=document.getElementById('mapStopPopup');if(!popup)return;
-    map.pendingStop=stop;
-    document.getElementById('mapPopupName').textContent=stop.name||('PARADA '+stop.code);
-    const cleanLocation=value=>String(value||'').replace(/\s*(?:,|-)?\s*SAN LUIS\s*$/i,'').trim();
-    const locations=[stop.street,stop.intersection].map(cleanLocation).filter(Boolean);
-    const uniqueLocations=locations.filter((value,index,array)=>array.findIndex(other=>other.toLocaleLowerCase('es-AR')===value.toLocaleLowerCase('es-AR'))===index);
-    document.getElementById('mapPopupLocation').textContent=uniqueLocations.join(' · ')||'UBICACIÓN DE PARADA';
-    const lines=document.getElementById('mapPopupLines');
-    const availableLines=[...new Set((stop.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
-    const renderLineChoices=choices=>{lines.innerHTML=choices.map(n=>'<button class="map-popup-line" data-map-stop-line="'+n+'" type="button">CONSULTAR LÍNEA '+mapEscape(publicLineLabel(n))+'</button>').join('')||'<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';};
-    if(availableLines.length)renderLineChoices(availableLines);
-    else{
-      lines.innerHTML='<small>BUSCANDO LÍNEAS QUE PASAN POR ESTA PARADA...</small>';
+
+  function mapEscape(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function mapArrivalDestination(value) {
+    const raw = String(value || '').replace(/[.·•‧∙⋅。．]+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!raw || /^(?:A{1,2}|N\/?A|S\/?D|DESTINO|SERVICIO)$/i.test(raw)) return 'DESTINO NO INFORMADO';
+    return 'HACIA ' + raw.toUpperCase();
+  }
+
+  function clearStopMarkers() {
+    stopsLayer.clearLayers();
+    map.stopMarkers = [];
+  }
+
+  function renderStops() {
+    clearStopMarkers();
+    for (const stop of map.stops) {
+      if (!Number.isFinite(stop.lat) || !Number.isFinite(stop.lng)) continue;
+      const marker = L.circleMarker([stop.lat, stop.lng], {
+        radius: 5,
+        color: '#00f0ff',
+        weight: 2,
+        opacity: 1,
+        fillColor: '#00f0ff',
+        fillOpacity: 0.22,
+        renderer: L.canvas({padding: 0.5})
+      });
+      marker.on('click', () => openStopPopup(stop));
+      marker.addTo(stopsLayer);
+      map.stopMarkers.push(marker);
     }
-    document.getElementById('mapPopupArrivals').innerHTML='';
-    popup.hidden=false;
-    if(!availableLines.length&&window.TuColectivoNative?.resolveNearbyStopLines){
-      window.TuColectivoNative.resolveNearbyStopLines(stop.identifier,stop.lat,stop.lng);
+  }
+
+  function fitPoints(points) {
+    const valid = (points || []).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    if (!valid.length) return;
+    const bounds = L.latLngBounds(valid.map(p => [p.lat, p.lng]));
+    if (!bounds.isValid()) return;
+    leafletMap.fitBounds(bounds, {padding: [54,54], maxZoom: 16, animate: false});
+  }
+
+  function drawRoute() {
+    routeLayer.clearLayers();
+    if (!Array.isArray(map.routePoints) || map.routePoints.length < 2) return;
+    const latLngs = map.routePoints.map(p => [p.lat, p.lng]);
+    L.polyline(latLngs, {
+      color: '#ff00ff',
+      weight: 10,
+      opacity: 0.28,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(routeLayer);
+    L.polyline(latLngs, {
+      color: '#ff4dff',
+      weight: 3.5,
+      opacity: 1,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(routeLayer);
+  }
+
+  function vehicleIcon(lineCode) {
+    const label = mapEscape(publicLineLabel(lineCode));
+    return L.divIcon({
+      className: 'tc-leaflet-vehicle',
+      html: '<span class="tc-vehicle-pulse"></span><b>' + label + '</b>',
+      iconSize: [34,34],
+      iconAnchor: [17,17]
+    });
+  }
+
+  function userMarker() {
+    if (!map.userMarker) {
+      map.userMarker = L.marker(FALLBACK, {icon: userIcon, interactive: false, zIndexOffset: 1000}).addTo(leafletMap);
+    }
+    map.userMarker.setLatLng([map.userLocation.lat, map.userLocation.lng]);
+  }
+
+  function updateVehicleMarker(vehicle, now) {
+    let marker = map.vehicleMarkers.get(vehicle.id);
+    const target = L.latLng(vehicle.lat, vehicle.lng);
+    if (!marker) {
+      marker = L.marker(target, {
+        icon: vehicleIcon(vehicle.lineCode || vehicle.line),
+        interactive: false,
+        zIndexOffset: 500
+      }).addTo(vehiclesLayer);
+      map.vehicleMarkers.set(vehicle.id, marker);
+      return;
+    }
+    const motion = map.vehicleMotion.get(vehicle.id);
+    if (motion) {
+      const progress = Math.min(1, (now - motion.startedAt) / motion.duration);
+      const eased = progress < .5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      marker.setLatLng([
+        motion.fromLat + (motion.toLat - motion.fromLat) * eased,
+        motion.fromLng + (motion.toLng - motion.fromLng) * eased
+      ]);
+      if (progress >= 1) map.vehicleMotion.delete(vehicle.id);
+    } else {
+      marker.setLatLng(target);
+    }
+    marker.setIcon(vehicleIcon(vehicle.lineCode || vehicle.line));
+  }
+
+  function renderVehicles() {
+    const now = performance.now();
+    const activeIds = new Set(map.vehicles.map(v => v.id));
+    for (const [id, marker] of map.vehicleMarkers) {
+      if (!activeIds.has(id)) {
+        vehiclesLayer.removeLayer(marker);
+        map.vehicleMarkers.delete(id);
+        map.vehicleMotion.delete(id);
+      }
+    }
+    let animating = false;
+    for (const vehicle of map.vehicles) {
+      updateVehicleMarker(vehicle, now);
+      if (map.vehicleMotion.has(vehicle.id)) animating = true;
+    }
+    if (animating) requestAnimationFrame(renderVehicles);
+  }
+
+  function locateUser() {
+    setState('LOCALIZANDO...');
+    if (window.TuColectivoNative && typeof window.TuColectivoNative.requestMapLocation === 'function') {
+      window.TuColectivoNative.requestMapLocation(map.routeLineCode || 0);
+    } else {
+      setState('UBICACIÓN NATIVA NO DISPONIBLE');
     }
   }
-  function hitTestMap(x,y){
-    const r=wrap.getBoundingClientRect(),center=project(map.lat,map.lng,map.zoom),w=r.width,h=r.height;
-    let best=null,bestD=20;
-    for(const stop of map.stops){const p=screenPoint(stop.lat,stop.lng,center,w,h),d=Math.hypot(p.x-x,p.y-y);if(d<bestD){best=stop;bestD=d;}}
-    if(best)openStopPopup(best);
+
+  function openStopPopup(stop) {
+    const popup = document.getElementById('mapStopPopup');
+    if (!popup) return;
+    map.pendingStop = stop;
+    document.getElementById('mapPopupName').textContent = stop.name || ('PARADA ' + stop.code);
+    const cleanLocation = value => String(value || '').replace(/\s*(?:,|-)?\s*SAN LUIS\s*$/i, '').trim();
+    const locations = [stop.street, stop.intersection].map(cleanLocation).filter(Boolean);
+    const uniqueLocations = locations.filter((value,index,array) =>
+      array.findIndex(other => other.toLocaleLowerCase('es-AR') === value.toLocaleLowerCase('es-AR')) === index
+    );
+    document.getElementById('mapPopupLocation').textContent = uniqueLocations.join(' · ') || 'UBICACIÓN DE PARADA';
+    const lines = document.getElementById('mapPopupLines');
+    const availableLines = [...new Set((stop.lines || []).map(Number).filter(n => Number.isFinite(n) && n > 0))].sort((a,b) => a-b);
+    const renderLineChoices = choices => {
+      lines.innerHTML = choices.map(n =>
+        '<button class="map-popup-line" data-map-stop-line="' + n + '" type="button">CONSULTAR LÍNEA ' +
+        mapEscape(publicLineLabel(n)) + '</button>'
+      ).join('') || '<small>NO SE ENCONTRARON LÍNEAS PARA CONSULTAR</small>';
+    };
+    if (availableLines.length) renderLineChoices(availableLines);
+    else lines.innerHTML = '<small>BUSCANDO LÍNEAS QUE PASAN POR ESTA PARADA...</small>';
+    document.getElementById('mapPopupArrivals').innerHTML = '';
+    popup.hidden = false;
+    if (!availableLines.length && window.TuColectivoNative?.resolveNearbyStopLines) {
+      window.TuColectivoNative.resolveNearbyStopLines(stop.identifier, stop.lat, stop.lng);
+    }
   }
-  function drawMarker(x,y){
-    ctx.save();
-    ctx.strokeStyle='#00f0ff';ctx.fillStyle='rgba(0,240,255,.18)';
-    ctx.shadowColor='#00f0ff';ctx.shadowBlur=16;
-    ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.fill();ctx.stroke();
-    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
-    ctx.restore();
-  }
-  function setCenter(lat,lng){map.lat=Math.max(-85,Math.min(85,lat));map.lng=lng;draw();}
-  function setZoom(z){
-    map.zoom=Math.max(11,Math.min(18,Math.round(z)));
-    zoomLabel.textContent='ZOOM '+map.zoom;draw();
-  }
-  function zoomAt(delta){
-    setZoom(map.zoom+delta);
-    if(navigator.vibrate) navigator.vibrate(12);
-  }
-  function locateUser(){
-    state.textContent='LOCALIZANDO...';
-    if(window.TuColectivoNative&&typeof window.TuColectivoNative.requestMapLocation==='function')window.TuColectivoNative.requestMapLocation(map.routeLineCode||0);
-    else state.textContent='UBICACIÓN NATIVA NO DISPONIBLE';
-  }
-  function distance(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);}
-  canvas.addEventListener('pointerdown',e=>{
-    canvas.setPointerCapture(e.pointerId);
-    map.pointers.set(e.pointerId,e);
-    if(map.pointers.size===1){map.drag=true;map.last=e;map.pointerStart={x:e.clientX,y:e.clientY};map.dragged=false;}
-    else if(map.pointers.size===2){map.drag=false;const p=[...map.pointers.values()];map.baseDistance=distance(p[0],p[1]);map.baseZoom=map.zoom;}
+
+  plus?.addEventListener('click', () => { leafletMap.zoomIn(); });
+  minus?.addEventListener('click', () => { leafletMap.zoomOut(); });
+  locate?.addEventListener('click', locateUser);
+  leafletMap.on('zoomend', syncZoomLabel);
+  leafletMap.on('zoomstart', () => { if (state?.textContent === 'MAPA EN LÍNEA') state.textContent = 'NAVEGANDO...'; });
+  leafletMap.on('zoomend', () => { syncZoomLabel(); if (state?.textContent === 'NAVEGANDO...') state.textContent = 'MAPA EN LÍNEA'; });
+  leafletMap.on('dragstart', () => { if (state) state.textContent = 'NAVEGANDO...'; });
+  leafletMap.on('dragend', () => { if (state) state.textContent = 'MAPA EN LÍNEA'; });
+  window.addEventListener('resize', () => setTimeout(() => leafletMap.invalidateSize({pan:false}), 60));
+
+  const mapPopup = document.getElementById('mapStopPopup');
+  if (mapPopup) mapPopup.addEventListener('click', e => {
+    if (e.target.closest('.map-popup-close')) { mapPopup.hidden = true; return; }
+    const choice = e.target.closest('[data-map-stop-line]');
+    if (choice && map.pendingStop && window.TuColectivoNative && typeof window.TuColectivoNative.loadArrivals === 'function') {
+      const line = Number(choice.dataset.mapStopLine);
+      map.pendingMapArrival = {stop: map.pendingStop, line};
+      document.getElementById('mapPopupArrivals').innerHTML = '<small>CONSULTANDO ARRIBOS EN TIEMPO REAL...</small>';
+      window.TuColectivoNative.loadArrivals(map.pendingStop.identifier, line);
+    }
   });
-  canvas.addEventListener('pointermove',e=>{
-    if(!map.pointers.has(e.pointerId))return;
-    map.pointers.set(e.pointerId,e);
-    if(map.pointers.size===1&&map.drag&&map.last){
-      const dx=e.clientX-map.last.clientX,dy=e.clientY-map.last.clientY;
-      if(map.pointerStart&&Math.hypot(e.clientX-map.pointerStart.x,e.clientY-map.pointerStart.y)>6)map.dragged=true;
-      const c=project(map.lat,map.lng,map.zoom);
-      const next=unproject(c.x-dx,c.y-dy,map.zoom);
-      setCenter(next.lat,next.lng);map.last=e;
-    }else if(map.pointers.size===2){
-      const p=[...map.pointers.values()];
-      const d=distance(p[0],p[1]);
-      if(map.baseDistance>0){const delta=Math.max(-2,Math.min(2,Math.round(Math.log2(d/map.baseDistance)*2)));setZoom(map.baseZoom+delta);}
-    }
-  });
-  ['pointerup','pointercancel','pointerleave'].forEach(type=>canvas.addEventListener(type,e=>{
-    if(type==='pointerup'&&!map.dragged&&map.pointerStart){const r=canvas.getBoundingClientRect();hitTestMap(e.clientX-r.left,e.clientY-r.top);}
-    map.pointers.delete(e.pointerId);if(map.pointers.size===0){map.drag=false;map.last=null;map.pointerStart=null;map.dragged=false;}
-  }));
-  canvas.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.deltaY<0?1:-1);},{passive:false});
-  plus.addEventListener('click',()=>zoomAt(1));
-  minus.addEventListener('click',()=>zoomAt(-1));
-  locate.addEventListener('click',locateUser);
-  window.addEventListener('resize',resize);
-  const mapPopup=document.getElementById('mapStopPopup');
-  if(mapPopup)mapPopup.addEventListener('click',e=>{
-    if(e.target.closest('.map-popup-close')){mapPopup.hidden=true;return;}
-    const choice=e.target.closest('[data-map-stop-line]');
-    if(choice&&map.pendingStop&&window.TuColectivoNative&&typeof window.TuColectivoNative.loadArrivals==='function'){
-      const line=Number(choice.dataset.mapStopLine);map.pendingMapArrival={stop:map.pendingStop,line};
-      document.getElementById('mapPopupArrivals').innerHTML='<small>CONSULTANDO ARRIBOS EN TIEMPO REAL...</small>';
-      window.TuColectivoNative.loadArrivals(map.pendingStop.identifier,line);
-    }
-  });
-  window.onNativeMapRoute=payload=>{
-    try{map.routePoints=(typeof payload==='string'?JSON.parse(payload):payload||[]).map(p=>({lat:Number(p.lat),lng:Number(p.lng)})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
-      state.textContent=map.routePoints.length>1?'RECORRIDO CARGADO · LÍNEA '+publicLineLabel(map.routeLineCode):'SIN GEOMETRÍA DE RECORRIDO';
-      if(refreshLive&&map.routeLineCode>0){refreshLive.disabled=false;refreshLiveState.textContent='GPS';refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · RECORRIDO EN TIEMPO REAL';}
-      if(map.manualRouteRefreshViewport){
-        const viewport=map.manualRouteRefreshViewport;
-        map.lat=viewport.lat;map.lng=viewport.lng;map.zoom=viewport.zoom;
-        map.manualRouteRefreshViewport=null;
-        draw();
-      }else if(map.routePoints.length)fitPoints(map.routePoints.concat(map.stops));else draw();
-    }catch(_){state.textContent='ERROR LEYENDO RECORRIDO';}
-  };
-  window.onNativeMapRouteError=payload=>{map.manualRouteRefreshViewport=null;let msg='NO SE PUDO CARGAR EL RECORRIDO';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
-  window.onNativeContinuousLocation=function(payload){
-    let r={};try{r=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
-    const lat=Number(r.latitude),lng=Number(r.longitude);
-    if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
-    if(document.querySelector('[data-screen="mapa"]')?.classList.contains('active')){
-      map.userLocation={lat,lng};
-      draw();
-    }
-    if(document.querySelector('[data-screen="paradas"]')?.classList.contains('active')){
-      if(nearbyState)nearbyState.textContent='';
+
+  window.onNativeMapRoute = payload => {
+    try {
+      map.routePoints = (typeof payload === 'string' ? JSON.parse(payload) : payload || [])
+        .map(p => ({lat:Number(p.lat), lng:Number(p.lng)}))
+        .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+      drawRoute();
+      renderStops();
+      if (map.routePoints.length > 1) {
+        state.textContent = 'RECORRIDO CARGADO · LÍNEA ' + publicLineLabel(map.routeLineCode);
+      } else {
+        state.textContent = 'SIN GEOMETRÍA DE RECORRIDO';
+      }
+      if (refreshLive && map.routeLineCode > 0) {
+        refreshLive.disabled = false;
+        refreshLiveState.textContent = 'GPS';
+        refreshLiveMeta.textContent = 'LÍNEA ' + publicLineLabel(map.routeLineCode) + ' · RECORRIDO EN TIEMPO REAL';
+      }
+      if (map.manualRouteRefreshViewport) {
+        const viewport = map.manualRouteRefreshViewport;
+        leafletMap.setView([viewport.lat, viewport.lng], viewport.zoom, {animate:false});
+        map.manualRouteRefreshViewport = null;
+      } else if (map.routePoints.length) {
+        fitPoints(map.routePoints.concat(map.stops));
+      }
+    } catch (_) {
+      state.textContent = 'ERROR LEYENDO RECORRIDO';
     }
   };
 
-  window.onNativeLocation=function(payload){
-    let r={};try{r=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
-    if(r.purpose==='map'){
-      map.userLocation={lat:Number(r.latitude),lng:Number(r.longitude)};
-      setCenter(map.userLocation.lat,map.userLocation.lng);
-      state.textContent='';
-      if(map.loadStopsAfterLocation&&window.TuColectivoNative?.loadMapDataAtLocation){
-        map.loadStopsAfterLocation=false;
-        window.TuColectivoNative.loadMapDataAtLocation(map.userLocation.lat,map.userLocation.lng,map.routeLineCode||0);
+  window.onNativeMapRouteError = payload => {
+    map.manualRouteRefreshViewport = null;
+    let msg = 'NO SE PUDO CARGAR EL RECORRIDO';
+    try { msg = (typeof payload === 'string' ? JSON.parse(payload) : payload).message || msg; } catch (_) {}
+    state.textContent = msg;
+  };
+
+  window.onNativeContinuousLocation = function(payload) {
+    let r = {};
+    try { r = typeof payload === 'string' ? JSON.parse(payload) : payload || {}; } catch (_) {}
+    const lat = Number(r.latitude), lng = Number(r.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    if (document.querySelector('[data-screen="mapa"]')?.classList.contains('active')) {
+      map.userLocation = {lat,lng};
+      userMarker();
+    }
+    if (document.querySelector('[data-screen="paradas"]')?.classList.contains('active') && typeof nearbyState !== 'undefined') {
+      if (nearbyState) nearbyState.textContent = '';
+    }
+  };
+
+  window.onNativeLocation = function(payload) {
+    let r = {};
+    try { r = typeof payload === 'string' ? JSON.parse(payload) : payload || {}; } catch (_) {}
+    if (r.purpose === 'map') {
+      const lat = Number(r.latitude), lng = Number(r.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      map.userLocation = {lat,lng};
+      userMarker();
+      leafletMap.setView([lat,lng], Math.max(leafletMap.getZoom(), 14), {animate:false});
+      state.textContent = '';
+      if (map.loadStopsAfterLocation && window.TuColectivoNative?.loadMapDataAtLocation) {
+        map.loadStopsAfterLocation = false;
+        window.TuColectivoNative.loadMapDataAtLocation(lat, lng, map.routeLineCode || 0);
       }
     }
-    if(r.purpose==='nearby')setNearbyState('');
+    if (r.purpose === 'nearby' && typeof setNearbyState === 'function') setNearbyState('');
   };
-  window.onNativeLocationError=function(payload){
-    let r={};try{r=typeof payload==='string'?JSON.parse(payload):payload||{};}catch(_){}
-    if(r.purpose==='map')state.textContent=r.message||'GPS NO DISPONIBLE';
-    if(r.purpose==='nearby'){locateBtn.disabled=false;setNearbyState('');}
+
+  window.onNativeLocationError = function(payload) {
+    let r = {};
+    try { r = typeof payload === 'string' ? JSON.parse(payload) : payload || {}; } catch (_) {}
+    if (r.purpose === 'map') state.textContent = r.message || 'GPS NO DISPONIBLE';
+    if (r.purpose === 'nearby' && typeof locateBtn !== 'undefined') locateBtn.disabled = false;
   };
-  window.onNativeMapStops=payload=>{
-    try{const raw=typeof payload==='string'?JSON.parse(payload):payload||[];raw.forEach(s=>{if(s?.lineLabels&&typeof s.lineLabels==='object')Object.assign(map.lineLabels,s.lineLabels);});
-      map.stops=raw.map(s=>({id:String(s.identifier||s.code),code:Number(s.code)||0,identifier:String(s.identifier||s.code||''),name:String(s.description||('PARADA '+s.code)),lat:Number(s.latitude),lng:Number(s.longitude),street:String(s.street||''),intersection:String(s.intersection||''),lines:(()=>{const found=[...(Array.isArray(s.lineCodes)?s.lineCodes:[]).map(Number),Number(s.lineCode)];return [...new Set(found.filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);})()})).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&(s.lat!==0||s.lng!==0));
-      state.textContent='';draw();
-    }catch(_){state.textContent='ERROR LEYENDO PARADAS';}
+
+  window.onNativeMapStops = payload => {
+    try {
+      const raw = typeof payload === 'string' ? JSON.parse(payload) : payload || [];
+      raw.forEach(s => { if (s?.lineLabels && typeof s.lineLabels === 'object') Object.assign(map.lineLabels, s.lineLabels); });
+      map.stops = raw.map(s => ({
+        id:String(s.identifier || s.code),
+        code:Number(s.code) || 0,
+        identifier:String(s.identifier || s.code || ''),
+        name:String(s.description || ('PARADA ' + s.code)),
+        lat:Number(s.latitude),
+        lng:Number(s.longitude),
+        street:String(s.street || ''),
+        intersection:String(s.intersection || ''),
+        lines:(() => {
+          const found = [...(Array.isArray(s.lineCodes) ? s.lineCodes : []).map(Number), Number(s.lineCode)];
+          return [...new Set(found.filter(n => Number.isFinite(n) && n > 0))].sort((a,b) => a-b);
+        })()
+      })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lng) && (s.lat !== 0 || s.lng !== 0));
+      renderStops();
+      if (state?.textContent === '') state.textContent = 'MAPA EN LÍNEA';
+    } catch (_) {
+      state.textContent = 'ERROR LEYENDO PARADAS';
+    }
   };
-  window.onNativeMapStopsError=payload=>{let msg='NO SE PUDIERON CARGAR LAS PARADAS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}state.textContent=msg;};
-  window.onNativeMapAvailableLines=payload=>{
-    try{
-      const raw=typeof payload==='string'?JSON.parse(payload):payload||[];
-      map.availableLines=[...new Set(raw.map(item=>Number(item.code)).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
-      map.availableLineLabels={};
-      raw.forEach(item=>{const code=Number(item.code);if(Number.isFinite(code)&&code>0)map.availableLineLabels[String(code)]=String(item.name||'').replace(/^l[ií]nea\s*/i,'').trim()||String(code);});
-      Object.assign(map.lineLabels,map.availableLineLabels);
-      map.availableLinesLoading=false;
-      const popup=document.getElementById('mapStopPopup'), lines=document.getElementById('mapPopupLines');
-      if(popup&&!popup.hidden&&map.pendingStop&&!(map.pendingStop.lines||[]).length&&lines){
-        lines.innerHTML='<small>NO HAY LÍNEAS CONFIRMADAS PARA ESTA PARADA.</small>';
+
+  window.onNativeMapStopsError = payload => {
+    let msg = 'NO SE PUDIERON CARGAR LAS PARADAS';
+    try { msg = (typeof payload === 'string' ? JSON.parse(payload) : payload).message || msg; } catch (_) {}
+    state.textContent = msg;
+  };
+
+  window.onNativeMapAvailableLines = payload => {
+    try {
+      const raw = typeof payload === 'string' ? JSON.parse(payload) : payload || [];
+      map.availableLines = [...new Set(raw.map(item => Number(item.code)).filter(n => Number.isFinite(n) && n > 0))].sort((a,b) => a-b);
+      map.availableLineLabels = {};
+      raw.forEach(item => {
+        const code = Number(item.code);
+        if (Number.isFinite(code) && code > 0) map.availableLineLabels[String(code)] = String(item.name || '').replace(/^l[ií]nea\s*/i,'').trim() || String(code);
+      });
+      Object.assign(map.lineLabels, map.availableLineLabels);
+      const popup = document.getElementById('mapStopPopup'), lines = document.getElementById('mapPopupLines');
+      if (popup && !popup.hidden && map.pendingStop && !(map.pendingStop.lines || []).length && lines) {
+        lines.innerHTML = '<small>NO HAY LÍNEAS CONFIRMADAS PARA ESTA PARADA.</small>';
       }
-    }catch(_){map.availableLinesLoading=false;}
+    } catch (_) {}
   };
-  window.onNativeMapAvailableLinesError=payload=>{
-    map.availableLinesLoading=false;
-    const lines=document.getElementById('mapPopupLines');
-    if(lines&&!map.availableLines.length)lines.innerHTML='<small>NO SE PUDIERON CARGAR LAS LÍNEAS. VOLVÉ A ABRIR LA PARADA PARA REINTENTAR.</small>';
+
+  window.onNativeMapAvailableLinesError = payload => {
+    const lines = document.getElementById('mapPopupLines');
+    if (lines && !map.availableLines.length) lines.innerHTML = '<small>NO SE PUDIERON CARGAR LAS LÍNEAS. VOLVÉ A ABRIR LA PARADA PARA REINTENTAR.</small>';
   };
-  window.onNativeMapVehicles=payload=>{try{
-    const raw=typeof payload==='string'?JSON.parse(payload):payload||[];
-    map.vehicleMotion=map.vehicleMotion||new Map();
-    const now=performance.now();
-    const next=raw.map(v=>{
-      const id=String(v.id||v.vehicleId||'');
-      const lat=Number(v.lat??v.latitude),lng=Number(v.lng??v.longitude);
-      const lineCode=Number(v.lineCode||v.code||map.routeLineCode||0);
-      const previous=map.vehicles.find(item=>item.id===id);
-      if(previous&&Number.isFinite(previous.lat)&&Number.isFinite(previous.lng)&&
-         (Math.abs(previous.lat-lat)>0.0000001||Math.abs(previous.lng-lng)>0.0000001)){
-        map.vehicleMotion.set(id,{fromLat:previous.lat,fromLng:previous.lng,toLat:lat,toLng:lng,startedAt:now,duration:9000});
-      }else if(!previous){
-        map.vehicleMotion.delete(id);
+
+  window.onNativeMapVehicles = payload => {
+    try {
+      const raw = typeof payload === 'string' ? JSON.parse(payload) : payload || [];
+      const now = performance.now();
+      const next = raw.map(v => {
+        const id = String(v.id || v.vehicleId || '');
+        const lat = Number(v.lat ?? v.latitude), lng = Number(v.lng ?? v.longitude);
+        const lineCode = Number(v.lineCode || v.code || map.routeLineCode || 0);
+        const previous = map.vehicles.find(item => item.id === id);
+        if (previous && Number.isFinite(previous.lat) && Number.isFinite(previous.lng) &&
+            (Math.abs(previous.lat-lat) > 0.0000001 || Math.abs(previous.lng-lng) > 0.0000001)) {
+          map.vehicleMotion.set(id, {
+            fromLat:previous.lat, fromLng:previous.lng,
+            toLat:lat, toLng:lng, startedAt:now, duration:9000
+          });
+        } else if (!previous) {
+          map.vehicleMotion.delete(id);
+        }
+        return {
+          id,lineCode,line:publicLineLabel(lineCode || v.line,window.TuColectivoLineLabels),
+          destination:String(v.destination || ''),lat,lng,gpsTimestamp:String(v.gpsTimestamp || '')
+        };
+      }).filter(v => Number.isFinite(v.lat) && Number.isFinite(v.lng) && (v.lat !== 0 || v.lng !== 0));
+      const activeIds = new Set(next.map(v => v.id));
+      [...map.vehicleMotion.keys()].forEach(id => { if (!activeIds.has(id)) map.vehicleMotion.delete(id); });
+      map.vehicles = next;
+      renderVehicles();
+    } catch (_) {
+      if (refreshLive && map.manualVehicleRefresh) {
+        map.manualVehicleRefresh = false;
+        refreshLive.classList.remove('is-refreshing');
+        refreshLive.disabled = false;
+        refreshLiveState.textContent = 'ERROR';
+        refreshLiveMeta.textContent = 'NO SE PUDO ACTUALIZAR EL GPS';
       }
-      return {id,lineCode,line:publicLineLabel(lineCode||v.line,window.TuColectivoLineLabels),destination:String(v.destination||''),lat,lng,gpsTimestamp:String(v.gpsTimestamp||'')};
-    }).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lng)&&(v.lat!==0||v.lng!==0));
-    const activeIds=new Set(next.map(v=>v.id));
-    [...map.vehicleMotion.keys()].forEach(id=>{if(!activeIds.has(id))map.vehicleMotion.delete(id);});
-    map.vehicles=next;
-  }catch(_){
-    if(refreshLive&&map.manualVehicleRefresh){map.manualVehicleRefresh=false;refreshLive.classList.remove('is-refreshing');refreshLive.disabled=false;refreshLiveState.textContent='ERROR';refreshLiveMeta.textContent='NO SE PUDO ACTUALIZAR EL GPS';}
-    state.textContent='ERROR LEYENDO GPS DE COLECTIVOS';}};
-  window.TuColectivoMap={
-    showRoute(lineCode){map.routeLineCode=Number(lineCode)||0;map.routePoints=[];map.vehicles=[];map.manualVehicleRefresh=false;if(refreshLive){refreshLive.disabled=map.routeLineCode<=0;refreshLive.classList.remove('is-refreshing');refreshLiveState.textContent='GPS';refreshLiveMeta.textContent=map.routeLineCode>0?'LÍNEA '+publicLineLabel(map.routeLineCode)+' · RECORRIDO EN TIEMPO REAL':'SELECCIONÁ UNA LÍNEA DESDE ARRIBOS';}map.loadStopsAfterLocation=true;state.textContent='CARGANDO RECORRIDO...';document.getElementById('mapStopPopup')?.setAttribute('hidden','');if(window.TuColectivoNative&&map.routeLineCode>0)window.TuColectivoNative.loadMapRoute(map.routeLineCode);window.TuColectivo.navigate('mapa');draw();},
-    handleStopLines(result){
-      const stop=map.pendingStop;
-      if(!stop||String(stop.identifier)!==String(result?.identifier))return false;
-      const lines=[...new Set((result?.lines||[]).map(Number).filter(n=>Number.isFinite(n)&&n>0))].sort((a,b)=>a-b);
-      if(result?.lineLabels&&typeof result.lineLabels==='object')Object.assign(map.lineLabels,result.lineLabels);
-      stop.lines=lines;
-      stop.lineLabels=result?.lineLabels&&typeof result.lineLabels==='object'?result.lineLabels:(stop.lineLabels||{});
-      const box=document.getElementById('mapPopupLines');
-      if(!box)return true;
-      if(!lines.length){box.innerHTML='<small>NO SE PUDIERON CONFIRMAR LÍNEAS PARA ESTA PARADA.</small>';return true;}
-      box.innerHTML='<small>LÍNEAS QUE PASAN POR ESTA PARADA</small>'+lines.map(line=>'<button class="map-popup-line" data-map-stop-line="'+line+'" type="button">CONSULTAR LÍNEA '+mapEscape(publicLineLabel(line,result?.lineLabels))+'</button>').join('');
+      state.textContent = 'ERROR LEYENDO GPS DE COLECTIVOS';
+    }
+  };
+
+  window.TuColectivoMap = {
+    showRoute(lineCode) {
+      map.routeLineCode = Number(lineCode) || 0;
+      map.routePoints = [];
+      map.vehicles = [];
+      map.vehicleMotion.clear();
+      vehiclesLayer.clearLayers();
+      map.vehicleMarkers.clear();
+      routeLayer.clearLayers();
+      document.getElementById('mapStopPopup')?.setAttribute('hidden','');
+      if (refreshLive) {
+        refreshLive.disabled = map.routeLineCode <= 0;
+        refreshLive.classList.remove('is-refreshing');
+        refreshLiveState.textContent = 'GPS';
+        refreshLiveMeta.textContent = map.routeLineCode > 0
+          ? 'LÍNEA ' + publicLineLabel(map.routeLineCode) + ' · RECORRIDO EN TIEMPO REAL'
+          : 'SELECCIONÁ UNA LÍNEA DESDE ARRIBOS';
+      }
+      map.loadStopsAfterLocation = true;
+      state.textContent = 'CARGANDO RECORRIDO...';
+      if (window.TuColectivoNative && map.routeLineCode > 0) {
+        window.TuColectivoNative.loadMapRoute(map.routeLineCode);
+      }
+      window.TuColectivo.navigate('mapa');
+      setTimeout(() => leafletMap.invalidateSize({pan:false}), 80);
+      setTimeout(locateUser, 120);
+    },
+    handleStopLines(result) {
+      const stop = map.pendingStop;
+      if (!stop || String(stop.identifier) !== String(result?.identifier)) return false;
+      const lines = [...new Set((result?.lines || []).map(Number).filter(n => Number.isFinite(n) && n > 0))].sort((a,b) => a-b);
+      if (result?.lineLabels && typeof result.lineLabels === 'object') Object.assign(map.lineLabels, result.lineLabels);
+      stop.lines = lines;
+      stop.lineLabels = result?.lineLabels && typeof result.lineLabels === 'object' ? result.lineLabels : (stop.lineLabels || {});
+      const box = document.getElementById('mapPopupLines');
+      if (!box) return true;
+      if (!lines.length) {
+        box.innerHTML = '<small>NO SE PUDIERON CONFIRMAR LÍNEAS PARA ESTA PARADA.</small>';
+        return true;
+      }
+      box.innerHTML = '<small>LÍNEAS QUE PASAN POR ESTA PARADA</small>' +
+        lines.map(line => '<button class="map-popup-line" data-map-stop-line="' + line + '" type="button">CONSULTAR LÍNEA ' +
+        mapEscape(publicLineLabel(line,result?.lineLabels)) + '</button>').join('');
       return true;
     },
-    handleArrivals(payload){if(!map.pendingMapArrival)return false;let items=[];try{items=typeof payload==='string'?JSON.parse(payload):payload||[];}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.innerHTML=items.length?items.map(a=>'<div class="map-popup-arrival"><b>'+mapEscape(a.line||'COLECTIVO')+'</b><span>'+mapEscape(mapArrivalDestination(a.destination))+'</span><strong>'+mapEscape(a.minutes==null?'--':a.minutes)+' MIN</strong></div>').join(''):'<small>SMARTMOVE NO DEVOLVIÓ ARRIBOS PARA ESTA LÍNEA</small>';map.pendingMapArrival=null;return true;},
-    handleArrivalsError(payload){if(!map.pendingMapArrival)return false;let msg='NO SE PUDIERON CARGAR LOS ARRIBOS';try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}const target=document.getElementById('mapPopupArrivals');if(target)target.textContent=msg;map.pendingMapArrival=null;return true;}
+    handleArrivals(payload) {
+      if (!map.pendingMapArrival) return false;
+      let items = [];
+      try { items = typeof payload === 'string' ? JSON.parse(payload) : payload || []; } catch (_) {}
+      const target = document.getElementById('mapPopupArrivals');
+      if (target) target.innerHTML = items.length
+        ? items.map(a => '<div class="map-popup-arrival"><b>' + mapEscape(a.line || 'COLECTIVO') + '</b><span>' +
+          mapEscape(mapArrivalDestination(a.destination)) + '</span><strong>' +
+          mapEscape(a.minutes == null ? '--' : a.minutes) + ' MIN</strong></div>').join('')
+        : '<small>SMARTMOVE NO DEVOLVIÓ ARRIBOS PARA ESTA LÍNEA</small>';
+      map.pendingMapArrival = null;
+      return true;
+    },
+    handleArrivalsError(payload) {
+      if (!map.pendingMapArrival) return false;
+      let msg = 'NO SE PUDIERON CARGAR LOS ARRIBOS';
+      try { msg = (typeof payload === 'string' ? JSON.parse(payload) : payload).message || msg; } catch (_) {}
+      const target = document.getElementById('mapPopupArrivals');
+      if (target) target.textContent = msg;
+      map.pendingMapArrival = null;
+      return true;
+    }
   };
-  if(refreshLive)refreshLive.addEventListener('click',()=>{
-    if(!map.routeLineCode||!window.TuColectivoNative)return;
-    map.manualVehicleRefresh=true;
-    map.manualRouteRefreshViewport={lat:map.lat,lng:map.lng,zoom:map.zoom};
-    refreshLive.disabled=true;
+
+  if (refreshLive) refreshLive.addEventListener('click', () => {
+    if (!map.routeLineCode || !window.TuColectivoNative) return;
+    map.manualVehicleRefresh = true;
+    map.manualRouteRefreshViewport = {
+      lat: leafletMap.getCenter().lat,
+      lng: leafletMap.getCenter().lng,
+      zoom: leafletMap.getZoom()
+    };
+    refreshLive.disabled = true;
     refreshLive.classList.add('is-refreshing');
-    refreshLiveState.textContent='ACTUALIZANDO';
-    refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · CONSULTANDO GPS...';
-    state.textContent='ACTUALIZANDO RECORRIDO EN TIEMPO REAL...';
-    if(typeof window.TuColectivoNative.loadMapRoute==='function')window.TuColectivoNative.loadMapRoute(map.routeLineCode);
-    if(typeof window.TuColectivoNative.refreshMapVehiclesManual==='function')window.TuColectivoNative.refreshMapVehiclesManual(map.routeLineCode);
-    else if(typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode);
+    refreshLiveState.textContent = 'ACTUALIZANDO';
+    refreshLiveMeta.textContent = 'LÍNEA ' + publicLineLabel(map.routeLineCode) + ' · CONSULTANDO GPS...';
+    state.textContent = 'ACTUALIZANDO RECORRIDO EN TIEMPO REAL...';
+    if (typeof window.TuColectivoNative.loadMapRoute === 'function') window.TuColectivoNative.loadMapRoute(map.routeLineCode);
+    if (typeof window.TuColectivoNative.refreshMapVehiclesManual === 'function') window.TuColectivoNative.refreshMapVehiclesManual(map.routeLineCode);
+    else if (typeof window.TuColectivoNative.refreshMapVehicles === 'function') window.TuColectivoNative.refreshMapVehicles(map.routeLineCode);
   });
-  window.onNativeMapManualRefreshComplete=payload=>{
-    if(!refreshLive)return;
-    map.manualVehicleRefresh=false;
+
+  window.onNativeMapManualRefreshComplete = payload => {
+    if (!refreshLive) return;
+    map.manualVehicleRefresh = false;
     refreshLive.classList.remove('is-refreshing');
-    refreshLive.disabled=false;
-    refreshLiveState.textContent='GPS';
-    const stamp=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    refreshLiveMeta.textContent='LÍNEA '+publicLineLabel(map.routeLineCode)+' · GPS ACTUALIZADO '+stamp;
-    state.textContent='RECORRIDO ACTUALIZADO · GPS '+stamp;
+    refreshLive.disabled = false;
+    refreshLiveState.textContent = 'GPS';
+    const stamp = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    refreshLiveMeta.textContent = 'LÍNEA ' + publicLineLabel(map.routeLineCode) + ' · GPS ACTUALIZADO ' + stamp;
+    state.textContent = 'RECORRIDO ACTUALIZADO · GPS ' + stamp;
   };
-  window.onNativeMapManualRefreshError=payload=>{
-    if(!refreshLive)return;
-    let msg='NO SE PUDO ACTUALIZAR EL GPS';
-    try{msg=(typeof payload==='string'?JSON.parse(payload):payload).message||msg;}catch(_){}
-    map.manualVehicleRefresh=false;
-    map.manualRouteRefreshViewport=null;
+
+  window.onNativeMapManualRefreshError = payload => {
+    if (!refreshLive) return;
+    let msg = 'NO SE PUDO ACTUALIZAR EL GPS';
+    try { msg = (typeof payload === 'string' ? JSON.parse(payload) : payload).message || msg; } catch (_) {}
+    map.manualVehicleRefresh = false;
+    map.manualRouteRefreshViewport = null;
     refreshLive.classList.remove('is-refreshing');
-    refreshLive.disabled=false;
-    refreshLiveState.textContent='ERROR';
-    refreshLiveMeta.textContent=msg;
-    state.textContent=msg;
+    refreshLive.disabled = false;
+    refreshLiveState.textContent = 'ERROR';
+    refreshLiveMeta.textContent = msg;
+    state.textContent = msg;
   };
-  window.setInterval(()=>{const screen=document.querySelector('[data-screen="mapa"]');if(screen&&screen.classList.contains('active')&&window.TuColectivoNative&&typeof window.TuColectivoNative.refreshMapVehicles==='function')window.TuColectivoNative.refreshMapVehicles(map.routeLineCode||0);},10000);
-  document.addEventListener('app:navigate',e=>{
-    if(e.detail.go==='mapa'){
-      map.loadStopsAfterLocation=true;
-      setTimeout(resize,60);
-      setTimeout(()=>{if(typeof locateUser==='function')locateUser();},120);
+
+  window.setInterval(() => {
+    const screen = document.querySelector('[data-screen="mapa"]');
+    if (screen && screen.classList.contains('active') && window.TuColectivoNative &&
+        typeof window.TuColectivoNative.refreshMapVehicles === 'function') {
+      window.TuColectivoNative.refreshMapVehicles(map.routeLineCode || 0);
+    }
+  }, 10000);
+
+  document.addEventListener('app:navigate', e => {
+    if (e.detail.go === 'mapa') {
+      setTimeout(() => leafletMap.invalidateSize({pan:false}), 60);
+      setTimeout(locateUser, 120);
     }
   });
-  resize();
+
+  const leafletStyle = document.createElement('style');
+  leafletStyle.textContent = `
+    #mapCanvas.leaflet-container { background:#07101c; }
+    #mapCanvas .leaflet-tile-pane { filter:saturate(.78) contrast(1.04) brightness(.78); }
+    #mapCanvas .leaflet-control-zoom { display:none; }
+    .tc-leaflet-user { background:transparent;border:0; }
+    .tc-leaflet-user span { display:block;width:18px;height:18px;margin:3px;border:2px solid #00f0ff;border-radius:50%;background:rgba(0,240,255,.18);box-shadow:0 0 8px #00f0ff,0 0 18px rgba(0,240,255,.65); }
+    .tc-leaflet-vehicle { background:transparent;border:0; }
+    .tc-leaflet-vehicle b { display:flex;width:30px;height:30px;align-items:center;justify-content:center;border:2px solid #ff4dff;border-radius:50%;background:rgba(255,0,255,.2);color:#fff;font:700 9px Arial,sans-serif;box-shadow:0 0 10px rgba(255,0,255,.9),inset 0 0 7px rgba(255,0,255,.35);text-shadow:0 0 5px #ff00ff; }
+    .tc-vehicle-pulse { position:absolute;left:7px;top:7px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,0,255,.45);animation:tcVehiclePulse 1.1s ease-in-out infinite;pointer-events:none; }
+    @keyframes tcVehiclePulse { 0%,100%{transform:scale(.8);opacity:.35} 50%{transform:scale(1.55);opacity:.08} }
+  `;
+  document.head.appendChild(leafletStyle);
+
+  syncZoomLabel();
+  setTimeout(() => leafletMap.invalidateSize({pan:false}), 80);
 })();
+
 
 /* FASE 7 — PARADAS CERCANAS + ARRIBOS */
 (() => {
