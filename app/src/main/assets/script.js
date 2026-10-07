@@ -236,14 +236,19 @@
     zoomDelta: 1,
     minZoom: 11,
     maxZoom: 18,
-    zoomAnimation: true,
-    fadeAnimation: true,
-    markerZoomAnimation: true
+    zoomAnimation: false,
+    fadeAnimation: false,
+    markerZoomAnimation: false,
+    zoomAnimationThreshold: 4
   }).setView(FALLBACK, 14);
 
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    minZoom: 0,
+    maxNativeZoom: 19,
+    minZoom: 11,
+    updateWhenZooming: false,
+    updateWhenIdle: true,
+    keepBuffer: 2,
     tileSize: 256,
     attribution: '&copy; OpenStreetMap contributors',
     crossOrigin: true
@@ -317,7 +322,7 @@
     if (!valid.length) return;
     const bounds = L.latLngBounds(valid.map(p => [p.lat, p.lng]));
     if (!bounds.isValid()) return;
-    leafletMap.fitBounds(bounds, {padding: [54,54], maxZoom: 16, animate: false});
+    leafletMap.fitBounds(bounds, {padding: [54,54], maxZoom: 16, animate: false, duration: 0});
   }
 
   function drawRoute() {
@@ -500,7 +505,7 @@
         const viewport = map.manualRouteRefreshViewport;
         leafletMap.setView([viewport.lat, viewport.lng], viewport.zoom, {animate:false});
         map.manualRouteRefreshViewport = null;
-      } else if (map.routePoints.length) {
+      } else if (map.routePoints.length && !map.userLocation && !map.followUser) {
         fitPoints(map.routePoints.concat(map.stops));
       }
     } catch (_) {
@@ -578,7 +583,7 @@
         })()
       })).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lng) && (s.lat !== 0 || s.lng !== 0));
       renderStops();
-      if (map.routePoints.length > 1 && !map.userLocation) fitPoints(map.routePoints.concat(map.stops));
+      if (map.routePoints.length > 1 && !map.userLocation && !map.followUser) fitPoints(map.routePoints.concat(map.stops));
       if (state?.textContent === '') state.textContent = 'MAPA EN LÍNEA';
     } catch (_) {
       state.textContent = 'ERROR LEYENDO PARADAS';
