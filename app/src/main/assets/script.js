@@ -218,6 +218,7 @@
     vehicleMarkers: new Map(),
     stopMarkers: [],
     vehicleMotion: new Map(),
+    vehicleAnimationFrame: 0,
     pendingStop: null,
     pendingMapArrival: null,
     loadStopsAfterLocation: false,
@@ -363,12 +364,14 @@
   function updateVehicleMarker(vehicle, now) {
     let marker = map.vehicleMarkers.get(vehicle.id);
     const target = L.latLng(vehicle.lat, vehicle.lng);
+    const lineKey = String(vehicle.lineCode || vehicle.line || '');
     if (!marker) {
       marker = L.marker(target, {
         icon: vehicleIcon(vehicle.lineCode || vehicle.line),
         interactive: false,
         zIndexOffset: 500
       }).addTo(vehiclesLayer);
+      marker._tcLineKey = lineKey;
       map.vehicleMarkers.set(vehicle.id, marker);
       return;
     }
@@ -384,7 +387,10 @@
     } else {
       marker.setLatLng(target);
     }
-    marker.setIcon(vehicleIcon(vehicle.lineCode || vehicle.line));
+    if (marker._tcLineKey !== lineKey) {
+      marker.setIcon(vehicleIcon(vehicle.lineCode || vehicle.line));
+      marker._tcLineKey = lineKey;
+    }
   }
 
   function renderVehicles() {
@@ -402,7 +408,12 @@
       updateVehicleMarker(vehicle, now);
       if (map.vehicleMotion.has(vehicle.id)) animating = true;
     }
-    if (animating) requestAnimationFrame(renderVehicles);
+    if (animating && !map.vehicleAnimationFrame) {
+      map.vehicleAnimationFrame = requestAnimationFrame(() => {
+        map.vehicleAnimationFrame = 0;
+        renderVehicles();
+      });
+    }
   }
 
   function locateUser() {
@@ -613,8 +624,11 @@
         const previous = map.vehicles.find(item => item.id === id);
         if (previous && Number.isFinite(previous.lat) && Number.isFinite(previous.lng) &&
             (Math.abs(previous.lat-lat) > 0.0000001 || Math.abs(previous.lng-lng) > 0.0000001)) {
+          const marker = map.vehicleMarkers.get(id);
+          const current = marker?.getLatLng();
           map.vehicleMotion.set(id, {
-            fromLat:previous.lat, fromLng:previous.lng,
+            fromLat: current ? current.lat : previous.lat,
+            fromLng: current ? current.lng : previous.lng,
             toLat:lat, toLng:lng, startedAt:now, duration:9000
           });
         } else if (!previous) {
