@@ -56,6 +56,15 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var mapVehicleRefreshInProgress = false
     @Volatile private var pendingMapVehicleRefreshLine = 0
     @Volatile private var pendingMapVehicleRefreshManual = false
+    private val anonymousMapVehicles = mutableMapOf<String, AnonymousMapVehicle>()
+    private data class AnonymousMapVehicle(
+        val id: String,
+        var lineCode: Int,
+        var destination: String,
+        var lat: Double,
+        var lng: Double,
+        var lastSeenMs: Long
+    )
     private var pendingArrivalNotifications: String? = null
     private var pendingArrivalStartTime: String = "18:00"
     private var pendingArrivalEndTime: String = "19:30"
@@ -453,7 +462,7 @@ class MainActivity : AppCompatActivity() {
                             val identifier = stop.identifier.ifBlank { stop.code.toString() }
                             if (lineCode > 0) {
                                 runCatching {
-                                    api.getArrivals(identifier, lineCode, timeoutMs = 8_000)
+                                    api.getArrivals(identifier, lineCode, timeoutMs = 4_000)
                                 }.getOrElse {
                                     if (identifier != stop.code.toString()) {
                                         api.getArrivals(stop.code.toString(), lineCode, timeoutMs = 8_000)
@@ -472,11 +481,38 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                val usedAnonymousIds = mutableSetOf<String>()
+                val nowMs = System.currentTimeMillis()
+                anonymousMapVehicles.entries.removeIf { nowMs - it.value.lastSeenMs > 30_000L }
+
+                fun stableVehicleId(code: Int, destination: String, lat: Double, lng: Double, vehicleId: String): String {
+                    if (vehicleId.isNotBlank()) return vehicleId
+                    val normalizedDestination = destination.trim().lowercase()
+                    val duplicate = found.values.firstOrNull { existing ->
+                        existing.optInt("lineCode", code) == code &&
+                            existing.optString("destination").trim().lowercase() == normalizedDestination &&
+                            distanceMeters(existing.optDouble("lat"), existing.optDouble("lng"), lat, lng) < 300.0
+                    }
+                    if (duplicate != null) return "__duplicate__"
+
+                    val candidate = anonymousMapVehicles.values
+                        .filter { it.id !in usedAnonymousIds && it.lineCode == code && it.destination == normalizedDestination }
+                        .minByOrNull { distanceMeters(it.lat, it.lng, lat, lng) }
+                    val id = if (candidate != null && distanceMeters(candidate.lat, candidate.lng, lat, lng) <= 1500.0) {
+                        candidate.id
+                    } else {
+                        "anon-" + code + "-" + (anonymousMapVehicles.size + usedAnonymousIds.size + 1)
+                    }
+                    anonymousMapVehicles[id] = AnonymousMapVehicle(id, code, normalizedDestination, lat, lng, nowMs)
+                    usedAnonymousIds += id
+                    return id
+                }
+
                 runCatching {
                     vehicleQueryExecutor.invokeAll(
                         tasks,
-                        9,
-                        TimeUnit.SECONDS
+                        4_500,
+                        TimeUnit.MILLISECONDS
                     )
                 }.getOrNull().orEmpty().forEach { future ->
                     runCatching { future.get() }.getOrNull().orEmpty().forEach { arrival ->
@@ -490,12 +526,12 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         val code = lineCode
-                        val id = arrival.vehicleId.ifBlank {
-                            "line-" + code + "-" + lat + "-" + lng
-                        }
+                        val id = stableVehicleId(code, arrival.destination, lat, lng, arrival.vehicleId)
+                        if (id == "__duplicate__") return@forEach
 
                         found[id] = JSONObject()
                             .put("id", id)
+                            .put("lineCode", code)
                             .put("line", normalizePublicLineLabel(arrival.line, code))
                             .put("destination", arrival.destination)
                             .put("lat", lat)
