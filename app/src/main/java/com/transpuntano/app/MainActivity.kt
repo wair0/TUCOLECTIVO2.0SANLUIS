@@ -52,6 +52,7 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var transitLinesCache: List<TransitLine> = emptyList()
     @Volatile private var mapNearbyStops: List<TransitStop> = emptyList()
     @Volatile private var mapLineCode: Int = 0
+    @Volatile private var mapDestinationFilter: String = ""
     @Volatile private var mapVehicleRefreshInProgress = false
     @Volatile private var pendingMapVehicleRefreshLine = 0
     @Volatile private var pendingMapVehicleRefreshManual = false
@@ -422,6 +423,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshMapVehiclesNow(lineCode: Int = mapLineCode, manualRequest: Boolean = false) {
+        val destinationFilter = mapDestinationFilter
         if (mapNearbyStops.isEmpty()) {
             if (manualRequest) {
                 dispatch("onNativeMapManualRefreshError", JSONObject()
@@ -481,6 +483,11 @@ class MainActivity : AppCompatActivity() {
                         val lat = arrival.latitude ?: return@forEach
                         val lng = arrival.longitude ?: return@forEach
                         if (lat == 0.0 || lng == 0.0) return@forEach
+                        if (destinationFilter.isNotBlank()) {
+                            val actual = arrival.destination.trim().lowercase()
+                            val wanted = destinationFilter.trim().lowercase()
+                            if (actual != wanted && !actual.contains(wanted) && !wanted.contains(actual)) return@forEach
+                        }
 
                         val code = lineCode
                         val id = arrival.vehicleId.ifBlank {
@@ -648,10 +655,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        @JavascriptInterface fun requestMapLocation(lineCode: Int) { mapLineCode = lineCode; requestNativeLocation("map") }
+        @JavascriptInterface fun requestMapLocation(lineCode: Int, destinationFilter: String) { mapLineCode = lineCode; mapDestinationFilter = destinationFilter.trim(); requestNativeLocation("map") }
         @JavascriptInterface fun requestNearbyLocation() { requestNativeLocation("nearby") }
-        @JavascriptInterface fun loadMapData(latitude: Double, longitude: Double, lineCode: Int) { loadMapStopsAt(latitude, longitude, lineCode) }
-        @JavascriptInterface fun loadMapDataAtLocation(latitude: Double, longitude: Double, lineCode: Int) { loadMapStopsAt(latitude, longitude, lineCode) }
+        @JavascriptInterface fun loadMapData(latitude: Double, longitude: Double, lineCode: Int, destinationFilter: String) { mapDestinationFilter = destinationFilter.trim(); loadMapStopsAt(latitude, longitude, lineCode) }
+        @JavascriptInterface fun loadMapDataAtLocation(latitude: Double, longitude: Double, lineCode: Int, destinationFilter: String) { mapDestinationFilter = destinationFilter.trim(); loadMapStopsAt(latitude, longitude, lineCode) }
         private fun loadMapStopsAt(latitude: Double, longitude: Double, lineCode: Int) {
             executor.execute {
                 runCatching { api.getNearby(latitude, longitude) }
@@ -660,13 +667,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        @JavascriptInterface fun refreshMapVehicles(lineCode: Int) {
+        @JavascriptInterface fun refreshMapVehicles(lineCode: Int, destinationFilter: String) {
             mapLineCode = lineCode
+            mapDestinationFilter = destinationFilter.trim()
             refreshMapVehiclesNow(lineCode)
         }
 
-        @JavascriptInterface fun refreshMapVehiclesManual(lineCode: Int) {
+        @JavascriptInterface fun refreshMapVehiclesManual(lineCode: Int, destinationFilter: String) {
             mapLineCode = lineCode
+            mapDestinationFilter = destinationFilter.trim()
             if (mapVehicleRefreshInProgress) {
                 pendingMapVehicleRefreshLine = lineCode
                 pendingMapVehicleRefreshManual = true
