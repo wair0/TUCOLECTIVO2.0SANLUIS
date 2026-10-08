@@ -150,10 +150,20 @@ class ArrivalNotificationService : Service() {
                         val stop = favorite.optJSONObject("stop") ?: continue
                         val identifier = stop.optString("identifier", stop.optString("id", ""))
                         if (line <= 0 || identifier.isBlank()) continue
-                        val arrivals = runCatching { api.getArrivals(identifier, line, timeoutMs = 8_000) }.getOrDefault(emptyList())
-                        for (arrival in arrivals) {
-                            val minutes = arrival.minutes ?: if (arrival.status.contains("arrib", true)) 0 else continue
-                            val lineLabel = publicLineLabel(arrival.line, line)
+                        val arrivals = runCatching { api.getArrivals(identifier, line, timeoutMs = 4_000) }.getOrDefault(emptyList())
+                        val bestArrival = arrivals
+                            .mapNotNull { arrival ->
+                                val minutes = arrival.minutes ?: if (arrival.status.contains("arrib", true)) 0 else null
+                                if (minutes == null) null else arrival to minutes
+                            }
+                            .minByOrNull { it.second }
+                        if (bestArrival != null) {
+                            val arrival = bestArrival.first
+                            val minutes = bestArrival.second
+                            val lineLabel = publicLineLabel(
+                                favorite.optString("lineLabel").ifBlank { arrival.line },
+                                line
+                            )
                             updateLiveArrivalNotification(favorite, line, lineLabel, arrival.destination, minutes)
                             evaluateArrival(favorite, line, lineLabel, identifier, arrival.vehicleId, arrival.destination, minutes)
                         }
@@ -282,7 +292,11 @@ class ArrivalNotificationService : Service() {
     private fun publicLineLabel(raw: String?, fallbackCode: Int): String {
         val value = raw?.trim().orEmpty()
         val cleaned = value.replace(Regex("^l[ií]nea\\s*", RegexOption.IGNORE_CASE), "").trim()
-        return cleaned.ifBlank { fallbackCode.toString() }
+        return when {
+            cleaned.isBlank() -> fallbackCode.toString()
+            cleaned.matches(Regex("\\d+")) -> fallbackCode.toString()
+            else -> cleaned
+        }
     }
 
     private fun appendHistory(line: String, stop: String, destination: String, label: String, minutes: Int) {
