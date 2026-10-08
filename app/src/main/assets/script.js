@@ -782,7 +782,7 @@
     const screen = document.querySelector('[data-screen="mapa"]');
     if (screen && screen.classList.contains('active') && window.TuColectivoNative &&
         typeof window.TuColectivoNative.refreshMapVehicles === 'function') {
-      window.TuColectivoNative.refreshMapVehicles(map.routeLineCode || 0);
+      window.TuColectivoNative.refreshMapVehicles(map.routeLineCode || 0, map.destinationFilter || '');
     }
   }, 10000);
 
@@ -947,6 +947,9 @@
       const destinationLabel=unknownDestination?'DESTINO NO INFORMADO':'HACIA '+rawDestination.toUpperCase();
       return '<div class="arrival-card" data-arrival-destination="'+esc(destination)+'" role="button" tabindex="0"><div class="arrival-copy"><b>'+escapeHtml(item.line||('LÍNEA '+(window.TuColectivoCurrentNearbyArrival?.line||'')))+'</b><span>'+escapeHtml(destinationLabel)+'</span></div><em class="arrival-time" style="--arrival-duration:'+duration+'s"><strong>'+escapeHtml(item.minutes==null?'--':item.minutes)+'</strong><small>MIN</small></em></div>';
     }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
+    const mapButton=document.querySelector('[data-map-route-line]');
+    window.TuColectivoSelectedMapDestination=destinations.length===1?destinations[0]:'';
+    if(mapButton) mapButton.disabled=destinations.length!==1;
   };
   window.onNativeNearbyArrivalsError=function(payload){
     let message='NO SE PUDIERON CARGAR LOS ARRIBOS';
@@ -1370,10 +1373,11 @@
   window.onNativeArrivalsError=p=>{if(window.TuColectivoMap?.handleArrivalsError(p))return;if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivalsError?.(p);return;}const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
   function showArrivals(stop){
     currentStop=stop;
+    window.TuColectivoSelectedMapDestination='';
     setLineHead('ARRIBOS');
     const favKey=String(stop.identifier||stop.code)+'::'+Number(currentLine.code);
     window.TuColectivoCurrentLineArrival={stop:{id:String(stop.identifier||stop.code),identifier:String(stop.identifier||stop.code),code:Number(stop.code)||0,name:stop.description,street:stop.street||'',intersection:stop.intersection||'',lat:Number(stop.latitude),lng:Number(stop.longitude),lines:[Number(currentLine.code)]},line:Number(currentLine.code)};
-    const stopContext=[stop.street,stop.intersection].map(v=>String(v||'').trim()).filter(Boolean).join(' · ');lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(stop.description)+'</strong>'+(stopContext?'<small class="line-sub-context">'+esc(stopContext)+'</small>':'')+'</div><button class="arrival-favorite-toggle" data-line-arrival-favorite="true" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button><button class="arrival-refresh" type="button" data-arrival-refresh="true">↻ ACTUALIZAR MINUTOS</button><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div><button class="map-route-action" data-map-route-line="'+Number(currentLine.code)+'" type="button">⌖ VER RECORRIDO EN EL MAPA</button>';
+    const stopContext=[stop.street,stop.intersection].map(v=>String(v||'').trim()).filter(Boolean).join(' · ');lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(stop.description)+'</strong>'+(stopContext?'<small class="line-sub-context">'+esc(stopContext)+'</small>':'')+'</div><button class="arrival-favorite-toggle" data-line-arrival-favorite="true" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button><button class="arrival-refresh" type="button" data-arrival-refresh="true">↻ ACTUALIZAR MINUTOS</button><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div><button class="map-route-action" data-map-route-line="'+Number(currentLine.code)+'" type="button" disabled>⌖ VER RECORRIDO EN EL MAPA</button>';
     window.TuColectivoFavorites?.syncLineArrivalFavorite?.();
     nativeApi.loadArrivals(stop.identifier,currentLine.code);
   }
@@ -1402,6 +1406,8 @@
     if(arrival){
       lineGrid.querySelectorAll('.arrival-card[data-arrival-destination]').forEach(card=>card.classList.toggle('selected',card===arrival));
       window.TuColectivoSelectedMapDestination=arrival.dataset.arrivalDestination||'';
+      const mapButton=lineGrid.querySelector('[data-map-route-line]');
+      if(mapButton) mapButton.disabled=!window.TuColectivoSelectedMapDestination;
       return;
     }
     const mapBtn=e.target.closest('[data-map-route-line]');if(mapBtn){const code=Number(mapBtn.dataset.mapRouteLine);if(code&&window.TuColectivoMap)window.TuColectivoMap.showRoute(code,window.TuColectivoSelectedMapDestination||'');return;}
