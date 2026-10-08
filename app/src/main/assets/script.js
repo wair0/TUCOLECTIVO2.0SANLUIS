@@ -206,6 +206,7 @@
 
   const map = {
     routeLineCode: 0,
+    destinationFilter: '',
     routePoints: [],
     stops: [],
     vehicles: [],
@@ -426,7 +427,7 @@
     map.loadStopsAfterLocation = true;
     setState('LOCALIZANDO...');
     if (window.TuColectivoNative && typeof window.TuColectivoNative.requestMapLocation === 'function') {
-      window.TuColectivoNative.requestMapLocation(map.routeLineCode || 0);
+      window.TuColectivoNative.requestMapLocation(map.routeLineCode || 0, map.destinationFilter || '');
     } else {
       setState('UBICACIÓN NATIVA NO DISPONIBLE');
     }
@@ -552,7 +553,7 @@
       state.textContent = '';
       if (map.loadStopsAfterLocation && window.TuColectivoNative?.loadMapDataAtLocation) {
         map.loadStopsAfterLocation = false;
-        window.TuColectivoNative.loadMapDataAtLocation(lat, lng, map.routeLineCode || 0);
+        window.TuColectivoNative.loadMapDataAtLocation(lat, lng, map.routeLineCode || 0, map.destinationFilter || '');
       }
     }
     if (r.purpose === 'nearby' && typeof setNearbyState === 'function') setNearbyState('');
@@ -662,8 +663,9 @@
   };
 
   window.TuColectivoMap = {
-    showRoute(lineCode) {
+    showRoute(lineCode, destinationFilter) {
       map.routeLineCode = Number(lineCode) || 0;
+      map.destinationFilter = String(destinationFilter || '').trim();
       map.routePoints = [];
       map.stops = [];
       map.vehicles = [];
@@ -748,8 +750,8 @@
     refreshLiveMeta.textContent = 'LÍNEA ' + publicLineLabel(map.routeLineCode) + ' · CONSULTANDO GPS...';
     state.textContent = 'ACTUALIZANDO RECORRIDO EN TIEMPO REAL...';
     if (typeof window.TuColectivoNative.loadMapRoute === 'function') window.TuColectivoNative.loadMapRoute(map.routeLineCode);
-    if (typeof window.TuColectivoNative.refreshMapVehiclesManual === 'function') window.TuColectivoNative.refreshMapVehiclesManual(map.routeLineCode);
-    else if (typeof window.TuColectivoNative.refreshMapVehicles === 'function') window.TuColectivoNative.refreshMapVehicles(map.routeLineCode);
+    if (typeof window.TuColectivoNative.refreshMapVehiclesManual === 'function') window.TuColectivoNative.refreshMapVehiclesManual(map.routeLineCode, map.destinationFilter || '');
+    else if (typeof window.TuColectivoNative.refreshMapVehicles === 'function') window.TuColectivoNative.refreshMapVehicles(map.routeLineCode, map.destinationFilter || '');
   });
 
   window.onNativeMapManualRefreshComplete = payload => {
@@ -943,7 +945,7 @@
       const rawDestination=String(item.destination||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim().replace(/[.·•‧∙⋅。．]+$/,'').trim();
       const unknownDestination=!rawDestination||/^(?:A{1,2}|N\/?A|S\/?D|DESTINO|SERVICIO)$/i.test(rawDestination);
       const destinationLabel=unknownDestination?'DESTINO NO INFORMADO':'HACIA '+rawDestination.toUpperCase();
-      return '<div class="arrival-card"><div class="arrival-copy"><b>'+escapeHtml(item.line||('LÍNEA '+(window.TuColectivoCurrentNearbyArrival?.line||'')))+'</b><span>'+escapeHtml(destinationLabel)+'</span></div><em class="arrival-time" style="--arrival-duration:'+duration+'s"><strong>'+escapeHtml(item.minutes==null?'--':item.minutes)+'</strong><small>MIN</small></em></div>';
+      return '<div class="arrival-card" data-arrival-destination="'+esc(destination)+'" role="button" tabindex="0"><div class="arrival-copy"><b>'+escapeHtml(item.line||('LÍNEA '+(window.TuColectivoCurrentNearbyArrival?.line||'')))+'</b><span>'+escapeHtml(destinationLabel)+'</span></div><em class="arrival-time" style="--arrival-duration:'+duration+'s"><strong>'+escapeHtml(item.minutes==null?'--':item.minutes)+'</strong><small>MIN</small></em></div>';
     }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
   };
   window.onNativeNearbyArrivalsError=function(payload){
@@ -1332,6 +1334,7 @@
   const renderLineArrivals=(items,list)=>{
     const a=Array.isArray(items)?items:[];
     if(!list)return;
+    const destinations=[...new Set(a.map(x=>String(x.destination||'').replace(/[.·•‧∙⋅。．]+/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean))];
     list.innerHTML=a.length?a.map(x=>{
       // SmartMove puede entregar minutos como número o como texto ("1 MIN").
       const rawMinutes=x.minutes;
@@ -1353,7 +1356,7 @@
       const arrivalLineTitle='LINEA '+publicLine;
       const arrivalDestination=destination?'HACIA '+destination.toUpperCase():'DESTINO NO INFORMADO';
       if(arriving){
-        return '<div class="arrival-card arrival-arriving"><div class="arrival-copy"><b>'+esc(arrivalLineTitle)+'</b><span>'+esc(arrivalDestination)+'</span></div><em class="arrival-time arrival-time-arriving"><strong>ARRIBANDO</strong></em></div>';
+        return '<div class="arrival-card arrival-arriving" data-arrival-destination="'+esc(destination)+'" role="button" tabindex="0"><div class="arrival-copy"><b>'+esc(arrivalLineTitle)+'</b><span>'+esc(arrivalDestination)+'</span></div><em class="arrival-time arrival-time-arriving"><strong>ARRIBANDO</strong></em></div>';
       }
       return '<div class="arrival-card"><div class="arrival-copy"><b>'+esc(arrivalLineTitle)+'</b><span>'+esc(arrivalDestination)+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';
     }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
@@ -1395,7 +1398,13 @@
       setTimeout(()=>{if(refresh.isConnected){refresh.disabled=false;refresh.textContent='↻ ACTUALIZAR MINUTOS';}},1200);
       return;
     }
-    const mapBtn=e.target.closest('[data-map-route-line]');if(mapBtn){const code=Number(mapBtn.dataset.mapRouteLine);if(code&&window.TuColectivoMap)window.TuColectivoMap.showRoute(code);return;}
+    const arrival=e.target.closest('.arrival-card[data-arrival-destination]');
+    if(arrival){
+      lineGrid.querySelectorAll('.arrival-card[data-arrival-destination]').forEach(card=>card.classList.toggle('selected',card===arrival));
+      window.TuColectivoSelectedMapDestination=arrival.dataset.arrivalDestination||'';
+      return;
+    }
+    const mapBtn=e.target.closest('[data-map-route-line]');if(mapBtn){const code=Number(mapBtn.dataset.mapRouteLine);if(code&&window.TuColectivoMap)window.TuColectivoMap.showRoute(code,window.TuColectivoSelectedMapDestination||'');return;}
     const c=e.target.closest('.line-card');if(c){const l=lines.find(x=>String(x.code)===c.dataset.line);if(l)openLine(l);return;}
   });
   document.addEventListener('app:navigate',e=>{if(e.detail.go==='lineas'){currentLine=null;currentStreet=null;currentIntersection=null;currentStop=null;loadLines();}});
