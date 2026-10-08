@@ -1361,8 +1361,11 @@
       if(arriving){
         return '<div class="arrival-card arrival-arriving" data-arrival-destination="'+esc(destination)+'" role="button" tabindex="0"><div class="arrival-copy"><b>'+esc(arrivalLineTitle)+'</b><span>'+esc(arrivalDestination)+'</span></div><em class="arrival-time arrival-time-arriving"><strong>ARRIBANDO</strong></em></div>';
       }
-      return '<div class="arrival-card"><div class="arrival-copy"><b>'+esc(arrivalLineTitle)+'</b><span>'+esc(arrivalDestination)+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';
+      return '<div class="arrival-card" data-arrival-destination="'+esc(destination)+'" role="button" tabindex="0"><div class="arrival-copy"><b>'+esc(arrivalLineTitle)+'</b><span>'+esc(arrivalDestination)+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';
     }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
+    const mapButton=lineGrid.querySelector('[data-map-route-line]');
+    window.TuColectivoSelectedMapDestination=destinations.length===1?destinations[0]:'';
+    if(mapButton) mapButton.disabled=destinations.length!==1;
   };
   window.onNativeArrivals=p=>{
     if(window.TuColectivoMap?.handleArrivals(p))return;
