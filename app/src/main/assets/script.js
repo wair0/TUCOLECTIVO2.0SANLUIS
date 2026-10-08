@@ -423,6 +423,7 @@
 
   function locateUser() {
     map.followUser = true;
+    map.loadStopsAfterLocation = true;
     setState('LOCALIZANDO...');
     if (window.TuColectivoNative && typeof window.TuColectivoNative.requestMapLocation === 'function') {
       window.TuColectivoNative.requestMapLocation(map.routeLineCode || 0);
@@ -785,6 +786,7 @@
 
   document.addEventListener('app:navigate', e => {
     if (e.detail.go === 'mapa') {
+      map.loadStopsAfterLocation = true;
       setTimeout(() => leafletMap.invalidateSize({pan:false}), 60);
       setTimeout(locateUser, 120);
     }
