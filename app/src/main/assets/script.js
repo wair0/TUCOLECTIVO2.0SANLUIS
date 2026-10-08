@@ -608,6 +608,7 @@
         if (Number.isFinite(code) && code > 0) map.availableLineLabels[String(code)] = String(item.name || '').replace(/^l[ií]nea\s*/i,'').trim() || String(code);
       });
       Object.assign(map.lineLabels, map.availableLineLabels);
+      renderVehicles();
       const popup = document.getElementById('mapStopPopup'), lines = document.getElementById('mapPopupLines');
       if (popup && !popup.hidden && map.pendingStop && !(map.pendingStop.lines || []).length && lines) {
         lines.innerHTML = '<small>NO HAY LÍNEAS CONFIRMADAS PARA ESTA PARADA.</small>';
@@ -636,7 +637,7 @@
           map.vehicleMotion.set(id, {
             fromLat: current ? current.lat : previous.lat,
             fromLng: current ? current.lng : previous.lng,
-            toLat:lat, toLng:lng, startedAt:now, duration:9000
+            toLat:lat, toLng:lng, startedAt:now, duration:4500
           });
         } else if (!previous) {
           map.vehicleMotion.delete(id);
@@ -688,6 +689,7 @@
       map.followUser = true;
       state.textContent = 'CARGANDO RECORRIDO...';
       if (window.TuColectivoNative && map.routeLineCode > 0) {
+        window.TuColectivoNative.loadMapAvailableLines?.();
         window.TuColectivoNative.loadMapRoute(map.routeLineCode);
       }
       window.TuColectivo.navigate('mapa');
@@ -784,7 +786,7 @@
         typeof window.TuColectivoNative.refreshMapVehicles === 'function') {
       window.TuColectivoNative.refreshMapVehicles(map.routeLineCode || 0, map.destinationFilter || '');
     }
-  }, 10000);
+  }, 5000);
 
   document.addEventListener('app:navigate', e => {
     if (e.detail.go === 'mapa') {
@@ -1117,7 +1119,7 @@
   function toggleArrival(stop,line){
     const key=arrivalKey(stop,line);
     if(isArrivalSaved(stop,line))favorites.arrivals=favorites.arrivals.filter(v=>v.key!==key);
-    else favorites.arrivals.push({key,line:Number(line),stop:{id:String(stop.id||stop.identifier||stop.code),identifier:String(stop.identifier||stop.id||stop.code),code:Number(stop.code)||0,name:String(stop.name||stop.description||('PARADA '+stop.code)),street:String(stop.street||''),intersection:String(stop.intersection||''),lat:Number(stop.lat??stop.latitude),lng:Number(stop.lng??stop.longitude),lines:Array.isArray(stop.lines)?stop.lines.map(Number):[Number(line)]}});
+    else favorites.arrivals.push({key,line:Number(line),lineLabel:window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(Number(line),window.TuColectivoLineLabels):'',stop:{id:String(stop.id||stop.identifier||stop.code),identifier:String(stop.identifier||stop.id||stop.code),code:Number(stop.code)||0,name:String(stop.name||stop.description||('PARADA '+stop.code)),street:String(stop.street||''),intersection:String(stop.intersection||''),lat:Number(stop.lat??stop.latitude),lng:Number(stop.lng??stop.longitude),lines:Array.isArray(stop.lines)?stop.lines.map(Number):[Number(line)]}});
     save();syncButtons();render();window.TuColectivoNearbySyncArrivalFavorite?.();syncLineArrivalFavorite();syncArrivalNotificationConfig();
   }
   function syncLineArrivalFavorite(){const current=window.TuColectivoCurrentLineArrival;const button=document.querySelector('[data-line-arrival-favorite]');if(!current||!button)return;const on=isArrivalSaved(current.stop,current.line);button.textContent=on?'★ ARRIBO GUARDADO':'☆ AGREGAR ARRIBO A FAVORITOS';button.setAttribute('aria-pressed',String(on));}
