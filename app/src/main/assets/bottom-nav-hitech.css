@@ -1,0 +1,4 @@
+/* Barra inferior High-Tech Corporativo. Estilos encapsulados para no interferir con Leaflet. */
+.tcui-tab:active{transform:scale(.94)}
+.tcui-tab:focus-visible{outline:2px solid rgb(var(--tcui-acc));outline-offset:-3px}
+@media(max-width:360px){.tcui-tab-label{font-size:8px;letter-spacing:.04em}.tcui-tab-icon{width:36px;height:36px}}

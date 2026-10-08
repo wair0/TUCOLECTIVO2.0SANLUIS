@@ -1,0 +1,32 @@
+/* Integración visual High-Tech: mantiene TuColectivo y el puente nativo existentes. */
+(()=>{'use strict';
+const sections=[['inicio','INICIO','<path d="M3 11 12 3 21 11M5 9v11h14V9M10 20v-6h4v6"/>'],['lineas','LÍNEAS','<path d="M8 6h7a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/><circle cx="5" cy="6" r="1.5"/><circle cx="19" cy="18" r="1.5"/>'],['mapa','MAPA','<path d="m3 7 6-3 6 3 6-3v13l-6 3-6-3-6 3zM9 4v13M15 7v13"/>'],['paradas','PARADAS','<path d="M6 3h12v7H6zM12 10v11M8 21h8"/>'],['favoritos','FAVORITOS','<path d="M6 3h12v18l-6-4-6 4z"/>']];
+const svg=d=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
+const header=document.createElement('header');header.id='tc-hightech-header';header.innerHTML='<button class="tcui-action" data-tcui="menu" aria-label="Abrir menú">'+svg('<path d="M4 7h16M4 12h11M4 17h16"/>')+'</button><div class="tcui-center"><h1 class="tcui-title">TU COLECTIVO 2.0</h1><div class="tcui-status" id="tcui-status">SECCIÓN: INICIO</div></div><button class="tcui-action" data-tcui="search" aria-label="Buscar">'+svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>')+'</button><button class="tcui-action" data-tcui="notifications" aria-label="Notificaciones">'+svg('<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>')+'<i class="tcui-badge" hidden></i></button>';
+const overlay=document.createElement('div');overlay.className='tcui-overlay';
+const menu=document.createElement('section');menu.className='tcui-panel';menu.dataset.panel='menu';menu.innerHTML='<h2>NAVEGACIÓN · 05 SECCIONES</h2>'+sections.map(s=>'<button class="tcui-menu-item" data-tcui-go="'+s[0]+'">'+s[1]+'</button>').join('');
+const search=document.createElement('section');search.className='tcui-panel';search.dataset.panel='search';search.innerHTML='<h2>BÚSQUEDA</h2><input class="tcui-search" id="tcui-query" type="search" placeholder="Línea, calle o parada..." autocomplete="off"><div class="tcui-filters">'+[['todo','TODO'],['lineas','LÍNEAS'],['calles','CALLES'],['paradas','PARADAS'],['favoritos','FAVORITOS']].map((x,i)=>'<button class="tcui-filter '+(!i?'active':'')+'" data-tcui-filter="'+x[0]+'">'+x[1]+'</button>').join('')+'</div><p style="text-align:right;font:700 9px ui-monospace,monospace;color:var(--tcui-muted)">ENTER PARA BUSCAR</p>';
+const notes=document.createElement('section');notes.className='tcui-panel';notes.dataset.panel='notifications';notes.innerHTML='<h2>NOTIFICACIONES</h2><div id="tcui-notes"><div class="tcui-note">SIN NOTIFICACIONES RECIENTES</div></div>';
+const nav=document.createElement('nav');nav.id='tc-hightech-nav';nav.setAttribute('aria-label','Navegación principal');nav.innerHTML=sections.map((s,i)=>'<button class="tcui-tab '+(!i?'active':'')+'" data-tcui-go="'+s[0]+'" aria-label="'+s[1]+'"><span class="tcui-tab-icon">'+svg(s[2])+'</span><span class="tcui-tab-label">'+s[1]+'</span></button>').join('');
+document.body.append(header,overlay,menu,search,notes,nav);
+let panel=null,filter='todo';
+function close(){[menu,search,notes].forEach(p=>p.classList.remove('open'));overlay.classList.remove('open');header.querySelectorAll('.tcui-action').forEach(b=>b.classList.remove('active'));panel=null}
+function open(name){if(panel===name){close();return}close();panel=name;({menu,search,notifications:notes})[name].classList.add('open');overlay.classList.add('open');header.querySelector('[data-tcui="'+name+'"]').classList.add('active');if(name==='search')setTimeout(()=>document.getElementById('tcui-query').focus(),100);if(name==='notifications'&&window.TuColectivoNative?.getArrivalNotificationState)window.TuColectivoNative.getArrivalNotificationState()}
+function navigate(name){if(window.TuColectivo?.navigate)window.TuColectivo.navigate(name);else document.querySelector('[data-screen="'+name+'"]')?.classList.add('active');sync(name);close()}
+function sync(name){const i=sections.findIndex(s=>s[0]===name);if(i<0)return;nav.style.setProperty('--tcui-i',i);nav.querySelectorAll('.tcui-tab').forEach(b=>b.classList.toggle('active',b.dataset.tcuiGo===name));const st=document.getElementById('tcui-status');if(st)st.textContent='SECCIÓN: '+sections[i][1]}
+header.addEventListener('click',e=>{const b=e.target.closest('[data-tcui]');if(b)open(b.dataset.tcui)});
+nav.addEventListener('click',e=>{const b=e.target.closest('[data-tcui-go]');if(b)navigate(b.dataset.tcuiGo)});
+menu.addEventListener('click',e=>{const b=e.target.closest('[data-tcui-go]');if(b)navigate(b.dataset.tcuiGo)});
+overlay.addEventListener('click',close);document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+const query=document.getElementById('tcui-query');
+function doSearch(){document.dispatchEvent(new CustomEvent('app:search',{detail:{q:query.value.trim(),filter}}));}
+query.addEventListener('input',doSearch);query.addEventListener('keydown',e=>{if(e.key==='Enter'){doSearch();close();query.blur()}});
+search.querySelectorAll('[data-tcui-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.tcuiFilter;search.querySelectorAll('.tcui-filter').forEach(x=>x.classList.toggle('active',x===b));doSearch()}));
+document.addEventListener('app:navigate',e=>sync(e.detail?.go||'inicio'));
+document.addEventListener('app:status',e=>{const st=document.getElementById('tcui-status');if(st)st.textContent=e.detail?.text||'SISTEMA LISTO'});
+document.addEventListener('click',e=>{const legacy=e.target.closest('[data-go]');if(legacy&&legacy.dataset.go)sync(legacy.dataset.go)});
+window.onNativeArrivalNotificationsStateHighTech=function(payload){let d={};try{d=typeof payload==='string'?JSON.parse(payload):payload||{}}catch(_){}const box=document.getElementById('tcui-notes');if(!box)return;box.textContent='';const item=document.createElement('div');item.className='tcui-note';const title=document.createElement('b');title.textContent=d.enabled?'ALERTAS DE ARRIBOS ACTIVAS':'ESTADO DE ALERTAS';const detail=document.createElement('span');detail.textContent=d.message||'SIN NOTIFICACIONES RECIENTES';item.append(title,detail);box.appendChild(item);const badge=header.querySelector('.tcui-badge');badge.hidden=!d.enabled};
+const nativeNotifications=window.onNativeArrivalNotificationsState;window.onNativeArrivalNotificationsState=function(payload){if(typeof nativeNotifications==='function')nativeNotifications(payload);window.onNativeArrivalNotificationsStateHighTech(payload)};
+window.setSystemStatusHighTech=function(text){const st=document.getElementById('tcui-status');if(st)st.textContent=String(text||'SISTEMA LISTO')};
+sync('inicio');
+})();
