@@ -35,15 +35,20 @@
       const d = $('.dot', btn); if (d) d.remove();
       if (window.TuColectivoNative?.getArrivalNotificationState) window.TuColectivoNative.getArrivalNotificationState();
     }
-    if (id === 'm-search') setTimeout(() => q.focus(), 220);
+    if (id === 'm-search' && q) setTimeout(() => q.focus(), 220);
   }
 
   function setStatus(text, state) {
-    status.textContent = text;
-    status.dataset.state = state || 'ok';
-    status.classList.remove('chg');
-    void status.offsetWidth;
-    status.classList.add('chg');
+    if (status) {
+      status.textContent = text;
+      status.dataset.state = state || 'ok';
+      status.classList.remove('chg');
+      void status.offsetWidth;
+      status.classList.add('chg');
+    }
+    if (window.TcHeader && typeof window.TcHeader.setStatus === 'function') {
+      window.TcHeader.setStatus(text);
+    }
   }
 
   function go(name) {
@@ -77,9 +82,11 @@
     if (target) { go(target.dataset.go); return; }
   });
 
-  const search = () => emit('app:search', { q: q.value.trim(), filter });
-  q.addEventListener('input', search);
-  q.addEventListener('keydown', e => { if (e.key === 'Enter') { q.blur(); search(); } });
+  const search = () => { if (q) emit('app:search', { q: q.value.trim(), filter }); };
+  if (q) {
+    q.addEventListener('input', search);
+    q.addEventListener('keydown', e => { if (e.key === 'Enter') { q.blur(); search(); } });
+  }
   $$('.chip').forEach(c => c.addEventListener('click', () => {
     $$('.chip').forEach(o => o.setAttribute('aria-pressed', String(o === c)));
     filter = c.dataset.f;
@@ -169,6 +176,11 @@
   document.addEventListener('app:status', e => setStatus(e.detail.text, e.detail.state));
   window.setSystemStatus = setStatus;
   function handleBack(){
+    if (window.TuColectivoHeaderOpen && window.TcHeader) {
+      window.TcHeader.closeAll();
+      window.TuColectivoHeaderOpen = false;
+      return true;
+    }
     if (current !== null) { closeAll(); return true; }
     if (currentScreen === 'lineas' && typeof window.TuColectivoLineBack === 'function') {
       return !!window.TuColectivoLineBack();
