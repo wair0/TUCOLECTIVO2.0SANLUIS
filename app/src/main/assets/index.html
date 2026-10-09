@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="style-ht.css">
 <link rel="stylesheet" href="leaflet/leaflet.css">
-<script src="theme.js"></script>
+
 <style id="tc-home-high-tech">
 :root{--tc-card-a:#FFFFFF;--tc-card-b:#EAF1FD;--tc-stroke:#8FB0EA;--tc-inner:#CFDDF7;--tc-title:#0F1B33;--tc-glow:8px;--tc-a-lineas:37,99,235;--tc-a-mapa:8,145,178;--tc-a-paradas:217,119,6;--tc-a-favoritos:124,58,237}
 :root[data-theme="dark"]{--tc-card-a:#16224A;--tc-card-b:#0C1430;--tc-stroke:#2F5BA8;--tc-inner:#1E3566;--tc-title:#FFFFFF;--tc-glow:16px;--tc-a-lineas:96,165,250;--tc-a-mapa:34,211,238;--tc-a-paradas:251,191,36;--tc-a-favoritos:167,139,250}
@@ -104,7 +104,9 @@
   }
 }
 </style>
-<link rel="stylesheet" href="header-hitech.css">\n<link rel="stylesheet" href="bottom-nav-hitech.css">\n</head>
+<link rel="stylesheet" href="header.css">
+<link rel="stylesheet" href="bottom-nav.css">
+</head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-bus" viewBox="0 0 24 24"><path d="M5 4h14v13H5zM5 11h14M7 17v3M17 17v3M8.5 14h.01M15.5 14h.01"/></symbol>
@@ -115,53 +117,44 @@
 </svg>
 
 
-<header class="hdr">
-  <div class="bar">
-    <div class="side">
-      <button class="btn" data-menu="m-nav" aria-label="Menú" aria-expanded="false">
-        <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h12M3 18h18"/></svg>
-      </button>
-    </div>
-    <h1 class="title" data-text="TU COLECTIVO 2.0">TU COLECTIVO 2.0</h1>
-    <div class="side r">
-      <button class="btn" data-menu="m-search" aria-label="Buscar" aria-expanded="false">
-        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
-      </button>
-      <button class="btn" data-menu="m-bell" aria-label="Notificaciones" aria-expanded="false">
-        <svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg><i class="dot"></i>
-      </button>
+<!-- Header TU COLECTIVO 2.0 (High-Tech Corporativo) con menús contextuales. Requiere header.css y header.js -->
+<header class="tc-hd" id="tc-hd" data-section="inicio" data-alerts="0" style="--i:0">
+  <i class="tc-hd-beam"></i>
+  <button type="button" class="tc-hd-btn" data-action="menu" aria-label="Menú" aria-haspopup="true" aria-expanded="false" aria-controls="tc-hd-menu"><span class="tc-hd-hex"></span><i class="tc-hd-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M4,7 H20"/><path pathLength="1" d="M4,12 H14"/><path pathLength="1" d="M4,17 H18"/><circle pathLength="1" cx="19" cy="12" r="1.3"/></svg></button>
+  <div class="tc-hd-center">
+    <h1 class="tc-hd-title">TU COLECTIVO 2.0</h1>
+    <div class="tc-hd-chip"><i class="tc-hd-led"></i><span class="tc-hd-status" id="tc-hd-status" aria-live="polite">SECCIÓN: INICIO</span></div>
+  </div>
+  <div class="tc-hd-right">
+    <button type="button" class="tc-hd-btn" data-action="search" aria-label="Buscar" aria-haspopup="true" aria-expanded="false" aria-controls="tc-hd-search"><span class="tc-hd-hex"></span><i class="tc-hd-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M16,16 L21,21"/><circle pathLength="1" cx="11" cy="11" r="6.5"/></svg></button>
+    <button type="button" class="tc-hd-btn" data-action="notifications" aria-label="Notificaciones" aria-haspopup="true" aria-expanded="false" aria-controls="tc-hd-notifications"><span class="tc-hd-hex"></span><i class="tc-hd-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M6,16 V11 A6,6 0 0 1 18,11 V16 L20,18 H4 Z"/><path pathLength="1" d="M10,21 H14"/></svg><i class="tc-hd-badge"></i></button>
+  </div>
+  <!-- Menú de la hamburguesa -->
+  <div class="tc-hd-panel" data-for="menu" id="tc-hd-menu" role="menu" aria-label="Menú de secciones">
+    <i class="tc-hd-pbeam"></i>
+    <p class="tc-hd-ptitle"><span>Navegación</span><span>05 secciones</span></p>
+    <div class="tc-hd-list"><button type="button" class="tc-hd-item current" role="menuitem" data-section="inicio" style="--n:0"><span class="tc-hd-item-ico"><span class="tc-hd-hex"></span><i class="tc-hd-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3,11 L12,3 L21,11"/><path d="M5,9.5 V20 H19 V9.5"/><path d="M10,20 V14 H14 V20"/></svg></span><span>INICIO</span><svg class="tc-hd-item-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9,5 L16,12 L9,19"/></svg></button><button type="button" class="tc-hd-item" role="menuitem" data-section="lineas" style="--n:1"><span class="tc-hd-item-ico"><span class="tc-hd-hex"></span><i class="tc-hd-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8,6 H15 A3,3 0 0 1 15,12 H9 A3,3 0 0 0 9,18 H16"/><circle cx="5" cy="6" r="1.6"/><circle cx="19" cy="18" r="1.6"/></svg></span><span>LÍNEAS</span><svg class="tc-hd-item-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9,5 L16,12 L9,19"/></svg></button><button type="button" class="tc-hd-item" role="menuitem" data-section="mapa" style="--n:2"><span class="tc-hd-item-ico"><span class="tc-hd-hex"></span><i class="tc-hd-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,3 L21,8 L12,13 L3,8 Z"/><path d="M3,12 L12,17 L21,12"/><path d="M3,16 L12,21 L21,16"/></svg></span><span>MAPA</span><svg class="tc-hd-item-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9,5 L16,12 L9,19"/></svg></button><button type="button" class="tc-hd-item" role="menuitem" data-section="paradas" style="--n:3"><span class="tc-hd-item-ico"><span class="tc-hd-hex"></span><i class="tc-hd-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6,3 H18 V10 H6 Z"/><path d="M12,10 V21"/><path d="M8,21 H16"/><path d="M9,6.5 H15"/></svg></span><span>PARADAS CERCANAS</span><svg class="tc-hd-item-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9,5 L16,12 L9,19"/></svg></button><button type="button" class="tc-hd-item" role="menuitem" data-section="favoritos" style="--n:4"><span class="tc-hd-item-ico"><span class="tc-hd-hex"></span><i class="tc-hd-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7,3 H17 A1,1 0 0 1 18,4 V21 L12,17 L6,21 V4 A1,1 0 0 1 7,3 Z"/><path d="M12,7.5 L13,9.6 L15.3,9.9 L13.6,11.5 L14,13.8 L12,12.7 L10,13.8 L10.4,11.5 L8.7,9.9 L11,9.6 Z"/></svg></span><span>FAVORITOS</span><svg class="tc-hd-item-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9,5 L16,12 L9,19"/></svg></button></div>
+    <div class="tc-hd-theme" id="tc-hd-theme" role="radiogroup" aria-label="Tema de la app" style="--n:5;--t:0">
+      <p class="tc-hd-ptitle"><span>Apariencia</span><span id="tc-hd-theme-now">AUTO · OSCURO</span></p>
+      <div class="tc-hd-seg"><i class="tc-hd-seg-ind"></i><button type="button" role="radio" aria-checked="true" tabindex="0" data-theme-mode="auto" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,4 A8,8 0 0 1 12,20 Z"/><circle cx="12" cy="12" r="8"/></svg><span>AUTO</span></button><button type="button" role="radio" aria-checked="false" tabindex="-1" data-theme-mode="light"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,2 V4"/><path d="M12,20 V22"/><path d="M2,12 H4"/><path d="M20,12 H22"/><path d="M4.9,4.9 L6.3,6.3"/><path d="M17.7,17.7 L19.1,19.1"/><path d="M4.9,19.1 L6.3,17.7"/><path d="M17.7,6.3 L19.1,4.9"/><circle cx="12" cy="12" r="4"/></svg><span>CLARO</span></button><button type="button" role="radio" aria-checked="false" tabindex="-1" data-theme-mode="dark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20,14.5 A8,8 0 1 1 9.5,4 A6.5,6.5 0 0 0 20,14.5 Z"/></svg><span>OSCURO</span></button></div>
     </div>
   </div>
-  <span id="status" class="status" data-state="ok">SISTEMA LISTO</span>
+  <!-- Menú de la lupa -->
+  <div class="tc-hd-panel" data-for="search" id="tc-hd-search" role="search" aria-label="Buscador">
+    <i class="tc-hd-pbeam"></i>
+    <p class="tc-hd-ptitle"><span>Búsqueda</span><span>Filtros rápidos</span></p>
+    <div class="tc-hd-field" style="--n:0"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16,16 L21,21"/></svg><input class="tc-hd-input" id="tc-hd-input" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Línea, calle o parada..." aria-label="Buscar"><button type="button" class="tc-hd-clear" id="tc-hd-clear" aria-label="Borrar búsqueda"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6,6 L18,18 M18,6 L6,18"/></svg></button></div>
+    <div class="tc-hd-chips" id="tc-hd-chips"><button type="button" class="tc-hd-fchip on" data-filter="todo" aria-pressed="true" style="--n:1">TODO</button><button type="button" class="tc-hd-fchip" data-filter="lineas" aria-pressed="false" style="--n:2">LÍNEAS</button><button type="button" class="tc-hd-fchip" data-filter="calles" aria-pressed="false" style="--n:3">CALLES</button><button type="button" class="tc-hd-fchip" data-filter="paradas" aria-pressed="false" style="--n:4">PARADAS</button><button type="button" class="tc-hd-fchip" data-filter="favoritos" aria-pressed="false" style="--n:5">FAVORITOS</button></div>
+    <p class="tc-hd-hint">ENTER ↵ PARA BUSCAR</p>
+  </div>
+  <!-- Menú de la campana -->
+  <div class="tc-hd-panel" data-for="notifications" id="tc-hd-notifications" role="region" aria-label="Notificaciones">
+    <i class="tc-hd-pbeam"></i>
+    <p class="tc-hd-ptitle"><span>Notificaciones</span><button type="button" class="tc-hd-link" id="tc-hd-markread" disabled>Marcar leídas</button></p>
+    <div class="tc-hd-notes" id="tc-hd-notes"></div>
+  </div>
 </header>
-
-<nav class="panel" id="m-nav" aria-label="Menú principal">
-  <div class="ph">MENÚ PRINCIPAL</div>
-  <button class="item" data-go="inicio">INICIO</button>
-  <button class="item" data-go="lineas">LÍNEAS</button>
-  <button class="item" data-go="mapa">MAPA</button>
-  <button class="item" data-go="paradas">PARADAS CERCANAS</button>
-  <button class="item" data-go="favoritos">FAVORITOS</button>
-  <button class="item theme-item" id="themeToggle" type="button" role="switch" aria-checked="false"><span class="ti"><svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>MODO OSCURO<small>DESACTIVADO</small><i class="sw"></i></button>
-</nav>
-<section class="panel" id="m-search" aria-label="Búsqueda">
-  <div class="ph">BÚSQUEDA</div>
-  <label class="sbox"><b>></b><input id="q" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Línea o parada_"></label>
-  <div class="chips">
-    <button class="chip" data-f="todo" aria-pressed="true">TODO</button>
-    <button class="chip" data-f="lineas" aria-pressed="false">LÍNEAS</button>
-    <button class="chip" data-f="paradas" aria-pressed="false">PARADAS</button>
-    <button class="chip" data-f="cercanas" aria-pressed="false">CERCANAS</button>
-    <button class="chip" data-f="favoritos" aria-pressed="false">FAVORITOS</button>
-  </div>
-</section>
-
-<section class="panel" id="m-bell" aria-label="Notificaciones">
-  <div class="ph">NOTIFICACIONES</div>
-  <ul class="nl" id="recentAlertsList">
-    <li><b>SIN ALERTAS RECIENTES</b><span>Las alertas aparecerán cuando se aproximen los arribos guardados en Favoritos.</span></li>
-  </ul>
-</section>
+<div class="tc-hd-scrim" id="tc-hd-scrim"></div>
 
 <main id="app" class="app-shell">
   <section class="screen active" data-screen="inicio">
@@ -265,15 +258,20 @@
   </section>
 </main>
 
-<nav class="bottom-nav" aria-label="Navegación inferior">
-  <button class="nav-btn active" data-go="inicio"><span class="nav-icon">⌂</span><small>INICIO</small></button>
-  <button class="nav-btn" data-go="lineas"><span class="nav-icon"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 48V20c0-7 8-10 18-10s18 3 18 10v28M10 48h44M16 20h32M17 38h8M39 38h8M18 49v5M46 49v5M18 27h28v9H18z"/><circle cx="21" cy="43" r="2"/><circle cx="43" cy="43" r="2"/></svg></span><small>LÍNEAS</small></button>
-  <button class="nav-btn" data-go="mapa"><span class="nav-icon"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 57S16 40 16 27a16 16 0 1 1 32 0c0 13-16 30-16 30Z"/><circle cx="32" cy="27" r="6"/></svg></span><small>MAPA</small></button>
-  <button class="nav-btn" data-go="paradas"><span class="nav-icon"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="20"/><circle cx="32" cy="32" r="9"/><path d="M32 5v10M32 49v10M5 32h10M49 32h10M32 32l14-14"/></svg></span><small>PARADAS</small></button>
-  <button class="nav-btn" data-go="favoritos"><span class="nav-icon"><svg class="card-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="m32 7 7.7 16.1 17.8 2.6-12.8 12.5 3 17.7L32 47.5 16.3 56l3-17.8L6.5 25.7l17.8-2.6z"/></svg></span><small>FAVORITOS</small></button>
+<!-- Barra inferior TU COLECTIVO 2.0 (High-Tech Corporativo), 5 secciones. Requiere bottom-nav.css y bottom-nav.js -->
+<nav class="tc-nav" id="tc-nav" data-active="inicio" style="--i:0" aria-label="Navegación principal">
+  <i class="tc-nav-beam"></i>
+  <button type="button" class="tc-nav-item active" id="tab-inicio" data-section="inicio" aria-label="Inicio" aria-selected="true" tabindex="0"><span class="tc-nav-ico"><span class="tc-nav-hex"></span><i class="tc-nav-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3,11 L12,3 L21,11"/><path d="M5,9.5 V20 H19 V9.5"/><path d="M10,20 V14 H14 V20"/></svg></span><span class="tc-nav-label">INICIO</span></button>
+  <button type="button" class="tc-nav-item" id="tab-lineas" data-section="lineas" aria-label="Líneas" aria-selected="false" tabindex="-1"><span class="tc-nav-ico"><span class="tc-nav-hex"></span><i class="tc-nav-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8,6 H15 A3,3 0 0 1 15,12 H9 A3,3 0 0 0 9,18 H16"/><circle cx="5" cy="6" r="1.6"/><circle cx="19" cy="18" r="1.6"/></svg></span><span class="tc-nav-label">LÍNEAS</span></button>
+  <button type="button" class="tc-nav-item" id="tab-mapa" data-section="mapa" aria-label="Mapa" aria-selected="false" tabindex="-1"><span class="tc-nav-ico"><span class="tc-nav-hex"></span><i class="tc-nav-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,3 L21,8 L12,13 L3,8 Z"/><path d="M3,12 L12,17 L21,12"/><path d="M3,16 L12,21 L21,16"/></svg></span><span class="tc-nav-label">MAPA</span></button>
+  <button type="button" class="tc-nav-item" id="tab-paradas" data-section="paradas" aria-label="Paradas" aria-selected="false" tabindex="-1"><span class="tc-nav-ico"><span class="tc-nav-hex"></span><i class="tc-nav-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6,3 H18 V10 H6 Z"/><path d="M12,10 V21"/><path d="M8,21 H16"/><path d="M9,6.5 H15"/></svg></span><span class="tc-nav-label">PARADAS</span></button>
+  <button type="button" class="tc-nav-item" id="tab-favoritos" data-section="favoritos" aria-label="Favoritos" aria-selected="false" tabindex="-1"><span class="tc-nav-ico"><span class="tc-nav-hex"></span><i class="tc-nav-fill"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7,3 H17 A1,1 0 0 1 18,4 V21 L12,17 L6,21 V4 A1,1 0 0 1 7,3 Z"/><path d="M12,7.5 L13,9.6 L15.3,9.9 L13.6,11.5 L14,13.8 L12,12.7 L10,13.8 L10.4,11.5 L8.7,9.9 L11,9.6 Z"/></svg></span><span class="tc-nav-label">FAVORITOS</span></button>
 </nav>
 
 <script src="leaflet/leaflet.js"></script>
-<script src="script.js"></script>\n<script src="hightech-navigation.js"></script>
+<script src="header.js"></script>
+<script src="bottom-nav.js"></script>
+<script src="script.js"></script>
+<script src="navigation-integration.js"></script>
 </body>
 </html>
