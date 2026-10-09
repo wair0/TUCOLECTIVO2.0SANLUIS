@@ -1,0 +1,73 @@
+CONTINUIDAD DEL PROYECTO — TU COLECTIVO 2.0 SAN LUIS
+Fecha: 2026-10-09
+
+REPOSITORIO Y RAMA
+Repositorio: https://github.com/wair0/TUCOLECTIVO2.0SANLUIS
+Rama de trabajo: native/cyberpunkwebview-ui
+Último commit antes de este documento: e121ae13b267415a598144a1bca26720876c246e
+Mensaje: RESTAURAR CAMBIO DE TEMA EN MENU HIGH-TECH
+
+CONTEXTO GENERAL
+Aplicación Android de Tu Colectivo 2.0 San Luis. La interfaz WebView se encuentra en app/src/main/assets/. El mapa se migró a Leaflet 1.9.4 y la interfaz utiliza un estilo cyberpunk/high-tech con acentos neón cyan.
+
+TRABAJO PREVIO DEL MAPA
+Se realizaron fases para incorporar Leaflet, reemplazar el motor Canvas, integrar rutas/paradas, estabilizar seguimiento GPS, vehículos en tiempo real y zoom/tiles. También se ajustó el marco cyan del mapa y se estabilizaron identificadores y actualizaciones GPS.
+No modificar el mapa ni reabrir esos cambios sin un problema reproducible. La siguiente validación funcional del mapa debe hacerse en el APK.
+
+HEADER Y BARRA INFERIOR: ESTADO REAL
+Se incorporó una implementación High-Tech en estos archivos:
+- app/src/main/assets/index.html
+- app/src/main/assets/header-hitech.css
+- app/src/main/assets/bottom-nav-hitech.css
+- app/src/main/assets/hightech-navigation.js
+
+Commit inicial de esta integración:
+1a72f7f1c7ae9c88ba7427d8b2b06440c0a93e42
+APLICAR HEADER Y BARRA INFERIOR HIGH-TECH
+
+IMPORTANTE: el diseño integrado no reproduce fielmente los archivos preparados en los ZIP HEADER_HIGHTECH.zip y BARRA_INFERIOR_HIGHTECH.zip. El usuario señaló expresamente esta diferencia. La tarea pendiente principal es revisar los archivos reales de ambos ZIP y aplicar sus diseños, estilos y animaciones originales, comprobando compatibilidad con el HTML/CSS/JS actual. No sustituirlos por una recreación aproximada ni por otra propuesta visual.
+
+MODO CLARO / OSCURO
+El usuario detectó que el menú contextual del botón hamburguesa había perdido la opción para cambiar entre modo claro y oscuro.
+Se creó el commit:
+e121ae13b267415a598144a1bca26720876c246e
+RESTAURAR CAMBIO DE TEMA EN MENU HIGH-TECH
+
+Ese commit vuelve a insertar el control visual #themeToggle en el menú y agrega estilos en header-hitech.css. El archivo existente app/src/main/assets/theme.js ya guarda la preferencia en localStorage bajo la clave tc-theme y actualiza data-theme y el color de la barra del sistema. El control se conecta en DOMContentLoaded. Verificar en el navegador/WebView que el control funciona al abrir/cerrar el menú y que la preferencia persiste al cambiar de sección y reiniciar la app. No dar por probada la funcionalidad solo por la existencia del botón.
+
+COMPATIBILIDAD QUE DEBE PRESERVARSE
+- Conservar la navegación y el puente nativo existentes.
+- Conservar búsqueda y eventos app:search / app:navigate que utiliza el código actual.
+- Conservar el tema claro/oscuro y la preferencia guardada.
+- No modificar el contenido ni las tarjetas internas de ARRIBOS; mantener el círculo animado original y el contador de minutos.
+- Mantener las secciones INICIO, LÍNEAS, MAPA, PARADAS y FAVORITOS.
+- Mantener la atribución de OpenStreetMap/Leaflet en el mapa.
+- Evitar cambios innecesarios en MainActivity.kt y en la lógica del mapa.
+
+ARCHIVOS CLAVE
+- app/src/main/assets/index.html
+- app/src/main/assets/style.css
+- app/src/main/assets/script.js
+- app/src/main/assets/theme.js
+- app/src/main/assets/header-hitech.css
+- app/src/main/assets/bottom-nav-hitech.css
+- app/src/main/assets/hightech-navigation.js
+
+PRÓXIMOS PASOS
+1. Obtener y revisar el contenido exacto de HEADER_HIGHTECH.zip y BARRA_INFERIOR_HIGHTECH.zip.
+2. Comparar los archivos del ZIP con el HTML/CSS/JS actual y comprobar selectores, IDs, eventos, dependencias y orden de carga.
+3. Aplicar los archivos originales del ZIP; hacer solo los ajustes mínimos necesarios para compatibilidad, documentándolos.
+4. Verificar el menú hamburguesa y el interruptor de tema claro/oscuro, incluyendo persistencia.
+5. Verificar navegación de las cinco secciones, búsqueda, notificaciones y barra inferior.
+6. Confirmar que las tarjetas internas de ARRIBOS no cambiaron.
+7. Crear un commit con el mensaje en MAYÚSCULAS.
+8. Probar mediante GitHub Actions o APK de prueba. No afirmar que la compilación o las pruebas pasaron hasta disponer de un resultado real.
+
+PREFERENCIAS DE TRABAJO DEL USUARIO
+- Trabajar directamente sobre GitHub y la rama indicada.
+- No usar un flujo de compilación local ni pedir comandos de Termux como método principal.
+- El usuario ejecuta personalmente cualquier commit local que le corresponda; para cambios hechos mediante la conexión de GitHub, dejar claro qué commit se creó.
+- Los mensajes de commit deben estar en MAYÚSCULAS.
+- Dar instrucciones concisas y no declarar resuelto lo que todavía no se verificó.
+
+FIN DEL DOCUMENTO
