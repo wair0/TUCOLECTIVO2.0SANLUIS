@@ -1,0 +1,47 @@
+/* NUEVO DISEÑO — CIRCUITOS HIGH-TECH CORPORATIVO. Adaptación segura sobre el marcado WebView existente. */
+:root{--tcn-bg-a:#fff;--tcn-bg-b:#edf3fe;--tcn-edge:143,176,234;--tcn-muted:#5b6f94;--tcn-label-active:#0f1b33;--tcn-acc:37,99,235;--tcn-acc2:8,145,178;--tcn-on-active:#fff;--tcn-page:#eef3fc;--tcn-alert:225,29,72;--tcn-neon:0,150,60}
+:root[data-theme="dark"]{--tcn-bg-a:#0b0b0c;--tcn-bg-b:#000;--tcn-edge:54,60,68;--tcn-muted:#9b9582;--tcn-label-active:#ffd60a;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080c;--tcn-page:#000;--tcn-alert:255,23,68;--tcn-neon:57,255,20}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-bg-a:#0b0b0c;--tcn-bg-b:#000;--tcn-edge:54,60,68;--tcn-muted:#9b9582;--tcn-label-active:#ffd60a;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080c;--tcn-page:#000;--tcn-alert:255,23,68;--tcn-neon:57,255,20}}
+/* Tema oscuro negro y tipografía oro neón; el modo claro conserva sus tokens originales. */
+:root[data-theme="dark"] body,:root[data-theme="dark"] .app-shell{background:#000;color:#ffd60a}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) body,:root:not([data-theme="light"]) .app-shell{background:#000;color:#ffd60a}}
+html[data-theme="dark"] body::before,html[data-theme="dark"] body::after{background-image:none!important;animation:none!important}
+@media(prefers-color-scheme:dark){html:not([data-theme="light"]) body::before,html:not([data-theme="light"]) body::after{background-image:none!important;animation:none!important}}
+/* Título compacto tipo wordmark + etiqueta 2.0, sin alterar los manejadores de header.js. */
+.tc-hd-title{position:relative;display:flex;align-items:center;gap:7px;max-width:calc(100vw - 140px);font-size:0!important;line-height:1!important;white-space:nowrap}
+.tc-hd-title::before{content:"TU COLECTIVO";display:block;font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.075em;color:rgb(var(--tcn-acc));text-shadow:0 0 7px rgba(var(--tcn-acc),.45);background:linear-gradient(100deg,rgb(var(--tcn-acc)),rgb(var(--tcn-acc2)),var(--tcn-label-active),rgb(var(--tcn-acc)));background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:tcWordShine 7s linear infinite}
+.tc-hd-title::after{content:"2.0";display:inline-grid;place-items:center;flex:none;padding:4px 5px;font:800 9px/1 ui-monospace,monospace;letter-spacing:.04em;color:rgb(var(--tcn-acc));border:1px solid rgba(var(--tcn-acc),.65);background:var(--tcn-bg-b);box-shadow:0 0 8px rgba(var(--tcn-acc),.22);clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
+@keyframes tcWordShine{to{background-position:-220% 0}}
+/* Pistas de circuito: se dibujan con CSS para evitar assets externos y no interceptan toques. */
+.tc-hd,.tc-hd-panel,.tc-nav,.tc-home-card,.card.sync,.line-card,.data-card,.arrival-card,.notification-schedule,.tc-stop{position:relative;isolation:isolate}
+.tc-hd::after,.tc-hd-panel::after,.tc-nav::after,.tc-home-card::after,.card.sync::after,.line-card::after,.data-card::after,.arrival-card::after,.notification-schedule::after,.tc-stop::after{content:"";position:absolute;inset:5px;z-index:-1;pointer-events:none;opacity:.55;background:linear-gradient(135deg,transparent 0 16%,rgba(var(--tcn-acc),.55) 16.15% 16.4%,transparent 16.55% 100%),linear-gradient(45deg,transparent 0 83%,rgba(var(--tcn-acc2),.5) 83.15% 83.4%,transparent 83.55% 100%);background-size:100% 100%;mask-image:linear-gradient(#000,transparent 78%);border-radius:inherit}
+.tc-hd::before,.tc-nav::before{content:"";position:absolute;left:8px;right:8px;bottom:3px;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(var(--tcn-acc),.75),rgba(var(--tcn-acc2),.8),transparent);box-shadow:0 0 8px rgba(var(--tcn-acc),.45)}
+.tc-home-card,.card.sync,.line-card,.data-card,.arrival-card{background-color:var(--tcn-page)!important}
+.tc-home-card{border-color:rgba(var(--tcn-edge),.95)}
+.tc-home-title,.card.sync b,.line-card b,.data-card b,.arrival-copy b{color:var(--tcn-label-active)}
+.tc-home-line{box-shadow:0 0 8px rgba(var(--tcn-acc),.4)}
+.card.sync{border-color:rgba(var(--tcn-edge),.9)!important}
+.card.sync .prog{background:var(--tcn-alert)!important;box-shadow:0 0 12px rgba(var(--tcn-alert),.5)}
+/* Sección LÍNEAS, calles, paradas y arribos: tarjetas opacas, cortes geométricos y estados visibles. */
+.screen-head{position:relative;display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:0 0 12px;border-bottom:1px solid rgba(var(--tcn-edge),.7)}
+.screen-head>span{font:800 16px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.12em;color:var(--tcn-label-active);text-shadow:0 0 8px rgba(var(--tcn-acc),.2)}
+.lineas-grid,.arrival-list,.section-list{gap:10px}
+.line-card,.data-card{border-radius:3px!important;border:1px solid rgba(var(--tcn-edge),.85)!important;background:linear-gradient(110deg,var(--tcn-bg-a),var(--tcn-bg-b))!important;box-shadow:inset 3px 0 0 rgba(var(--tcn-acc),.8),0 4px 14px rgba(0,0,0,.07)!important}
+.line-card::before,.data-card::before{background:linear-gradient(180deg,rgb(var(--tcn-acc)),rgb(var(--tcn-acc2)))!important}
+.line-card b,.data-card b{font:800 13px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;letter-spacing:.06em}
+.line-card em,.data-card span{color:var(--tcn-muted)}
+.data-card.line-detail-card>b{font-size:13px!important;color:var(--tcn-label-active)!important}
+.arrival-card{border-radius:3px!important;border:1px solid rgba(var(--tcn-edge),.8)!important;background:var(--tcn-page)!important;box-shadow:inset 3px 0 0 rgba(var(--tcn-acc),.7),0 4px 14px rgba(0,0,0,.08)!important;overflow:hidden}
+.arrival-card .arrival-copy span{color:rgb(var(--tcn-acc2))!important;text-shadow:0 0 7px rgba(var(--tcn-acc2),.28)}
+.arrival-card .arrival-time:not(.arrival-time-arriving) strong,.arrival-card .arrival-time:not(.arrival-time-arriving) small{color:rgb(var(--tcn-neon))!important;text-shadow:0 0 8px rgba(var(--tcn-neon),.35)}
+.arrival-card .arrival-ring-base{stroke:rgba(var(--tcn-edge),.7)!important}
+.arrival-card .arrival-ring-arc{stroke:rgb(var(--tcn-acc))!important}
+.arrival-card .arrival-ring-dot{fill:rgb(var(--tcn-acc2))!important}
+.arrival-card.arrival-arriving{border-color:var(--tcn-alert)!important;box-shadow:inset 3px 0 0 var(--tcn-alert),0 0 14px rgba(var(--tcn-alert),.2)!important}
+.arrival-card .arrival-time-arriving{background:rgba(var(--tcn-alert),.08)!important;border:1px solid rgba(var(--tcn-alert),.65)!important;animation:tcArrivingPulse 1.05s ease-in-out infinite!important}
+.arrival-card .arrival-time-arriving strong{color:var(--tcn-alert)!important;text-shadow:0 0 8px rgba(var(--tcn-alert),.75)!important}
+@keyframes tcArrivingPulse{50%{opacity:.78;box-shadow:0 0 18px rgba(var(--tcn-alert),.4)}}
+.notification-schedule,.nearby-empty,.favorites-empty{background-color:var(--tcn-page)!important;border-radius:3px!important;border-color:rgba(var(--tcn-edge),.75)!important}
+:root[data-theme="dark"] .tc-home-card,:root[data-theme="dark"] .card.sync,:root[data-theme="dark"] .line-card,:root[data-theme="dark"] .data-card,:root[data-theme="dark"] .arrival-card,:root[data-theme="dark"] .notification-schedule{background:#000!important}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .tc-home-card,:root:not([data-theme="light"]) .card.sync,:root:not([data-theme="light"]) .line-card,:root:not([data-theme="light"]) .data-card,:root:not([data-theme="light"]) .arrival-card,:root:not([data-theme="light"]) .notification-schedule{background:#000!important}}
+@media(prefers-reduced-motion:reduce){.tc-hd-title::before,.arrival-card .arrival-time-arriving{animation:none!important}}
