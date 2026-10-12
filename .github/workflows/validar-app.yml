@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
       - name: Preparar Java
         uses: actions/setup-java@v4
         with:
@@ -30,10 +34,12 @@ jobs:
         uses: android-actions/setup-android@v3
       - name: Revisar sintaxis JavaScript
         run: |
+          set -euo pipefail
           for file in app/src/main/assets/header.js app/src/main/assets/bottom-nav.js app/src/main/assets/home-cards.js app/src/main/assets/lineas.js app/src/main/assets/script.js app/src/main/assets/navigation-integration.js; do
             node --check "$file"
           done
       - name: Compilar APK debug
         run: |
+          set -euo pipefail
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
