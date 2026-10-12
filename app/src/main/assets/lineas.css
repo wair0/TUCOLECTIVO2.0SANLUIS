@@ -213,3 +213,18 @@ html[data-theme] .screen[data-screen="lineas"] .screen-head{display:flex!importa
 .screen[data-screen="lineas"] .arrival-card .arrival-v{color:var(--tcn-label-active)!important;}
 .screen[data-screen="lineas"] .arrival-arriving{background:transparent!important;padding:0!important;}
 @media(prefers-color-scheme:dark){html:not([data-theme="light"]) .screen[data-screen="lineas"] .screen-head{display:flex!important;}}
+
+
+/* AJUSTE VISUAL DE TARJETAS DE LÍNEAS: icono visible, contraste y respuesta táctil */
+html body [data-screen="lineas"] .line-card .lc-badge{position:relative!important;isolation:isolate!important;color:rgb(var(--tcn-acc))!important}
+html body [data-screen="lineas"] .line-card .lc-badge .tc-hx{position:absolute!important;inset:0!important;display:block!important}
+html body [data-screen="lineas"] .line-card .lc-badge .tc-hxf{position:absolute!important;inset:0!important;display:block!important}
+html body [data-screen="lineas"] .line-card .lc-badge>svg:not(.lc-go){position:relative!important;z-index:2!important;display:block!important;visibility:visible!important;opacity:1!important;width:25px!important;height:25px!important;fill:none!important;stroke:currentColor!important;stroke-width:2.1!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+html body [data-screen="lineas"] .line-card .lc-k{color:#22D3EE!important;text-shadow:0 0 7px rgba(34,211,238,.38)!important;font-weight:800!important}
+html body [data-screen="lineas"] .line-card .lc-name{color:#FFE600!important;text-shadow:0 0 8px rgba(255,230,0,.42)!important;font-weight:900!important}
+html body [data-screen="lineas"] .line-card .lc-meta{color:#C9C4B5!important}
+html body [data-screen="lineas"] .line-card.hot .lc-name{color:#FFF36A!important;text-shadow:0 0 12px rgba(255,230,0,.72)!important}
+html body [data-screen="lineas"] .line-card.hot .lc-badge{color:#02080C!important}
+html body [data-screen="lineas"] .line-card.press{transform:scale(.965)!important}
+html body [data-screen="lineas"] .line-card.hot .tc-hxf{opacity:.18!important;transform:scale(1)!important}
+html body [data-screen="lineas"] .line-card .lc-go{display:block!important;visibility:visible!important}
