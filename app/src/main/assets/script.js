@@ -134,11 +134,13 @@
       detail.textContent = count + (count === 1 ? ' LÍNEA CONFIRMADA' : ' LÍNEAS CONFIRMADAS');
       setStatus(detail.textContent, 'ok');
       emit('app:status', { text: detail.textContent, state: 'ok' });
+      if (window.TcHomeCards && window.TcHomeCards.sync) window.TcHomeCards.sync.done();
     } else {
       label.textContent = 'ERROR AL SINCRONIZAR';
       detail.textContent = message || 'NO SE PUDIERON CARGAR LAS LÍNEAS';
       setStatus('ERROR DE SINCRONIZACIÓN', 'error');
       emit('app:status', { text: detail.textContent, state: 'error' });
+      if (window.TcHomeCards && window.TcHomeCards.sync) window.TcHomeCards.sync.fail();
     }
   }
   window.TuColectivoLineSyncResult = finishLineSync;
@@ -152,6 +154,7 @@
       label.textContent = 'SERVICIO NO DISPONIBLE';
       detail.textContent = 'NO HAY CONEXIÓN CON SMARTMOVE';
       setStatus('SIN CONEXIÓN CON SMARTMOVE', 'error');
+      if (window.TcHomeCards && window.TcHomeCards.sync) window.TcHomeCards.sync.fail();
       return;
     }
     lineSyncPending = true;
