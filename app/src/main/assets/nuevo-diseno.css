@@ -12,10 +12,12 @@ html[data-theme="dark"] body::before,html[data-theme="dark"] body::after{backgro
 .tc-hd-title::before{content:"TU COLECTIVO";display:block;font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.075em;color:rgb(var(--tcn-acc));text-shadow:0 0 7px rgba(var(--tcn-acc),.45);background:linear-gradient(100deg,rgb(var(--tcn-acc)),rgb(var(--tcn-acc2)),var(--tcn-label-active),rgb(var(--tcn-acc)));background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:tcWordShine 7s linear infinite}
 .tc-hd-title::after{content:"2.0";display:inline-grid;place-items:center;flex:none;padding:4px 5px;font:800 9px/1 ui-monospace,monospace;letter-spacing:.04em;color:rgb(var(--tcn-acc));border:1px solid rgba(var(--tcn-acc),.65);background:var(--tcn-bg-b);box-shadow:0 0 8px rgba(var(--tcn-acc),.22);clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
 @keyframes tcWordShine{to{background-position:-220% 0}}
-/* Pistas de circuito: se dibujan con CSS para evitar assets externos y no interceptan toques. */
-.tc-hd,.tc-hd-panel,.tc-nav,.tc-home-card,.card.sync,.line-card,.data-card,.arrival-card,.notification-schedule,.tc-stop{position:relative;isolation:isolate}
-.tc-hd::after,.tc-hd-panel::after,.tc-nav::after,.tc-home-card::after,.card.sync::after,.line-card::after,.data-card::after,.arrival-card::after,.notification-schedule::after,.tc-stop::after{content:"";position:absolute;inset:5px;z-index:-1;pointer-events:none;opacity:.55;background:linear-gradient(135deg,transparent 0 16%,rgba(var(--tcn-acc),.55) 16.15% 16.4%,transparent 16.55% 100%),linear-gradient(45deg,transparent 0 83%,rgba(var(--tcn-acc2),.5) 83.15% 83.4%,transparent 83.55% 100%);background-size:100% 100%;mask-image:linear-gradient(#000,transparent 78%);border-radius:inherit}
-.tc-hd::before,.tc-nav::before{content:"";position:absolute;left:8px;right:8px;bottom:3px;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(var(--tcn-acc),.75),rgba(var(--tcn-acc2),.8),transparent);box-shadow:0 0 8px rgba(var(--tcn-acc),.45)}
+/* Detalles de circuito sin reutilizar ::before/::after estructurales del header y las tarjetas. */
+.tc-hd{box-shadow:0 5px 20px rgba(var(--tcn-acc),.12)}
+.tc-nav{box-shadow:0 0 0 1px rgba(var(--tcn-acc),.12),0 12px 30px rgba(0,0,0,.16)}
+.tc-home-card,.card.sync,.line-card,.data-card,.arrival-card{outline:1px solid rgba(var(--tcn-acc),.08);outline-offset:-4px}
+.tc-home-title,.card.sync b,.line-card b,.data-card b,.arrival-copy b{ text-decoration-color:rgba(var(--tcn-acc),.6); text-decoration-thickness:1px; text-underline-offset:4px}
+.tc-home-line{background:linear-gradient(90deg,rgb(var(--tcn-acc)),rgba(var(--tcn-acc2),.8),transparent)!important}
 .tc-home-card,.card.sync,.line-card,.data-card,.arrival-card{background-color:var(--tcn-page)!important}
 .tc-home-card{border-color:rgba(var(--tcn-edge),.95)}
 .tc-home-title,.card.sync b,.line-card b,.data-card b,.arrival-copy b{color:var(--tcn-label-active)}
