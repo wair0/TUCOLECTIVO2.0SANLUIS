@@ -1292,19 +1292,23 @@
   if(!lineGrid)return;
   let lines=[],currentLine=null,currentStreet=null,currentIntersection=null,currentStop=null;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const loading=t=>lineGrid.innerHTML='<div class="nearby-empty"><strong>'+esc(t)+'</strong><span>CONSULTANDO SERVICIO SMARTMOVE_</span></div>';
+  const state=(kind,text)=>window.TcLineas?window.TcLineas.stateHtml(kind,text):'<div class="nearby-empty"><strong>'+esc(text)+'</strong><span>CONSULTANDO SERVICIO SMARTMOVE_</span></div>';
+  const loading=t=>lineGrid.innerHTML=state('loading',t);
   const renderLines=items=>{
     lines=Array.isArray(items)?items:[];
     setLineHead(lines.length+' RUTAS');
-    lineGrid.innerHTML=lines.map(l=>{const publicName=window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(l.code,window.TuColectivoLineLabels):String(l.name||l.code);const displayName='LINEA '+publicName;return '<button class="line-card" data-line="'+l.code+'"><span class="line-badge">'+esc(displayName)+'</span><div><b>'+esc(displayName)+'</b></div><em>›</em></button>';}).join('');
+    lineGrid.innerHTML=lines.map((l,i)=>{const publicName=window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(l.code,window.TuColectivoLineLabels):String(l.name||l.code);return window.TcLineas?window.TcLineas.lineCardHtml({code:l.code,name:publicName,routes:l.routes??l.routeCount??l.routesCount??null},i):'<button class="line-card" data-line="'+esc(l.code)+'">'+esc(publicName)+'</button>';}).join('');
     if(!lines.length)loading('SIN LÍNEAS');
     if(window.TuColectivoFavorites?.render)window.TuColectivoFavorites.render();
   };
   const showList=(title,subtitle,items,empty,onClick,itemLabel='')=>{
     const context=String(subtitle??'').trim();
-    lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(title)+'</strong>'+(context?'<small class="line-sub-context">'+esc(context)+'</small>':'')+'</div>';
-    if(!items.length){lineGrid.insertAdjacentHTML('beforeend','<div class="nearby-empty"><strong>'+esc(empty)+'</strong><span>NO HAY DATOS PARA ESTA SELECCIÓN_</span></div>');return;}
-    items.forEach(item=>{const b=document.createElement('button');b.type='button';b.className='data-card line-detail-card';const title=item.name||itemLabel||'';const secondary=item.name&&itemLabel?itemLabel:'';b.innerHTML='<b class="line-detail-title">'+esc(title)+'</b>'+(secondary?'<span>'+esc(secondary)+'</span>':'')+'<em>›</em>';b.addEventListener('click',()=>onClick(item));lineGrid.appendChild(b);});
+    const backButton='<button type="button" class="tc-back" data-line-back aria-label="Atrás"><span class="tc-hx"></span><i class="tc-hxf"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg></button>';
+    lineGrid.innerHTML='<div class="screen-head">'+backButton+'<div class="screen-head-txt"><h2 class="screen-title">'+esc(title)+'</h2>'+(context?'<p class="screen-sub">'+esc(context)+'</p>':'')+'</div></div>';
+    if(!items.length){lineGrid.insertAdjacentHTML('beforeend',state(title==='ERROR'?'error':'empty',empty));return;}
+    const list=document.createElement('div');list.className='line-list';
+    items.forEach((item,i)=>{const titleText=item.name||itemLabel||'';const markup=window.TcLineas?window.TcLineas.detailCardHtml({code:item.code??item.identifier??titleText,name:titleText},i,itemLabel==='ARRIBOS'?'ARRIBOS':''):'<button type="button" class="data-card line-detail-card">'+esc(titleText)+'</button>';const holder=document.createElement('div');holder.innerHTML=markup;const b=holder.firstElementChild;b.addEventListener('click',()=>onClick(item));list.appendChild(b);});
+    lineGrid.appendChild(list);
   };
   const showError=(title,msg)=>showList(title,'',[],msg,()=>{});
   window.onNativeLines=p=>{
@@ -1372,11 +1376,12 @@
       const publicLine=window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(x.line||currentLine?.code||currentLine?.name,window.TuColectivoLineLabels):String(x.line||currentLine?.name||'');
       const arrivalLineTitle='LINEA '+publicLine;
       const arrivalDestination=destination?'HACIA '+destination.toUpperCase():'DESTINO NO INFORMADO';
-      if(arriving){
-        return '<div class="arrival-card arrival-arriving" data-arrival-destination="'+esc(destination)+'" role="button" tabindex="0"><div class="arrival-copy"><b>'+esc(arrivalLineTitle)+'</b><span>'+esc(arrivalDestination)+'</span></div><em class="arrival-time arrival-time-arriving"><strong>ARRIBANDO</strong></em></div>';
-      }
-      return '<div class="arrival-card" data-arrival-destination="'+esc(destination)+'" role="button" tabindex="0"><div class="arrival-copy"><b>'+esc(arrivalLineTitle)+'</b><span>'+esc(arrivalDestination)+'</span></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="arrival-ring-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="arrival-ring-arc" cx="40" cy="40" r="35"></circle><circle class="arrival-ring-dot" cx="38.78" cy="74.98" r="3.2"></circle></g></svg><strong>'+esc(x.minutes==null?'--':x.minutes)+'</strong><small>MIN</small></em></div>';
-    }).join(''):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>';
+      const card=window.TcLineas?window.TcLineas.arrivalCardHtml({line:publicLine,destination:destination,minutes:Number.isFinite(m)?m:null,status:x.status},0,false):'';
+      if(card){return card.replace(' role="button"',' data-arrival-destination="'+esc(destination)+'" role="button"');}
+      if(arriving){return '<div class="arrival-card arriving" data-arrival-destination="'+esc(destination)+'" role="button" tabindex="0"><div class="arrival-copy"><div class="arrival-row"><span class="arrival-k">LINEA</span><span class="arrival-v">'+esc(arrivalLineTitle)+'</span></div><div class="arrival-row"><span class="arrival-k">HACIA</span><span class="arrival-v">'+esc(arrivalDestination)+'</span></div></div><em class="arrival-time"><strong class="arrival-arriving">ARRIBANDO</strong></em></div>';}
+      return '<div class="arrival-card" data-arrival-destination="'+esc(destination)+'" role="button" tabindex="0"><div class="arrival-copy"><div class="arrival-row"><span class="arrival-k">LINEA</span><span class="arrival-v">'+esc(arrivalLineTitle)+'</span></div><div class="arrival-row"><span class="arrival-k">HACIA</span><span class="arrival-v">'+esc(arrivalDestination)+'</span></div></div><em class="arrival-time" style="--arrival-duration:'+d+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="ar-base" cx="40" cy="40" r="35"></circle><g class="arrival-ring-orbit"><circle class="ar-arc" cx="40" cy="40" r="35"></circle><circle class="ar-dot" cx="38.8" cy="75" r="3"></circle></g></svg><span class="arrival-num"><b class="arrival-n"'+(Number.isFinite(m)?' data-m="'+m+'"':'')+'>'+(Number.isFinite(m)?esc(m):'--')+'</b><small>MIN</small></span></em></div>';
+    }).join(''):(window.TcLineas?window.TcLineas.stateHtml('empty','SIN ARRIBOS'):'<div class="nearby-empty"><strong>SIN ARRIBOS</strong><span>SMARTMOVE NO DEVOLVIÓ SERVICIOS PARA ESTA PARADA</span></div>');
+    if(window.TcLineas)window.TcLineas.animateNumbers(list);
     const mapButton=lineGrid.querySelector('[data-map-route-line]');
     window.TuColectivoSelectedMapDestination=destinations.length===1?destinations[0]:'';
     if(mapButton) mapButton.disabled=destinations.length!==1;
@@ -1387,14 +1392,16 @@
     const a=JSON.parse(p),list=lineGrid.querySelector('.line-arrivals');
     renderLineArrivals(a,list);
   };
-  window.onNativeArrivalsError=p=>{if(window.TuColectivoMap?.handleArrivalsError(p))return;if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivalsError?.(p);return;}const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML='<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
+  window.onNativeArrivalsError=p=>{if(window.TuColectivoMap?.handleArrivalsError(p))return;if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivalsError?.(p);return;}const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML=window.TcLineas?window.TcLineas.stateHtml('error',JSON.parse(p).message):'<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
   function showArrivals(stop){
     currentStop=stop;
     window.TuColectivoSelectedMapDestination='';
     setLineHead('ARRIBOS');
     const favKey=String(stop.identifier||stop.code)+'::'+Number(currentLine.code);
     window.TuColectivoCurrentLineArrival={stop:{id:String(stop.identifier||stop.code),identifier:String(stop.identifier||stop.code),code:Number(stop.code)||0,name:stop.description,street:stop.street||'',intersection:stop.intersection||'',lat:Number(stop.latitude),lng:Number(stop.longitude),lines:[Number(currentLine.code)]},line:Number(currentLine.code)};
-    const stopContext=[stop.street,stop.intersection].map(v=>String(v||'').trim()).filter(Boolean).join(' · ');lineGrid.innerHTML='<div class="line-sub-head"><strong>'+esc(stop.description)+'</strong>'+(stopContext?'<small class="line-sub-context">'+esc(stopContext)+'</small>':'')+'</div><button class="arrival-favorite-toggle" data-line-arrival-favorite="true" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button><button class="arrival-refresh" type="button" data-arrival-refresh="true">↻ ACTUALIZAR MINUTOS</button><div class="arrival-list line-arrivals"><div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>ESPERÁ LA RESPUESTA DE SMARTMOVE</span></div></div><button class="map-route-action" data-map-route-line="'+Number(currentLine.code)+'" type="button" disabled>⌖ VER RECORRIDO EN EL MAPA</button>';
+    const stopContext=[stop.street,stop.intersection].map(v=>String(v||'').trim()).filter(Boolean).join(' · ');
+    const backButton='<button type="button" class="tc-back" data-line-back aria-label="Atrás"><span class="tc-hx"></span><i class="tc-hxf"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg></button>';
+    lineGrid.innerHTML='<div class="screen-head">'+backButton+'<div class="screen-head-txt"><h2 class="screen-title">ARRIBOS</h2><p class="screen-sub">LÍNEA '+esc(window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(currentLine.code,window.TuColectivoLineLabels):currentLine.name)+'</p></div></div><div class="tc-stop"><h3 class="tc-stop-name">'+esc(stop.description)+'</h3><p class="tc-stop-ctx">'+esc(stopContext)+'</p></div><div class="tc-actions"><button class="tc-btn" data-line-arrival-favorite="true" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button><button class="tc-btn tc-btn-primary" type="button" data-arrival-refresh="true">↻ ACTUALIZAR MINUTOS</button></div><div class="arrival-list line-arrivals">'+(window.TcLineas?window.TcLineas.stateHtml('loading','CONSULTANDO ARRIBOS'): '<div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong></div>')+'</div><button class="tc-btn" data-map-route-line="'+Number(currentLine.code)+'" type="button" disabled>⌖ VER RECORRIDO EN EL MAPA</button>';
     window.TuColectivoFavorites?.syncLineArrivalFavorite?.();
     nativeApi.loadArrivals(stop.identifier,currentLine.code);
   }
@@ -1409,12 +1416,13 @@
     return true;
   }
   lineGrid.addEventListener('click',e=>{
+    if(e.target.closest('[data-line-back]')){back();return;}
     const refresh=e.target.closest('[data-arrival-refresh]');
     if(refresh&&currentStop&&currentLine){
       refresh.disabled=true;
       refresh.textContent='↻ ACTUALIZANDO...';
       const list=lineGrid.querySelector('.line-arrivals');
-      if(list)list.innerHTML='<div class="nearby-empty"><strong>ACTUALIZANDO MINUTOS_</strong><span>CONSULTANDO ARRIBOS EN TIEMPO REAL</span></div>';
+      if(list)list.innerHTML=window.TcLineas?window.TcLineas.stateHtml('loading','ACTUALIZANDO MINUTOS'):'<div class="nearby-empty"><strong>ACTUALIZANDO MINUTOS_</strong><span>CONSULTANDO ARRIBOS EN TIEMPO REAL</span></div>';
       nativeApi.loadArrivals(currentStop.identifier,currentLine.code);
       setTimeout(()=>{if(refresh.isConnected){refresh.disabled=false;refresh.textContent='↻ ACTUALIZAR MINUTOS';}},1200);
       return;
@@ -1437,40 +1445,3 @@
   document.head.appendChild(listStyle);
   if(nativeApi)loadLines();
 })();
-/* CÍRCULO DE ARRIBOS — MISMA LÓGICA VISUAL DE LA RAMA NATIVA */
-(()=>{
- const css=document.createElement('style');
- css.textContent=`
- .line-card small{display:none!important}
- .data-card.line-detail-card span{display:block!important}
- .arrival-card{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:88px!important;padding:10px 14px!important;box-sizing:border-box!important}
- .arrival-refresh{display:block!important;width:100%!important;min-height:44px!important;margin:8px 0 10px!important;padding:10px 14px!important;border:1px solid var(--vt)!important;background:rgba(0,240,255,.08)!important;color:var(--vt)!important;font-family:inherit!important;font-weight:800!important;letter-spacing:.08em!important;border-radius:10px!important;box-shadow:0 0 10px rgba(0,240,255,.12)!important}
- .arrival-refresh:disabled{opacity:.55!important}
- .arrival-arriving .arrival-copy{padding-right:8px}
- .arrival-time-arriving{flex:0 0 auto!important;width:auto!important;min-width:92px!important;height:42px!important}
- .arrival-time-arriving strong{position:static!important;transform:none!important;font-size:15px!important;letter-spacing:.08em!important;color:var(--arrival-red)!important;text-shadow:0 0 8px var(--arrival-red),0 0 18px color-mix(in srgb,var(--arrival-red) 45%,transparent)!important;animation:arrivalArrivingPulse 1.05s ease-in-out infinite!important;will-change:opacity,transform,text-shadow!important}
- @media (prefers-reduced-motion: reduce){
-   .arrival-time-arriving strong{animation:none!important}
- }
-
- .arrival-copy{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:7px;flex:1;padding-right:12px}
- .arrival-copy b{line-height:1.15!important}
- .arrival-copy span{line-height:1.15!important;white-space:normal!important}
- .arrival-time{position:relative!important;flex:0 0 70px!important;width:70px!important;height:70px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;box-sizing:border-box!important}
- .arrival-ring{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;overflow:visible!important;transform:rotate(-90deg)!important}
-  .arrival-ring-orbit{transform-box:view-box!important;transform-origin:40px 40px!important;animation:arrivalNativeOrbit var(--arrival-duration,1.5s) linear infinite!important}
-  .arrival-ring-dot{fill:var(--vt);stroke:var(--vt);stroke-width:1;filter:drop-shadow(0 0 5px var(--vt));animation:none!important}
- .arrival-ring-base{fill:none;stroke:var(--cy);stroke-width:4;filter:drop-shadow(0 0 5px var(--cy))}
- .arrival-ring-arc{fill:none;stroke:var(--vt);stroke-width:4;stroke-linecap:round;stroke-dasharray:56.2 163.7;filter:drop-shadow(0 0 6px var(--vt));transform-origin:40px 40px;animation:none!important}
- .arrival-time strong,.arrival-time small{position:static!important;left:auto!important;z-index:5!important;line-height:1!important;margin:0!important;white-space:nowrap!important;transform:none!important}
- .arrival-time strong{font-size:15px!important}
- .arrival-time small{font-size:8px!important;letter-spacing:.04em!important}
- @keyframes arrivalNativeOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
- @keyframes arrivalArrivingPulse{
-   0%,100%{opacity:1;transform:scale(1);text-shadow:0 0 6px currentColor,0 0 14px currentColor}
-   50%{opacity:.62;transform:scale(1.07);text-shadow:0 0 12px currentColor,0 0 26px currentColor,0 0 38px color-mix(in srgb,currentColor 42%,transparent)}
- }
- `;
- document.head.appendChild(css);
-})();
-
