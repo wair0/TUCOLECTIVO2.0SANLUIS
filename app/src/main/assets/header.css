@@ -4,7 +4,7 @@
 :root{--tcn-bg-a:#FFFFFF;--tcn-bg-b:#EDF3FE;--tcn-edge:143,176,234;--tcn-muted:#5B6F94;--tcn-label-active:#0F1B33;--tcn-acc:37,99,235;--tcn-acc2:8,145,178;--tcn-on-active:#FFFFFF;--tcn-page:#eef3fa;--tcn-alert:225,29,72;}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-bg-a:#0F1A3A;--tcn-bg-b:#070D1E;--tcn-edge:47,91,168;--tcn-muted:#7C93B3;--tcn-label-active:#FFFFFF;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#04101F;--tcn-page:#080e1f;--tcn-alert:251,113,133;}}
 :root[data-theme="dark"]{--tcn-bg-a:#0F1A3A;--tcn-bg-b:#070D1E;--tcn-edge:47,91,168;--tcn-muted:#7C93B3;--tcn-label-active:#FFFFFF;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#04101F;--tcn-page:#080e1f;--tcn-alert:251,113,133;}
-.tc-hd{background-color:var(--tcn-page);position:fixed;top:0;left:0;right:0;z-index:60;height:calc(80px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 12px 0;display:flex;align-items:center;gap:8px;box-sizing:border-box;isolation:isolate;font-family:inherit;-webkit-user-select:none;user-select:none;animation:tchin .5s cubic-bezier(.2,.8,.2,1) both}
+.tc-hd{background-color:rgb(var(--tcn-edge));position:fixed;top:0;left:0;right:0;z-index:60;height:calc(80px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 12px 0;display:flex;align-items:center;gap:8px;box-sizing:border-box;isolation:isolate;font-family:inherit;-webkit-user-select:none;user-select:none;animation:tchin .5s cubic-bezier(.2,.8,.2,1) both}
 .tc-hd::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;z-index:-2;background:rgb(var(--tcn-edge));clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px))}
 .tc-hd::before{content:"";position:absolute;top:0;left:1px;right:1px;bottom:1px;z-index:-1;clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px));
 background-image:radial-gradient(circle at 1px 1px,rgba(var(--tcn-acc),.14) 1px,transparent 1.3px),linear-gradient(0deg,var(--tcn-bg-a),var(--tcn-bg-b));background-size:14px 14px,100% 100%}
@@ -147,6 +147,3 @@ color:var(--tcn-muted);font:700 9.5px/1 ui-monospace,SFMono-Regular,Menlo,Consol
 .tc-hd-seg button:focus-visible span{text-decoration:underline}
 .tc-hd-panel.open .tc-hd-theme{animation:tchitem .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--n,0) * 55ms + 70ms)}
 @media (prefers-reduced-motion:reduce){.tc-hd-seg-ind,.tc-hd-seg button,.tc-hd-seg button svg{transition:none}.tc-hd-panel.open .tc-hd-theme{animation:none}}
-
-/* Evita que los recortes decorativos del header dejen ver el fondo negro en las esquinas. */
-.tc-hd::before,.tc-hd::after{clip-path:none}

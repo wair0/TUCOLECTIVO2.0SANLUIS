@@ -1,5 +1,5 @@
 /* HIGH-TECH CORPORATIVO — tarjetas, botones e iconos. Usa los tokens de style.css, así sigue claro/oscuro. */
-.card,.line-card,.data-card,.arrival-card,.notification-schedule,.favorite-item,.map-wrap,.map-refresh-card,.map-stop-popup,.panel,.bottom-nav{
+.card,.data-card:not(.line-detail-card),.notification-schedule,.favorite-item,.map-wrap,.map-refresh-card,.map-stop-popup,.panel,.bottom-nav{
   border-color:color-mix(in srgb,var(--vt) 22%,var(--ln));
   background:
     linear-gradient(180deg,color-mix(in srgb,var(--sf) 92%,#fff) 0%,var(--sf) 42%),
@@ -7,9 +7,7 @@
   box-shadow:0 1px 0 color-mix(in srgb,#fff 55%,transparent) inset,var(--sh);
 }
 html[data-theme=dark] .card,
-html[data-theme=dark] .line-card,
-html[data-theme=dark] .data-card,
-html[data-theme=dark] .arrival-card,
+html[data-theme=dark] .data-card:not(.line-detail-card),
 html[data-theme=dark] .notification-schedule,
 html[data-theme=dark] .favorite-item,
 html[data-theme=dark] .map-wrap,
@@ -22,7 +20,7 @@ html[data-theme=dark] .bottom-nav{
     var(--sf);
   box-shadow:0 1px 0 rgba(91,141,255,.16) inset,0 10px 28px rgba(0,0,0,.28);
 }
-.card::after,.line-card::after,.data-card::after,.arrival-card::after,.favorite-item::after{
+.card::after,.data-card:not(.line-detail-card)::after,.favorite-item::after{
   content:"";
   position:absolute;
   inset:7px;

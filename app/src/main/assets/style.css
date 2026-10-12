@@ -83,19 +83,13 @@ small{font-size:10px}
 .card.sync.done .prog{width:100%}
 
 /* LÍNEAS / DATOS */
-.lineas-grid{display:grid;gap:10px}
-.line-card,.data-card{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:14px 16px 14px 20px;text-align:left;background:var(--sf);border:1px solid var(--ln);border-radius:var(--r);box-shadow:var(--sh);transition:transform .15s,border-color .15s}
-.line-card::before,.data-card::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:0 4px 4px 0;background:linear-gradient(180deg,var(--vt),var(--cy))}
-.line-card:active,.data-card:active{transform:scale(.985);border-color:var(--vt);background:var(--tint2)}
-.line-card .line-badge{display:none!important}
-.line-card>div{flex:1;min-width:0}
-.line-card b,.data-card b{display:block;font-size:15px;font-weight:800;letter-spacing:.03em}.line-card b{font-size:22px!important;line-height:1.2!important}
-.line-card em,.data-card em{margin-left:auto;font-style:normal;font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.06em}
-.line-card em strong{font-size:18px;color:var(--vt)}
+.data-card{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:14px 16px 14px 20px;text-align:left;background:var(--sf);border:1px solid var(--ln);border-radius:var(--r);box-shadow:var(--sh);transition:transform .15s,border-color .15s}
+.data-card::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:0 4px 4px 0;background:linear-gradient(180deg,var(--vt),var(--cy))}
+.data-card:active{transform:scale(.985);border-color:var(--vt);background:var(--tint2)}
+.data-card:not(.line-detail-card) b{display:block;font-size:15px;font-weight:800;letter-spacing:.03em}
+.data-card em{margin-left:auto;font-style:normal;font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.06em}
 .data-card{flex-direction:column;align-items:flex-start;justify-content:center;gap:0;padding-right:48px}
-.data-card span{display:block;margin-top:4px;font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
-/* Unificar el rótulo de las tarjetas de detalle de LÍNEAS (incluida ARRIBOS). */
-.data-card.line-detail-card>b{font-size:22px!important;font-weight:800!important;letter-spacing:.03em!important;line-height:1.2!important;color:var(--ink)!important;-webkit-text-size-adjust:none!important;text-size-adjust:none!important;}
+.data-card:not(.line-detail-card) span{display:block;margin-top:4px;font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
 .data-card em{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:22px;font-weight:400;color:var(--vt)}
 .nearby-stop em{top:16px;transform:none;font-size:11px;font-weight:800;padding:3px 9px;background:var(--tint);border-radius:99px}
 .nearby-stop>b,.nearby-stop>span,.nearby-stop>.line-badges,.nearby-stop>em{pointer-events:none}
@@ -120,16 +114,6 @@ small{font-size:10px}
 .arrival-favorite-toggle{display:block;width:100%;margin-top:12px;padding:12px;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--vt);background:var(--sf);border:1px solid var(--ln);border-radius:13px;transition:all .15s}
 .arrival-favorite-toggle[aria-pressed=true]{color:#fff;background:linear-gradient(135deg,var(--vt),var(--vi));border-color:transparent}
 .arrival-list{display:grid;gap:10px;margin-top:8px}
-.arrival-card{position:relative;background:var(--sf);border:1px solid var(--ln);border-radius:var(--r);box-shadow:var(--sh)}
-.arrival-copy b{font-size:15px;font-weight:800;letter-spacing:.03em;color:var(--ink)}
-.arrival-copy span{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--mut)}
-.arrival-time{font-style:normal;color:var(--ink)}
-.arrival-time strong{color:var(--ink);font-weight:800}.arrival-time small{color:var(--mut);font-weight:700}
-.arrival-time .arrival-ring-base{stroke:var(--ring);filter:none}
-.arrival-time .arrival-ring-arc{stroke:var(--vt);filter:none}.arrival-time .arrival-ring-dot{fill:var(--cy);stroke:var(--sf);filter:none}
-.arrival-arriving{border-color:var(--bd2);background:linear-gradient(120deg,var(--sf),var(--tint))}
-.arrival-card .arrival-time-arriving{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:7px!important;flex:0 0 92px!important;width:92px!important;min-width:0!important;height:62px!important;padding:0 6px!important;border-radius:14px!important;background:var(--tint)!important;border:1px solid var(--bd2)!important}
-.arrival-card .arrival-time-arriving strong{position:static!important;left:auto!important;top:auto!important;transform:none!important;font-size:10px!important;font-weight:900!important;letter-spacing:.08em!important;line-height:1!important;color:var(--cy)!important;text-shadow:0 0 8px rgba(15,181,201,.28)!important;animation:arrivingText 1.5s ease-in-out infinite}
 
 /* MAPA */
 .map-wrap{position:relative;width:min(100%,calc(100dvh - var(--hh) - var(--top) - 236px - env(safe-area-inset-bottom)));aspect-ratio:1/1;height:auto;min-height:0;margin:0 auto;overflow:hidden;background:var(--map);border:1px solid #00f0ff;border-radius:22px;box-shadow:0 0 0 1px rgba(0,240,255,.18),0 0 18px rgba(0,240,255,.28),var(--sh)}
@@ -195,7 +179,6 @@ html[data-theme=dark] .card::before{background:radial-gradient(closest-side,rgba
 html[data-theme=dark] .card-mapa::before,html[data-theme=dark] .card-favoritos::before{background:radial-gradient(closest-side,rgba(34,211,238,.18),transparent)}
 html[data-theme=dark] .card-mapa .ic,html[data-theme=dark] .card-favoritos .ic{stroke:var(--cy)}
 html[data-theme=dark] .map-wrap canvas{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.95) saturate(1.15)}
-html[data-theme=dark] .arrival-card .arrival-time-arriving::before{background:var(--cy);box-shadow:0 0 0 4px rgba(34,211,238,.22)}
 html[data-theme=dark] .status[data-state=warn]{--c:#ffb020}
 html[data-theme=dark] body,html[data-theme=dark] .app-shell{color:var(--ink)}
 html,body{transition:background-color .25s}
@@ -209,54 +192,7 @@ html,body{transition:background-color .25s}
 @media(min-width:700px){.app-shell{max-width:720px;margin:auto}.bottom-nav{max-width:704px;left:50%;right:auto;width:calc(100% - 20px);transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
-/* ARRIBOS — NEON ADAPTABLE A MODO CLARO/OSCURO */
-:root{
-  --arrival-red:#c9002b;
-  --arrival-green:#008f32;
-  --arrival-cyan:#007fa9;
-}
-html[data-theme=dark]{
-  --arrival-red:#ff1744;
-  --arrival-green:#39ff78;
-  --arrival-cyan:#25e1ff;
-}
-.arrival-card .arrival-copy span{
-  color:var(--arrival-cyan)!important;
-  text-shadow:0 0 8px var(--arrival-cyan),0 0 16px color-mix(in srgb,var(--arrival-cyan) 48%,transparent)!important;
-}
-.arrival-card .arrival-time:not(.arrival-time-arriving) strong,
-.arrival-card .arrival-time:not(.arrival-time-arriving) small{
-  color:var(--arrival-green)!important;
-  text-shadow:0 0 8px var(--arrival-green),0 0 16px color-mix(in srgb,var(--arrival-green) 48%,transparent)!important;
-}
-.arrival-card.arrival-arriving{
-  border-color:color-mix(in srgb,var(--arrival-red) 72%,var(--ln))!important;
-}
-.arrival-card .arrival-time-arriving{
-  background:color-mix(in srgb,var(--arrival-red) 10%,var(--sf))!important;
-  border-color:color-mix(in srgb,var(--arrival-red) 58%,var(--ln))!important;
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--arrival-red) 18%,transparent),0 0 14px color-mix(in srgb,var(--arrival-red) 24%,transparent)!important;
-  animation:arrivalWarningBox 1.05s ease-in-out infinite!important;
-}
-@keyframes arrivalWarningBox{
-  0%,100%{opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--arrival-red) 18%,transparent),0 0 10px color-mix(in srgb,var(--arrival-red) 20%,transparent)}
-  50%{opacity:.78;box-shadow:0 0 0 2px color-mix(in srgb,var(--arrival-red) 34%,transparent),0 0 22px color-mix(in srgb,var(--arrival-red) 48%,transparent)}
-}
-@media(prefers-reduced-motion:reduce){
-  .arrival-card .arrival-time-arriving{animation:none!important}
-}
-
-/* INTENSIDAD EXTRA DE ARRIBANDO Y TEXTOS CLAVE */
-.arrival-card .arrival-time-arriving strong{
-  color:var(--arrival-red)!important;
-  font-weight:950!important;
-  text-shadow:0 0 8px var(--arrival-red),0 0 18px var(--arrival-red),0 0 30px color-mix(in srgb,var(--arrival-red) 52%,transparent)!important;
-}
-@keyframes arrivalArrivingPulse{
-  0%,100%{opacity:1;transform:scale(1);text-shadow:0 0 8px var(--arrival-red),0 0 18px var(--arrival-red)}
-  50%{opacity:.9;transform:scale(1.05);text-shadow:0 0 12px var(--arrival-red),0 0 24px var(--arrival-red),0 0 38px color-mix(in srgb,var(--arrival-red) 46%,transparent)}
-}
-
+/* El diseño y las animaciones de ARRIBOS pertenecen a circuits.css. */
 
 /* TARJETA SINCRONIZAR LÍNEAS — NEUTRA CON PROGRESO ROJO */
 .grid .card.sync{
