@@ -96,3 +96,100 @@
 /* Integración del marcado de la app: todos los bloques internos ocupan el ancho completo del grid de líneas. */
 .lineas-grid>.screen-head,.lineas-grid>.line-list,.lineas-grid>.tc-stop,.lineas-grid>.tc-actions,.lineas-grid>.arrival-list,.lineas-grid>.tc-state,.lineas-grid>[data-map-route-line]{grid-column:1/-1}
 .tc-state{grid-column:1/-1}
+
+
+/* FIX DE CASCADA: aislar tarjetas de LÍNEAS de los estilos heredados de style.css/style-ht.css.
+   Las tarjetas usan el marcado line-card/data-card generado por TcLineas; no deben heredar
+   alturas, fondos, pseudo-elementos ni animaciones genéricas de .card/.item. */
+.screen[data-screen="lineas"] .lineas-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  align-items:stretch;
+}
+.screen[data-screen="lineas"] .line-card,
+.screen[data-screen="lineas"] .lineas-grid>[data-line],
+.screen[data-screen="lineas"] .line-detail-card{
+  position:relative;
+  min-width:0;
+  min-height:76px;
+  margin:0;
+  box-sizing:border-box;
+  overflow:hidden;
+  isolation:isolate;
+  appearance:none;
+  -webkit-appearance:none;
+  text-align:left;
+  font:inherit;
+  transform:translateZ(0);
+  animation:tcLineCardEnter .42s cubic-bezier(.2,.8,.2,1) both;
+  animation-delay:calc(min(var(--n,0),12) * 35ms);
+}
+.screen[data-screen="lineas"] .line-card *,
+.screen[data-screen="lineas"] .line-detail-card *{
+  box-sizing:border-box;
+}
+.screen[data-screen="lineas"] .line-card .lc-body,
+.screen[data-screen="lineas"] .line-detail-card .ld-name{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+.screen[data-screen="lineas"] .line-card::after,
+.screen[data-screen="lineas"] .line-card::before,
+.screen[data-screen="lineas"] .line-detail-card::after,
+.screen[data-screen="lineas"] .line-detail-card::before{
+  pointer-events:none;
+}
+.screen[data-screen="lineas"] .line-card.hot,
+.screen[data-screen="lineas"] .line-detail-card.hot{
+  transform:translateY(-1px);
+}
+.screen[data-screen="lineas"] .line-card.press,
+.screen[data-screen="lineas"] .line-detail-card.press{
+  transform:scale(.975);
+}
+.screen[data-screen="lineas"] .line-card:focus-visible,
+.screen[data-screen="lineas"] .line-detail-card:focus-visible{
+  outline:2px solid rgb(var(--tcn-acc,34,211,238));
+  outline-offset:2px;
+}
+.screen[data-screen="lineas"] .arrival-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.screen[data-screen="lineas"] .arrival-card{
+  position:relative;
+  min-width:0;
+  box-sizing:border-box;
+  overflow:hidden;
+  isolation:isolate;
+  animation:tcLineCardEnter .42s cubic-bezier(.2,.8,.2,1) both;
+  animation-delay:calc(min(var(--n,0),12) * 35ms);
+}
+.screen[data-screen="lineas"] .arrival-copy,
+.screen[data-screen="lineas"] .arrival-row,
+.screen[data-screen="lineas"] .arrival-v{
+  min-width:0;
+}
+.screen[data-screen="lineas"] .arrival-v{
+  overflow-wrap:anywhere;
+}
+@keyframes tcLineCardEnter{
+  from{opacity:0;transform:translateY(7px);filter:brightness(.94)}
+  to{opacity:1;transform:translateY(0);filter:brightness(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  .screen[data-screen="lineas"] .line-card,
+  .screen[data-screen="lineas"] .lineas-grid>[data-line],
+  .screen[data-screen="lineas"] .line-detail-card,
+  .screen[data-screen="lineas"] .arrival-card{
+    animation:none!important;
+    transition:none!important;
+  }
+}
+@media(max-width:360px){
+  .screen[data-screen="lineas"] .lineas-grid{gap:8px}
+  .screen[data-screen="lineas"] .line-card,
+  .screen[data-screen="lineas"] .lineas-grid>[data-line]{padding-inline:9px}
+}
