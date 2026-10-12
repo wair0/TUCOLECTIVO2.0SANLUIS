@@ -92,3 +92,7 @@
 @keyframes arrivalNumPulse{0%,100%{text-shadow:0 0 4px rgba(var(--tcn-neon),.5),0 0 10px rgba(var(--tcn-neon),.25);transform:scale(1)}50%{text-shadow:0 0 8px rgba(var(--tcn-neon),.95),0 0 20px rgba(var(--tcn-neon),.6);transform:scale(1.07)}}
 @keyframes arrivalArrivingPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(1.06)}}
 @media (prefers-reduced-motion:reduce){.screen-head::before,.line-list::after,.tc-enter,.arrival-ring-orbit,.arrival-arriving,.arrival-num,.tc-scan::after,.tc-btn.busy svg{animation:none}.screen-head::before{display:none}.line-list::after{display:none}.tc-scan::after{left:0;width:100%}.line-card,.lineas-grid>[data-line],.line-detail-card,.arrival-card,.tc-btn,.tc-back,.lc-badge,.lc-go{transition:none}}
+
+/* Integración del marcado de la app: todos los bloques internos ocupan el ancho completo del grid de líneas. */
+.lineas-grid>.screen-head,.lineas-grid>.line-list,.lineas-grid>.tc-stop,.lineas-grid>.tc-actions,.lineas-grid>.arrival-list,.lineas-grid>.tc-state,.lineas-grid>[data-map-route-line]{grid-column:1/-1}
+.tc-state{grid-column:1/-1}
