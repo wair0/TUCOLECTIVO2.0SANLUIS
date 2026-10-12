@@ -1,0 +1,39 @@
+name: Validar WebView y compilar Android
+on:
+  push:
+    branches:
+      - native/cyberpunkwebview-ui
+    paths:
+      - "app/src/main/assets/**"
+      - "app/src/main/java/**"
+      - "app/src/main/res/**"
+      - "app/build.gradle.kts"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "gradlew"
+      - ".github/workflows/validar-app.yml"
+permissions:
+  contents: read
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Preparar Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Revisar sintaxis JavaScript
+        run: |
+          for file in app/src/main/assets/header.js app/src/main/assets/bottom-nav.js app/src/main/assets/home-cards.js app/src/main/assets/lineas.js app/src/main/assets/script.js app/src/main/assets/navigation-integration.js; do
+            node --check "$file"
+          done
+      - name: Compilar APK debug
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
