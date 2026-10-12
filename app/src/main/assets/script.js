@@ -1308,7 +1308,7 @@
     const context=String(subtitle??'').trim();
     const backButton='<button type="button" class="tc-back" data-line-back aria-label="Atrás"><span class="tc-hx"></span><i class="tc-hxf"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg></button>';
     lineGrid.innerHTML='<div class="screen-head">'+backButton+'<div class="screen-head-txt"><h2 class="screen-title">'+esc(title)+'</h2>'+(context?'<p class="screen-sub">'+esc(context)+'</p>':'')+'</div></div>';
-    if(!items.length){lineGrid.insertAdjacentHTML('beforeend',state(title==='ERROR'?'error':'empty',empty));return;}
+    if(!items.length){const kind=/ERROR|FALLO|NO SE PUDO/i.test(empty)?'error':/CARGANDO|CONSULTANDO|ACTUALIZANDO/i.test(empty)?'loading':'empty';lineGrid.insertAdjacentHTML('beforeend',state(kind,empty));return;}
     const list=document.createElement('div');list.className='line-list';
     items.forEach((item,i)=>{const titleText=item.name||itemLabel||'';const markup=window.TcLineas?window.TcLineas.detailCardHtml({code:item.code??item.identifier??titleText,name:titleText},i,itemLabel==='ARRIBOS'?'ARRIBOS':''):'<button type="button" class="data-card line-detail-card">'+esc(titleText)+'</button>';const holder=document.createElement('div');holder.innerHTML=markup;const b=holder.firstElementChild;b.addEventListener('click',()=>onClick(item));list.appendChild(b);});
     lineGrid.appendChild(list);
