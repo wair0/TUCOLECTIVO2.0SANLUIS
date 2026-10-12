@@ -1,0 +1,7 @@
+/* TU COLECTIVO 2.0 - Modo oscuro NEGRO con textos oro neon. Cargar al FINAL (despues de header.css, bottom-nav.css, home-cards.css y lineas.css):
+   sobrescribe solo los tokens --tcn-* del modo oscuro, asi no hace falta editar header.css ni bottom-nav.css. El modo claro no cambia.
+   Fondos negros (#000), bordes grafito, texto principal oro neon #FFD60A, acento cian, contador de minutos en verde neon. */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-bg-a:#0B0B0C;--tcn-bg-b:#000000;--tcn-edge:54,60,68;--tcn-muted:#9B9582;--tcn-label-active:#FFD60A;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080C;--tcn-page:#000000;--tcn-alert:251,113,133;--tcn-neon:57,255,20;--tcn-scrim:rgba(0,0,0,.62);}}
+:root[data-theme="dark"]{--tcn-bg-a:#0B0B0C;--tcn-bg-b:#000000;--tcn-edge:54,60,68;--tcn-muted:#9B9582;--tcn-label-active:#FFD60A;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080C;--tcn-page:#000000;--tcn-alert:251,113,133;--tcn-neon:57,255,20;--tcn-scrim:rgba(0,0,0,.62);}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) :is(.tc-hd-status,.tc-nav-item.active .tc-nav-label,.tc-card-name,.tc-sync-pct,.lc-name,.ld-name,.arrival-v,.screen-title,.tc-stop-name,.tc-btn:not(.tc-btn-primary)){text-shadow:0 0 9px rgba(255,214,10,.32)}}
+:root[data-theme="dark"] :is(.tc-hd-status,.tc-nav-item.active .tc-nav-label,.tc-card-name,.tc-sync-pct,.lc-name,.ld-name,.arrival-v,.screen-title,.tc-stop-name,.tc-btn:not(.tc-btn-primary)){text-shadow:0 0 9px rgba(255,214,10,.32)}
