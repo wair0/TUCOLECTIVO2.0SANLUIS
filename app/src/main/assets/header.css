@@ -147,3 +147,6 @@ color:var(--tcn-muted);font:700 9.5px/1 ui-monospace,SFMono-Regular,Menlo,Consol
 .tc-hd-seg button:focus-visible span{text-decoration:underline}
 .tc-hd-panel.open .tc-hd-theme{animation:tchitem .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--n,0) * 55ms + 70ms)}
 @media (prefers-reduced-motion:reduce){.tc-hd-seg-ind,.tc-hd-seg button,.tc-hd-seg button svg{transition:none}.tc-hd-panel.open .tc-hd-theme{animation:none}}
+
+/* Evita que los recortes decorativos del header dejen ver el fondo negro en las esquinas. */
+.tc-hd::before,.tc-hd::after{clip-path:none}
