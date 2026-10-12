@@ -12,12 +12,15 @@
 (function(){
   function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
   function norm(s){return String(s||"").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
+  var ROUTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-10 6 10 6-10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var GO='<svg class="lc-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9,5 L16,12 L9,19"/></svg>';
   function isArriving(status,m){var s=norm(status);return /^(ARRIBANDO|LLEGANDO|EN PARADA|PROXIMO|PROXIMA)$/.test(s)||(typeof m==="number"&&isFinite(m)&&m<=1);}
   function arrivalDuration(m){return(typeof m==="number"&&isFinite(m))?Math.max(1.2,Math.min(18,m*0.35)):8;}
   function lineCardHtml(l,i){
-    var r=l.routes,meta=(r==null)?"":'<span class="lc-meta">'+esc(r)+(Number(r)===1?" RUTA":" RUTAS")+'</span>';
-    return '<button type="button" class="line-card tc-enter" data-line="'+esc(l.code)+'" style="--n:'+(i|0)+'"><span class="lc-badge"><span class="tc-hx"></span><i class="tc-hxf"></i><b>'+esc(l.code)+'</b></span><span class="lc-body"><span class="lc-name">'+esc(l.name)+'</span>'+meta+'</span>'+GO+'</button>';
+    /* La identificación pública es el nombre de la línea; el código SmartMove queda solo en data-line. */
+    var label=String(l.name==null||l.name===""?l.code:l.name).trim(),r=l.routes;
+    var meta=(r==null||r==="")?"":'<span class="lc-meta">'+esc(r)+(Number(r)===1?" RUTA":" RUTAS")+'</span>';
+    return '<button type="button" class="line-card tc-enter" data-line="'+esc(l.code)+'" aria-label="LÍNEA '+esc(label)+'" style="--n:'+(i|0)+'"><span class="lc-badge"><span class="tc-hx"></span><i class="tc-hxf"></i>'+ROUTE+'</span><span class="lc-body"><span class="lc-k">LÍNEA</span><span class="lc-name'+(label.length>5?" lc-long":"")+'">'+esc(label)+'</span>'+meta+'</span>'+GO+'</button>';
   }
   function detailCardHtml(it,i,tag){
     return '<button type="button" class="data-card line-detail-card tc-enter" data-card="'+esc(it.code)+'" style="--n:'+(i|0)+'"><span class="ld-node"></span><span class="ld-name">'+esc(it.name)+'</span>'+(tag?'<span class="ld-tag">'+esc(tag)+'</span>':'')+GO+'</button>';
