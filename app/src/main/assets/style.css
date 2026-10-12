@@ -235,8 +235,8 @@ html[data-theme=dark] .card.sync .prog{
 }
 
 
-/* LIMPIEZA DE TITULOS DE SECCIONES Y SUBTEXTOS DEL INICIO */
-.screen-head{display:none!important}
+/* Ocultar solo el encabezado redundante de INICIO. Las secciones internas (LINEAS, MAPA, PARADAS, etc.) necesitan sus encabezados y controles de regreso. */
+.screen[data-screen="inicio"] .screen-head{display:none!important}
 .home-design-grid .card-lineas small,
 .home-design-grid .card-mapa small,
 .home-design-grid .card-paradas small,
