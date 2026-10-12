@@ -335,3 +335,28 @@ html[data-theme=dark] .bottom-nav .nav-btn:nth-child(5){color:#c084ff}
 @media(prefers-reduced-motion:reduce){
   .bottom-nav .nav-icon,.bottom-nav .nav-icon .card-icon{animation:none!important}
 }
+
+
+/* CONTRASTE DE AMARILLOS EN MODO OSCURO: conservar el tono amarillo y mejorar legibilidad de textos pequeños. */
+html[data-theme="dark"]{
+  --tcn-label-active:#FFE66D;
+  --tcn-muted:#C8C1A7;
+}
+@media(prefers-color-scheme:dark){
+  html:not([data-theme="light"]){
+    --tcn-label-active:#FFE66D;
+    --tcn-muted:#C8C1A7;
+  }
+}
+html[data-theme="dark"] .screen[data-screen="lineas"] .lc-meta,
+html[data-theme="dark"] .screen[data-screen="lineas"] .screen-sub,
+html[data-theme="dark"] .screen[data-screen="lineas"] .tc-stop-ctx,
+html[data-theme="dark"] .screen[data-screen="lineas"] .tc-crumb{
+  color:#C8C1A7!important;
+}
+@media(prefers-color-scheme:dark){
+  html:not([data-theme="light"]) .screen[data-screen="lineas"] .lc-meta,
+  html:not([data-theme="light"]) .screen[data-screen="lineas"] .screen-sub,
+  html:not([data-theme="light"]) .screen[data-screen="lineas"] .tc-stop-ctx,
+  html:not([data-theme="light"]) .screen[data-screen="lineas"] .tc-crumb{color:#C8C1A7!important;}
+}
