@@ -54,4 +54,6 @@
     root.addEventListener("focusout",function(e){var c=el(e.target);if(c)c.classList.remove("hot");});
   }
   window.TcLineas={bindPress:bindPress,lineCardHtml:lineCardHtml,detailCardHtml:detailCardHtml,arrivalCardHtml:arrivalCardHtml,stateHtml:stateHtml,animateNumbers:animateNumbers,arrivalDuration:arrivalDuration,isArriving:isArriving};
+  /* Activar una sola vez los estados visuales de interacción para las tarjetas presentes y futuras de la sección Líneas. */
+  if(document&&document.body)bindPress(document.body);
 })();
