@@ -121,9 +121,7 @@
   -webkit-appearance:none;
   text-align:left;
   font:inherit;
-  transform:translateZ(0);
   animation:tcLineCardEnter .42s cubic-bezier(.2,.8,.2,1) both;
-  animation-delay:calc(min(var(--n,0),12) * 35ms);
 }
 .screen[data-screen="lineas"] .line-card *,
 .screen[data-screen="lineas"] .line-detail-card *{
@@ -165,7 +163,6 @@
   overflow:hidden;
   isolation:isolate;
   animation:tcLineCardEnter .42s cubic-bezier(.2,.8,.2,1) both;
-  animation-delay:calc(min(var(--n,0),12) * 35ms);
 }
 .screen[data-screen="lineas"] .arrival-copy,
 .screen[data-screen="lineas"] .arrival-row,
@@ -176,8 +173,8 @@
   overflow-wrap:anywhere;
 }
 @keyframes tcLineCardEnter{
-  from{opacity:0;transform:translateY(7px);filter:brightness(.94)}
-  to{opacity:1;transform:translateY(0);filter:brightness(1)}
+  from{opacity:0}
+  to{opacity:1}
 }
 @media(prefers-reduced-motion:reduce){
   .screen[data-screen="lineas"] .line-card,

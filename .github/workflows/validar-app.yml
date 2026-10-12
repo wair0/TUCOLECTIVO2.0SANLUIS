@@ -65,7 +65,17 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace assembleDebug
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon --stacktrace assembleDebug; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Gradle falló (intento $attempt/3); reintentando en 15 segundos por si es un error temporal de descarga."
+              sleep 15
+            fi
+          done
+          echo "::error::Gradle falló después de 3 intentos."
+          exit 1
 
       - name: Publicar APK debug
         uses: actions/upload-artifact@v4

@@ -1,4 +1,4 @@
-name: Generar circuitos del diseño
+name: Validar generación de circuitos
 on:
   push:
     branches:
@@ -7,22 +7,22 @@ on:
       - tools/generar_circuits.py
       - .github/workflows/generar-circuits.yml
 permissions:
-  contents: write
+  contents: read
 jobs:
-  generar:
+  validar:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar rama
         uses: actions/checkout@v4
         with:
           ref: native/cyberpunkwebview-ui
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Generar CSS de circuitos
-        run: python3 tools/generar_circuits.py
-      - name: Publicar CSS generado
+      - name: Generar y comprobar circuitos
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/assets/circuits.css
-          git commit -m "GENERAR circuits.css del diseño del ZIP" || exit 0
-          git push origin HEAD:native/cyberpunkwebview-ui
+          set -euo pipefail
+          python3 tools/generar_circuits.py
+          if git diff --quiet -- app/src/main/assets/circuits.css; then
+            echo "circuits.css ya está actualizado."
+          else
+            echo "::warning::La generación cambia circuits.css. No se creará ni publicará ningún commit automático; incorpora ese archivo al commit del cambio que estés haciendo."
+            git diff --stat -- app/src/main/assets/circuits.css
+          fi
