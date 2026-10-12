@@ -214,4 +214,67 @@ html[data-theme] .screen[data-screen="lineas"] .screen-head{display:flex!importa
 .screen[data-screen="lineas"] .arrival-arriving{background:transparent!important;padding:0!important;}
 @media(prefers-color-scheme:dark){html:not([data-theme="light"]) .screen[data-screen="lineas"] .screen-head{display:flex!important;}}
 
-
+/* GEOMETRÍA ORIGINAL DEL ICONO DE LÍNEA (ZIP REPARACION_LINEAS_SUBSECCIONES):
+   el símbolo de ruta va dentro de un HEXÁGONO de seis vértices, no dentro del recorte angular de la tarjeta.
+   Se fija la geometría explícitamente para evitar que una variable CSS heredada deforme el icono. */
+.screen[data-screen="lineas"] .line-card .lc-badge,
+.screen[data-screen="lineas"] .lineas-grid>[data-line] .lc-badge{
+  position:relative;
+  isolation:isolate;
+  flex:0 0 44px;
+  width:44px;
+  height:44px;
+  overflow:visible;
+}
+.screen[data-screen="lineas"] .line-card .lc-badge .tc-hx,
+.screen[data-screen="lineas"] .lineas-grid>[data-line] .lc-badge .tc-hx{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:rgb(var(--tcn-edge));
+  clip-path:polygon(25% 6%,75% 6%,100% 50%,75% 94%,25% 94%,0 50%);
+  -webkit-clip-path:polygon(25% 6%,75% 6%,100% 50%,75% 94%,25% 94%,0 50%);
+  transition:background .25s ease;
+}
+.screen[data-screen="lineas"] .line-card .lc-badge .tc-hx::after,
+.screen[data-screen="lineas"] .lineas-grid>[data-line] .lc-badge .tc-hx::after{
+  content:"";
+  position:absolute;
+  inset:1.5px;
+  background:var(--tcn-bg-b);
+  clip-path:polygon(25% 6%,75% 6%,100% 50%,75% 94%,25% 94%,0 50%);
+  -webkit-clip-path:polygon(25% 6%,75% 6%,100% 50%,75% 94%,25% 94%,0 50%);
+}
+.screen[data-screen="lineas"] .line-card .lc-badge .tc-hxf,
+.screen[data-screen="lineas"] .lineas-grid>[data-line] .lc-badge .tc-hxf{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background:linear-gradient(135deg,rgb(var(--tcn-acc)),rgb(var(--tcn-acc2)));
+  clip-path:polygon(25% 6%,75% 6%,100% 50%,75% 94%,25% 94%,0 50%);
+  -webkit-clip-path:polygon(25% 6%,75% 6%,100% 50%,75% 94%,25% 94%,0 50%);
+  opacity:0;
+  transform:scale(.6);
+  transition:opacity .25s ease,transform .38s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;
+}
+.screen[data-screen="lineas"] .line-card .lc-badge svg,
+.screen[data-screen="lineas"] .lineas-grid>[data-line] .lc-badge svg{
+  position:relative;
+  z-index:2;
+}
+.screen[data-screen="lineas"] .line-card.hot .lc-badge .tc-hx,
+.screen[data-screen="lineas"] .lineas-grid>[data-line].hot .lc-badge .tc-hx{
+  background:rgb(var(--tcn-acc));
+}
+.screen[data-screen="lineas"] .line-card.hot .lc-badge .tc-hxf,
+.screen[data-screen="lineas"] .lineas-grid>[data-line].hot .lc-badge .tc-hxf{
+  opacity:1;
+  transform:scale(1);
+}
+@media(prefers-reduced-motion:reduce){
+  .screen[data-screen="lineas"] .line-card .lc-badge .tc-hxf,
+  .screen[data-screen="lineas"] .lineas-grid>[data-line] .lc-badge .tc-hxf{
+    transition:none;
+  }
+}
