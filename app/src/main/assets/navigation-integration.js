@@ -53,13 +53,13 @@
     };
     header.onThemeChange = function (mode, theme) {
       var meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', theme === 'dark' ? '#080e1f' : '#eef3fa');
+      if (meta) meta.setAttribute('content', theme === 'dark' ? '#000000' : '#eef3fa');
     };
     header.onNotification = function () {};
     header.onMarkAllRead = function () {};
     var theme = header.getTheme();
     var themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.setAttribute('content', theme.theme === 'dark' ? '#080e1f' : '#eef3fa');
+    if (themeMeta) themeMeta.setAttribute('content', theme.theme === 'dark' ? '#000000' : '#eef3fa');
   }
   document.addEventListener('app:navigate', function (event) {
     syncSection(event.detail && event.detail.go);
@@ -91,5 +91,18 @@
   window.setSystemStatusHighTech = function (text) {
     if (header) header.setStatus(String(text || 'SISTEMA LISTO'));
   };
+  /* Integración de las tarjetas suministradas en el ZIP con la navegación y la sincronización existentes. */
+  if (window.TcHomeCards) {
+    window.TcHomeCards.onSelect = navigate;
+    window.TcHomeCards.onSync = function () {
+      var legacySync = document.getElementById('sync');
+      if (legacySync) legacySync.click();
+      else window.TcHomeCards.sync.fail();
+    };
+    document.addEventListener('app:navigate', function (event) {
+      if (event.detail && event.detail.go === 'inicio') window.TcHomeCards.replay();
+    });
+  }
+  if (window.TcLineas && document.body) window.TcLineas.bindPress(document.body);
   syncSection('inicio');
 })();
