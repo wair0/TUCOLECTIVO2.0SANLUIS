@@ -32,3 +32,15 @@ background-image:radial-gradient(circle at 1px 1px,rgba(var(--tcn-acc),.14) 1px,
 @keyframes tcnping{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
 @keyframes tcnbreath{0%,100%{opacity:.65}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tc-nav-beam,.tc-nav-ico,.tc-nav-hex{transition:none}.tc-nav-beam::after,.tc-nav-item.active .tc-nav-ico::after,.tc-nav-item.active svg path,.tc-nav-item.active svg circle{animation:none;stroke-dashoffset:0}}
+
+/* FIX HIGH-TECH: igualar el antialiasing de las esquinas al marco, sin alterar navegación ni geometría. */
+.tc-nav{background-color:rgb(var(--tcn-edge))!important}
+.tc-nav::after{
+  -webkit-clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px);
+  clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px);
+  filter:drop-shadow(0 0 .75px rgb(var(--tcn-edge)));
+}
+.tc-nav::before{
+  -webkit-clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px);
+  clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px);
+}
