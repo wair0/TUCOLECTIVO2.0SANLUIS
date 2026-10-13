@@ -147,3 +147,17 @@ color:var(--tcn-muted);font:700 9.5px/1 ui-monospace,SFMono-Regular,Menlo,Consol
 .tc-hd-seg button:focus-visible span{text-decoration:underline}
 .tc-hd-panel.open .tc-hd-theme{animation:tchitem .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--n,0) * 55ms + 70ms)}
 @media (prefers-reduced-motion:reduce){.tc-hd-seg-ind,.tc-hd-seg button,.tc-hd-seg button svg{transition:none}.tc-hd-panel.open .tc-hd-theme{animation:none}}
+
+
+/* FIX HIGH-TECH: eliminar halos oscuros en las esquinas recortadas en Android WebView.
+   Se conserva la geometría y el diseño; el contorno antialiasado usa el mismo color del marco. */
+.tc-hd{background-color:rgb(var(--tcn-edge))!important}
+.tc-hd::after{
+  -webkit-clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px));
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px));
+  filter:drop-shadow(0 0 .75px rgb(var(--tcn-edge)));
+}
+.tc-hd::before{
+  -webkit-clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px));
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px));
+}
