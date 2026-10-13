@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "native/cyberpunkwebview-ui" ]
+    branches: [ "native/hightechwebview-ui" ]
   workflow_dispatch:
 
 permissions:

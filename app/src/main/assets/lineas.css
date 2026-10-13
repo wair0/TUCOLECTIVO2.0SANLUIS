@@ -214,3 +214,88 @@ html[data-theme] .screen[data-screen="lineas"] .screen-head{display:flex!importa
 .screen[data-screen="lineas"] .arrival-arriving{background:transparent!important;padding:0!important;}
 @media(prefers-color-scheme:dark){html:not([data-theme="light"]) .screen[data-screen="lineas"] .screen-head{display:flex!important;}}
 
+
+
+/* INTEGRACIÓN VISUAL DEFINITIVA — LÍNEAS Y SUBSECCIONES.
+   Replica el marco angular, el borde fino y el panel técnico de header.css/bottom-nav.css.
+   Limitado a la pantalla de líneas: no afecta la sección independiente data-screen="arribos". */
+.screen[data-screen="lineas"] .line-card,
+.screen[data-screen="lineas"] .lineas-grid>[data-line],
+.screen[data-screen="lineas"] .line-detail-card,
+.screen[data-screen="lineas"] .tc-stop,
+.screen[data-screen="lineas"] .tc-btn,
+.screen[data-screen="lineas"] .tc-state{
+  --cut:12px;
+  position:relative;
+  isolation:isolate;
+  border:0!important;
+  border-radius:0!important;
+  background-color:transparent!important;
+  box-shadow:none;
+  -webkit-clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));
+  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));
+}
+.screen[data-screen="lineas"] .line-card::after,
+.screen[data-screen="lineas"] .lineas-grid>[data-line]::after,
+.screen[data-screen="lineas"] .line-detail-card::after,
+.screen[data-screen="lineas"] .tc-stop::after,
+.screen[data-screen="lineas"] .tc-btn::after,
+.screen[data-screen="lineas"] .tc-state::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  background:rgb(var(--tcn-edge));
+  border-radius:0;
+  filter:drop-shadow(0 0 .5px rgb(var(--tcn-edge)));
+  pointer-events:none;
+}
+.screen[data-screen="lineas"] .line-card::before,
+.screen[data-screen="lineas"] .lineas-grid>[data-line]::before,
+.screen[data-screen="lineas"] .line-detail-card::before,
+.screen[data-screen="lineas"] .tc-stop::before,
+.screen[data-screen="lineas"] .tc-btn::before,
+.screen[data-screen="lineas"] .tc-state::before{
+  content:"";
+  position:absolute;
+  inset:1px;
+  z-index:-1;
+  -webkit-clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));
+  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));
+  background-image:
+    radial-gradient(circle at 1px 1px,rgba(var(--tcn-acc),.14) 1px,transparent 1.3px),
+    linear-gradient(180deg,var(--tcn-bg-a),var(--tcn-bg-b));
+  background-size:14px 14px,100% 100%;
+  pointer-events:none;
+}
+.screen[data-screen="lineas"] .line-card.hot::after,
+.screen[data-screen="lineas"] .lineas-grid>[data-line].hot::after,
+.screen[data-screen="lineas"] .line-detail-card.hot::after,
+.screen[data-screen="lineas"] .tc-btn.hot::after{
+  background:rgb(var(--tcn-acc));
+}
+.screen[data-screen="lineas"] .line-card.hot::before,
+.screen[data-screen="lineas"] .lineas-grid>[data-line].hot::before,
+.screen[data-screen="lineas"] .line-detail-card.hot::before{
+  background-image:
+    radial-gradient(circle at 1px 1px,rgba(var(--tcn-acc),.16) 1px,transparent 1.3px),
+    radial-gradient(120% 90% at 100% 100%,rgba(var(--tcn-acc),.2),transparent 65%),
+    linear-gradient(180deg,var(--tcn-bg-a),var(--tcn-bg-b));
+  background-size:14px 14px,100% 100%,100% 100%;
+}
+.screen[data-screen="lineas"] .tc-btn.tc-btn-primary::after{
+  background:rgb(var(--tcn-acc));
+}
+.screen[data-screen="lineas"] .tc-btn.tc-btn-primary::before{
+  background:linear-gradient(135deg,rgb(var(--tcn-acc)),rgb(var(--tcn-acc2)));
+}
+.screen[data-screen="lineas"] .tc-state.is-error::after{
+  background:rgb(var(--tcn-alert));
+}
+.screen[data-screen="lineas"] .line-card:focus-visible,
+.screen[data-screen="lineas"] .lineas-grid>[data-line]:focus-visible,
+.screen[data-screen="lineas"] .line-detail-card:focus-visible,
+.screen[data-screen="lineas"] .tc-btn:focus-visible{
+  outline:2px solid rgb(var(--tcn-acc));
+  outline-offset:2px;
+}
