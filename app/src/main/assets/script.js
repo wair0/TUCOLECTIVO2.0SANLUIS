@@ -1323,6 +1323,7 @@
         if(Number.isFinite(code)&&code>0) window.TuColectivoLineLabels[String(code)]=String(item.name||'').trim();
       });
       window.TuColectivoLineSyncResult?.(true, items.length);
+      document.dispatchEvent(new CustomEvent('app:linesloaded',{detail:{lines:items}}));
       renderLines(items.map(item=>({
         ...item,
         name:window.TuColectivoPublicLineLabel
@@ -1442,6 +1443,21 @@
     const c=e.target.closest('.line-card');if(c){const l=lines.find(x=>String(x.code)===c.dataset.line);if(l)openLine(l);return;}
   });
   document.addEventListener('app:navigate',e=>{if(e.detail.go==='lineas'){currentLine=null;currentStreet=null;currentIntersection=null;currentStop=null;loadLines();}});
+  document.addEventListener('app:searchselect',e=>{
+    const result=e.detail||{};
+    if(result.type!=='line')return;
+    const code=String(result.code);
+    const found=lines.find(l=>String(l.code)===code);
+    if(found){openLine(found);return;}
+    const once=event=>{
+      document.removeEventListener('app:linesloaded',once);
+      const line=lines.find(l=>String(l.code)===code);
+      if(line)openLine(line);
+    };
+    document.addEventListener('app:linesloaded',once);
+    if(!document.querySelector('[data-screen="lineas"]')?.classList.contains('active'))window.TuColectivo.navigate('lineas');
+    else loadLines();
+  });
   window.TuColectivoLineBack=back;
   const listStyle=document.createElement('style');
   listStyle.textContent='.line-sub-head{display:flex;flex-direction:column;align-items:flex-start;gap:7px}.line-sub-head>strong{display:block;line-height:1.2}.line-sub-head>.line-sub-context{display:block;max-width:100%;line-height:1.35;overflow-wrap:anywhere;white-space:normal;opacity:.9}';
