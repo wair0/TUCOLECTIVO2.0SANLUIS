@@ -98,8 +98,12 @@
       currentSearch={query:String(query||'').trim(),filter:filter||'todo'};
       searchResults.textContent='';
       if(!currentSearch.query){searchResults.textContent='ESCRIBÍ PARA BUSCAR';return;}
-      var term=normalize(currentSearch.query);
-      var entries=searchEntries().filter(function(item){return matchesFilter(item,currentSearch.filter)&&normalize(item.search+' '+item.label).includes(term);}).slice(0,30);
+      var term=normalize(currentSearch.query).replace(/^linea\\s+/,'').trim();
+      var entries=searchEntries().filter(function(item){
+        if(!matchesFilter(item,currentSearch.filter))return false;
+        var haystack=normalize(item.search+' '+item.label);
+        return haystack.includes(term);
+      }).slice(0,30);
       if(!entries.length){searchResults.textContent=currentSearch.filter==='calles'?'LAS CALLES SE CONSULTAN AL SELECCIONAR UNA LÍNEA':'SIN RESULTADOS · SINCRONIZÁ LÍNEAS SI TODAVÍA NO APARECEN';return;}
       entries.forEach(function(item,index){
         var button=document.createElement('button');button.type='button';button.className='tc-hd-result';
