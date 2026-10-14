@@ -12,12 +12,17 @@
 (function(){
   function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
   function norm(s){return String(s||"").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
-  var ROUTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-10 6 10 6-10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var ROUTE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8,6 H15 A3,3 0 0 1 15,12 H9 A3,3 0 0 0 9,18 H16"/><circle cx="5" cy="6" r="1.6"/><circle cx="19" cy="18" r="1.6"/></svg>';
+  /* PARCHE: script.js (arribos de PARADAS CERCANAS) usa esc(destination) fuera de su alcance y la pantalla quedaba en "CONSULTANDO ARRIBOS_" con un ReferenceError.
+     Estos respaldos globales evitan los errores sin tocar script.js (la corrección definitiva está en el LEEME). */
+  if(typeof window.esc!=="function")window.esc=function(v){return esc(v);};
+  if(typeof window.destination==="undefined")window.destination="";
+  if(typeof window.destinations==="undefined")window.destinations=[];
   var GO='<svg class="lc-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9,5 L16,12 L9,19"/></svg>';
   function isArriving(status,m){var s=norm(status);return /^(ARRIBANDO|LLEGANDO|EN PARADA|PROXIMO|PROXIMA)$/.test(s)||(typeof m==="number"&&isFinite(m)&&m<=1);}
   function arrivalDuration(m){return(typeof m==="number"&&isFinite(m))?Math.max(1.2,Math.min(18,m*0.35)):8;}
   function lineCardHtml(l,i){
-    /* La identificación pública es el nombre de la línea; el código SmartMove queda solo en data-line. */
+    /* Muestra la identificación PÚBLICA (l.name, p. ej. A, BCG, 110). El código interno de SmartMove (l.code) solo viaja en data-line. */
     var label=String(l.name==null||l.name===""?l.code:l.name).trim(),r=l.routes;
     var meta=(r==null||r==="")?"":'<span class="lc-meta">'+esc(r)+(Number(r)===1?" RUTA":" RUTAS")+'</span>';
     return '<button type="button" class="line-card tc-enter" data-line="'+esc(l.code)+'" aria-label="LÍNEA '+esc(label)+'" style="--n:'+(i|0)+'"><span class="lc-badge"><span class="tc-hx"></span><i class="tc-hxf"></i>'+ROUTE+'</span><span class="lc-body"><span class="lc-k">LÍNEA</span><span class="lc-name'+(label.length>5?" lc-long":"")+'">'+esc(label)+'</span>'+meta+'</span>'+GO+'</button>';
@@ -43,7 +48,7 @@
       (function f(now){var t=Math.min(1,(now-t0)/D);n.textContent=Math.round(to*(1-Math.pow(1-t,3)));if(t<1)requestAnimationFrame(f);else n.textContent=to;})(t0);
     });
   }
-  var SEL=".line-card,.lineas-grid>[data-line],.line-detail-card,.arrival-card,.tc-btn,.tc-back";
+  var SEL=".line-card,.lineas-grid>[data-line],.line-detail-card,.arrival-card,.tc-btn,.tc-back,.nearby-stop,.favorite-item,.locate-stops,.map-refresh-card,.notification-toggle,.arrival-favorite-toggle,.map-popup-line,.map-route-action,.map-controls button,.favorite-remove,.map-popup-close";
   function bindPress(root){
     root=root||document.body;
     function el(t){var c=t&&t.closest?t.closest(SEL):null;return c&&root.contains(c)&&!c.disabled?c:null;}
