@@ -1447,8 +1447,9 @@
     const result=e.detail||{};
     if(result.type!=='line')return;
     const code=String(result.code);
+    const active=document.querySelector('[data-screen="lineas"]')?.classList.contains('active');
     const found=lines.find(l=>String(l.code)===code);
-    if(found){openLine(found);return;}
+    if(found&&active){openLine(found);return;}
     const once=event=>{
       document.removeEventListener('app:linesloaded',once);
       const line=lines.find(l=>String(l.code)===code);
