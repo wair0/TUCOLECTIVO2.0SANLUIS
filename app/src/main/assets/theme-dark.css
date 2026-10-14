@@ -1,17 +1,20 @@
-/* TU COLECTIVO 2.0 - Modo oscuro NEGRO con textos oro neon. Cargar al FINAL (despues de header.css, bottom-nav.css, home-cards.css y lineas.css):
-   sobrescribe solo los tokens --tcn-* del modo oscuro, asi no hace falta editar header.css ni bottom-nav.css. El modo claro no cambia.
-   Fondos negros (#000), bordes grafito, texto principal oro neon #FFF36A, acento cian, contador de minutos en verde neon. */
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-bg-a:#0B0B0C;--tcn-bg-b:#000000;--tcn-edge:54,60,68;--tcn-muted:#9B9582;--tcn-label-active:#FFF36A;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080C;--tcn-page:#000000;--tcn-alert:251,113,133;--tcn-neon:57,255,20;--tcn-scrim:rgba(0,0,0,.62);}}
-:root[data-theme="dark"]{--tcn-bg-a:#0B0B0C;--tcn-bg-b:#000000;--tcn-edge:54,60,68;--tcn-muted:#9B9582;--tcn-label-active:#FFF36A;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080C;--tcn-page:#000000;--tcn-alert:251,113,133;--tcn-neon:57,255,20;--tcn-scrim:rgba(0,0,0,.62);}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) :is(.tc-hd-status,.tc-nav-item.active .tc-nav-label,.tc-card-name,.tc-sync-pct,.lc-name,.ld-name,.arrival-v,.screen-title,.tc-stop-name,.tc-btn:not(.tc-btn-primary)){text-shadow:0 0 9px rgba(255,243,106,.62)}}
-:root[data-theme="dark"] :is(.tc-hd-status,.tc-nav-item.active .tc-nav-label,.tc-card-name,.tc-sync-pct,.lc-name,.ld-name,.arrival-v,.screen-title,.tc-stop-name,.tc-btn:not(.tc-btn-primary)){text-shadow:0 0 9px rgba(255,243,106,.62)}
+/* TU COLECTIVO 2.0 - PALETA, MODO OSCURO NEGRO y GUARDAS. Se carga DESPUÉS de header.css, bottom-nav.css, home-cards.css y lineas.css (index.html ya lo hace).
+   1) Paleta única de colores (claro y oscuro) con más contraste: los textos ya no quedan apagados.
+      Claro: texto #08122B, secundario #2B4170, acento azul. Oscuro: fondo negro #000, texto principal oro neón #FFD60A, secundario oro claro #E3D58F, acento cian.
+   2) Variables heredadas de style.css en negro (antes el fondo y las superficies del modo oscuro seguían azules).
+   3) Guardas: restauran el recorte de esquinas del header y de la barra inferior y la opacidad de las etiquetas aunque otro archivo lo haya cambiado. */
+:root{--tcn-bg-a:#FFFFFF;--tcn-bg-b:#EAF1FD;--tcn-edge:112,148,222;--tcn-muted:#2B4170;--tcn-label-active:#08122B;--tcn-acc:29,78,216;--tcn-acc2:3,118,160;--tcn-on-active:#FFFFFF;--tcn-page:#EEF3FC;--tcn-alert:200,16,60;--tcn-neon:0,128,44;--tcn-scrim:rgba(238,243,252,.6)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-bg-a:#0B0B0C;--tcn-bg-b:#000000;--tcn-edge:66,76,88;--tcn-muted:#E3D58F;--tcn-label-active:#FFD60A;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080C;--tcn-page:#000000;--tcn-alert:255,120,140;--tcn-neon:57,255,20;--tcn-scrim:rgba(0,0,0,.62)}}
+:root[data-theme="dark"]{--tcn-bg-a:#0B0B0C;--tcn-bg-b:#000000;--tcn-edge:66,76,88;--tcn-muted:#E3D58F;--tcn-label-active:#FFD60A;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080C;--tcn-page:#000000;--tcn-alert:255,120,140;--tcn-neon:57,255,20;--tcn-scrim:rgba(0,0,0,.62)}
+:root[data-theme="light"]{--tcn-bg-a:#FFFFFF;--tcn-bg-b:#EAF1FD;--tcn-edge:112,148,222;--tcn-muted:#2B4170;--tcn-label-active:#08122B;--tcn-acc:29,78,216;--tcn-acc2:3,118,160;--tcn-on-active:#FFFFFF;--tcn-page:#EEF3FC;--tcn-alert:200,16,60;--tcn-neon:0,128,44;--tcn-scrim:rgba(238,243,252,.6)}
 
-/* Fondo NEGRO y tokens heredados del tema global para modo oscuro. */
-html[data-theme=dark]{--bg:#000;--sf:#0b0b0c;--ink:#FFF36A;--mut:#9b9582;--ln:#363c44;--tint:#101214;--tint2:#0d0e10;--glass:rgba(5,5,6,.88);--glass2:rgba(8,8,9,.97);--glass3:rgba(8,8,9,.62);--field:#0b0b0c;--soft:#15171a;--soft2:#0d0e10;--bd2:#363c44;--press:#1b1e22;--dash:#2a2f36;--map:#050607;--ring:#26323a;--ic1:#101214;--ic2:#0d1a1f;--deep:#15181c;--a1:0;--a2:0;--a3:0;--dot:rgba(255,255,255,.035)}
+/* variables heredadas de style.css */
+html[data-theme=dark]{--bg:#000;--sf:#0b0b0c;--ink:#FFD60A;--mut:#E3D58F;--ln:#424c58;--tint:#101214;--tint2:#0d0e10;--glass:rgba(5,5,6,.88);--glass2:rgba(8,8,9,.97);--glass3:rgba(8,8,9,.62);--field:#0b0b0c;--soft:#15171a;--soft2:#0d0e10;--bd2:#424c58;--press:#1b1e22;--dash:#2a2f36;--map:#050607;--ring:#26323a;--ic1:#101214;--ic2:#0d1a1f;--deep:#15181c;--a1:0;--a2:0;--a3:0;--dot:rgba(255,255,255,.035)}
 html[data-theme=dark] body{background:#000}
+html:not([data-theme=dark]){--ink:#08122B;--mut:#2B4170}
 
-/* CONTRASTE GLOBAL DE TEXTOS AMARILLOS EN MODO OSCURO — todas las secciones */
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-label-active:#FFF36A;--ink:#FFF36A;}}
-:root[data-theme="dark"]{--tcn-label-active:#FFF36A;--ink:#FFF36A;}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) :is(.tc-hd-status,.tc-nav-item.active .tc-nav-label,.tc-card-name,.tc-sync-pct,.lc-name,.ld-name,.arrival-v,.screen-title,.tc-stop-name,.tc-btn:not(.tc-btn-primary),.tc-crumb>span,.tc-state.is-loading){color:#FFF36A!important;text-shadow:0 0 2px rgba(255,243,106,.95),0 0 10px rgba(255,243,106,.55)!important;}}
-:root[data-theme="dark"] :is(.tc-hd-status,.tc-nav-item.active .tc-nav-label,.tc-card-name,.tc-sync-pct,.lc-name,.ld-name,.arrival-v,.screen-title,.tc-stop-name,.tc-btn:not(.tc-btn-primary),.tc-crumb>span,.tc-state.is-loading){color:#FFF36A!important;text-shadow:0 0 2px rgba(255,243,106,.95),0 0 10px rgba(255,243,106,.55)!important;}
+/* guardas del header y la barra inferior */
+html body .tc-hd::after,html body .tc-hd::before{clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px))!important}
+html body .tc-nav::after{clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px)!important}
+html body .tc-nav-label{opacity:1!important}
+html body .tc-hd-status{font-weight:700}
