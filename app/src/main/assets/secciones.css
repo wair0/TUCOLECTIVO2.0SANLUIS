@@ -157,3 +157,9 @@ html body [data-screen="mapa"] .leaflet-control-attribution{background:var(--tcn
 html body [data-screen="mapa"] .leaflet-control-attribution a{color:rgb(var(--tcn-acc))!important}
 html:not([data-theme=dark]) body [data-screen="mapa"] .map-wrap .leaflet-container{background:#dfe8f6}
 html body [data-screen="arribos"] .arrival-card.arrival-arriving::after{background:rgb(var(--tcn-alert))}
+
+/* Selector explícito del único arribo que se sigue para alertas. */
+html body [data-screen="favoritos"] .arrival-notification-select{flex:0 1 auto;min-height:38px;padding:8px 10px;border:1px solid rgb(var(--tcn-edge));background:transparent;color:var(--tcn-label-active);font:800 10px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;cursor:pointer}
+html body [data-screen="favoritos"] .arrival-notification-select[aria-pressed="true"]{border-color:rgb(var(--tcn-acc));color:rgb(var(--tcn-acc))}
+html body [data-screen="favoritos"] .favorite-item[data-fav-type="arrivals"]{flex-wrap:wrap;gap:10px}
+html body [data-screen="favoritos"] .favorite-item[data-fav-type="arrivals"]>div{flex:1 1 150px;min-width:0}
