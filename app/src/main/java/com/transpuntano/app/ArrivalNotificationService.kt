@@ -163,21 +163,39 @@ class ArrivalNotificationService : Service() {
                         val identifier = stop.optString("identifier", stop.optString("id", ""))
                         if (line <= 0 || identifier.isBlank()) continue
                         val arrivals = runCatching { api.getArrivals(identifier, line, timeoutMs = 4_000) }.getOrDefault(emptyList())
-                        val bestArrival = arrivals
+                        val orderedArrivals = arrivals
                             .mapNotNull { arrival ->
                                 val minutes = arrival.minutes ?: if (arrival.status.contains("arrib", true)) 0 else null
                                 if (minutes == null) null else arrival to minutes
                             }
-                            .minByOrNull { it.second }
-                        if (bestArrival != null) {
-                            val arrival = bestArrival.first
-                            val minutes = bestArrival.second
+                            .sortedBy { it.second }
+                        if (orderedArrivals.isNotEmpty()) {
+                            val prefsNow = getSharedPreferences(PREFS, MODE_PRIVATE)
+                            val favoriteKey = favorite.optString("key", "$identifier::$line")
+                            val activeKey = "active_service_${favoriteKey.hashCode()}"
+                            fun identity(pair: Pair<com.tucolectivo.app.model.TransitArrival, Int>): String {
+                                val a = pair.first
+                                return a.vehicleId.takeIf { it.isNotBlank() }
+                                    ?: "${a.destination.trim().lowercase()}_${pair.second}"
+                            }
+                            val savedIdentity = prefsNow.getString(activeKey, "").orEmpty()
+                            val active = orderedArrivals.firstOrNull { identity(it) == savedIdentity }
+                                ?: orderedArrivals.first().also { prefsNow.edit().putString(activeKey, identity(it)).apply() }
+                            val arrival = active.first
+                            val minutes = active.second
                             val lineLabel = publicLineLabel(
                                 favorite.optString("lineLabel").ifBlank { arrival.line },
                                 line
                             )
                             updateLiveArrivalNotification(favorite, line, lineLabel, arrival.destination, minutes)
                             evaluateArrival(favorite, line, lineLabel, identifier, arrival.vehicleId, arrival.destination, minutes)
+                            // Al llegar al umbral de 1 minuto, avisar y pasar el seguimiento
+                            // al siguiente coche estimado, en lugar de seguir alertando por el mismo.
+                            if (minutes <= 1) {
+                                val next = orderedArrivals.firstOrNull { it.second > 1 && identity(it) != identity(active) }
+                                if (next != null) prefsNow.edit().putString(activeKey, identity(next)).apply()
+                                else prefsNow.edit().remove(activeKey).apply()
+                            }
                         } else {
                             // Nunca mostrar un tiempo inventado si SmartMove no informa minutos.
                             val label = publicLineLabel(favorite.optString("lineLabel"), line)
@@ -268,37 +286,31 @@ class ArrivalNotificationService : Service() {
         val lastKey = "last_$signature"
         val firedKey = "fired_$signature"
         val previous = prefs.getInt(lastKey, Int.MAX_VALUE)
-        var fired = prefs.getString(firedKey, "")!!.split(',').filter { it.isNotBlank() }.toMutableSet()
-        if (previous != Int.MAX_VALUE && minutes > previous + 3) fired.clear()
-
+        val fired = prefs.getString(firedKey, "")!!.split(',').filter { it.isNotBlank() }.toMutableSet()
         val stage = when {
-            minutes <= 0 && (previous > 0 || "0" !in fired) -> "0"
-            minutes == 1 && previous > 1 -> "1"
-            minutes in 2..3 && previous > 3 -> "3"
-            minutes in 4..5 && previous > 5 -> "5"
-            minutes in 6..10 && previous > 10 -> "10"
-            previous == Int.MAX_VALUE -> when (minutes) {
-                in 6..10 -> "10"
-                in 4..5 -> "5"
-                in 2..3 -> "3"
-                1 -> "1"
-                else -> if (minutes <= 0) "0" else null
-            }
+            minutes <= 1 && "1" !in fired && (previous == Int.MAX_VALUE || previous > 1) -> "1"
+            minutes in 2..3 && "3" !in fired && (previous == Int.MAX_VALUE && minutes >= 2 || previous > 3) -> "3"
+            minutes in 4..5 && "5" !in fired && (previous == Int.MAX_VALUE && minutes >= 4 || previous > 5) -> "5"
+            minutes in 6..10 && "10" !in fired && (previous == Int.MAX_VALUE && minutes >= 6 || previous > 10) -> "10"
+            minutes in 11..15 && "15" !in fired && (previous == Int.MAX_VALUE || previous > 15) -> "15"
+            minutes > 15 -> null
             else -> null
         }
-        if (stage != null && stage !in fired) {
+        if (stage != null) {
             val label = when (stage) {
-                "10" -> "FALTAN 10 MINUTOS"
-                "5" -> "FALTAN 5 MINUTOS"
-                "3" -> "FALTAN 3 MINUTOS"
-                "1" -> "FALTA 1 MINUTO"
-                else -> "EL COLECTIVO ESTÁ ARRIBANDO"
+                "15" -> "FALTAN 15 MIN"
+                "10" -> "FALTAN 10 MIN"
+                "5" -> "FALTAN 5 MIN"
+                "3" -> "FALTAN 3 MIN"
+                else -> "FALTA 1 MIN"
             }
             val stopName = favorite.optJSONObject("stop")?.optString("name", "Tu parada") ?: "Tu parada"
             postArrivalNotification(signature, lineLabel, line, stopName, destination, label, minutes, stage)
             fired.add(stage)
             appendHistory(lineLabel, stopName, destination, label, minutes)
         }
+        // Si el servicio cruza de 2 min a 0 min entre consultas, no repetir alertas;
+        // la transición al próximo arribo se gestiona al alcanzar <= 1 minuto.
         prefs.edit().putInt(lastKey, minutes).putString(firedKey, fired.joinToString(",")).apply()
     }
 
