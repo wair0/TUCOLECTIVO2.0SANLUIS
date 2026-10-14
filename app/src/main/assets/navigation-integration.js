@@ -98,12 +98,33 @@
       currentSearch={query:String(query||'').trim(),filter:filter||'todo'};
       searchResults.textContent='';
       if(!currentSearch.query){searchResults.textContent='ESCRIBÍ PARA BUSCAR';return;}
-      var term=normalize(currentSearch.query).replace(/^linea\s+/,'').trim();
-      var entries=searchEntries().filter(function(item){
-        if(!matchesFilter(item,currentSearch.filter))return false;
-        var haystack=normalize(item.search+' '+item.label);
-        return haystack.includes(term);
-      }).slice(0,30);
+      var rawTerm=normalize(currentSearch.query);
+      var isLineQuery=/^linea\s+/.test(rawTerm);
+      var term=rawTerm.replace(/^linea\s+/,'').trim();
+      if(!term){searchResults.textContent='ESCRIBÍ EL NOMBRE O CÓDIGO DE LA LÍNEA';return;}
+      var candidates=searchEntries().filter(function(item){return matchesFilter(item,currentSearch.filter);});
+      function lineNames(item){
+        var labels=window.TuColectivoLineLabels||{};
+        var publicName=window.TuColectivoPublicLineLabel
+          ? window.TuColectivoPublicLineLabel(item.code,labels)
+          : (labels[item.code]||item.code);
+        return [publicName,labels[item.code],item.label.replace(/^LÍNEA\s+/i,''),item.code]
+          .filter(function(v){return v!=null&&String(v).trim();})
+          .map(function(v){return normalize(v).replace(/^linea\s+/,'').trim();});
+      }
+      // Una coincidencia exacta de línea prevalece sobre coincidencias accidentales
+      // dentro de palabras como "línea", "avenida" o nombres de otras paradas.
+      var exactLines=candidates.filter(function(item){
+        return item.type==='line'&&lineNames(item).some(function(name){return name===term;});
+      });
+      var entries=exactLines.length?exactLines:candidates.filter(function(item){
+        if(isLineQuery&&item.type!=='line')return false;
+        if(item.type==='line'){
+          return lineNames(item).some(function(name){return name.indexOf(term)===0;});
+        }
+        return normalize(item.search+' '+item.label).includes(term);
+      });
+      entries=entries.slice(0,30);
       if(!entries.length){searchResults.textContent=currentSearch.filter==='calles'?'LAS CALLES SE CONSULTAN AL SELECCIONAR UNA LÍNEA':'SIN RESULTADOS · SINCRONIZÁ LÍNEAS SI TODAVÍA NO APARECEN';return;}
       entries.forEach(function(item,index){
         var button=document.createElement('button');button.type='button';button.className='tc-hd-result';
