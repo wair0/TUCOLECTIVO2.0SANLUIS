@@ -64,7 +64,7 @@
       var labels = window.TuColectivoLineLabels || {};
       knownLines.forEach(function(line) {
         var label = window.TuColectivoPublicLineLabel ? window.TuColectivoPublicLineLabel(line.code,labels) : (line.name || line.code);
-        entries.push({type:'line',code:line.code,label:'LÍNEA '+label,extra:'RECORRIDO · '+line.code,search:label+' '+line.name+' '+line.code});
+        entries.push({type:'line',code:line.code,label:'LÍNEA '+label,extra:'RECORRIDO · '+line.code,search:[label,line.name,line.code,'linea '+label,'linea '+line.code].join(' ')});
       });
       (window.TuColectivoStops || []).forEach(function(stop) {
         entries.push({type:'stop',id:stop.id,label:stop.name || 'PARADA',extra:'PARADA · '+(stop.street || ''),search:[stop.name,stop.street,stop.intersection,stop.identifier,stop.code].join(' ')});
@@ -72,7 +72,7 @@
       var fav=storedFavorites();
       (fav.lines || []).forEach(function(code) {
         if(!entries.some(function(e){return e.type==='line'&&String(e.code)===String(code);}))
-          entries.push({type:'line',code:code,label:'LÍNEA '+(labels[code]||code),extra:'LÍNEA FAVORITA',search:(labels[code]||'')+' '+code});
+          entries.push({type:'line',code:code,label:'LÍNEA '+(labels[code]||code),extra:'LÍNEA FAVORITA',search:[labels[code]||'',code,'linea '+(labels[code]||code)].join(' ')});
       });
       (fav.arrivals || []).forEach(function(item) {
         if(item.stop)entries.push({type:'arrival',item:item,label:item.stop.name || 'ARRIBO',extra:'ARRIBO FAVORITO · LÍNEA '+(item.lineLabel||item.line),search:[item.stop.name,item.stop.street,item.lineLabel,item.line].join(' ')});
@@ -98,7 +98,7 @@
       currentSearch={query:String(query||'').trim(),filter:filter||'todo'};
       searchResults.textContent='';
       if(!currentSearch.query){searchResults.textContent='ESCRIBÍ PARA BUSCAR';return;}
-      var term=normalize(currentSearch.query).replace(/^linea\\s+/,'').trim();
+      var term=normalize(currentSearch.query).replace(/^linea\s+/,'').trim();
       var entries=searchEntries().filter(function(item){
         if(!matchesFilter(item,currentSearch.filter))return false;
         var haystack=normalize(item.search+' '+item.label);
