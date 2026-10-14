@@ -176,7 +176,7 @@ class ArrivalNotificationService : Service() {
                             fun identity(pair: Pair<com.tucolectivo.app.model.TransitArrival, Int>): String {
                                 val a = pair.first
                                 return a.vehicleId.takeIf { it.isNotBlank() }
-                                    ?: "${a.destination.trim().lowercase()}_${pair.second}"
+                                    ?: "${a.destination.trim().lowercase()}_${a.gpsTimestamp.trim()}"
                             }
                             val savedIdentity = prefsNow.getString(activeKey, "").orEmpty()
                             val active = orderedArrivals.firstOrNull { identity(it) == savedIdentity }
@@ -192,7 +192,7 @@ class ArrivalNotificationService : Service() {
                             // Al llegar al umbral de 1 minuto, avisar y pasar el seguimiento
                             // al siguiente coche estimado, en lugar de seguir alertando por el mismo.
                             if (minutes <= 1) {
-                                val next = orderedArrivals.firstOrNull { it.second > 1 && identity(it) != identity(active) }
+                                val next = orderedArrivals.firstOrNull { identity(it) != identity(active) }
                                 if (next != null) prefsNow.edit().putString(activeKey, identity(next)).apply()
                                 else prefsNow.edit().remove(activeKey).apply()
                             }
