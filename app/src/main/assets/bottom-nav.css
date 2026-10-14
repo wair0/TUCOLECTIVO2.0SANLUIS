@@ -1,10 +1,10 @@
 /* TU COLECTIVO 2.0 - Barra inferior High-Tech Corporativo (claro/oscuro). Vanilla CSS, offline, sin CDN.
    Tema: automatico por prefers-color-scheme, o forzado con document.documentElement.setAttribute("data-theme","dark"|"light").
    Requiere <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"> para el area segura. */
-:root{--tcn-bg-a:#FFFFFF;--tcn-bg-b:#EDF3FE;--tcn-edge:143,176,234;--tcn-muted:#5B6F94;--tcn-label-active:#0F1B33;--tcn-acc:37,99,235;--tcn-acc2:8,145,178;--tcn-on-active:#FFFFFF;--tcn-page:#eef3fa;}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-bg-a:#0F1A3A;--tcn-bg-b:#070D1E;--tcn-edge:47,91,168;--tcn-muted:#7C93B3;--tcn-label-active:#FFFFFF;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#04101F;--tcn-page:#080e1f;}}
-:root[data-theme="dark"]{--tcn-bg-a:#0F1A3A;--tcn-bg-b:#070D1E;--tcn-edge:47,91,168;--tcn-muted:#7C93B3;--tcn-label-active:#FFFFFF;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#04101F;--tcn-page:#080e1f;}
-.tc-nav{background-color:rgb(var(--tcn-edge));position:fixed;left:0;right:0;bottom:0;z-index:50;height:calc(78px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);display:flex;box-sizing:border-box;
+:root{--tcn-bg-a:#FFFFFF;--tcn-bg-b:#EDF3FE;--tcn-edge:143,176,234;--tcn-muted:#5B6F94;--tcn-label-active:#0F1B33;--tcn-acc:37,99,235;--tcn-acc2:8,145,178;--tcn-on-active:#FFFFFF;--tcn-page:#EEF3FC;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-bg-a:#0F1A3A;--tcn-bg-b:#070D1E;--tcn-edge:47,91,168;--tcn-muted:#7C93B3;--tcn-label-active:#FFFFFF;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#04101F;--tcn-page:#060D1C;}}
+:root[data-theme="dark"]{--tcn-bg-a:#0F1A3A;--tcn-bg-b:#070D1E;--tcn-edge:47,91,168;--tcn-muted:#7C93B3;--tcn-label-active:#FFFFFF;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#04101F;--tcn-page:#060D1C;}
+.tc-nav{background-color:var(--tcn-page);position:fixed;left:0;right:0;bottom:0;z-index:50;height:calc(78px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);display:flex;box-sizing:border-box;
 isolation:isolate;font-family:inherit;-webkit-user-select:none;user-select:none}
 .tc-nav::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;z-index:-2;background:rgb(var(--tcn-edge));clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px)}
 .tc-nav::before{content:"";position:absolute;left:1px;right:1px;top:1px;bottom:0;z-index:-1;clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px);
@@ -32,15 +32,3 @@ background-image:radial-gradient(circle at 1px 1px,rgba(var(--tcn-acc),.14) 1px,
 @keyframes tcnping{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
 @keyframes tcnbreath{0%,100%{opacity:.65}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tc-nav-beam,.tc-nav-ico,.tc-nav-hex{transition:none}.tc-nav-beam::after,.tc-nav-item.active .tc-nav-ico::after,.tc-nav-item.active svg path,.tc-nav-item.active svg circle{animation:none;stroke-dashoffset:0}}
-
-/* FIX HIGH-TECH: igualar el antialiasing de las esquinas al marco, sin alterar navegación ni geometría. */
-.tc-nav{background-color:rgb(var(--tcn-edge))!important}
-.tc-nav::after{
-  -webkit-clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px);
-  clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px);
-  filter:drop-shadow(0 0 .75px rgb(var(--tcn-edge)));
-}
-.tc-nav::before{
-  -webkit-clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px);
-  clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%,0 15px);
-}
