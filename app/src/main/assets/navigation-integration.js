@@ -42,8 +42,95 @@
         detail: { q: String(query || '').trim(), filter: filter || 'todo' }
       }));
     }
-    header.onSearchInput = dispatchSearch;
-    header.onSearch = dispatchSearch;
+    var searchPanel = document.getElementById('tc-hd-search');
+    var searchResults = document.createElement('div');
+    searchResults.id = 'tc-hd-results';
+    searchResults.setAttribute('role','listbox');
+    searchResults.setAttribute('aria-label','Resultados de búsqueda');
+    searchResults.style.cssText = 'max-height:38vh;overflow-y:auto;display:grid;gap:6px;padding:4px 0 8px';
+    searchPanel.insertBefore(searchResults,searchPanel.querySelector('.tc-hd-hint'));
+    var knownLines = [];
+    var currentSearch = {query:'',filter:'todo'};
+    function normalize(value) {
+      return String(value == null ? '' : value).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();
+    }
+    function storedFavorites() {
+      try { return JSON.parse(localStorage.getItem('tucolectivo:favorites:v1') || '{}'); }
+      catch (_) { return {}; }
+    }
+    function searchEntries() {
+      var entries = [];
+      var labels = window.TuColectivoLineLabels || {};
+      knownLines.forEach(function(line) {
+        var label = window.TuColectivoPublicLineLabel ? window.TuColectivoPublicLineLabel(line.code,labels) : (line.name || line.code);
+        entries.push({type:'line',code:line.code,label:'LÍNEA '+label,extra:'RECORRIDO · '+line.code,search:label+' '+line.name+' '+line.code});
+      });
+      (window.TuColectivoStops || []).forEach(function(stop) {
+        entries.push({type:'stop',id:stop.id,label:stop.name || 'PARADA',extra:'PARADA · '+(stop.street || ''),search:[stop.name,stop.street,stop.intersection,stop.identifier,stop.code].join(' ')});
+      });
+      var fav=storedFavorites();
+      (fav.lines || []).forEach(function(code) {
+        if(!entries.some(function(e){return e.type==='line'&&String(e.code)===String(code);}))
+          entries.push({type:'line',code:code,label:'LÍNEA '+(labels[code]||code),extra:'LÍNEA FAVORITA',search:(labels[code]||'')+' '+code});
+      });
+      (fav.arrivals || []).forEach(function(item) {
+        if(item.stop)entries.push({type:'arrival',item:item,label:item.stop.name || 'ARRIBO',extra:'ARRIBO FAVORITO · LÍNEA '+(item.lineLabel||item.line),search:[item.stop.name,item.stop.street,item.lineLabel,item.line].join(' ')});
+      });
+      (fav.stops || []).forEach(function(id) {
+        if(!entries.some(function(e){return e.type==='stop'&&String(e.id)===String(id);}))
+          entries.push({type:'favoriteStop',id:id,label:'PARADA '+id,extra:'PARADA FAVORITA',search:id});
+      });
+      return entries;
+    }
+    function matchesFilter(item,filter) {
+      if(filter==='todo')return true;
+      if(filter==='lineas')return item.type==='line';
+      if(filter==='paradas')return item.type==='stop'||item.type==='favoriteStop';
+      if(filter==='favoritos'){
+        var fav=storedFavorites();
+        return item.type==='arrival'||(item.type==='line'&&(fav.lines||[]).some(function(v){return String(v)===String(item.code);}))||
+          ((item.type==='stop'||item.type==='favoriteStop')&&(fav.stops||[]).some(function(v){return String(v)===String(item.id);}));
+      }
+      return filter==='calles'&&item.type==='street';
+    }
+    function renderSearch(query,filter) {
+      currentSearch={query:String(query||'').trim(),filter:filter||'todo'};
+      searchResults.textContent='';
+      if(!currentSearch.query){searchResults.textContent='ESCRIBÍ PARA BUSCAR';return;}
+      var term=normalize(currentSearch.query);
+      var entries=searchEntries().filter(function(item){return matchesFilter(item,currentSearch.filter)&&normalize(item.search+' '+item.label).includes(term);}).slice(0,30);
+      if(!entries.length){searchResults.textContent=currentSearch.filter==='calles'?'LAS CALLES SE CONSULTAN AL SELECCIONAR UNA LÍNEA':'SIN RESULTADOS · SINCRONIZÁ LÍNEAS SI TODAVÍA NO APARECEN';return;}
+      entries.forEach(function(item,index){
+        var button=document.createElement('button');button.type='button';button.className='tc-hd-result';
+        button.style.cssText='display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;padding:11px 13px;border:1px solid currentColor;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer';
+        var title=document.createElement('strong');title.textContent=item.label;
+        var extra=document.createElement('small');extra.textContent=item.extra;
+        button.appendChild(title);button.appendChild(extra);
+        button.addEventListener('click',function(){selectSearch(item);});
+        searchResults.appendChild(button);
+      });
+    }
+    function selectSearch(item) {
+      if(item.type==='line'){
+        document.dispatchEvent(new CustomEvent('app:searchselect',{detail:{type:'line',code:item.code}}));
+      }else if(item.type==='arrival'){
+        navigate('favoritos');
+      }else if(item.type==='stop'||item.type==='favoriteStop'){
+        navigate('paradas');
+      }
+      header.closeAll();
+    }
+    document.addEventListener('app:linesloaded',function(e){
+      knownLines=Array.isArray(e.detail.lines)?e.detail.lines:[];
+      renderSearch(currentSearch.query,currentSearch.filter);
+    });
+    header.onSearchInput = function(query,filter){dispatchSearch(query,filter);renderSearch(query,filter);};
+    header.onSearch = function(query,filter){
+      dispatchSearch(query,filter);
+      renderSearch(query,filter);
+      var first=searchResults.querySelector('.tc-hd-result');
+      if(first)first.click();
+    };
     header.onAction = function (action, opened) {
       window.TuColectivoHeaderOpen = !!opened;
       if (action === 'notifications' && opened && window.TuColectivoNative &&
