@@ -50,9 +50,10 @@
     searchResults.style.cssText = 'max-height:38vh;overflow-y:auto;display:grid;gap:6px;padding:4px 0 8px';
     searchPanel.insertBefore(searchResults,searchPanel.querySelector('.tc-hd-hint'));
     var knownLines = [];
+    var linesLoading = false;
     var currentSearch = {query:'',filter:'todo'};
     function normalize(value) {
-      return String(value == null ? '' : value).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();
+      return String(value == null ? '' : value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
     }
     function storedFavorites() {
       try { return JSON.parse(localStorage.getItem('tucolectivo:favorites:v1') || '{}'); }
@@ -121,6 +122,7 @@
       header.closeAll();
     }
     document.addEventListener('app:linesloaded',function(e){
+      linesLoading=false;
       knownLines=Array.isArray(e.detail.lines)?e.detail.lines:[];
       renderSearch(currentSearch.query,currentSearch.filter);
     });
@@ -133,8 +135,9 @@
     };
     header.onAction = function (action, opened) {
       window.TuColectivoHeaderOpen = !!opened;
-      if (action === 'search' && opened && !knownLines.length &&
+      if (action === 'search' && opened && !knownLines.length && !linesLoading &&
           window.TuColectivoNative && typeof window.TuColectivoNative.loadLines === 'function') {
+        linesLoading=true;
         window.TuColectivoNative.loadLines();
       }
       if (action === 'notifications' && opened && window.TuColectivoNative &&
