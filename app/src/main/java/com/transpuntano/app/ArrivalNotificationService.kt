@@ -46,6 +46,13 @@ class ArrivalNotificationService : Service() {
     override fun onCreate() {
         super.onCreate()
         createChannels()
+        // Limpia avisos acumulados por versiones anteriores, que usaban un ID distinto
+        // para cada umbral y otro ID para los minutos en vivo.
+        runCatching {
+            getSystemService(NotificationManager::class.java)?.activeNotifications
+                ?.filter { it.id in 30000..39999 || it.id in 5000..105999 }
+                ?.forEach { getSystemService(NotificationManager::class.java)?.cancel(it.id) }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
