@@ -133,6 +133,10 @@
     };
     header.onAction = function (action, opened) {
       window.TuColectivoHeaderOpen = !!opened;
+      if (action === 'search' && opened && !knownLines.length &&
+          window.TuColectivoNative && typeof window.TuColectivoNative.loadLines === 'function') {
+        window.TuColectivoNative.loadLines();
+      }
       if (action === 'notifications' && opened && window.TuColectivoNative &&
           typeof window.TuColectivoNative.getArrivalNotificationState === 'function') {
         window.TuColectivoNative.getArrivalNotificationState();
