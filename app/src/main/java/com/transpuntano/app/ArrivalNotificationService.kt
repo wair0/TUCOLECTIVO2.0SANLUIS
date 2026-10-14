@@ -77,8 +77,8 @@ class ArrivalNotificationService : Service() {
         )
         val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("TU COLECTIVO · ALERTAS ACTIVAS")
-            .setContentText("Vigilando los arribos guardados en Favoritos")
+            .setContentTitle("TU COLECTIVO · CONSULTANDO ARRIBO")
+            .setContentText("Esperando los minutos estimados de SmartMove")
             .setContentIntent(openApp)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -178,6 +178,10 @@ class ArrivalNotificationService : Service() {
                             )
                             updateLiveArrivalNotification(favorite, line, lineLabel, arrival.destination, minutes)
                             evaluateArrival(favorite, line, lineLabel, identifier, arrival.vehicleId, arrival.destination, minutes)
+                        } else {
+                            // Nunca mostrar un tiempo inventado si SmartMove no informa minutos.
+                            val label = publicLineLabel(favorite.optString("lineLabel"), line)
+                            updateForegroundArrival("LÍNEA $label · SIN ESTIMACIÓN", "SmartMove todavía no informa minutos para esta parada")
                         }
                     }
                 } catch (_: Exception) {
@@ -193,6 +197,26 @@ class ArrivalNotificationService : Service() {
     private fun parseTime(value: String): Int? {
         val match = Regex("^(?:([01]\\d|2[0-3])):([0-5]\\d)$").matchEntire(value) ?: return null
         return match.groupValues[1].toInt() * 60 + match.groupValues[2].toInt()
+    }
+
+    private fun updateForegroundArrival(title: String, detail: String) {
+        val openApp = PendingIntent.getActivity(
+            this, SERVICE_ID, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0
+        )
+        val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(detail)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
+            .setContentIntent(openApp)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setSilent(true)
+            .build()
+        getSystemService(NotificationManager::class.java)?.notify(SERVICE_ID, notification)
     }
 
     private fun updateLiveArrivalNotification(
@@ -211,6 +235,7 @@ class ArrivalNotificationService : Service() {
         val stopName = stop?.optString("name", "Tu parada") ?: "Tu parada"
         val publicDestination = destination.trim().ifBlank { "Destino no informado" }
         val timeLabel = if (minutes <= 0) "ARRIBANDO" else "FALTAN $minutes MIN"
+        updateForegroundArrival("LÍNEA $lineLabel · $timeLabel", "$stopName · $publicDestination · $timeLabel")
         val openApp = PendingIntent.getActivity(
             this, notificationId, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0
@@ -218,7 +243,7 @@ class ArrivalNotificationService : Service() {
         val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("LÍNEA $lineLabel · $timeLabel")
-            .setContentText("$stopName · $publicDestination")
+            .setContentText("$stopName · $publicDestination · $timeLabel")
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
                     "$stopName · $publicDestination\n$timeLabel"
