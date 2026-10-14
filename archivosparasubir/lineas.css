@@ -1,0 +1,196 @@
+@import url("secciones.css");
+/* TU COLECTIVO 2.0 - Seccion LINEAS High-Tech Corporativo (claro/oscuro): lineas, calles, intersecciones, paradas y arribos.
+   Vanilla CSS, offline, sin CDN. Mismo lenguaje que header.css / bottom-nav.css / home-cards.css (tokens --tcn-*, esquinas cortadas, hexagonos, haz de luz).
+   Clases que ya existen en la app: screen-head, lineas-grid, data-card, line-detail-card, arrival-list, arrival-card, arrival-copy, arrival-time,
+   arrival-ring-orbit y las animaciones arrivalNativeOrbit / arrivalArrivingPulse (se conservan los nombres). Cargar DESPUES de style.css y style-ht.css.
+   Tarjetas 100% OPACAS (fondo solido --tcn-page). Estados HOT/PRESS los pone lineas.js (TcLineas.bindPress). */
+:root{--tcn-bg-a:#FFFFFF;--tcn-bg-b:#EDF3FE;--tcn-edge:143,176,234;--tcn-muted:#5B6F94;--tcn-label-active:#0F1B33;--tcn-acc:37,99,235;--tcn-acc2:8,145,178;--tcn-on-active:#FFFFFF;--tcn-page:#EEF3FC;--tcn-alert:225,29,72;--tcn-neon:0,150,60;--tc-hex:polygon(25% 6%,75% 6%,100% 50%,75% 94%,25% 94%,0 50%);}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-bg-a:#0B0B0C;--tcn-bg-b:#000000;--tcn-edge:54,60,68;--tcn-muted:#9B9582;--tcn-label-active:#FFD60A;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080C;--tcn-page:#000000;--tcn-neon:57,255,20;--tcn-alert:251,113,133;}}
+:root[data-theme="dark"]{--tcn-bg-a:#0B0B0C;--tcn-bg-b:#000000;--tcn-edge:54,60,68;--tcn-muted:#9B9582;--tcn-label-active:#FFD60A;--tcn-acc:34,211,238;--tcn-acc2:59,130,246;--tcn-on-active:#02080C;--tcn-page:#000000;--tcn-neon:57,255,20;--tcn-alert:251,113,133;}
+
+/* ---------- cabecera de pantalla (screen-head) ---------- */
+.screen-head{position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;margin:0 0 16px;padding:0 0 14px;font-family:inherit}
+.screen-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,rgba(var(--tcn-acc),.9),rgba(var(--tcn-edge),.7) 45%,transparent)}
+.screen-head::before{content:"";position:absolute;left:-60px;bottom:0;width:60px;height:3px;background:linear-gradient(90deg,transparent,rgb(var(--tcn-acc)),transparent);animation:tclglint 3.8s ease-in-out infinite}
+.screen-head-txt{flex:1;min-width:0}
+.screen-title{margin:0;display:flex;align-items:center;gap:9px;font:800 15px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--tcn-label-active)}
+.screen-title::before{content:"";flex:none;width:6px;height:6px;background:rgb(var(--tcn-acc));transform:rotate(45deg);box-shadow:0 0 8px rgba(var(--tcn-acc),.8)}
+.screen-sub{margin:6px 0 0 15px;font:700 9.5px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--tcn-muted)}
+.tc-back{position:relative;flex:none;width:44px;height:44px;margin:0;padding:0;border:0;background:none;display:grid;place-items:center;color:var(--tcn-muted);cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;transition:transform .38s cubic-bezier(.34,1.56,.64,1),color .25s}
+.tc-back svg{position:relative;z-index:1;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tc-hx{position:absolute;top:0;left:0;right:0;bottom:0;background:rgb(var(--tcn-edge));clip-path:var(--tc-hex);transition:background .25s}
+.tc-hx::after{content:"";position:absolute;top:1.5px;left:1.5px;right:1.5px;bottom:1.5px;background:var(--tcn-bg-b);clip-path:var(--tc-hex)}
+.tc-hxf{position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,rgb(var(--tcn-acc)),rgb(var(--tcn-acc2)));clip-path:var(--tc-hex);opacity:0;transform:scale(.6);transition:opacity .25s,transform .38s cubic-bezier(.34,1.56,.64,1)}
+.tc-back.hot{color:var(--tcn-on-active)}.tc-back.hot .tc-hx{background:rgb(var(--tcn-acc))}.tc-back.hot .tc-hxf{opacity:1;transform:scale(1)}.tc-back.press{transform:scale(.9)}
+.tc-crumbs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.tc-crumb{position:relative;isolation:isolate;display:inline-flex;max-width:100%;padding:5px 11px;background:rgb(var(--tcn-edge));clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px);font:700 9px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--tcn-muted)}
+.tc-crumb::before{content:"";position:absolute;top:1px;left:1px;right:1px;bottom:1px;z-index:-1;background:var(--tcn-bg-b);clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px)}
+.tc-crumb>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tc-crumb:last-child{color:var(--tcn-label-active)}
+
+/* ---------- tarjetas base (lineas, detalle y arribos) ---------- */
+.line-card,.lineas-grid>[data-line],.line-detail-card,.arrival-card{--cut:12px;position:relative;isolation:isolate;box-sizing:border-box;margin:0;border:0;background-color:var(--tcn-page);color:var(--tcn-muted);font-family:inherit;text-align:left;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;
+clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));transition:transform .38s cubic-bezier(.34,1.56,.64,1)}
+.line-card::after,.lineas-grid>[data-line]::after,.line-detail-card::after,.arrival-card::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;z-index:-2;background:rgb(var(--tcn-edge));transition:background .25s}
+.line-card::before,.lineas-grid>[data-line]::before,.line-detail-card::before,.arrival-card::before{content:"";position:absolute;top:1px;left:1px;right:1px;bottom:1px;z-index:-1;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));
+background-image:radial-gradient(circle at 1px 1px,rgba(var(--tcn-acc),.14) 1px,transparent 1.3px),linear-gradient(180deg,var(--tcn-bg-a),var(--tcn-bg-b));background-size:14px 14px,100% 100%}
+.line-card.hot::after,.lineas-grid>[data-line].hot::after,.line-detail-card.hot::after,.arrival-card.hot::after{background:rgb(var(--tcn-acc))}
+.line-card.hot::before,.lineas-grid>[data-line].hot::before,.line-detail-card.hot::before,.arrival-card.hot::before{background-image:radial-gradient(circle at 1px 1px,rgba(var(--tcn-acc),.14) 1px,transparent 1.3px),radial-gradient(120% 90% at 100% 100%,rgba(var(--tcn-acc),.2),transparent 65%),linear-gradient(180deg,var(--tcn-bg-a),var(--tcn-bg-b));background-size:14px 14px,100% 100%,100% 100%}
+.line-card.press,.lineas-grid>[data-line].press,.line-detail-card.press,.arrival-card.press{transform:scale(.975)}
+.tc-enter{animation:tclin .55s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:min(calc(var(--n,0) * 55ms),700ms)}
+
+/* tarjeta de linea (lineas-grid) */
+.lineas-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.line-card,.lineas-grid>[data-line]{display:flex;align-items:center;gap:11px;width:100%;min-height:78px;padding:12px 28px 12px 11px}
+.lc-badge{position:relative;flex:none;width:44px;height:44px;display:grid;place-items:center;color:rgb(var(--tcn-acc));transition:color .25s,transform .38s cubic-bezier(.34,1.56,.64,1)}
+.lc-badge b{position:relative;z-index:1;font:800 16px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.lc-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.lc-name{font:800 12px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--tcn-label-active);overflow-wrap:anywhere}
+.lc-meta{display:flex;align-items:center;gap:6px;font:700 9px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--tcn-muted)}
+.lc-meta::before{content:"";flex:none;width:8px;height:1px;background:rgb(var(--tcn-acc));transition:width .3s}
+.lc-go{position:absolute;right:9px;top:50%;width:18px;height:18px;margin-top:-9px;fill:none;stroke:rgb(var(--tcn-acc));stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.45;transition:opacity .2s,transform .3s}
+.line-card.hot .lc-badge,.lineas-grid>[data-line].hot .lc-badge{color:var(--tcn-on-active);transform:translateY(-2px)}
+.line-card.hot .tc-hx,.lineas-grid>[data-line].hot .tc-hx{background:rgb(var(--tcn-acc))}
+.line-card.hot .tc-hxf,.lineas-grid>[data-line].hot .tc-hxf{opacity:1;transform:scale(1)}
+.line-card.hot .lc-meta::before,.lineas-grid>[data-line].hot .lc-meta::before{width:16px}
+.line-card.hot .lc-go,.lineas-grid>[data-line].hot .lc-go,.line-detail-card.hot .lc-go,.arrival-card.hot .lc-go{opacity:1;transform:translateX(3px)}
+
+/* tarjeta de detalle (calles, intersecciones, paradas) */
+.line-list{position:relative;display:flex;flex-direction:column;gap:10px;padding-left:20px}
+.line-list::before{content:"";position:absolute;left:5px;top:12px;bottom:12px;width:2px;background:linear-gradient(180deg,rgba(var(--tcn-acc),.85),rgba(var(--tcn-acc2),.15))}
+.line-list::after{content:"";position:absolute;left:4px;top:8px;width:4px;height:22px;background:linear-gradient(180deg,transparent,rgb(var(--tcn-acc)));box-shadow:0 0 8px rgba(var(--tcn-acc),.8);animation:tclflow 3s linear infinite}
+.line-detail-card{--cut:12px;display:flex;align-items:center;gap:12px;width:100%;min-height:62px;padding:12px 30px 12px 14px}
+.ld-node{flex:none;width:10px;height:10px;box-sizing:border-box;background:var(--tcn-bg-b);border:1.5px solid rgb(var(--tcn-acc));transform:rotate(45deg);transition:background .25s,box-shadow .25s}
+.ld-name{flex:1;min-width:0;font:700 12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--tcn-label-active);overflow-wrap:anywhere}
+.ld-tag{position:relative;isolation:isolate;flex:none;margin-right:2px;padding:4px 8px;background:rgb(var(--tcn-acc));font:800 9px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.16em;color:rgb(var(--tcn-acc));clip-path:polygon(4px 0,calc(100% - 4px) 0,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0 calc(100% - 4px),0 4px)}
+.ld-tag::before{content:"";position:absolute;top:1px;left:1px;right:1px;bottom:1px;z-index:-1;background:var(--tcn-bg-b);clip-path:polygon(4px 0,calc(100% - 4px) 0,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0 calc(100% - 4px),0 4px)}
+.line-detail-card.hot .ld-node{background:rgb(var(--tcn-acc));box-shadow:0 0 8px rgba(var(--tcn-acc),.8)}
+
+/* ---------- parada, botones y estados ---------- */
+.tc-stop{--cut:14px;position:relative;isolation:isolate;margin:0 0 12px;padding:16px 16px 15px 18px;background-color:var(--tcn-page);clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)))}
+.tc-stop::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;z-index:-2;background:rgb(var(--tcn-edge))}
+.tc-stop::before{content:"";position:absolute;top:1px;left:1px;right:1px;bottom:1px;z-index:-1;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));background-image:linear-gradient(90deg,rgba(var(--tcn-acc),.16),transparent 38%),radial-gradient(circle at 1px 1px,rgba(var(--tcn-acc),.14) 1px,transparent 1.3px),linear-gradient(180deg,var(--tcn-bg-a),var(--tcn-bg-b));background-size:100% 100%,14px 14px,100% 100%}
+.tc-stop-name{margin:0;font:800 14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--tcn-label-active);overflow-wrap:anywhere}
+.tc-stop-ctx{margin:8px 0 0;font:700 10px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--tcn-muted);overflow-wrap:anywhere}
+.tc-actions{display:flex;flex-direction:column;gap:10px;margin:0 0 14px}
+.tc-btn{--cut:10px;position:relative;isolation:isolate;display:flex;align-items:center;justify-content:center;gap:10px;box-sizing:border-box;width:100%;min-height:46px;margin:0;padding:0 16px;border:0;background-color:var(--tcn-page);font:800 11px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--tcn-label-active);cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;
+clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));transition:transform .38s cubic-bezier(.34,1.56,.64,1),color .25s}
+.tc-btn::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;z-index:-2;background:rgb(var(--tcn-edge));transition:background .25s}
+.tc-btn::before{content:"";position:absolute;top:1px;left:1px;right:1px;bottom:1px;z-index:-1;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));background:linear-gradient(180deg,var(--tcn-bg-a),var(--tcn-bg-b))}
+.tc-btn svg{flex:none;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tc-btn-primary{color:var(--tcn-on-active)}
+.tc-btn-primary::after{background:rgb(var(--tcn-acc))}
+.tc-btn-primary::before{background:linear-gradient(135deg,rgb(var(--tcn-acc)),rgb(var(--tcn-acc2)))}
+.tc-btn.hot::after{background:rgb(var(--tcn-acc))}
+.tc-btn:not(.tc-btn-primary).hot{color:rgb(var(--tcn-acc))}
+.tc-btn.press{transform:scale(.97)}
+.tc-btn[disabled]{cursor:not-allowed;color:var(--tcn-muted);transform:none}
+.tc-btn[disabled]::after{background:rgba(var(--tcn-edge),.55)}
+.tc-btn[disabled]::before{background:var(--tcn-bg-b)}
+.tc-btn.busy svg{animation:tclspin 1s linear infinite}
+.tc-state{--cut:12px;position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;gap:14px;box-sizing:border-box;padding:28px 16px;text-align:center;font:800 11px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--tcn-muted);background-color:var(--tcn-page);clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)))}
+.tc-state::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;z-index:-2;background:rgb(var(--tcn-edge))}
+.tc-state::before{content:"";position:absolute;top:1px;left:1px;right:1px;bottom:1px;z-index:-1;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));background:linear-gradient(180deg,var(--tcn-bg-a),var(--tcn-bg-b))}
+.tc-scan{position:relative;display:block;width:56%;height:3px;overflow:hidden;background:rgba(var(--tcn-edge),.6)}
+.tc-scan::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:40%;background:linear-gradient(90deg,transparent,rgb(var(--tcn-acc)),transparent);animation:tclscan 1.1s linear infinite}
+.tc-state.is-loading{color:var(--tcn-label-active)}
+.tc-state.is-error{color:rgb(var(--tcn-alert))}
+.tc-state.is-error::after{background:rgb(var(--tcn-alert))}
+
+/* ---------- arribos ---------- */
+.arrival-list{display:flex;flex-direction:column;gap:10px;margin:0 0 14px}
+.arrival-card{--cut:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:12px 12px 12px 16px}
+.arrival-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:11px}
+.arrival-row{display:flex;flex-direction:column;gap:4px}
+.arrival-k{font:700 8.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.22em;text-transform:uppercase;color:rgb(var(--tcn-acc))}
+.arrival-v{font:800 13px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--tcn-label-active);overflow-wrap:anywhere}
+.arrival-time{position:relative;flex:none;width:70px;height:70px;display:grid;place-items:center}
+.arrival-ring{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;transform:rotate(-90deg)}
+.arrival-ring .ar-base{fill:none;stroke:rgba(var(--tcn-acc),.22);stroke-width:4}
+.arrival-ring .ar-arc{fill:none;stroke:rgb(var(--tcn-acc));stroke-width:4;stroke-linecap:round;stroke-dasharray:56.2 163.7;filter:drop-shadow(0 0 3px rgba(var(--tcn-acc),.7))}
+.arrival-ring .ar-dot{fill:rgb(var(--tcn-acc));filter:drop-shadow(0 0 4px rgb(var(--tcn-acc)))}
+.arrival-ring-orbit{transform-origin:40px 40px;animation:arrivalNativeOrbit var(--arrival-duration,8s) linear infinite}
+.arrival-num{position:relative;z-index:1;text-align:center;font:800 20px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:rgb(var(--tcn-neon));animation:arrivalNumPulse 1.8s ease-in-out infinite}
+.arrival-n{display:block;font:inherit}
+.arrival-num small{display:block;margin-top:4px;font:700 8px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.2em;color:rgba(var(--tcn-neon),.85)}
+.arrival-arriving{position:relative;z-index:1;text-align:center;font:800 10px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;color:rgb(var(--tcn-alert));text-shadow:0 0 10px rgba(var(--tcn-alert),.6);animation:arrivalArrivingPulse 1.05s ease-in-out infinite}
+.arrival-card.selected::after{background:rgb(var(--tcn-acc))}
+.arrival-card.selected::before{background-image:linear-gradient(90deg,rgba(var(--tcn-acc),.2),transparent 55%),radial-gradient(circle at 1px 1px,rgba(var(--tcn-acc),.14) 1px,transparent 1.3px),linear-gradient(180deg,var(--tcn-bg-a),var(--tcn-bg-b));background-size:100% 100%,14px 14px,100% 100%}
+.arrival-card.arriving::after{background:rgb(var(--tcn-alert))}
+.arrival-card.arriving::before{background-image:linear-gradient(90deg,rgba(var(--tcn-alert),.16),transparent 55%),radial-gradient(circle at 1px 1px,rgba(var(--tcn-alert),.14) 1px,transparent 1.3px),linear-gradient(180deg,var(--tcn-bg-a),var(--tcn-bg-b));background-size:100% 100%,14px 14px,100% 100%}
+
+@keyframes tclin{from{transform:translateY(12px) scale(.97);clip-path:polygon(0 0,0 0,0 var(--cut),0 100%,0 100%,0 calc(100% - var(--cut)))}}
+@keyframes tclglint{0%{left:-60px}60%,100%{left:100%}}
+@keyframes tclflow{0%{top:8px;opacity:0}15%{opacity:1}85%{opacity:1}100%{top:calc(100% - 30px);opacity:0}}
+@keyframes tclspin{to{transform:rotate(360deg)}}
+@keyframes tclscan{from{left:-40%}to{left:100%}}
+@keyframes arrivalNativeOrbit{to{transform:rotate(360deg)}}
+@keyframes arrivalNumPulse{0%,100%{text-shadow:0 0 4px rgba(var(--tcn-neon),.5),0 0 10px rgba(var(--tcn-neon),.25);transform:scale(1)}50%{text-shadow:0 0 8px rgba(var(--tcn-neon),.95),0 0 20px rgba(var(--tcn-neon),.6);transform:scale(1.07)}}
+@keyframes arrivalArrivingPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(1.06)}}
+@media (prefers-reduced-motion:reduce){.screen-head::before,.line-list::after,.tc-enter,.arrival-ring-orbit,.arrival-arriving,.arrival-num,.tc-scan::after,.tc-btn.busy svg{animation:none}.screen-head::before{display:none}.line-list::after{display:none}.tc-scan::after{left:0;width:100%}
+.line-card,.lineas-grid>[data-line],.line-detail-card,.arrival-card,.tc-btn,.tc-back,.lc-badge,.lc-go{transition:none}}
+
+
+/* =====================================================================================================
+   REPARACIÓN DE LÍNEAS Y SUBSECCIONES — neutraliza las reglas viejas de style.css / style-ht.css que pisaban este diseño
+   (todo va dentro de [data-screen="lineas"], así no se toca MAPA, PARADAS CERCANAS ni FAVORITOS).
+   Causas que corrige:
+   1) style.css:  .screen-head{display:none!important}  ocultaba la cabecera de las subsecciones (botón atrás y título).
+   2) style-ht.css: html[data-theme=dark] .line-card/.data-card/.arrival-card{background:…}  (fondo gris azulado) y ::after con borde redondeado.
+   3) style.css:  .line-card::before{width:4px;border-radius:…}  dejaba el relleno interno en una barrita de 4 px.
+   4) style.css:  .data-card{flex-direction:column}, .data-card span{font-size:10px;color:var(--mut)}, .line-card b{font-size:22px!important}.
+   5) style.css:  .arrival-card .arrival-copy span{color:cyan!important}  y  .arrival-arriving{background:…}  sobre el rótulo ARRIBANDO.
+   ===================================================================================================== */
+html body [data-screen="lineas"] .lineas-grid .screen-head{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;padding:0 0 14px!important;margin:0 0 16px!important;background:none!important;border:0!important}
+html body [data-screen="lineas"] .lineas-grid .screen-head .screen-title{font-size:15px!important;letter-spacing:.18em!important;color:var(--tcn-label-active)!important}
+html body [data-screen="lineas"] .lineas-grid .screen-head .screen-sub{font-size:9.5px!important;letter-spacing:.2em!important;color:var(--tcn-muted)!important}
+
+/* caja de la tarjeta: sin fondo, borde, radio ni sombra heredados */
+html body [data-screen="lineas"] .line-card,
+html body [data-screen="lineas"] .line-detail-card,
+html body [data-screen="lineas"] .arrival-card{background:var(--tcn-page);border:0;border-radius:0;box-shadow:none;margin:0;min-width:0;transform:none}
+html body [data-screen="lineas"] .line-card:active,
+html body [data-screen="lineas"] .line-detail-card:active,
+html body [data-screen="lineas"] .arrival-card:active{background:var(--tcn-page);border:0;box-shadow:none}
+html body [data-screen="lineas"] .line-card.press,
+html body [data-screen="lineas"] .line-detail-card.press,
+html body [data-screen="lineas"] .arrival-card.press{transform:scale(.975)}
+html body [data-screen="lineas"] .line-card::before,
+html body [data-screen="lineas"] .line-detail-card::before,
+html body [data-screen="lineas"] .arrival-card::before{width:auto;height:auto;border:0;border-radius:0;box-shadow:none}
+html body [data-screen="lineas"] .line-card::after,
+html body [data-screen="lineas"] .line-detail-card::after,
+html body [data-screen="lineas"] .arrival-card::after{border:0;border-radius:0;box-shadow:none;pointer-events:none}
+
+/* tarjeta de línea: el hexágono lleva el icono y el texto muestra la IDENTIFICACIÓN PÚBLICA (nunca el código interno) */
+html body [data-screen="lineas"] .line-card{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:11px;padding:12px 28px 12px 11px;min-height:78px}
+html body [data-screen="lineas"] .line-card .lc-badge svg{position:relative;z-index:1;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+html body [data-screen="lineas"] .line-card .lc-body{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+html body [data-screen="lineas"] .line-card .lc-k{display:block;margin:0;font:700 8.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.22em;text-transform:uppercase;color:rgb(var(--tcn-acc))}
+html body [data-screen="lineas"] .line-card .lc-name{display:block;margin:0;font:800 19px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;letter-spacing:.06em!important;text-transform:uppercase;color:var(--tcn-label-active)!important;overflow-wrap:anywhere}
+html body [data-screen="lineas"] .line-card .lc-name.lc-long{font-size:14px!important;letter-spacing:.04em!important}
+html body [data-screen="lineas"] .line-card .lc-meta{display:flex;margin:0}
+
+/* tarjeta de detalle (calles, intersecciones, paradas) */
+html body [data-screen="lineas"] .line-detail-card{display:flex;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;padding:12px 30px 12px 14px!important;min-height:62px}
+html body [data-screen="lineas"] .line-detail-card .ld-node{display:block!important;flex:none;margin:0!important}
+html body [data-screen="lineas"] .line-detail-card .ld-name{display:block!important;flex:1;min-width:0;margin:0!important;font:700 12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;letter-spacing:.08em!important;text-transform:uppercase;color:var(--tcn-label-active)!important}
+html body [data-screen="lineas"] .line-detail-card .ld-tag{display:block!important;flex:none;margin:0 2px 0 0!important;font:800 9px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;letter-spacing:.16em!important;color:rgb(var(--tcn-acc))!important}
+html body [data-screen="lineas"] .line-detail-card .lc-go{display:block;margin-top:-9px}
+
+/* tarjeta de arribo */
+html body [data-screen="lineas"] .arrival-card{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:12px 12px 12px 16px;cursor:pointer}
+html body [data-screen="lineas"] .arrival-card .arrival-copy{display:flex;flex-direction:column;gap:11px;flex:1;min-width:0}
+html body [data-screen="lineas"] .arrival-card .arrival-copy .arrival-row{display:flex;flex-direction:column;gap:4px}
+html body [data-screen="lineas"] .arrival-card .arrival-copy .arrival-k{display:block!important;margin:0!important;font:700 8.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;letter-spacing:.22em!important;color:rgb(var(--tcn-acc))!important;text-shadow:none!important}
+html body [data-screen="lineas"] .arrival-card .arrival-copy .arrival-v{display:block!important;margin:0!important;font:800 13px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;letter-spacing:.08em!important;color:var(--tcn-label-active)!important;text-shadow:none!important;overflow-wrap:anywhere}
+html body [data-screen="lineas"] .arrival-card .arrival-time{position:relative;flex:none;display:grid;place-items:center;width:70px;height:70px;min-width:0;margin:0;padding:0;background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;animation:none}
+html body [data-screen="lineas"] .arrival-card .arrival-arriving{position:relative;display:block;background:none!important;border:0!important;border-radius:0!important;box-shadow:none;padding:0;color:rgb(var(--tcn-alert))!important;text-shadow:0 0 10px rgba(var(--tcn-alert),.6)!important}
+html body [data-screen="lineas"] .arrival-card .arrival-num{display:block;color:rgb(var(--tcn-neon))!important;text-shadow:none}
+html body [data-screen="lineas"] .arrival-card .arrival-num .arrival-n{display:block;font:inherit!important;color:inherit!important;text-shadow:none!important}
+html body [data-screen="lineas"] .arrival-card .arrival-num small{display:block;margin-top:4px;font:700 8px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;letter-spacing:.2em!important;color:rgba(var(--tcn-neon),.85)!important;text-shadow:none!important}
+html body [data-screen="lineas"] .arrival-card.selected{border:0}
+
+/* subpantallas dentro de la cuadrícula de 2 columnas: todo lo que no sea tarjeta de línea ocupa el ancho completo */
+html body [data-screen="lineas"] .lineas-grid>*:not(.line-card){grid-column:1 / -1}
+html body [data-screen="lineas"] .lineas-grid .tc-crumbs{margin:0 0 14px}
