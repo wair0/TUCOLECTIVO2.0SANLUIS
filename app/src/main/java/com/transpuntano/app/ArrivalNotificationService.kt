@@ -75,7 +75,7 @@ class ArrivalNotificationService : Service() {
             this, 4201, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0
         )
-        val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL)
+        val notification = NotificationCompat.Builder(this, ALERT_CHANNEL)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("TU COLECTIVO · CONSULTANDO ARRIBO")
             .setContentText("Esperando los minutos estimados de SmartMove")
@@ -103,8 +103,8 @@ class ArrivalNotificationService : Service() {
             .setUsage(AudioAttributes.USAGE_NOTIFICATION)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
-        manager.createNotificationChannel(NotificationChannel(ALERT_CHANNEL, "Alertas de colectivos", NotificationManager.IMPORTANCE_HIGH).apply {
-            description = "Avisos sonoros cuando se aproxima un colectivo guardado en Favoritos"
+        manager.createNotificationChannel(NotificationChannel(ALERT_CHANNEL, "Seguimiento y alertas de colectivos", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "Actualiza los minutos en una sola notificación y emite sonido en cada umbral de alerta"
             enableVibration(true)
             setSound(notificationSound, audioAttributes)
         })
@@ -217,24 +217,28 @@ class ArrivalNotificationService : Service() {
         return match.groupValues[1].toInt() * 60 + match.groupValues[2].toInt()
     }
 
-    private fun updateForegroundArrival(title: String, detail: String) {
+    private fun updateForegroundArrival(title: String, detail: String, alert: Boolean = false) {
         val openApp = PendingIntent.getActivity(
             this, SERVICE_ID, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0
         )
-        val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL)
+        val builder = NotificationCompat.Builder(this, ALERT_CHANNEL)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(detail)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
             .setContentIntent(openApp)
             .setOngoing(true)
-            .setOnlyAlertOnce(true)
+            .setOnlyAlertOnce(!alert)
             .setCategory(Notification.CATEGORY_SERVICE)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setSilent(true)
-            .build()
-        getSystemService(NotificationManager::class.java)?.notify(SERVICE_ID, notification)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setSilent(!alert)
+        if (alert) {
+            builder.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                .setVibrate(longArrayOf(0, 250, 120, 250))
+        }
+        // Un solo ID estable: actualiza la notificación del servicio en lugar de crear otra.
+        getSystemService(NotificationManager::class.java)?.notify(SERVICE_ID, builder.build())
     }
 
     private fun updateLiveArrivalNotification(
@@ -244,38 +248,12 @@ class ArrivalNotificationService : Service() {
         destination: String,
         minutes: Int
     ) {
-        val manager = getSystemService(NotificationManager::class.java)
         val stop = favorite.optJSONObject("stop")
-        val identifier = stop?.optString("identifier", stop.optString("id", "")).orEmpty()
-        val favoriteKey = favorite.optString("key", "$identifier::$line")
-        val notificationId = LIVE_NOTIFICATION_BASE_ID + (favoriteKey.hashCode().toLong().and(0x7fffffff).toInt() % 10000)
-        liveNotificationIds.add(notificationId)
         val stopName = stop?.optString("name", "Tu parada") ?: "Tu parada"
         val publicDestination = destination.trim().ifBlank { "Destino no informado" }
         val timeLabel = if (minutes <= 0) "ARRIBANDO" else "FALTAN $minutes MIN"
+        // La notificación persistente es también la notificación de minutos; no crear otra.
         updateForegroundArrival("LÍNEA $lineLabel · $timeLabel", "$stopName · $publicDestination · $timeLabel")
-        val openApp = PendingIntent.getActivity(
-            this, notificationId, Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0
-        )
-        val notification = NotificationCompat.Builder(this, SERVICE_CHANNEL)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("LÍNEA $lineLabel · $timeLabel")
-            .setContentText("$stopName · $publicDestination · $timeLabel")
-            .setStyle(
-                NotificationCompat.BigTextStyle().bigText(
-                    "$stopName · $publicDestination\n$timeLabel"
-                )
-            )
-            .setContentIntent(openApp)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setAutoCancel(false)
-            .setCategory(Notification.CATEGORY_TRANSPORT)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setSilent(true)
-            .build()
-        runCatching { manager.notify(notificationId, notification) }
     }
 
     private fun evaluateArrival(favorite: JSONObject, line: Int, lineLabel: String, identifier: String, vehicleId: String, destination: String, minutes: Int) {
@@ -315,28 +293,11 @@ class ArrivalNotificationService : Service() {
     }
 
     private fun postArrivalNotification(signature: String, lineLabel: String, line: Int, stop: String, destination: String, label: String, minutes: Int, stage: String) {
-        val manager = getSystemService(NotificationManager::class.java)
-        val id = 5000 + (signature.hashCode().toLong().and(0x7fffffff).toInt() % 100000) + stage.hashCode().let { kotlin.math.abs(it % 1000) }
-        val title = "LÍNEA $lineLabel · $label"
-        val text = listOf(stop, destination, if (minutes <= 0) "ARRIBANDO" else "$minutes min").filter { it.isNotBlank() }.joinToString(" · ")
-        val openApp = PendingIntent.getActivity(
-            this, id, Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0
-        )
-        val notification = NotificationCompat.Builder(this, ALERT_CHANNEL)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-            .setContentIntent(openApp)
-            .setAutoCancel(true)
-            .setCategory(Notification.CATEGORY_TRANSPORT)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-            .setDefaults(Notification.DEFAULT_VIBRATE)
-            .build()
-        alertNotificationIds.add(id)
-        runCatching { manager.notify(id, notification) }
+        val text = listOf(stop, destination, if (minutes <= 0) "ARRIBANDO" else "$minutes min")
+            .filter { it.isNotBlank() }.joinToString(" · ")
+        // Reutiliza el ID de la notificación principal; el cambio de etapa reproduce sonido,
+        // pero reemplaza el contenido anterior en vez de acumular avisos en la bandeja.
+        updateForegroundArrival("LÍNEA $lineLabel · $label", text, alert = true)
     }
 
     private fun publicLineLabel(raw: String?, fallbackCode: Int): String {
