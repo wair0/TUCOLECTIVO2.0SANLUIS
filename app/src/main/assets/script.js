@@ -1202,7 +1202,7 @@
       }
       return;
     }
-    const arrivalBtn=e.target.closest('.arrival-favorite-toggle');
+    const arrivalBtn=e.target.closest('.arrival-favorite-toggle, [data-line-arrival-favorite]');
     if(arrivalBtn){
       e.preventDefault();e.stopPropagation();
       const current=arrivalBtn.hasAttribute('data-line-arrival-favorite')?window.TuColectivoCurrentLineArrival:window.TuColectivoCurrentNearbyArrival;
