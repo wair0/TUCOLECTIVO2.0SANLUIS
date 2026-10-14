@@ -38,6 +38,8 @@ class ArrivalNotificationService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val executor = Executors.newSingleThreadExecutor()
     private val liveNotificationIds = mutableSetOf<Int>()
+    private val alertNotificationIds = mutableSetOf<Int>()
+    private var trackedFavoriteKey = ""
     @Volatile private var polling = false
     @Volatile private var destroyed = false
 
@@ -144,7 +146,17 @@ class ArrivalNotificationService : Service() {
             executor.execute {
                 try {
                     val favorites = JSONArray(prefs.getString("favorites", "[]") ?: "[]")
-                    for (index in 0 until favorites.length()) {
+                    val activeKey = favorites.optJSONObject(0)?.optString("key").orEmpty()
+                    if (activeKey != trackedFavoriteKey) {
+                        val manager = getSystemService(NotificationManager::class.java)
+                        liveNotificationIds.forEach { manager.cancel(it) }
+                        alertNotificationIds.forEach { manager.cancel(it) }
+                        liveNotificationIds.clear()
+                        alertNotificationIds.clear()
+                        trackedFavoriteKey = activeKey
+                    }
+                    // Un único arribo seleccionado, incluso si llega un payload antiguo con varios.
+                    for (index in 0 until minOf(favorites.length(), 1)) {
                         val favorite = favorites.optJSONObject(index) ?: continue
                         val line = favorite.optInt("line", 0)
                         val stop = favorite.optJSONObject("stop") ?: continue
@@ -286,6 +298,7 @@ class ArrivalNotificationService : Service() {
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             .setDefaults(Notification.DEFAULT_VIBRATE)
             .build()
+        alertNotificationIds.add(id)
         runCatching { manager.notify(id, notification) }
     }
 
@@ -313,8 +326,10 @@ class ArrivalNotificationService : Service() {
     override fun onDestroy() {
         getSystemService(NotificationManager::class.java)?.let { manager ->
             liveNotificationIds.forEach { runCatching { manager.cancel(it) } }
+            alertNotificationIds.forEach { runCatching { manager.cancel(it) } }
         }
         liveNotificationIds.clear()
+        alertNotificationIds.clear()
         destroyed = true
         handler.removeCallbacksAndMessages(null)
         executor.shutdownNow()
