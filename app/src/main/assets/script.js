@@ -1323,13 +1323,13 @@
         if(Number.isFinite(code)&&code>0) window.TuColectivoLineLabels[String(code)]=String(item.name||'').trim();
       });
       window.TuColectivoLineSyncResult?.(true, items.length);
-      document.dispatchEvent(new CustomEvent('app:linesloaded',{detail:{lines:items}}));
       renderLines(items.map(item=>({
         ...item,
         name:window.TuColectivoPublicLineLabel
           ? window.TuColectivoPublicLineLabel(item.code,window.TuColectivoLineLabels)
           : item.name
       })));
+      document.dispatchEvent(new CustomEvent('app:linesloaded',{detail:{lines:items}}));
     }catch(_){showError('LÍNEAS','RESPUESTA INVÁLIDA');}
   };
   window.onNativeLinesError=p=>{
