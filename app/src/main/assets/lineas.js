@@ -30,11 +30,15 @@
   function detailCardHtml(it,i,tag){
     return '<button type="button" class="data-card line-detail-card tc-enter" data-card="'+esc(it.code)+'" style="--n:'+(i|0)+'"><span class="ld-node"></span><span class="ld-name">'+esc(it.name)+'</span>'+(tag?'<span class="ld-tag">'+esc(tag)+'</span>':'')+GO+'</button>';
   }
+  /* Anillo del contador (estilo corporativo): pista + arco de acento que gira suave. Solo decorativo: no resta ni calcula minutos. */
+  function ringSvg(){
+    return '<svg class="arrival-ring" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><circle class="rg-track" cx="50" cy="50" r="42"/><circle class="rg-arc" cx="50" cy="50" r="42"/></svg>';
+  }
   function arrivalCardHtml(a,i,selected){
     var m=(a.minutes==null||a.minutes==="")?null:Number(a.minutes),arr=isArriving(a.status,m),dest=a.destination&&String(a.destination).trim()?a.destination:"DESTINO NO INFORMADO";
     var time=arr?'<span class="arrival-time"><span class="arrival-arriving">ARRIBANDO</span></span>'
-      :'<span class="arrival-time" style="--arrival-duration:'+arrivalDuration(m)+'s"><svg class="arrival-ring" viewBox="0 0 80 80" aria-hidden="true"><circle class="ar-base" cx="40" cy="40" r="35"/><g class="arrival-ring-orbit"><circle class="ar-arc" cx="40" cy="40" r="35"/><circle class="ar-dot" cx="38.8" cy="75" r="3"/></g></svg><span class="arrival-num"><b class="arrival-n"'+(m==null?"":' data-m="'+esc(m)+'"')+'>'+(m==null?"--":esc(m))+'</b><small>MIN</small></span></span>';
-    return '<div class="arrival-card tc-enter'+(arr?" arriving":"")+(selected?" selected":"")+'" role="button" tabindex="0" aria-pressed="'+(selected?"true":"false")+'" data-dest="'+esc(dest)+'" style="--n:'+(i|0)+'"><div class="arrival-copy"><div class="arrival-row"><span class="arrival-k">LINEA</span><span class="arrival-v">'+esc(a.line)+'</span></div><div class="arrival-row"><span class="arrival-k">HACIA</span><span class="arrival-v">'+esc(dest)+'</span></div></div>'+time+'</div>';
+      :'<span class="arrival-time" style="--arrival-duration:'+arrivalDuration(m)+'s">'+ringSvg()+'<span class="arrival-num"><b class="arrival-n"'+(m==null?"":' data-m="'+esc(m)+'"')+'>'+(m==null?"--":esc(m))+'</b><small>MIN</small></span></span>';
+    return '<div class="arrival-card tc-enter'+(arr?" arriving":"")+(selected?" selected":"")+'" role="button" tabindex="0" aria-pressed="'+(selected?"true":"false")+'" data-dest="'+esc(dest)+'" style="--n:'+(i|0)+'"><div class="arrival-copy"><div class="arrival-row"><span class="arrival-k">LÍNEA</span><span class="arrival-v">'+esc(a.line)+'</span></div><div class="arrival-row"><span class="arrival-k">HACIA</span><span class="arrival-v">'+esc(dest)+'</span></div></div>'+time+'</div>';
   }
   function stateHtml(kind,text){
     var cls=kind==="loading"?"is-loading":kind==="error"?"is-error":"is-empty";
@@ -61,7 +65,7 @@
     root.addEventListener("focusin",function(e){var c=el(e.target);if(c&&c.matches(":focus-visible"))c.classList.add("hot");});
     root.addEventListener("focusout",function(e){var c=el(e.target);if(c)c.classList.remove("hot");});
   }
-  window.TcLineas={bindPress:bindPress,lineCardHtml:lineCardHtml,detailCardHtml:detailCardHtml,arrivalCardHtml:arrivalCardHtml,stateHtml:stateHtml,animateNumbers:animateNumbers,arrivalDuration:arrivalDuration,isArriving:isArriving};
+  window.TcLineas={bindPress:bindPress,lineCardHtml:lineCardHtml,detailCardHtml:detailCardHtml,arrivalCardHtml:arrivalCardHtml,stateHtml:stateHtml,ringSvg:ringSvg,animateNumbers:animateNumbers,arrivalDuration:arrivalDuration,isArriving:isArriving};
   /* Activar una sola vez los estados visuales de interacción para las tarjetas presentes y futuras de la sección Líneas. */
   if(document&&document.body)bindPress(document.body);
 })();
