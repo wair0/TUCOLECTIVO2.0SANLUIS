@@ -1,0 +1,16 @@
+/* TU COLECTIVO 2.0 — ESTILO CORPORATIVO · PALETA (claro y oscuro). Se carga DESPUÉS de header.css, bottom-nav.css, home-cards.css y lineas.css (index.html ya lo hace).
+   Diseño sobrio tipo aplicación empresarial: superficies limpias, un solo color de acento (azul), tipografía del sistema (Roboto en Android), tarjetas redondeadas con borde fino y sombra suave.
+   Sin neones, sin brillos, sin hexágonos ni circuitos. Contraste: texto principal ≥ 12:1, secundario ≥ 5:1 en ambos modos. */
+:root{--tc-font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--tc-r:16px;
+--tcn-page:#F3F5F9;--tcn-bg-a:#FFFFFF;--tcn-bg-b:#F6F8FB;--tcn-edge:220,226,236;--tcn-muted:#51607A;--tcn-label-active:#0F172A;--tcn-acc:37,99,235;--tcn-acc2:29,78,216;--tcn-on-active:#FFFFFF;--tcn-alert:200,30,60;--tcn-neon:14,138,75;
+--tc-3:#5F6C84;--tc-fill:#2563EB;--tc-soft:rgba(37,99,235,.09);--tc-sh:0 1px 2px rgba(15,23,42,.05),0 6px 16px rgba(15,23,42,.06);--tc-sh2:0 12px 32px rgba(15,23,42,.18);--tcn-scrim:rgba(15,23,42,.35)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tcn-page:#0B1018;--tcn-bg-a:#121926;--tcn-bg-b:#182132;--tcn-edge:38,50,70;--tcn-muted:#A9B6CB;--tcn-label-active:#EAF0FA;--tcn-acc:112,155,255;--tcn-acc2:96,142,255;--tcn-on-active:#FFFFFF;--tcn-alert:251,113,133;--tcn-neon:52,211,153;--tc-3:#8593AA;--tc-fill:#3B6BF0;--tc-soft:rgba(112,155,255,.14);--tc-sh:none;--tc-sh2:0 16px 40px rgba(0,0,0,.55);--tcn-scrim:rgba(3,6,12,.6)}}
+:root[data-theme="dark"]{--tcn-page:#0B1018;--tcn-bg-a:#121926;--tcn-bg-b:#182132;--tcn-edge:38,50,70;--tcn-muted:#A9B6CB;--tcn-label-active:#EAF0FA;--tcn-acc:112,155,255;--tcn-acc2:96,142,255;--tcn-on-active:#FFFFFF;--tcn-alert:251,113,133;--tcn-neon:52,211,153;--tc-3:#8593AA;--tc-fill:#3B6BF0;--tc-soft:rgba(112,155,255,.14);--tc-sh:none;--tc-sh2:0 16px 40px rgba(0,0,0,.55);--tcn-scrim:rgba(3,6,12,.6)}
+:root[data-theme="light"]{--tcn-page:#F3F5F9;--tcn-bg-a:#FFFFFF;--tcn-bg-b:#F6F8FB;--tcn-edge:220,226,236;--tcn-muted:#51607A;--tcn-label-active:#0F172A;--tcn-acc:37,99,235;--tcn-acc2:29,78,216;--tcn-on-active:#FFFFFF;--tcn-alert:200,30,60;--tcn-neon:14,138,75;--tc-3:#5F6C84;--tc-fill:#2563EB;--tc-soft:rgba(37,99,235,.09);--tc-sh:0 1px 2px rgba(15,23,42,.05),0 6px 16px rgba(15,23,42,.06);--tc-sh2:0 12px 32px rgba(15,23,42,.18);--tcn-scrim:rgba(15,23,42,.35)}
+
+/* variables heredadas de style.css (mapa, ventanas, formularios antiguos) */
+html[data-theme=dark]{--bg:#0B1018;--sf:#121926;--ink:#EAF0FA;--mut:#A9B6CB;--ln:#26324A;--tint:#182132;--tint2:#141C2B;--glass:rgba(18,25,38,.92);--glass2:rgba(18,25,38,.98);--glass3:rgba(18,25,38,.7);--field:#121926;--soft:#182132;--soft2:#141C2B;--bd2:#2C3A55;--press:#1E2838;--dash:#2C3A55;--map:#0E1420;--ring:#2C3A55;--ic1:#182132;--ic2:#1E2838;--deep:#182132;--a1:0;--a2:0;--a3:0;--dot:rgba(255,255,255,0)}
+html:not([data-theme=dark]){--bg:#F3F5F9;--sf:#FFFFFF;--ink:#0F172A;--mut:#51607A;--ln:#DCE2EC;--a1:0;--a2:0;--a3:0;--dot:rgba(0,0,0,0)}
+html body{background:var(--tcn-page);color:var(--tcn-label-active);font-family:var(--tc-font)}
+html body::before,html body::after{display:none!important}
+html body .tc-nav-label,html body .tc-hd-status{opacity:1}
