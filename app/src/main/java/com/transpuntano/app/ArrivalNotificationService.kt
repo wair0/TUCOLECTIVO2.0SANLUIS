@@ -178,7 +178,7 @@ class ArrivalNotificationService : Service() {
                             fun identity(pair: Pair<com.tucolectivo.app.model.TransitArrival, Int>): String {
                                 val a = pair.first
                                 return a.vehicleId.takeIf { it.isNotBlank() }
-                                    ?: "${a.destination.trim().lowercase()}_${a.gpsTimestamp.trim()}"
+                                    ?: "posicion_${orderedArrivals.indexOf(pair)}"
                             }
                             val savedIdentity = prefsNow.getString(activeKey, "").orEmpty()
                             val active = orderedArrivals.firstOrNull { identity(it) == savedIdentity }
@@ -190,13 +190,13 @@ class ArrivalNotificationService : Service() {
                                 line
                             )
                             updateLiveArrivalNotification(favorite, line, lineLabel, arrival.destination, minutes)
-                            evaluateArrival(favorite, line, lineLabel, identifier, arrival.vehicleId, arrival.destination, minutes)
+                            evaluateArrival(favorite, line, lineLabel, identifier, identity(active), arrival.destination, minutes)
                             // Al llegar al umbral de 1 minuto, avisar y pasar el seguimiento
                             // al siguiente coche estimado, en lugar de seguir alertando por el mismo.
                             if (minutes <= 1) {
                                 val next = orderedArrivals.firstOrNull { identity(it) != identity(active) }
                                 if (next != null) prefsNow.edit().putString(activeKey, identity(next)).apply()
-                                else prefsNow.edit().remove(activeKey).apply()
+                                else prefsNow.edit().putString(activeKey, identity(active)).apply()
                             }
                         } else {
                             // Nunca mostrar un tiempo inventado si SmartMove no informa minutos.
@@ -261,7 +261,7 @@ class ArrivalNotificationService : Service() {
     private fun evaluateArrival(favorite: JSONObject, line: Int, lineLabel: String, identifier: String, vehicleId: String, destination: String, minutes: Int) {
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         val favoriteKey = favorite.optString("key", "$identifier::$line")
-        val serviceIdentity = vehicleId.takeIf { it.isNotBlank() } ?: destination.trim().lowercase().ifBlank { "servicio" }
+        val serviceIdentity = vehicleId.ifBlank { "servicio" }
         val signature = "${favoriteKey}_${serviceIdentity.hashCode()}"
         val lastKey = "last_$signature"
         val firedKey = "fired_$signature"
@@ -270,9 +270,9 @@ class ArrivalNotificationService : Service() {
         val fired = prefs.getString(firedKey, "")!!.split(',').filter { it.isNotBlank() }.toMutableSet()
         val stage = when {
             minutes <= 1 && "1" !in fired && (previous == Int.MAX_VALUE || previous > 1) -> "1"
-            minutes in 2..3 && "3" !in fired && (previous == Int.MAX_VALUE && minutes >= 2 || previous > 3) -> "3"
-            minutes in 4..5 && "5" !in fired && (previous == Int.MAX_VALUE && minutes >= 4 || previous > 5) -> "5"
-            minutes in 6..10 && "10" !in fired && (previous == Int.MAX_VALUE && minutes >= 6 || previous > 10) -> "10"
+            minutes in 2..3 && "3" !in fired && (previous == Int.MAX_VALUE || previous > 3) -> "3"
+            minutes in 4..5 && "5" !in fired && (previous == Int.MAX_VALUE || previous > 5) -> "5"
+            minutes in 6..10 && "10" !in fired && (previous == Int.MAX_VALUE || previous > 10) -> "10"
             minutes in 11..15 && "15" !in fired && (previous == Int.MAX_VALUE || previous > 15) -> "15"
             minutes > 15 -> null
             else -> null

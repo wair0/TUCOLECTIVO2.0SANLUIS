@@ -873,37 +873,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface fun setArrivalNotifications(favoritesJson: String, startTime: String, endTime: String) {
-            runOnUiThread {
-                val favorites = runCatching { JSONArray(favoritesJson) }.getOrNull()
-                if (favorites == null || favorites.length() == 0) {
-                    dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "GUARDÁ AL MENOS UN ARRIBO EN FAVORITOS").toString())
-                    return@runOnUiThread
-                }
-                val timePattern = Regex("^(?:([01]\\d|2[0-3])):([0-5]\\d)$")
-                if (!timePattern.matches(startTime) || !timePattern.matches(endTime) || endTime <= startTime) {
-                    dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "CONFIGURÁ UN HORARIO VÁLIDO").toString())
-                    return@runOnUiThread
-                }
-                pendingArrivalStartTime = startTime
-                pendingArrivalEndTime = endTime
-                if (android.os.Build.VERSION.SDK_INT >= 33 &&
-                    checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    pendingArrivalNotifications = favoritesJson
-                    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
-                    return@runOnUiThread
-                }
-                startArrivalNotifications(favoritesJson, startTime, endTime)
-            }
+            dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "CONFIGURÁ LAS ALERTAS DESDE LA SECCIÓN ALERTAS").toString())
         }
 
         @JavascriptInterface fun updateArrivalNotificationFavorites(favoritesJson: String) {
-            runOnUiThread {
-                val prefs = getSharedPreferences(ArrivalNotificationService.PREFS, MODE_PRIVATE)
-                if (!prefs.getBoolean("enabled", false)) return@runOnUiThread
-                runCatching { JSONArray(favoritesJson) }.onSuccess {
-                    prefs.edit().putString("favorites", favoritesJson).apply()
-                }
-            }
+            // La selección se administra únicamente desde Alertas.
         }
 
         @JavascriptInterface fun stopArrivalNotifications() {
