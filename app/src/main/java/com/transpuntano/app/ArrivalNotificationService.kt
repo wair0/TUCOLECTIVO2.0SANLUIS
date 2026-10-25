@@ -144,10 +144,6 @@ class ArrivalNotificationService : Service() {
                 schedulePoll(POLL_INTERVAL_MS)
                 return
             }
-            if (false) {
-                schedulePoll(POLL_INTERVAL_MS)
-                return
-            }
             polling = true
             executor.execute {
                 try {
