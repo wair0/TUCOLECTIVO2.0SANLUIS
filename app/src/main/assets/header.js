@@ -23,7 +23,7 @@
   [].forEach.call(hd.querySelectorAll(".tc-hd-panel"),function(p){panels[p.getAttribute("data-for")]=p;});
   var input=document.getElementById("tc-hd-input"),clr=document.getElementById("tc-hd-clear"),chipsEl=document.getElementById("tc-hd-chips"),
       notesEl=document.getElementById("tc-hd-notes"),markBtn=document.getElementById("tc-hd-markread");
-  var SEC={inicio:"INICIO",lineas:"LÍNEAS",mapa:"MAPA",paradas:"PARADAS",favoritos:"FAVORITOS"},KEYS=Object.keys(SEC);
+  var SEC={inicio:"INICIO",lineas:"LÍNEAS",mapa:"MAPA",paradas:"PARADAS",favoritos:"FAVORITOS",alertas:"ALERTAS"},KEYS=Object.keys(SEC);
   var filter="todo",notes=[],openName=null;
   function emit(n,d){hd.dispatchEvent(new CustomEvent(n,{bubbles:true,detail:d}));}
   function call(fn){if(typeof api[fn]==="function"){api[fn].apply(api,[].slice.call(arguments,1));}}

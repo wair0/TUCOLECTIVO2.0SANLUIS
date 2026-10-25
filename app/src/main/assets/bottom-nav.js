@@ -2,7 +2,7 @@
    - Al tocar una pestaña: mueve el haz, activa el hexagono y llama a TcBottomNav.onChange(seccion) (si existe)
      y dispara el evento "tc:navchange" (detail.section) sobre #tc-nav.
    - La app puede sincronizar el estado: TcBottomNav.setActive("mapa")  (no dispara onChange).
-   - Secciones: inicio | lineas | mapa | paradas | favoritos */
+   - Secciones: inicio | lineas | mapa | paradas | favoritos | alertas */
 (function(){
   var nav=document.getElementById("tc-nav");if(!nav)return;
   var items=[].slice.call(nav.querySelectorAll(".tc-nav-item"));

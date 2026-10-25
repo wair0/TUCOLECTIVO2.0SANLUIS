@@ -1,7 +1,7 @@
 /* Integración del header y la barra originales con la navegación WebView existente. */
 (function () {
   'use strict';
-  var sections = ['inicio', 'lineas', 'mapa', 'paradas', 'favoritos'];
+  var sections = ['inicio', 'lineas', 'mapa', 'paradas', 'favoritos', 'alertas'];
   var header = window.TcHeader;
   var nav = window.TcBottomNav;
   function validSection(name) { return sections.indexOf(name) !== -1; }
