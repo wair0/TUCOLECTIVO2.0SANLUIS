@@ -43,3 +43,9 @@
 @keyframes tccin{from{opacity:0;transform:translateY(10px)}}
 @keyframes tccspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.tc-cards.in .tc-card,.tc-sync.run .tc-card-ico .sy{animation:none}.tc-card,.tc-card-go,.tc-card-ico{transition:none}.tc-sync.drain .tc-sync-fill{transition:none}}
+
+/* FASE 3/3 · ESTADO REAL DEL SEGUIMIENTO EN LA TARJETA DE INICIO. */
+.tc-card-alertas .tc-card-alert-state{display:inline-flex;align-items:center;justify-content:center;max-width:100%;padding:5px 7px;border:1px solid rgb(var(--tcn-edge));border-radius:999px;font:700 9px/1.2 var(--tc-font);letter-spacing:.02em;white-space:nowrap;color:var(--tcn-muted);background:var(--tc-soft)}
+.tc-card-alertas.tc-card-alertas-active .tc-card-alert-state{color:rgb(var(--tcn-acc));border-color:rgba(var(--tcn-acc),.45)}
+.tc-card-alertas .tc-card-art{display:none}
+@media(max-width:350px){.tc-card-alertas .tc-card-top{flex-wrap:wrap}.tc-card-alertas .tc-card-meta{align-items:flex-start}.tc-card-alertas .tc-card-name{font-size:14px}}
