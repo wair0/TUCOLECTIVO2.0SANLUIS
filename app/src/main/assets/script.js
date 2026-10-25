@@ -1257,7 +1257,7 @@
   window.TuColectivoFavorites={toggle,render,toggleArrival,isArrivalSaved,syncLineArrivalFavorite};
   render();syncButtons();
   // Desactivar el servicio anterior durante la transición; conservar preferencias para migrarlas.
-  window.TuColectivoNative?.stopArrivalNotifications?.();
+  // El control del seguimiento pertenece exclusivamente a la sección Alertas.
 })();
 
 /* FASE 11B — LÍNEAS REALES + SUBSECCIONES DESDE SMARTMOVE NATIVO */

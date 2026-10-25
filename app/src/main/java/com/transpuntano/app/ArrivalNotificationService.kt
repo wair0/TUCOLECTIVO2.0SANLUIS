@@ -31,7 +31,7 @@ class ArrivalNotificationService : Service() {
         private const val SERVICE_ID = 4201
         private const val LIVE_NOTIFICATION_BASE_ID = 30000
         private const val POLL_INTERVAL_MS = 10_000L
-        private val THRESHOLDS = listOf(10, 5, 3, 1, 0)
+        private val THRESHOLDS = listOf(15, 10, 5, 3, 1)
     }
 
     private val api = SmartMoveApi()
@@ -134,18 +134,17 @@ class ArrivalNotificationService : Service() {
             val endMinute = parseTime(prefs.getString("end_time", "19:30") ?: "19:30")
             val now = java.util.Calendar.getInstance()
             val nowMinute = now.get(java.util.Calendar.HOUR_OF_DAY) * 60 + now.get(java.util.Calendar.MINUTE)
-            if (startMinute == null || endMinute == null || endMinute <= startMinute) {
+            if (startMinute == null || endMinute == null || endMinute == startMinute) {
                 prefs.edit().putBoolean("enabled", false).apply()
                 stopSelf()
                 return
             }
-            if (nowMinute >= endMinute) {
-                prefs.edit().putBoolean("enabled", false).apply()
-                stopForeground(true)
-                stopSelf()
+            val withinHours = if (startMinute < endMinute) nowMinute in startMinute until endMinute else nowMinute >= startMinute || nowMinute < endMinute
+            if (!withinHours) {
+                schedulePoll(POLL_INTERVAL_MS)
                 return
             }
-            if (nowMinute < startMinute) {
+            if (false) {
                 schedulePoll(POLL_INTERVAL_MS)
                 return
             }
@@ -241,8 +240,8 @@ class ArrivalNotificationService : Service() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setSilent(!alert)
         if (alert) {
-            builder.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                .setVibrate(longArrayOf(0, 250, 120, 250))
+            if (getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean("sound", true)) builder.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            if (getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean("vibrate", true)) builder.setVibrate(longArrayOf(0, 250, 120, 250))
         }
         // Un solo ID estable: actualiza la notificación del servicio en lugar de crear otra.
         getSystemService(NotificationManager::class.java)?.notify(SERVICE_ID, builder.build())
@@ -271,6 +270,7 @@ class ArrivalNotificationService : Service() {
         val lastKey = "last_$signature"
         val firedKey = "fired_$signature"
         val previous = prefs.getInt(lastKey, Int.MAX_VALUE)
+        val enabledThresholds = prefs.getString("thresholds", "15,10,5,3,1").orEmpty().split(",").mapNotNull { it.toIntOrNull() }.toSet()
         val fired = prefs.getString(firedKey, "")!!.split(',').filter { it.isNotBlank() }.toMutableSet()
         val stage = when {
             minutes <= 1 && "1" !in fired && (previous == Int.MAX_VALUE || previous > 1) -> "1"
@@ -281,7 +281,7 @@ class ArrivalNotificationService : Service() {
             minutes > 15 -> null
             else -> null
         }
-        if (stage != null) {
+        if (stage != null && stage.toInt() in enabledThresholds) {
             val label = when (stage) {
                 "15" -> "FALTAN 15 MIN"
                 "10" -> "FALTAN 10 MIN"

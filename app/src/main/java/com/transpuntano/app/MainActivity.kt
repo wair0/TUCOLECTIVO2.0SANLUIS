@@ -840,6 +840,38 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        @JavascriptInterface fun setAlertConfig(configJson: String) {
+            runOnUiThread {
+                val config = runCatching { JSONObject(configJson) }.getOrNull()
+                val arrival = config?.optJSONObject("arrival")
+                val key = config?.optString("arrivalKey").orEmpty()
+                val valid = arrival != null && key.isNotBlank() && arrival.optString("key") == key &&
+                    arrival.optInt("line") > 0 && arrival.optJSONObject("stop")?.optString("identifier").orEmpty().isNotBlank()
+                val times = Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d$")
+                val start = config?.optString("start").orEmpty()
+                val end = config?.optString("end").orEmpty()
+                val thresholds = config?.optJSONArray("thresholds")
+                val chosen = (0 until (thresholds?.length() ?: 0)).mapNotNull { thresholds?.optInt(it) }.filter { it in listOf(15, 10, 5, 3, 1) }.distinct()
+                if (!valid || !times.matches(start) || !times.matches(end) || start == end || chosen.isEmpty()) {
+                    dispatch("onNativeArrivalNotificationsState", JSONObject().put("enabled", false).put("message", "CONFIGURACIÓN DE ALERTAS INVÁLIDA").toString())
+                    return@runOnUiThread
+                }
+                val prefs = getSharedPreferences(ArrivalNotificationService.PREFS, MODE_PRIVATE)
+                prefs.edit().putString("thresholds", chosen.joinToString(",")).putBoolean("sound", config?.optBoolean("sound", true) ?: true)
+                    .putBoolean("vibrate", config?.optBoolean("vibrate", true) ?: true).apply()
+                val favorites = JSONArray().put(arrival).toString()
+                pendingArrivalStartTime = start
+                pendingArrivalEndTime = end
+                if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                    checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    pendingArrivalNotifications = favorites
+                    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
+                    return@runOnUiThread
+                }
+                startArrivalNotifications(favorites, start, end)
+            }
+        }
+
         @JavascriptInterface fun setArrivalNotifications(favoritesJson: String, startTime: String, endTime: String) {
             runOnUiThread {
                 val favorites = runCatching { JSONArray(favoritesJson) }.getOrNull()
