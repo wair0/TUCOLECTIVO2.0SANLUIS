@@ -1,0 +1,6 @@
+/* FASE 2/3 · UNIFICACIÓN TIPOGRÁFICA GLOBAL.
+   Transformación visual: conserva valores originales de búsquedas, GPS, claves y API. */
+html body,html body *{text-transform:uppercase!important}
+html body input::placeholder,html body textarea::placeholder{text-transform:uppercase!important}
+/* Mantener legibles los campos, evitando cambios sobre el dato enviado. */
+html body input,html body textarea,html body select,html body button{font-variant-caps:normal}
