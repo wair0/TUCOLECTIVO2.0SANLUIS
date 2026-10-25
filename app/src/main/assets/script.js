@@ -1079,17 +1079,8 @@
     notificationSchedule=schedule;
     try{localStorage.setItem(SCHEDULE_STORAGE,JSON.stringify(schedule));}catch(_){}
   }
-  function syncArrivalNotificationConfig(){
-    if(!notificationsEnabled)return;
-    syncSelectedArrival();
-    if(!selectedArrival()){window.TuColectivoNative?.stopArrivalNotifications?.();return;}
-    const payload=selectedArrivalPayload();
-    if(window.TuColectivoNative?.updateArrivalNotificationFavorites){
-      window.TuColectivoNative.updateArrivalNotificationFavorites(payload);
-    }else{
-      window.TuColectivoNative?.setArrivalNotifications?.(payload,notificationSchedule.start,notificationSchedule.end);
-    }
-  }
+  // Fase 1: las alertas antiguas no se reactivan al modificar Favoritos.
+  function syncArrivalNotificationConfig(){ /* Se migrará a la sección Alertas. */ }
   function escapeNotificationText(value){
     return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
@@ -1187,43 +1178,13 @@
     }
     if(favorites.arrivals.length){
       syncSelectedArrival();
-      html+='<div class="favorite-group">ARRIBOS FAVORITOS · ELEGÍ UNO PARA RECIBIR ALERTAS</div>';
-      html+=favorites.arrivals.map(v=>'<div class="favorite-item" data-fav-type="arrivals" data-fav-id="'+v.key+'"><div><b>'+String(v.stop?.name||'PARADA').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</b><small>LÍNEA '+(window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(Number(v.line)):Number(v.line))+' · ARRIBOS EN TIEMPO REAL</small></div><button class="arrival-notification-select" type="button" data-notification-key="'+escapeNotificationText(v.key)+'" aria-pressed="'+String(v.key===selectedArrivalKey)+'">'+(v.key===selectedArrivalKey?'◉ SELECCIONADO':'◎ RECIBIR ALERTAS')+'</button><button class="favorite-remove" type="button" aria-label="Quitar arribo de favoritos">×</button></div>').join('');
+      html+='<div class="favorite-group">ARRIBOS FAVORITOS</div>';
+      html+=favorites.arrivals.map(v=>'<div class="favorite-item" data-fav-type="arrivals" data-fav-id="'+v.key+'"><div><b>'+String(v.stop?.name||'PARADA').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</b><small>LÍNEA '+(window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(Number(v.line)):Number(v.line))+' · ARRIBOS EN TIEMPO REAL</small></div><button class="favorite-remove" type="button" aria-label="Quitar arribo de favoritos">×</button></div>').join('');
     }
     list.innerHTML=html;
   }
 
   document.addEventListener('click',e=>{
-    const selection=e.target.closest('[data-notification-key]');
-    if(selection){
-      e.preventDefault();e.stopPropagation();
-      selectedArrivalKey=selection.dataset.notificationKey;
-      try{localStorage.setItem(SELECTED_ARRIVAL_STORAGE,selectedArrivalKey);}catch(_){}
-      render();syncArrivalNotificationConfig();
-      if(window.setSystemStatus)window.setSystemStatus('ARRIBO SELECCIONADO PARA ALERTAS','ok');
-      return;
-    }
-    const notificationToggle=e.target.closest('#arrivalNotificationsToggle');
-    if(notificationToggle){
-      e.preventDefault();
-      if(notificationsEnabled){
-        window.TuColectivoNative?.stopArrivalNotifications?.();
-      }else if(!selectedArrival()){
-        if(window.setSystemStatus)window.setSystemStatus('SELECCIONÁ EL ARRIBO QUE QUERÉS SEGUIR','warn');
-      }else if(window.TuColectivoNative?.setArrivalNotifications){
-        const schedule=readNotificationSchedule();
-        if(!schedule.start||!schedule.end||schedule.end<=schedule.start){
-          if(window.setSystemStatus)window.setSystemStatus('LA HORA FINAL DEBE SER POSTERIOR A LA INICIAL','warn');
-          return;
-        }
-        saveNotificationSchedule(schedule);
-        notificationToggle.textContent='CONFIGURANDO HORARIO...';
-        window.TuColectivoNative.setArrivalNotifications(selectedArrivalPayload(),schedule.start,schedule.end);
-      }else if(window.setSystemStatus){
-        window.setSystemStatus('PUENTE NATIVO NO DISPONIBLE','error');
-      }
-      return;
-    }
     const arrivalBtn=e.target.closest('.arrival-favorite-toggle, [data-line-arrival-favorite]');
     if(arrivalBtn){
       e.preventDefault();e.stopPropagation();
@@ -1292,17 +1253,11 @@
       },80);
     }
   });
-  document.addEventListener('app:navigate',e=>{if(e.detail.go==='favoritos'){render();window.TuColectivoNative?.getArrivalNotificationState?.();}});
+  document.addEventListener('app:navigate',e=>{if(e.detail.go==='favoritos')render();});
   window.TuColectivoFavorites={toggle,render,toggleArrival,isArrivalSaved,syncLineArrivalFavorite};
-  const scheduleStart=document.getElementById('arrivalNotificationStart'),scheduleEnd=document.getElementById('arrivalNotificationEnd');
-  if(scheduleStart)scheduleStart.value=notificationSchedule.start;
-  if(scheduleEnd)scheduleEnd.value=notificationSchedule.end;
-  [scheduleStart,scheduleEnd].forEach(input=>input?.addEventListener('change',()=>saveNotificationSchedule(readNotificationSchedule())));
-  render();syncButtons();syncNotificationButton();
-  window.TuColectivoNative?.getArrivalNotificationState?.();
-  window.setInterval(()=>{
-    if(document.querySelector('[data-screen="favoritos"]')?.classList.contains('active'))window.TuColectivoNative?.getArrivalNotificationState?.();
-  },15000);
+  render();syncButtons();
+  // Desactivar el servicio anterior durante la transición; conservar preferencias para migrarlas.
+  window.TuColectivoNative?.stopArrivalNotifications?.();
 })();
 
 /* FASE 11B — LÍNEAS REALES + SUBSECCIONES DESDE SMARTMOVE NATIVO */
