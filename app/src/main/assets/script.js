@@ -206,7 +206,12 @@
 (() => {
   'use strict';
   const container = document.getElementById('mapCanvas');
-  if (!container || typeof L === 'undefined') return;
+  if (!container) return;
+  if (typeof L === 'undefined') {
+    const status = document.getElementById('mapState');
+    if (status) status.textContent = 'NO SE PUDO INICIAR EL MOTOR DEL MAPA';
+    return;
+  }
 
   const wrap = document.getElementById('map-wrap');
   const state = document.getElementById('mapState');
@@ -258,7 +263,7 @@
     zoomAnimationThreshold: 4
   }).setView(FALLBACK, 14);
 
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const baseTiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     maxNativeZoom: 19,
     minZoom: 11,
@@ -269,6 +274,9 @@
     attribution: '&copy; OpenStreetMap contributors',
     crossOrigin: true
   }).addTo(leafletMap);
+  let tileFailures = 0;
+  baseTiles.on('tileload', () => { tileFailures = 0; if (state?.textContent === 'ERROR DE CONEXIÓN CON EL MAPA') setState('MAPA EN LÍNEA'); });
+  baseTiles.on('tileerror', () => { if (++tileFailures >= 3) setState('ERROR DE CONEXIÓN CON EL MAPA'); });
 
   const routeLayer = L.layerGroup().addTo(leafletMap);
   const routeEndpointLayer = map.routeEndpointLayer.addTo(leafletMap);
@@ -580,7 +588,14 @@
   window.onNativeLocationError = function(payload) {
     let r = {};
     try { r = typeof payload === 'string' ? JSON.parse(payload) : payload || {}; } catch (_) {}
-    if (r.purpose === 'map') state.textContent = r.message || 'GPS NO DISPONIBLE';
+    if (r.purpose === 'map') {
+      setState(r.message || 'GPS NO DISPONIBLE');
+      // El mapa debe permanecer visible aun cuando el usuario no tenga señal GPS.
+      if (map.loadStopsAfterLocation && window.TuColectivoNative?.loadMapDataAtLocation) {
+        map.loadStopsAfterLocation = false;
+        window.TuColectivoNative.loadMapDataAtLocation(FALLBACK[0], FALLBACK[1], map.routeLineCode || 0, map.destinationFilter || '');
+      }
+    }
     if (r.purpose === 'nearby') {
       const button = document.getElementById('locateStops');
       const status = document.getElementById('nearbyState');
@@ -816,6 +831,8 @@
   document.addEventListener('app:navigate', e => {
     if (e.detail.go === 'mapa') {
       map.loadStopsAfterLocation = true;
+      requestAnimationFrame(() => leafletMap.invalidateSize({pan:false}));
+      setTimeout(() => leafletMap.invalidateSize({pan:false}), 260);
       setTimeout(() => leafletMap.invalidateSize({pan:false}), 60);
       setTimeout(locateUser, 120);
     }
