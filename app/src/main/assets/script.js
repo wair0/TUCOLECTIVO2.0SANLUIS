@@ -932,20 +932,7 @@
 
   function showArrival(stop,line){
     window.TuColectivoOpenLineArrivals?.(stop,Number(line));
-    return;
-    window.TuColectivoCurrentNearbyArrival={stop,line:Number(line)};
-    arrivalStop.innerHTML='<strong>'+escapeHtml(stop.name)+'</strong><span>LÍNEA '+escapeHtml(publicNearbyLineLabel(Number(line),stop.lineLabels))+' · PARADA SELECCIONADA</span><button class="arrival-favorite-toggle" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button>';
-    arrivalList.innerHTML='<div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>OBTENIENDO DATOS REALES DE SMARTMOVE</span></div>';
-    setArrivalsMeta('LÍNEA '+publicNearbyLineLabel(Number(line),stop.lineLabels));
-    window.TuColectivo.navigate('arribos');
-    syncNearbyArrivalFavorite();
-    if(window.TuColectivoNative&&typeof window.TuColectivoNative.loadArrivals==='function'){
-      window.TuColectivoNative.loadArrivals(stop.identifier,Number(line));
-    }else{
-      arrivalList.innerHTML='<div class="nearby-empty"><strong>SERVICIO NO DISPONIBLE</strong><span>NO SE PUDO CONECTAR CON SMARTMOVE</span></div>';
-    }
   }
-  function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function syncNearbyArrivalFavorite(){
     const current=window.TuColectivoCurrentNearbyArrival;
     const button=arrivalStop.querySelector('.arrival-favorite-toggle');
