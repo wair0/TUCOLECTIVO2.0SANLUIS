@@ -931,6 +931,8 @@
   };
 
   function showArrival(stop,line){
+    window.TuColectivoOpenLineArrivals?.(stop,Number(line));
+    return;
     window.TuColectivoCurrentNearbyArrival={stop,line:Number(line)};
     arrivalStop.innerHTML='<strong>'+escapeHtml(stop.name)+'</strong><span>LÍNEA '+escapeHtml(publicNearbyLineLabel(Number(line),stop.lineLabels))+' · PARADA SELECCIONADA</span><button class="arrival-favorite-toggle" type="button" aria-pressed="false">☆ AGREGAR ARRIBO A FAVORITOS</button>';
     arrivalList.innerHTML='<div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>OBTENIENDO DATOS REALES DE SMARTMOVE</span></div>';
@@ -1241,7 +1243,7 @@
       setTimeout(()=>document.querySelector('.line-card[data-line="'+id+'"]')?.scrollIntoView({behavior:'smooth',block:'center'}),80);
     }else if(type==='arrivals'){
       const saved=favorites.arrivals.find(v=>v.key===id);
-      if(saved){window.TuColectivoCurrentNearbyArrival={stop:{...saved.stop,lines:saved.stop.lines||[saved.line]},line:Number(saved.line)};window.TuColectivo.navigate('arribos');const current=window.TuColectivoCurrentNearbyArrival;const box=document.getElementById('arrivalStop'),target=document.getElementById('arrivalList');box.innerHTML='<strong>'+String(current.stop.name).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</strong><span>LÍNEA '+(window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(Number(current.line)):current.line)+' · PARADA FAVORITA</span><button class="arrival-favorite-toggle" type="button" aria-pressed="true">★ ARRIBO GUARDADO</button>';target.innerHTML='<div class="nearby-empty"><strong>CONSULTANDO ARRIBOS_</strong><span>OBTENIENDO DATOS REALES DE SMARTMOVE</span></div>';window.TuColectivoNative?.loadArrivals(current.stop.identifier,current.line);}
+      if(saved)window.TuColectivoOpenLineArrivals?.(saved.stop,Number(saved.line));
     }else if(type==='stops'){
       window.TuColectivo.navigate('paradas');
       setTimeout(()=>{
@@ -1369,11 +1371,11 @@
   };
   window.onNativeArrivals=p=>{
     if(window.TuColectivoMap?.handleArrivals(p))return;
-    if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivals?.(p);return;}
+    
     const a=JSON.parse(p),list=lineGrid.querySelector('.line-arrivals');
     renderLineArrivals(a,list);
   };
-  window.onNativeArrivalsError=p=>{if(window.TuColectivoMap?.handleArrivalsError(p))return;if(window.TuColectivoCurrentNearbyArrival&&document.querySelector('[data-screen="arribos"]')?.classList.contains('active')){window.onNativeNearbyArrivalsError?.(p);return;}const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML=window.TcLineas?window.TcLineas.stateHtml('error',JSON.parse(p).message):'<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
+  window.onNativeArrivalsError=p=>{if(window.TuColectivoMap?.handleArrivalsError(p))return;const list=lineGrid.querySelector('.line-arrivals');if(list)list.innerHTML=window.TcLineas?window.TcLineas.stateHtml('error',JSON.parse(p).message):'<div class="nearby-empty"><strong>ERROR DE ARRIBOS</strong><span>'+esc(JSON.parse(p).message)+'</span></div>';};
   function showArrivals(stop){
     currentStop=stop;
     window.TuColectivoSelectedMapDestination='';
@@ -1386,10 +1388,21 @@
     window.TuColectivoFavorites?.syncLineArrivalFavorite?.();
     nativeApi.loadArrivals(stop.identifier,currentLine.code);
   }
+  // Ruta única de consulta: PARADAS y FAVORITOS abren ARRIBOS dentro de LÍNEAS.
+  window.TuColectivoOpenLineArrivals=function(source,line){
+    const code=Number(line), identifier=String(source?.identifier||source?.id||source?.code||'');
+    if(!Number.isFinite(code)||code<=0||!identifier)return;
+    const label=window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(code,window.TuColectivoLineLabels):String(code);
+    currentLine=lines.find(x=>Number(x.code)===code)||{code,name:label};
+    currentStreet=null;currentIntersection=null;currentStop=null;
+    window.TuColectivoCurrentNearbyArrival=null;
+    window.TuColectivo.navigate('lineas');
+    showArrivals({identifier,code:source.code,description:source.name||source.description||'PARADA',street:source.street||'',intersection:source.intersection||'',latitude:source.lat??source.latitude,longitude:source.lng??source.longitude});
+  };
   function loadLines(){if(nativeApi){loading('CARGANDO LÍNEAS');nativeApi.loadLines();}else showError('LÍNEAS','PUENTE ANDROID NO DISPONIBLE');}
   function openLine(l){currentLine=l;setLineHead(l.name.toUpperCase());showList(l.name,'CALLES PRINCIPALES',[], 'CARGANDO CALLES',()=>{});nativeApi.loadStreets(l.code);}
   function back(){
-    if(currentStop){currentStop=null;setLineHead('PARADAS');nativeApi.loadStops(currentLine.code,currentStreet.code,currentIntersection.code);return true;}
+    if(currentStop){currentStop=null;if(!currentStreet||!currentIntersection){currentLine=null;renderLines(lines);}else{setLineHead('PARADAS');nativeApi.loadStops(currentLine.code,currentStreet.code,currentIntersection.code);}return true;}
     if(currentIntersection){currentIntersection=null;setLineHead(currentStreet.name);nativeApi.loadIntersections(currentLine.code,currentStreet.code);return true;}
     if(currentStreet){currentStreet=null;setLineHead(currentLine.name);nativeApi.loadStreets(currentLine.code);return true;}
     if(currentLine){currentLine=null;renderLines(lines);return true;}
