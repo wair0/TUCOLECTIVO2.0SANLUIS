@@ -613,6 +613,11 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     private fun requestNativeLocation(purpose: String) {
+        // @JavascriptInterface puede ejecutarse fuera del hilo principal: permisos y GPS deben entrar al main looper.
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            runOnUiThread { requestNativeLocation(purpose) }
+            return
+        }
         pendingLocationPurpose = purpose
         startContinuousLocationTracking()
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
