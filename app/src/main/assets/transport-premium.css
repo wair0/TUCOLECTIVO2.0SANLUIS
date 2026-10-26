@@ -1,0 +1,26 @@
+/* FASE 4/5 · LENGUAJE VISUAL DE TRANSPORTE PÚBLICO AVANZADO.
+   Superficies sobrias, jerarquía editorial, señalética y respuesta táctil. */
+:root{--mobility-radius:16px;--mobility-ease:cubic-bezier(.2,.72,.22,1);--mobility-stroke:rgba(var(--tcn-acc),.19)}
+html body{font-feature-settings:"tnum" 1;letter-spacing:.012em}
+html body .tc-hd{box-shadow:0 8px 28px rgba(5,24,44,.09);border-bottom:1px solid rgb(var(--tcn-edge));}
+html body .tc-card,html body .tc-alerts-panel,html body .favorite-item,html body .nearby-stop,html body .line-card,html body .tc-stop,html body .map-refresh-card{border-radius:var(--mobility-radius);border:1px solid rgb(var(--tcn-edge));box-shadow:0 1px 2px rgba(5,24,44,.035),0 12px 32px rgba(5,24,44,.055);transition:transform .22s var(--mobility-ease),box-shadow .22s var(--mobility-ease),border-color .22s var(--mobility-ease),background-color .22s var(--mobility-ease)}
+html body .tc-card{min-height:146px;padding:18px;gap:20px}
+html body .tc-card-ico{width:48px;height:48px;border-radius:14px;border:1px solid var(--mobility-stroke)}
+html body .tc-card-name{font-size:15px;font-weight:750;letter-spacing:.035em;line-height:1.35}
+html body .tc-card-go{right:18px;bottom:18px}
+html body .tc-card-alertas-active{border-color:rgba(var(--tcn-acc),.5)}
+html body .tc-card-alertas-active .tc-card-ico{background:rgba(var(--tcn-acc),.12)}
+html body .tc-alerts-panel{padding:20px;gap:14px}
+html body .tc-alerts-panel h3{font-size:15px;letter-spacing:.035em}
+html body .tc-alerts-panel :is(select,input[type=time]),html body .tc-arrival-picker-button{border-radius:12px;min-height:48px;transition:border-color .18s,box-shadow .18s,background .18s}
+html body .tc-arrival-picker-button:focus-visible,html body :is(button,[role=button],input,select):focus-visible{outline:2px solid rgb(var(--tcn-acc));outline-offset:3px}
+html body .tc-arrival-picker-list{border-radius:14px;box-shadow:0 18px 48px rgba(5,24,44,.17);border:1px solid rgb(var(--tcn-edge));}
+html body :is(.tc-card,.tc-btn,.tc-alerts-save,.tc-nav-item,.tc-hd-btn,.favorite-item,.nearby-stop,.stop-line-choice,.tc-arrival-picker-button,.tc-arrival-picker-option){-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .18s var(--mobility-ease),background-color .18s var(--mobility-ease),border-color .18s var(--mobility-ease),box-shadow .18s var(--mobility-ease)}
+html body :is(.tc-card,.tc-btn,.tc-alerts-save,.tc-nav-item,.tc-hd-btn,.favorite-item,.nearby-stop,.stop-line-choice,.tc-arrival-picker-button,.tc-arrival-picker-option):active{transform:scale(.975);filter:brightness(.97)}
+html body .tc-card.press{transform:scale(.975)}
+html body .tc-card.hot{box-shadow:0 0 0 2px var(--mobility-stroke),0 14px 34px rgba(5,24,44,.075)}
+html body .tc-nav{box-shadow:0 -10px 32px rgba(5,24,44,.09)}
+html body .tc-nav-item[aria-selected=true] .tc-nav-ico{transform:translateY(-2px)}
+@media (hover:hover){html body :is(.tc-card,.favorite-item,.nearby-stop,.line-card):hover{border-color:rgba(var(--tcn-acc),.45);box-shadow:0 14px 32px rgba(5,24,44,.09)}}
+@media (max-width:360px){html body .tc-cards{gap:9px}html body .tc-card{min-height:130px;padding:13px}html body .tc-card-name{font-size:13px}html body .tc-card-ico{width:42px;height:42px}}
+@media(prefers-reduced-motion:reduce){html body *,html body *::before,html body *::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
