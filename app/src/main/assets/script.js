@@ -206,12 +206,7 @@
 (() => {
   'use strict';
   const container = document.getElementById('mapCanvas');
-  if (!container) return;
-  if (typeof L === 'undefined') {
-    const status = document.getElementById('mapState');
-    if (status) status.textContent = 'NO SE PUDO INICIAR EL MOTOR DEL MAPA';
-    return;
-  }
+  if (!container || typeof L === 'undefined') return;
 
   const wrap = document.getElementById('map-wrap');
   const state = document.getElementById('mapState');
@@ -263,7 +258,7 @@
     zoomAnimationThreshold: 4
   }).setView(FALLBACK, 14);
 
-  const baseTiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     maxNativeZoom: 19,
     minZoom: 11,
@@ -274,9 +269,6 @@
     attribution: '&copy; OpenStreetMap contributors',
     crossOrigin: true
   }).addTo(leafletMap);
-  let tileFailures = 0;
-  baseTiles.on('tileload', () => { tileFailures = 0; if (state?.textContent === 'ERROR DE CONEXIÓN CON EL MAPA') setState('MAPA EN LÍNEA'); });
-  baseTiles.on('tileerror', () => { if (++tileFailures >= 3) setState('ERROR DE CONEXIÓN CON EL MAPA'); });
 
   const routeLayer = L.layerGroup().addTo(leafletMap);
   const routeEndpointLayer = map.routeEndpointLayer.addTo(leafletMap);
@@ -579,31 +571,14 @@
         window.TuColectivoNative.loadMapDataAtLocation(lat, lng, map.routeLineCode || 0, map.destinationFilter || '');
       }
     }
-    if (r.purpose === 'nearby') {
-      const status = document.getElementById('nearbyState');
-      if (status) status.textContent = 'CONSULTANDO PARADAS CERCANAS...';
-    }
+    if (r.purpose === 'nearby' && typeof setNearbyState === 'function') setNearbyState('');
   };
 
   window.onNativeLocationError = function(payload) {
     let r = {};
     try { r = typeof payload === 'string' ? JSON.parse(payload) : payload || {}; } catch (_) {}
-    if (r.purpose === 'map') {
-      setState(r.message || 'GPS NO DISPONIBLE');
-      // El mapa debe permanecer visible aun cuando el usuario no tenga señal GPS.
-      if (map.loadStopsAfterLocation && window.TuColectivoNative?.loadMapDataAtLocation) {
-        map.loadStopsAfterLocation = false;
-        window.TuColectivoNative.loadMapDataAtLocation(FALLBACK[0], FALLBACK[1], map.routeLineCode || 0, map.destinationFilter || '');
-      }
-    }
-    if (r.purpose === 'nearby') {
-      const button = document.getElementById('locateStops');
-      const status = document.getElementById('nearbyState');
-      const list = document.getElementById('nearbyList');
-      if (button) button.disabled = false;
-      if (status) status.textContent = r.message || 'NO SE PUDO OBTENER TU UBICACIÓN';
-      if (list) list.innerHTML = '<div class="nearby-empty"><strong>UBICACIÓN NO DISPONIBLE</strong><span>ACTIVÁ EL GPS Y VOLVÉ A INTENTARLO.</span></div>';
-    }
+    if (r.purpose === 'map') state.textContent = r.message || 'GPS NO DISPONIBLE';
+    if (r.purpose === 'nearby' && typeof locateBtn !== 'undefined') locateBtn.disabled = false;
   };
 
   window.onNativeMapStops = payload => {
@@ -831,8 +806,6 @@
   document.addEventListener('app:navigate', e => {
     if (e.detail.go === 'mapa') {
       map.loadStopsAfterLocation = true;
-      requestAnimationFrame(() => leafletMap.invalidateSize({pan:false}));
-      setTimeout(() => leafletMap.invalidateSize({pan:false}), 260);
       setTimeout(() => leafletMap.invalidateSize({pan:false}), 60);
       setTimeout(locateUser, 120);
     }
@@ -960,6 +933,7 @@
   function showArrival(stop,line){
     window.TuColectivoOpenLineArrivals?.(stop,Number(line));
   }
+  function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function syncNearbyArrivalFavorite(){
     const current=window.TuColectivoCurrentNearbyArrival;
     const button=arrivalStop.querySelector('.arrival-favorite-toggle');

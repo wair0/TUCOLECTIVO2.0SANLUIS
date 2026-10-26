@@ -613,11 +613,6 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     private fun requestNativeLocation(purpose: String) {
-        // @JavascriptInterface puede ejecutarse fuera del hilo principal: permisos y GPS deben entrar al main looper.
-        if (Looper.myLooper() != Looper.getMainLooper()) {
-            runOnUiThread { requestNativeLocation(purpose) }
-            return
-        }
         pendingLocationPurpose = purpose
         startContinuousLocationTracking()
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
@@ -629,14 +624,6 @@ class MainActivity : AppCompatActivity() {
             val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
             val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).filter { runCatching { manager.isProviderEnabled(it) }.getOrDefault(false) }
             if (providers.isEmpty()) { failNativeLocation(purpose, "UBICACIÓN DESACTIVADA"); return }
-            // El GPS puede tardar en interiores: usar posición reciente como respaldo sin esperar 12 segundos.
-            val cached = providers.mapNotNull { provider -> runCatching { manager.getLastKnownLocation(provider) }.getOrNull() }
-                .filter { it.latitude.isFinite() && it.longitude.isFinite() && it.latitude != 0.0 && it.longitude != 0.0 }
-                .maxByOrNull { it.time }
-            if (cached != null && System.currentTimeMillis() - cached.time in 0..120_000L) {
-                deliverNativeLocation(purpose, cached)
-                return
-            }
             var delivered = false
             val listeners = mutableListOf<LocationListener>()
             val finish: (Location) -> Unit = { location ->
@@ -656,8 +643,7 @@ class MainActivity : AppCompatActivity() {
                     .onFailure { listeners.remove(listener) }
             }
             Handler(Looper.getMainLooper()).postDelayed({
-                if (!delivered) {
-                    delivered = true;
+                if (!delivered && pendingLocationPurpose == purpose) {
                     listeners.forEach { listener -> runCatching { manager.removeUpdates(listener) } }
                     listeners.clear()
                     failNativeLocation(purpose, "TIEMPO DE ESPERA AGOTADO")
@@ -666,7 +652,8 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { failNativeLocation(purpose, e.message ?: "ERROR DE UBICACIÓN") }
     }
     private fun deliverNativeLocation(purpose: String, location: Location) {
-        if (pendingLocationPurpose == purpose) pendingLocationPurpose = null
+        if (pendingLocationPurpose != purpose) return
+        pendingLocationPurpose = null
         dispatch("onNativeLocation", JSONObject().put("purpose", purpose).put("latitude", location.latitude).put("longitude", location.longitude).toString())
         if (purpose == "map") {
             // MAPA: sincronización/centrado solamente. La carga de paradas se solicita aparte.
@@ -683,7 +670,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private fun failNativeLocation(purpose: String, message: String) {
-        if (pendingLocationPurpose == purpose) pendingLocationPurpose = null
+        pendingLocationPurpose = null
         dispatch("onNativeLocationError", JSONObject().put("purpose", purpose).put("message", message).toString())
     }
 
