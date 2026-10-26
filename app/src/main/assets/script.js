@@ -1380,10 +1380,12 @@
     const code=Number(line), identifier=String(source?.identifier||source?.id||source?.code||'');
     if(!Number.isFinite(code)||code<=0||!identifier)return;
     const label=window.TuColectivoPublicLineLabel?window.TuColectivoPublicLineLabel(code,window.TuColectivoLineLabels):String(code);
-    currentLine=lines.find(x=>Number(x.code)===code)||{code,name:label};
     currentStreet=null;currentIntersection=null;currentStop=null;
     window.TuColectivoCurrentNearbyArrival=null;
-    window.TuColectivo.navigate('lineas');
+    window.TuColectivoOpeningLineArrivals=true;
+    try{window.TuColectivo.navigate('lineas');}finally{window.TuColectivoOpeningLineArrivals=false;}
+    // Navegar emite app:navigate sincrónicamente y reinicia el estado: asignar el contexto después.
+    currentLine=lines.find(x=>Number(x.code)===code)||{code,name:label};
     showArrivals({identifier,code:source.code,description:source.name||source.description||'PARADA',street:source.street||'',intersection:source.intersection||'',latitude:source.lat??source.latitude,longitude:source.lng??source.longitude});
   };
   function loadLines(){if(nativeApi){loading('CARGANDO LÍNEAS');nativeApi.loadLines();}else showError('LÍNEAS','PUENTE ANDROID NO DISPONIBLE');}
@@ -1419,7 +1421,7 @@
     const mapBtn=e.target.closest('[data-map-route-line]');if(mapBtn){const code=Number(mapBtn.dataset.mapRouteLine);if(code&&window.TuColectivoMap)window.TuColectivoMap.showRoute(code,window.TuColectivoSelectedMapDestination||'');return;}
     const c=e.target.closest('.line-card');if(c){const l=lines.find(x=>String(x.code)===c.dataset.line);if(l)openLine(l);return;}
   });
-  document.addEventListener('app:navigate',e=>{if(e.detail.go==='lineas'){currentLine=null;currentStreet=null;currentIntersection=null;currentStop=null;loadLines();}});
+  document.addEventListener('app:navigate',e=>{if(e.detail.go==='lineas'&&!window.TuColectivoOpeningLineArrivals){currentLine=null;currentStreet=null;currentIntersection=null;currentStop=null;loadLines();}});
   document.addEventListener('app:searchselect',e=>{
     const result=e.detail||{};
     if(result.type!=='line')return;
