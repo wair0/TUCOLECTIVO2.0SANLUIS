@@ -13,3 +13,11 @@ html body .tc-alerts-save:not(:disabled):active{transform:scale(.985)}
 html body .tc-nav{box-shadow:0 -8px 28px rgba(10,35,65,.065)}
 html body .tc-hd{box-shadow:0 4px 20px rgba(10,35,65,.045)}
 @media(prefers-reduced-motion:reduce){html body .tc-card,html body .data-card,html body .line-card,html body .favorite-item,html body .nearby-stop,html body .tc-alerts-panel,html body .tc-alerts-intro,html body .tc-alerts-save{transition:none}}
+
+/* FASE 4/5 — RESPUESTA TÁCTIL CONSISTENTE, SIN ANIMACIONES DECORATIVAS. */
+html body button,html body [role=button],html body .tc-nav-item,html body .tc-hd-btn{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+html body .tc-card:active,html body .tc-card.press,html body .data-card:active,html body .line-card:active,html body .favorite-item:active,html body .nearby-stop:active,html body .tc-alerts-link:active{transform:translateY(1px) scale(.982)!important;box-shadow:0 1px 4px rgba(10,35,65,.08)!important}
+html body .tc-nav-item:active .tc-nav-ico,html body .tc-hd-btn:active,html body .tc-btn:active,html body .favorite-remove:active{transform:scale(.92);transition:transform .16s var(--tc-motion)}
+html body .tc-card-go{transition:transform .2s var(--tc-motion),stroke .2s}
+html body .tc-card:active .tc-card-go{transform:translateX(3px)}
+@media(prefers-reduced-motion:reduce){html body .tc-card:active,html body .tc-card.press,html body .data-card:active,html body .line-card:active,html body .favorite-item:active,html body .nearby-stop:active,html body .tc-alerts-link:active,html body .tc-nav-item:active .tc-nav-ico,html body .tc-hd-btn:active,html body .tc-btn:active{transform:none!important;transition:none!important}}
