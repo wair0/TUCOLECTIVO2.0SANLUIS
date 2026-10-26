@@ -571,14 +571,24 @@
         window.TuColectivoNative.loadMapDataAtLocation(lat, lng, map.routeLineCode || 0, map.destinationFilter || '');
       }
     }
-    if (r.purpose === 'nearby' && typeof setNearbyState === 'function') setNearbyState('');
+    if (r.purpose === 'nearby') {
+      const status = document.getElementById('nearbyState');
+      if (status) status.textContent = 'CONSULTANDO PARADAS CERCANAS...';
+    }
   };
 
   window.onNativeLocationError = function(payload) {
     let r = {};
     try { r = typeof payload === 'string' ? JSON.parse(payload) : payload || {}; } catch (_) {}
     if (r.purpose === 'map') state.textContent = r.message || 'GPS NO DISPONIBLE';
-    if (r.purpose === 'nearby' && typeof locateBtn !== 'undefined') locateBtn.disabled = false;
+    if (r.purpose === 'nearby') {
+      const button = document.getElementById('locateStops');
+      const status = document.getElementById('nearbyState');
+      const list = document.getElementById('nearbyList');
+      if (button) button.disabled = false;
+      if (status) status.textContent = r.message || 'NO SE PUDO OBTENER TU UBICACIÓN';
+      if (list) list.innerHTML = '<div class="nearby-empty"><strong>UBICACIÓN NO DISPONIBLE</strong><span>ACTIVÁ EL GPS Y VOLVÉ A INTENTARLO.</span></div>';
+    }
   };
 
   window.onNativeMapStops = payload => {

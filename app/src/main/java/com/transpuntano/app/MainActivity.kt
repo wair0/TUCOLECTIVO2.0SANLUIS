@@ -643,7 +643,8 @@ class MainActivity : AppCompatActivity() {
                     .onFailure { listeners.remove(listener) }
             }
             Handler(Looper.getMainLooper()).postDelayed({
-                if (!delivered && pendingLocationPurpose == purpose) {
+                if (!delivered) {
+                    delivered = true;
                     listeners.forEach { listener -> runCatching { manager.removeUpdates(listener) } }
                     listeners.clear()
                     failNativeLocation(purpose, "TIEMPO DE ESPERA AGOTADO")
@@ -652,8 +653,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { failNativeLocation(purpose, e.message ?: "ERROR DE UBICACIÓN") }
     }
     private fun deliverNativeLocation(purpose: String, location: Location) {
-        if (pendingLocationPurpose != purpose) return
-        pendingLocationPurpose = null
+        if (pendingLocationPurpose == purpose) pendingLocationPurpose = null
         dispatch("onNativeLocation", JSONObject().put("purpose", purpose).put("latitude", location.latitude).put("longitude", location.longitude).toString())
         if (purpose == "map") {
             // MAPA: sincronización/centrado solamente. La carga de paradas se solicita aparte.
@@ -670,7 +670,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private fun failNativeLocation(purpose: String, message: String) {
-        pendingLocationPurpose = null
+        if (pendingLocationPurpose == purpose) pendingLocationPurpose = null
         dispatch("onNativeLocationError", JSONObject().put("purpose", purpose).put("message", message).toString())
     }
 
