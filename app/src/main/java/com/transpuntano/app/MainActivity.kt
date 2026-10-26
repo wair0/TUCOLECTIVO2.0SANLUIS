@@ -629,6 +629,14 @@ class MainActivity : AppCompatActivity() {
             val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
             val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).filter { runCatching { manager.isProviderEnabled(it) }.getOrDefault(false) }
             if (providers.isEmpty()) { failNativeLocation(purpose, "UBICACIÓN DESACTIVADA"); return }
+            // El GPS puede tardar en interiores: usar posición reciente como respaldo sin esperar 12 segundos.
+            val cached = providers.mapNotNull { provider -> runCatching { manager.getLastKnownLocation(provider) }.getOrNull() }
+                .filter { it.latitude.isFinite() && it.longitude.isFinite() && it.latitude != 0.0 && it.longitude != 0.0 }
+                .maxByOrNull { it.time }
+            if (cached != null && System.currentTimeMillis() - cached.time in 0..120_000L) {
+                deliverNativeLocation(purpose, cached)
+                return
+            }
             var delivered = false
             val listeners = mutableListOf<LocationListener>()
             val finish: (Location) -> Unit = { location ->
