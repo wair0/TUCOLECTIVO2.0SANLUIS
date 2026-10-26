@@ -1,0 +1,15 @@
+/* FASE 3/5 — LENGUAJE VISUAL DE MOVILIDAD URBANA: PRECISO, SERENO Y CONTEMPORÁNEO. */
+:root{--tc-motion:cubic-bezier(.2,.75,.25,1);--tc-premium-line:rgba(var(--tcn-acc),.17)}
+html body .screen-head{position:relative;padding-bottom:13px;border-bottom:1px solid rgb(var(--tcn-edge));letter-spacing:.075em}
+html body .screen-head::after{content:"";position:absolute;bottom:-1px;left:0;width:42px;height:2px;background:rgb(var(--tcn-acc));border-radius:3px}
+html body .tc-card,html body .data-card,html body .line-card,html body .favorite-item,html body .nearby-stop,html body .tc-alerts-panel,html body .tc-alerts-intro{border:1px solid rgb(var(--tcn-edge));border-radius:16px;background:var(--tcn-bg-a);box-shadow:0 2px 5px rgba(10,35,65,.035),0 9px 24px rgba(10,35,65,.045);transition:border-color .22s var(--tc-motion),box-shadow .22s var(--tc-motion),transform .22s var(--tc-motion)}
+html body .tc-card:focus-visible,html body .data-card:focus-visible,html body .line-card:focus-visible,html body .favorite-item:focus-visible,html body .tc-alerts-save:focus-visible{outline:2px solid rgb(var(--tcn-acc));outline-offset:3px}
+html body .tc-card.hot,html body .line-card:hover,html body .nearby-stop:hover,html body .favorite-item:hover{border-color:rgba(var(--tcn-acc),.5);box-shadow:0 3px 10px rgba(10,35,65,.055),0 14px 28px rgba(10,35,65,.08)}
+html body .tc-card-ico,html body .tc-alerts-symbol{border:1px solid var(--tc-premium-line);border-radius:13px}
+html body .tc-alerts-panel{padding:clamp(16px,4vw,22px)}
+html body .tc-alerts-panel h3{letter-spacing:.035em}
+html body .tc-alerts-save{min-height:50px;border-radius:12px;font-weight:750;letter-spacing:.035em;transition:filter .2s,transform .2s,box-shadow .2s}
+html body .tc-alerts-save:not(:disabled):active{transform:scale(.985)}
+html body .tc-nav{box-shadow:0 -8px 28px rgba(10,35,65,.065)}
+html body .tc-hd{box-shadow:0 4px 20px rgba(10,35,65,.045)}
+@media(prefers-reduced-motion:reduce){html body .tc-card,html body .data-card,html body .line-card,html body .favorite-item,html body .nearby-stop,html body .tc-alerts-panel,html body .tc-alerts-intro,html body .tc-alerts-save{transition:none}}
