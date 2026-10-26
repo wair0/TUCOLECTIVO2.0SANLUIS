@@ -1289,6 +1289,8 @@
         if(Number.isFinite(code)&&code>0) window.TuColectivoLineLabels[String(code)]=String(item.name||'').trim();
       });
       window.TuColectivoLineSyncResult?.(true, items.length);
+      // Una sincronización pendiente no debe sobrescribir ARRIBOS abiertos desde PARADAS o FAVORITOS.
+      if(currentStop&&lineGrid.querySelector('.line-arrivals'))return;
       renderLines(items.map(item=>({
         ...item,
         name:window.TuColectivoPublicLineLabel
