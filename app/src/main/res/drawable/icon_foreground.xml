@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/icon_new"
-    android:insetLeft="17%"
-    android:insetTop="17%"
-    android:insetRight="17%"
-    android:insetBottom="17%" />
+    android:drawable="@drawable/icon_clean_foreground"
+    android:insetLeft="0%"
+    android:insetTop="0%"
+    android:insetRight="0%"
+    android:insetBottom="0%" />

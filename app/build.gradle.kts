@@ -51,3 +51,43 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
 }
+
+/*
+ * Icono: el JPG entregado contiene un fondo gris rectangular. Generamos recursos
+ * PNG con alfa y recorte circular antes de compilar, sin alterar la ilustración.
+ * El launcher adaptativo aplica su propia máscara; el círculo queda en zona segura.
+ */
+val generatedIconRes = layout.buildDirectory.dir("generated/cleanLauncherIcon/res")
+android.sourceSets.getByName("main").res.srcDir(generatedIconRes)
+
+val generateCleanLauncherIcon = tasks.register("generateCleanLauncherIcon") {
+    val source = layout.projectDirectory.file("src/main/res/drawable-nodpi/icon_new.jpg")
+    inputs.file(source)
+    outputs.dir(generatedIconRes)
+    doLast {
+        val original = javax.imageio.ImageIO.read(source.asFile)
+        val side = minOf(original.width, original.height)
+        val sx = (original.width - side) / 2
+        val sy = (original.height - side) / 2
+        val destination = generatedIconRes.get().asFile.resolve("drawable-nodpi")
+        destination.mkdirs()
+        listOf("icon_clean_foreground" to 0.64, "icon_clean_legacy" to 0.94).forEach { (name, fraction) ->
+            val size = 512
+            val image = java.awt.image.BufferedImage(size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            val graphics = image.createGraphics()
+            graphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+            graphics.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            val diameter = (size * fraction).toInt()
+            val offset = (size - diameter) / 2
+            graphics.clip = java.awt.geom.Ellipse2D.Double(offset.toDouble(), offset.toDouble(), diameter.toDouble(), diameter.toDouble())
+            // El círculo original termina antes del margen gris del JPG.
+            val crop = (side * 0.80).toInt()
+            val cropOffset = (side - crop) / 2
+            graphics.drawImage(original, offset, offset, offset + diameter, offset + diameter,
+                sx + cropOffset, sy + cropOffset, sx + cropOffset + crop, sy + cropOffset + crop, null)
+            graphics.dispose()
+            javax.imageio.ImageIO.write(image, "png", destination.resolve("$name.png"))
+        }
+    }
+}
+tasks.named("preBuild") { dependsOn(generateCleanLauncherIcon) }
