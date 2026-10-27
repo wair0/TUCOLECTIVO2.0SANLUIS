@@ -1,5 +1,0 @@
-/* TU COLECTIVO 2.0 — Título del header (estilo corporativo): texto real con el sistema tipográfico y etiqueta de versión. Se carga DESPUÉS de header.css. */
-.tc-hd-title.tc-wm{display:flex;align-items:center;gap:8px;margin:0;font-size:0;line-height:0;letter-spacing:0;background:none;-webkit-text-fill-color:initial;animation:none}
-.tc-hd-title.tc-wm .tc-wm-name,.tc-hd-title.tc-wm .tc-wm-tag{display:none}
-.tc-hd-title.tc-wm::before{content:"TU COLECTIVO";font:700 18px/1.1 var(--tc-font);letter-spacing:.01em;color:var(--tcn-label-active)}
-.tc-hd-title.tc-wm::after{content:"2.0";font:700 11px/1 var(--tc-font);letter-spacing:.02em;color:rgb(var(--tcn-acc));background:var(--tc-soft);padding:4px 7px;border-radius:999px}
