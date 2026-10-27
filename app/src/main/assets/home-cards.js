@@ -65,7 +65,7 @@
       root.dispatchEvent(new CustomEvent("tc:cardselect",{bubbles:true,detail:{section:sec}}));
     },reduce?0:140);
   }
-  root.addEventListener("pointerdown",function(e){var c=cardOf(e.target);if(!c||c===sync)return;hot(c,true);c.classList.add("press");});
+  root.addEventListener("pointerdown",function(e){var c=cardOf(e.target);if(!c)return;if(c!==sync)hot(c,true);c.classList.add("press");});
   function release(e){var c=cardOf(e.target);cards.forEach(function(k){k.classList.remove("press");});if(c&&c!==sync&&e.pointerType!=="mouse")cool(c,450);}
   root.addEventListener("pointerup",release);root.addEventListener("pointercancel",release);
   root.addEventListener("pointerover",function(e){if(e.pointerType!=="mouse")return;var c=cardOf(e.target);if(c&&c!==sync)hot(c,true);});
