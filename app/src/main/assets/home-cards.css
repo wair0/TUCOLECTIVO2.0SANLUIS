@@ -49,3 +49,13 @@
 .tc-card-alertas.tc-card-alertas-active .tc-card-alert-state{color:rgb(var(--tcn-acc));border-color:rgba(var(--tcn-acc),.45)}
 .tc-card-alertas .tc-card-art{display:none}
 @media(max-width:350px){.tc-card-alertas .tc-card-top{flex-wrap:wrap}.tc-card-alertas .tc-card-meta{align-items:flex-start}.tc-card-alertas .tc-card-name{font-size:14px}}
+
+/* Tarjetas de ancho completo: Alertas comparte la geometría de Sincronizar. */
+.tc-card.tc-wide-card{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;min-height:0;padding:14px 16px}
+.tc-wide-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.tc-wide-detail,.tc-sync-status{display:block;font:600 11px/1.35 var(--tc-font);letter-spacing:.02em;color:var(--tcn-muted);overflow-wrap:anywhere}
+.tc-card-alertas.tc-card-alertas-active .tc-wide-detail{color:rgb(var(--tcn-acc))}
+.tc-wide-go{flex:none;width:18px;height:18px;fill:none;stroke:var(--tc-3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tc-card.tc-wide-card .tc-card-name{text-transform:uppercase}
+.tc-card.tc-wide-card .tc-card-ico{flex:none}
+.tc-sync-status.swap{animation:tchswap .3s ease-out}

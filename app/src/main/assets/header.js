@@ -27,7 +27,7 @@
   var filter="todo",notes=[],openName=null;
   function emit(n,d){hd.dispatchEvent(new CustomEvent(n,{bubbles:true,detail:d}));}
   function call(fn){if(typeof api[fn]==="function"){api[fn].apply(api,[].slice.call(arguments,1));}}
-  function setStatus(t){st.classList.remove("swap");void st.offsetWidth;st.textContent=t;st.classList.add("swap");}
+  function setStatus(t){if(!st)return;st.classList.remove("swap");void st.offsetWidth;st.textContent=t;st.classList.add("swap");}
   function closeAll(){
     btns.forEach(function(b){b.classList.remove("active");b.setAttribute("aria-expanded","false");});
     Object.keys(panels).forEach(function(k){panels[k].classList.remove("open");});
