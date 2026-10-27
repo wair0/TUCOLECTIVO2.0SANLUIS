@@ -56,22 +56,22 @@
     done:function(){if(S.state==="run"){setP(100);end(true);}},
     fail:function(){end(false);}};
   function fire(c){
+    if(c===sync){start();return;}
     c.classList.remove("fire");void c.offsetWidth;c.classList.add("fire");
     setTimeout(function(){c.classList.remove("fire");},800);
-    if(c===sync){start();return;}
     var sec=c.getAttribute("data-section");
     setTimeout(function(){
       if(typeof api.onSelect==="function")api.onSelect(sec);
       root.dispatchEvent(new CustomEvent("tc:cardselect",{bubbles:true,detail:{section:sec}}));
     },reduce?0:140);
   }
-  root.addEventListener("pointerdown",function(e){var c=cardOf(e.target);if(!c)return;hot(c,true);c.classList.add("press");});
-  function release(e){var c=cardOf(e.target);cards.forEach(function(k){k.classList.remove("press");});if(c&&e.pointerType!=="mouse")cool(c,450);}
+  root.addEventListener("pointerdown",function(e){var c=cardOf(e.target);if(!c||c===sync)return;hot(c,true);c.classList.add("press");});
+  function release(e){var c=cardOf(e.target);cards.forEach(function(k){k.classList.remove("press");});if(c&&c!==sync&&e.pointerType!=="mouse")cool(c,450);}
   root.addEventListener("pointerup",release);root.addEventListener("pointercancel",release);
-  root.addEventListener("pointerover",function(e){if(e.pointerType!=="mouse")return;var c=cardOf(e.target);if(c)hot(c,true);});
-  root.addEventListener("pointerout",function(e){if(e.pointerType!=="mouse")return;var c=cardOf(e.target);if(c&&!c.contains(e.relatedTarget)&&!c.matches(":focus-visible"))hot(c,false);});
-  root.addEventListener("focusin",function(e){var c=cardOf(e.target);if(c&&c.matches(":focus-visible"))hot(c,true);});
-  root.addEventListener("focusout",function(e){var c=cardOf(e.target);if(c)hot(c,false);});
+  root.addEventListener("pointerover",function(e){if(e.pointerType!=="mouse")return;var c=cardOf(e.target);if(c&&c!==sync)hot(c,true);});
+  root.addEventListener("pointerout",function(e){if(e.pointerType!=="mouse")return;var c=cardOf(e.target);if(c&&c!==sync&&!c.contains(e.relatedTarget)&&!c.matches(":focus-visible"))hot(c,false);});
+  root.addEventListener("focusin",function(e){var c=cardOf(e.target);if(c&&c!==sync&&c.matches(":focus-visible"))hot(c,true);});
+  root.addEventListener("focusout",function(e){var c=cardOf(e.target);if(c&&c!==sync)hot(c,false);});
   root.addEventListener("click",function(e){var c=cardOf(e.target);if(c)fire(c);});
   root.addEventListener("keydown",function(e){
     var i=cards.indexOf(document.activeElement);if(i<0)return;
