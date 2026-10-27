@@ -84,6 +84,6 @@ html body .tc-card.tc-sync.drain .tc-sync-fill{transition:width .35s ease-in!imp
 
 /* Respuesta tactil discreta para sincronizar: solo cambia el fondo. */
 html body .tc-card.tc-sync{transition:transform 120ms ease-out,background-color 120ms ease-out!important}
-html body .tc-card.tc-sync.press{transform:scale(.975)!important;transition:transform 120ms ease-out,background-color 120ms ease-out!important}
+html body .tc-card.tc-sync:is(.press,.press:active){transform:scale(.975)!important;transition:transform 120ms ease-out,background-color 120ms ease-out!important}
 html body .tc-card.tc-sync:active{background-color:var(--tcn-bg-b)!important;transition:background-color 120ms ease-out!important}
 @media(prefers-reduced-motion:reduce){html body .tc-card.tc-sync,html body .tc-card.tc-sync:active{transition:none!important}}
