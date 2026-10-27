@@ -72,3 +72,12 @@ html body .tc-sync.fail .tc-sync-head{background:rgb(var(--tcn-alert));box-shado
 html body .tc-sync.drain .tc-sync-fill,html body .tc-sync.drain .tc-sync-head{transition:width .35s ease-in,left .35s ease-in}
 @keyframes tcSyncHeadPulse{50%{box-shadow:0 0 0 1px rgb(var(--tcn-acc)),0 0 0 6px rgba(var(--tc-nb),.18),0 0 17px rgba(var(--tc-nb),.75)}}
 @media(prefers-reduced-motion:reduce){html body .tc-sync.run .tc-sync-head{animation:none}html body .tc-sync :is(.tc-sync-fill,.tc-sync-head){transition:none}}
+
+/* Sincronizar: sin destellos, escala, ripple ni animaciones de brillo en WebView. */
+html body .tc-card.tc-sync,html body .tc-card.tc-sync:is(:active,:hover,:focus-visible,.press,.hot,.fire,.run,.done,.fail){transform:none!important;animation:none!important;transition:none!important;filter:none!important;box-shadow:0 0 0 1px rgba(var(--tc-nb),.12),0 0 7px rgba(var(--tc-nb),.12)!important;overflow:hidden}
+html body .tc-card.tc-sync::before,html body .tc-card.tc-sync::after,html body .tc-card.tc-sync :is(.tc-card-glow,.tc-card-beam,.tc-ripple){display:none!important;animation:none!important}
+html body .tc-card.tc-sync :is(.tc-card-ico,.tc-card-ico svg,.tc-card-ico svg *, .tc-sync-head){animation:none!important;filter:none!important}
+html body .tc-card.tc-sync .tc-sync-head{transition:left .12s linear!important}
+html body .tc-card.tc-sync .tc-sync-fill{transition:width .12s linear!important}
+html body .tc-card.tc-sync.drain .tc-sync-head{transition:left .35s ease-in!important}
+html body .tc-card.tc-sync.drain .tc-sync-fill{transition:width .35s ease-in!important}
