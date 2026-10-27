@@ -9,4 +9,5 @@
     <color name="cyber_text">#FFFFFF</color>
     <color name="cyber_text_sec">#6C7D93</color>
     <color name="cyber_border">#1A2A3A</color>
+    <color name="icon_background">#9EAEA0</color>
 </resources>
