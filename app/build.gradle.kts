@@ -1,3 +1,8 @@
+import java.awt.RenderingHints
+import java.awt.geom.Ellipse2D
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -65,7 +70,7 @@ val generateCleanLauncherIcon = tasks.register("generateCleanLauncherIcon") {
     inputs.file(source)
     outputs.dir(generatedIconRes)
     doLast {
-        val original = javax.imageio.ImageIO.read(source.asFile)
+        val original = ImageIO.read(source.asFile)
         val side = minOf(original.width, original.height)
         val sx = (original.width - side) / 2
         val sy = (original.height - side) / 2
@@ -73,20 +78,20 @@ val generateCleanLauncherIcon = tasks.register("generateCleanLauncherIcon") {
         destination.mkdirs()
         listOf("icon_clean_foreground" to 0.64, "icon_clean_legacy" to 0.94).forEach { (name, fraction) ->
             val size = 512
-            val image = java.awt.image.BufferedImage(size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            val image = BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB)
             val graphics = image.createGraphics()
-            graphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
-            graphics.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             val diameter = (size * fraction).toInt()
             val offset = (size - diameter) / 2
-            graphics.clip = java.awt.geom.Ellipse2D.Double(offset.toDouble(), offset.toDouble(), diameter.toDouble(), diameter.toDouble())
+            graphics.clip = Ellipse2D.Double(offset.toDouble(), offset.toDouble(), diameter.toDouble(), diameter.toDouble())
             // El círculo original termina antes del margen gris del JPG.
             val crop = (side * 0.80).toInt()
             val cropOffset = (side - crop) / 2
             graphics.drawImage(original, offset, offset, offset + diameter, offset + diameter,
                 sx + cropOffset, sy + cropOffset, sx + cropOffset + crop, sy + cropOffset + crop, null)
             graphics.dispose()
-            javax.imageio.ImageIO.write(image, "png", destination.resolve("$name.png"))
+            ImageIO.write(image, "png", destination.resolve("$name.png"))
         }
     }
 }
