@@ -1,0 +1,17 @@
+/* Identidad institucional y cronómetro HUD: HTML/CSS sin dependencias. */
+.tc-partner-logos{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);align-items:center;gap:12px;margin:18px 0 4px}
+.tc-partner-logo{display:flex;align-items:center;justify-content:center;min-width:0;min-height:92px;padding:10px 12px;box-sizing:border-box;border:1px solid rgb(var(--tcn-edge));border-radius:var(--tc-r);background:#fff;box-shadow:var(--tc-sh)}
+.tc-partner-logo img{display:block;max-width:100%;width:auto;height:auto;max-height:76px;object-fit:contain}
+.tc-partner-logo-province img{width:100%}.tc-partner-logo-transpuntano img{max-height:82px}
+html[data-theme=dark] .tc-partner-logo{background:#eaf0f6;border-color:rgba(255,255,255,.2)}
+@media(max-width:360px){.tc-partner-logos{gap:8px}.tc-partner-logo{min-height:76px;padding:8px}.tc-partner-logo img{max-height:60px}}
+html body [data-screen="lineas"] .arrival-card .arrival-time{width:86px;height:86px;isolation:isolate}
+html body [data-screen="lineas"] .arrival-card .arrival-hud{position:absolute;inset:0;display:block;border-radius:50%;background:radial-gradient(circle at center,rgba(var(--tcn-acc),.1) 0 47%,transparent 48%),conic-gradient(from 0deg,transparent 0 8deg,rgba(var(--tcn-acc),.95) 9deg 54deg,transparent 55deg 80deg,rgba(var(--tcn-acc),.4) 81deg 84deg,transparent 85deg 135deg,rgba(var(--tcn-acc),.9) 136deg 183deg,transparent 184deg 218deg,rgba(var(--tcn-acc),.45) 219deg 224deg,transparent 225deg 275deg,rgba(var(--tcn-acc),.9) 276deg 326deg,transparent 327deg);animation:tcHudRotate var(--arrival-duration,8s) linear infinite}
+html body [data-screen="lineas"] .arrival-card .arrival-hud::before{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--tcn-bg-a);box-shadow:inset 0 0 0 1px rgba(var(--tcn-acc),.35),0 0 12px rgba(var(--tcn-acc),.15)}
+html body [data-screen="lineas"] .arrival-card .arrival-hud-grid{position:absolute;inset:10px;border-radius:50%;border:1px dashed rgba(var(--tcn-acc),.45)}
+html body [data-screen="lineas"] .arrival-card .arrival-hud-orbit{position:absolute;inset:0;border-radius:50%;border:2px solid transparent;border-top-color:rgb(var(--tcn-acc));border-bottom-color:rgba(var(--tcn-acc),.65);filter:drop-shadow(0 0 3px rgba(var(--tcn-acc),.55))}
+html body [data-screen="lineas"] .arrival-card .arrival-hud-orbit::after{content:"";position:absolute;top:3px;left:10px;width:5px;height:5px;border-radius:50%;background:rgb(var(--tcn-acc));box-shadow:0 0 7px rgb(var(--tcn-acc))}
+html body [data-screen="lineas"] .arrival-card .arrival-hud-core{position:absolute;inset:14px;border-radius:50%;border:1px solid rgba(var(--tcn-acc),.2)}
+html body [data-screen="lineas"] .arrival-card .arrival-num{z-index:1;gap:2px;font-size:26px}
+html body [data-screen="lineas"] .arrival-card .arrival-num small{font-size:9px!important;letter-spacing:.1em!important}
+@keyframes tcHudRotate{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){html body [data-screen="lineas"] .arrival-card .arrival-hud{animation:none}}
