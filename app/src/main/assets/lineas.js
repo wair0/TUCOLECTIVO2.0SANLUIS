@@ -32,7 +32,7 @@
   }
   /* Anillo del contador (estilo corporativo): pista + arco de acento que gira suave. Solo decorativo: no resta ni calcula minutos. */
   function ringSvg(){
-    return '<svg class="arrival-ring" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><circle class="rg-track" cx="50" cy="50" r="42"/><circle class="rg-arc" cx="50" cy="50" r="42"/></svg>';
+    return '<span class="arrival-hud" aria-hidden="true"><span class="arrival-hud-orbit"></span><span class="arrival-hud-grid"></span><span class="arrival-hud-core"></span></span>';
   }
   function arrivalCardHtml(a,i,selected){
     var m=(a.minutes==null||a.minutes==="")?null:Number(a.minutes),arr=isArriving(a.status,m),dest=a.destination&&String(a.destination).trim()?a.destination:"DESTINO NO INFORMADO";

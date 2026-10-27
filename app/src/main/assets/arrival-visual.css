@@ -3,7 +3,8 @@
 .tc-partner-logo{display:flex;align-items:center;justify-content:center;min-width:0;min-height:92px;padding:10px 12px;box-sizing:border-box;border:1px solid rgb(var(--tcn-edge));border-radius:var(--tc-r);background:#fff;box-shadow:var(--tc-sh)}
 .tc-partner-logo img{display:block;max-width:100%;width:auto;height:auto;max-height:76px;object-fit:contain}
 .tc-partner-logo-province img{width:100%}.tc-partner-logo-transpuntano img{max-height:82px}
-html[data-theme=dark] .tc-partner-logo{background:#eaf0f6;border-color:rgba(255,255,255,.2)}
+html[data-theme=dark] .tc-partner-logo{background:#121926;border-color:rgba(112,155,255,.25)}
+html[data-theme=dark] .tc-partner-logo img{filter:invert(1) hue-rotate(180deg);mix-blend-mode:screen}
 @media(max-width:360px){.tc-partner-logos{gap:8px}.tc-partner-logo{min-height:76px;padding:8px}.tc-partner-logo img{max-height:60px}}
 html body [data-screen="lineas"] .arrival-card .arrival-time{width:86px;height:86px;isolation:isolate}
 html body [data-screen="lineas"] .arrival-card .arrival-hud{position:absolute;inset:0;display:block;border-radius:50%;background:radial-gradient(circle at center,rgba(var(--tcn-acc),.1) 0 47%,transparent 48%),conic-gradient(from 0deg,transparent 0 8deg,rgba(var(--tcn-acc),.95) 9deg 54deg,transparent 55deg 80deg,rgba(var(--tcn-acc),.4) 81deg 84deg,transparent 85deg 135deg,rgba(var(--tcn-acc),.9) 136deg 183deg,transparent 184deg 218deg,rgba(var(--tcn-acc),.45) 219deg 224deg,transparent 225deg 275deg,rgba(var(--tcn-acc),.9) 276deg 326deg,transparent 327deg);animation:tcHudRotate var(--arrival-duration,8s) linear infinite}
@@ -15,3 +16,12 @@ html body [data-screen="lineas"] .arrival-card .arrival-hud-core{position:absolu
 html body [data-screen="lineas"] .arrival-card .arrival-num{z-index:1;gap:2px;font-size:26px}
 html body [data-screen="lineas"] .arrival-card .arrival-num small{font-size:9px!important;letter-spacing:.1em!important}
 @keyframes tcHudRotate{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){html body [data-screen="lineas"] .arrival-card .arrival-hud{animation:none}}
+
+/* Modo oscuro automático además del selector manual. Los PNG tienen fondo blanco integrado:
+   se invierten para que ese fondo pase a negro y se funda con la superficie oscura. */
+@media(prefers-color-scheme:dark){html:not([data-theme="light"]) .tc-partner-logo{background:#121926;border-color:rgba(112,155,255,.25)}html:not([data-theme="light"]) .tc-partner-logo img{filter:invert(1) hue-rotate(180deg);mix-blend-mode:screen}}
+/* El HUD es un componente distinto del antiguo SVG; oculta cualquier anillo residual. */
+html body [data-screen="lineas"] .arrival-card .arrival-ring{display:none!important}
+html body [data-screen="lineas"] .arrival-card .arrival-hud{z-index:0}
+html body [data-screen="lineas"] .arrival-card .arrival-hud-grid{z-index:1}
+html body [data-screen="lineas"] .arrival-card .arrival-num{z-index:2}
