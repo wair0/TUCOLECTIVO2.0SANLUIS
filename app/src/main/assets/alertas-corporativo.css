@@ -52,3 +52,23 @@ html body [data-screen="lineas"] .arrival-card .arrival-num small{font-size:10px
 html body [data-screen="lineas"] .arrival-card .arrival-hud{display:none!important}
 @media(prefers-reduced-motion:reduce){html body [data-screen="lineas"] .arrival-ring *,html body [data-screen="lineas"] .arrival-num{animation:none!important}html body .tc-card-alertas,html body [data-screen="alertas"] *{transition:none!important}}
 @media(max-width:350px){html body [data-screen="alertas"] :is(.tc-alerts-thresholds,.tc-alerts-sound){grid-template-columns:1fr}html body [data-screen="alertas"] .tc-alerts-panel{padding:14px}}
+
+/* Sincronización V3.2: pista multicapa, avance luminoso y cabezal circular. */
+html body .tc-card.tc-sync{overflow:visible}
+html body .tc-sync .tc-sync-body{gap:11px}
+html body .tc-sync #tc-hd-status.tc-sync-status{display:flex;align-items:center;gap:7px;min-width:0;font:750 11px/1.35 var(--tc-font);letter-spacing:.055em;color:rgb(var(--tcn-neon))!important;text-shadow:0 0 9px rgba(var(--tcn-neon),.22);text-transform:uppercase;white-space:normal;overflow-wrap:anywhere}
+html body .tc-sync #tc-hd-status.tc-sync-status::before{content:"";display:block;flex:none;width:7px;height:7px;border-radius:50%;background:rgb(var(--tcn-neon));box-shadow:0 0 0 3px rgba(var(--tcn-neon),.12),0 0 9px rgba(var(--tcn-neon),.35)}
+html body .tc-sync .tc-sync-track{position:relative;display:block;box-sizing:border-box;width:100%;height:12px;margin:3px 0 5px;border:1px solid rgba(var(--tc-nb),.55);border-radius:999px;overflow:visible;background:linear-gradient(180deg,rgba(var(--tcn-acc),.13),rgba(var(--tcn-acc),.035)),var(--tcn-bg-b);box-shadow:inset 0 1px 3px rgba(0,0,0,.14),0 0 0 2px rgba(var(--tc-nb),.06)}
+html body .tc-sync .tc-sync-track::before{content:"";display:block;position:absolute;inset:2px;border-radius:999px;background:repeating-linear-gradient(90deg,transparent 0,transparent 17px,rgba(var(--tcn-acc),.14) 18px,transparent 19px);pointer-events:none}
+html body .tc-sync .tc-sync-track::after{content:"";display:block;position:absolute;inset:-3px;border:1px solid rgba(var(--tc-nb),.16);border-radius:999px;pointer-events:none}
+html body .tc-sync .tc-sync-fill{position:absolute;left:1px;top:1px;bottom:1px;box-sizing:border-box;width:calc((100% - 2px) * var(--p,0) / 100);max-width:calc(100% - 2px);border-radius:999px;background:linear-gradient(90deg,rgb(var(--tcn-acc2)),rgb(var(--tcn-acc)) 65%,rgb(var(--tc-nb)));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 0 9px rgba(var(--tc-nb),.48);transition:width .12s linear;pointer-events:none}
+html body .tc-sync .tc-sync-head{display:block;position:absolute;z-index:2;top:50%;left:calc(1px + (100% - 2px) * var(--p,0) / 100);width:15px;height:15px;box-sizing:border-box;border:3px solid var(--tcn-bg-a);border-radius:50%;background:rgb(var(--tc-nb));box-shadow:0 0 0 1px rgb(var(--tcn-acc)),0 0 0 4px rgba(var(--tc-nb),.14),0 0 12px rgba(var(--tc-nb),.65);transform:translate(-50%,-50%);transition:left .12s linear;pointer-events:none;opacity:0}
+html body .tc-sync:is(.run,.done,.fail) .tc-sync-head{opacity:1}
+html body .tc-sync.run .tc-sync-head{animation:tcSyncHeadPulse 1.5s ease-in-out infinite}
+html body .tc-sync.done .tc-sync-fill{background:linear-gradient(90deg,rgb(var(--tcn-acc)),rgb(var(--tcn-neon)))}
+html body .tc-sync.done .tc-sync-head{background:rgb(var(--tcn-neon));box-shadow:0 0 0 1px rgb(var(--tcn-neon)),0 0 12px rgba(var(--tcn-neon),.55)}
+html body .tc-sync.fail .tc-sync-fill{background:rgb(var(--tcn-alert))}
+html body .tc-sync.fail .tc-sync-head{background:rgb(var(--tcn-alert));box-shadow:0 0 0 1px rgb(var(--tcn-alert)),0 0 12px rgba(var(--tcn-alert),.5)}
+html body .tc-sync.drain .tc-sync-fill,html body .tc-sync.drain .tc-sync-head{transition:width .35s ease-in,left .35s ease-in}
+@keyframes tcSyncHeadPulse{50%{box-shadow:0 0 0 1px rgb(var(--tcn-acc)),0 0 0 6px rgba(var(--tc-nb),.18),0 0 17px rgba(var(--tc-nb),.75)}}
+@media(prefers-reduced-motion:reduce){html body .tc-sync.run .tc-sync-head{animation:none}html body .tc-sync :is(.tc-sync-fill,.tc-sync-head){transition:none}}
