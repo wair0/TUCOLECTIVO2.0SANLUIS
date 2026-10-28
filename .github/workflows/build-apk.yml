@@ -2,14 +2,55 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "native/hightechwebview-ui" ]
+    branches: [ "native/hightechwebview-ui", "native/login" ]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  test-login:
+    if: github.ref == 'refs/heads/native/login'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate login JavaScript syntax
+        run: |
+          for file in app/src/main/assets/{login,profile,favorites-sync,header}.js; do node --check "$file"; done
+      - name: Run login and favorites smoke tests
+        run: node tests/login/smoke.cjs
+  build-debug-login:
+    if: github.ref == 'refs/heads/native/login'
+    needs: test-login
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK 35
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Build unsigned development APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+      - name: Upload development APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TUCOLECTIVO-NATIVE-LOGIN-DEBUG
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
   build-release:
+    if: github.ref == 'refs/heads/native/hightechwebview-ui'
     runs-on: ubuntu-latest
     environment: production
     steps:
