@@ -1,0 +1,32 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const assets = path.resolve(__dirname, '../../app/src/main/assets');
+const read = name => fs.readFileSync(path.join(assets, name), 'utf8');
+const html = read('index.html');
+for (const file of ['login.js','login.css','profile.js','profile.css','favorites-sync.js']) {
+  assert.ok(html.includes(file), 'Falta recurso '+file);
+  assert.ok(fs.existsSync(path.join(assets,file)), 'No existe '+file);
+}
+assert.match(html, /CONTINUAR SIN CUENTA/);
+assert.match(html, /data-section="perfil"/);
+assert.doesNotMatch(html.match(/<nav class="tc-nav"[\s\S]*?<\/nav>/)?.[0] || '', /data-section="perfil"/);
+assert.match(read('header.js'), /tc:profileopen/);
+assert.match(read('login.js'), /FALTA CONFIGURAR FIREBASE/);
+assert.match(html, /data-account-action="delete"[^>]*disabled/);
+const storage = new Map();
+const context = {window:{}, localStorage:{getItem:k=>storage.get(k)||null}, Set, Number, String, Array, Object};
+context.window = context;
+vm.runInNewContext(read('favorites-sync.js'),context);
+const sync = context.TcFavoritesSync;
+const local={lines:[1,1,2],stops:['A','A'],arrivals:[{key:'wrong',line:1,stop:{id:'P1'}}]};
+const remote={lines:[2,3],stops:['A','B'],arrivals:[{line:1,stop:{id:'P1'}},{line:2,stop:{id:'P2'}}]};
+const result=sync.merge(local,remote);
+assert.deepEqual(Array.from(result.lines),[1,2,3]);
+assert.deepEqual(Array.from(result.stops),['A','B']);
+assert.equal(result.arrivals.length,2);
+assert.equal(result.arrivals[0].key,'P1::1');
+assert.equal(result.arrivals[1].key,'P2::2');
+assert.equal(typeof sync.importRemote,'undefined','No habilitar importación sin autenticación real');
+console.log('OK: estructura de acceso, perfil, bloqueo seguro y fusión local de favoritos');
