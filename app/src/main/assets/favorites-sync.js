@@ -1,6 +1,6 @@
 /* FASE 4: contrato local de sincronización. No realiza llamadas a la nube sin sesión verificada. */
 (function(global){'use strict';
-  var STORAGE='tucolectivo:favorites:v1', BACKUP='tucolectivo:favorites:premerge:v1';
+  var STORAGE='tucolectivo:favorites:v1';
   function empty(){return {lines:[],stops:[],arrivals:[]};}
   function normalize(source){
     source=source&&typeof source==='object'?source:{};
