@@ -91,7 +91,7 @@
   /* ---- menu hamburguesa ---- */
   panels.menu.addEventListener("click",function(e){
     var it=e.target.closest(".tc-hd-item");if(!it)return;
-    var s=it.getAttribute("data-section");closeAll();api.setSection(s);
+    var s=it.getAttribute("data-section");closeAll();if(s==="perfil"){emit("tc:profileopen",{});fireAction("menu",false);return;}api.setSection(s);
     call("onMenuSelect",s);emit("tc:menuselect",{section:s});fireAction("menu",false);
   });
   /* ---- lupa ---- */
