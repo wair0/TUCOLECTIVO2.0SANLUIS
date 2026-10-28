@@ -1120,7 +1120,7 @@
       };
     }catch(_){return {lines:[],stops:[],arrivals:[]};}
   }
-  function save(){try{localStorage.setItem(STORAGE,JSON.stringify(favorites));}catch(_){}}
+  function save(){try{localStorage.setItem(STORAGE,JSON.stringify(favorites));document.dispatchEvent(new CustomEvent('tc:favoriteschanged',{detail:{counts:{lines:favorites.lines.length,stops:favorites.stops.length,arrivals:favorites.arrivals.length}}}));}catch(_){}}
   function has(type,id){return favorites[type].some(v=>String(v)===String(id));}
   function arrivalKey(stop,line){return String(stop.identifier||stop.id||stop.code)+'::'+Number(line);}
   function isArrivalSaved(stop,line){const key=arrivalKey(stop,line);return favorites.arrivals.some(v=>v.key===key);}
