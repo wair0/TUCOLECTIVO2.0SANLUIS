@@ -17,3 +17,7 @@ local.properties
 # FIRMA PRIVADA DE TU COLECTIVO 2.0 SAN LUIS
 *.jks
 *.keystore
+
+# CONFIGURACIÓN LOCAL DE FIREBASE (SE INYECTARÁ EN CI)
+/app/google-services.json
+**/service-account*.json
