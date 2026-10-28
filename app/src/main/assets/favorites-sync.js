@@ -23,20 +23,5 @@
     return normalize({lines:a.lines.concat(b.lines),stops:a.stops.concat(b.stops),arrivals:a.arrivals.concat(b.arrivals)});
   }
   function read(){try{return normalize(JSON.parse(localStorage.getItem(STORAGE)||'{}'));}catch(_){return empty();}}
-  function importRemote(remote,uid){
-    // Nunca importar datos privados si la identidad no ha sido confirmada por el proveedor.
-    if(!uid||typeof uid!=='string')throw new Error('SE REQUIERE IDENTIDAD AUTENTICADA');
-    if(!global.TcVerifiedSyncSession||global.TcVerifiedSyncSession.uid!==uid)throw new Error('SESIÓN NO VERIFICADA');
-    var previous=localStorage.getItem(STORAGE),combined=merge(read(),remote);
-    try{
-      localStorage.setItem(BACKUP,previous===null?'':previous);
-      localStorage.setItem(STORAGE,JSON.stringify(combined));
-      global.dispatchEvent(new CustomEvent('tc:favoritesimported',{detail:{uid:uid,counts:{lines:combined.lines.length,stops:combined.stops.length,arrivals:combined.arrivals.length}}}));
-      return combined;
-    }catch(error){
-      if(previous===null)localStorage.removeItem(STORAGE);else localStorage.setItem(STORAGE,previous);
-      throw error;
-    }
-  }
-  global.TcFavoritesSync={normalize:normalize,merge:merge,read:read,importRemote:importRemote};
+  global.TcFavoritesSync={normalize:normalize,merge:merge,read:read};
 })(window);
