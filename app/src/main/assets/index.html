@@ -21,8 +21,11 @@
 <link rel="stylesheet" href="transport-premium.css">
 <link rel="stylesheet" href="arrival-visual.css?v=2">
 <link rel="stylesheet" href="alertas-corporativo.css?v=1">
+<link rel="stylesheet" href="login.css">
 </head>
 <body>
+<section class="tc-auth" id="tc-auth" aria-label="Acceso a TU COLECTIVO 2.0"><div class="tc-auth-card"><p class="tc-auth-brand">TU COLECTIVO 2.0 · ACCESO SEGURO</p><h2 id="tc-auth-title">INICIAR SESIÓN</h2><p>Guardá tus favoritos en tu cuenta cuando la sincronización esté disponible.</p><form id="tc-auth-form"><label for="tc-auth-email">CORREO ELECTRÓNICO</label><input id="tc-auth-email" type="email" autocomplete="email" required placeholder="nombre@correo.com"><div id="tc-auth-password-wrap"><label for="tc-auth-password">CONTRASEÑA</label><input id="tc-auth-password" type="password" autocomplete="current-password" minlength="6" required></div><button id="tc-auth-submit" type="submit">INICIAR SESIÓN</button></form><p id="tc-auth-status" class="tc-auth-status" role="status" aria-live="polite"></p><button id="tc-auth-register" class="tc-auth-link" type="button">CREAR CUENTA / VOLVER A INICIAR SESIÓN</button><button id="tc-auth-recover" class="tc-auth-link" type="button">RECUPERAR CONTRASEÑA</button><button id="tc-auth-guest" class="tc-auth-guest" type="button">CONTINUAR SIN CUENTA</button><p class="tc-auth-note">El acceso con correo se habilitará cuando esté configurado Firebase. Podés utilizar la aplicación sin cuenta.</p></div></section>
+
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-bus" viewBox="0 0 24 24"><path d="M5 4h14v13H5zM5 11h14M7 17v3M17 17v3M8.5 14h.01M15.5 14h.01"/></symbol>
   <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></symbol>
@@ -220,5 +223,6 @@
 <script src="script.js"></script>
 <script src="navigation-integration.js"></script>
 <script src="alertas-navigation.js"></script>
+<script src="login.js"></script>
 </body>
 </html>
