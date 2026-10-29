@@ -779,6 +779,13 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread { firebaseAuth.signOut(); GoogleSignIn.getClient(this@MainActivity, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut() }
         }
 
+        @JavascriptInterface fun getCurrentAccount(): String {
+            val user = FirebaseAuth.getInstance().currentUser ?: return "{}"
+            return JSONObject().put("uid", user.uid)
+                .put("email", user.email ?: "").put("name", user.displayName ?: "")
+                .put("verified", user.isEmailVerified).toString()
+        }
+
         @JavascriptInterface fun emailAuth(mode: String, email: String, password: String) {
             runOnUiThread {
                 val auth = FirebaseAuth.getInstance()

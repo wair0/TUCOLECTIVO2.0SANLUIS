@@ -30,6 +30,7 @@ el('tc-auth-verify-check').addEventListener('click',function(){if(!native()||typ
 el('tc-auth-verify-resend').addEventListener('click',function(){if(!native()||typeof native().resendEmailVerification!=='function'){message('ACTUALIZÁ LA APLICACIÓN.');return}native().resendEmailVerification()});
 window.onNativeEmailVerificationStatus=function(x){var d=payload(x);if(d.verified&&d.uid)success(d,'password');else message(d.message||'TODAVÍA NO SE VERIFICÓ EL CORREO.')};
 window.onNativeEmailVerificationSent=function(x){message(payload(x).message||'REVISÁ TU CORREO.')};
-try{if(localStorage.getItem(KEY)==='1')close();else show()}catch(_){show()}
+function restoreSession(){try{var bridge=native();if(bridge&&typeof bridge.getCurrentAccount==='function'){var current=payload(bridge.getCurrentAccount());if(current.uid){window.onNativeEmailAuthSuccess(current);return}}if(localStorage.getItem(KEY)==='1')close();else show()}catch(_){show()}}
+restoreSession();
 window.TcAuthGate={open:show,close:close};
 })();
