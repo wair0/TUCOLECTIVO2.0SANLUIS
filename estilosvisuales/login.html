@@ -1,0 +1,76 @@
+<!-- LOGIN HIGH-TECH BUS v4: reemplaza completo <section id="tc-auth">…</section> de index.html. login.js sin cambios (mismos IDs). -->
+<section class="tc-auth" id="tc-auth" aria-label="Acceso a TU COLECTIVO 2.0">
+  <div class="tc-auth-bg" aria-hidden="true">
+    <svg viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
+      <path id="tc-auth-path" class="tc-auth-route" d="M-20,690 C90,690 120,560 210,560 S330,430 300,330 S120,250 150,130 S300,60 430,60"/>
+      <circle class="tc-auth-stop" cx="210" cy="560" r="6"/><circle class="tc-auth-stop" cx="300" cy="330" r="6"/><circle class="tc-auth-stop" cx="150" cy="130" r="6"/>
+      <circle class="tc-auth-bus" r="5"><animateMotion dur="11s" repeatCount="indefinite"><mpath href="#tc-auth-path"/></animateMotion></circle>
+    </svg>
+  </div>
+
+  <div class="tc-auth-head">
+    <span class="tc-auth-hex"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5,4 H19 V17 H5 Z"/><path d="M5,11 H19"/><path d="M7,17 V20"/><path d="M17,17 V20"/><path d="M8.5,14 H8.51"/><path d="M15.5,14 H15.51"/></svg></span>
+    <h1 class="tc-auth-brand">TU COLECTIVO<small>2.0 · SAN LUIS</small></h1>
+    <span class="tc-auth-chip"><i></i>ACCESO SEGURO</span>
+  </div>
+
+  <div class="tc-auth-card"><i class="tc-auth-beam"></i>
+
+    <div class="tc-auth-page" data-auth-page="login">
+      <h2>INICIAR SESIÓN</h2><p class="tc-auth-sub">Ingresá para sincronizar tus favoritos.</p>
+      <form id="tc-auth-form">
+        <label for="tc-auth-email">CORREO ELECTRÓNICO</label>
+        <div class="tc-auth-field"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3,7 L12,13 L21,7"/></svg><input id="tc-auth-email" type="email" autocomplete="email" required placeholder="nombre@correo.com"></div>
+        <label for="tc-auth-password">CONTRASEÑA</label>
+        <div class="tc-auth-field tc-auth-password-field"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8,10 V7 A4,4 0 0 1 16,7 V10"/></svg><input id="tc-auth-password" type="password" minlength="6" autocomplete="current-password" autocapitalize="none" spellcheck="false" required placeholder="••••••••"><button type="button" class="tc-auth-eye" data-eye="tc-auth-password" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2,12 C5,6.5 8.5,5 12,5 S19,6.5 22,12 C19,17.5 15.5,19 12,19 S5,17.5 2,12 Z"/><circle cx="12" cy="12" r="3"/><path class="tc-slash" d="M4,4 L20,20"/></svg></button></div>
+        <button id="tc-auth-submit" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5,12 H19"/><path d="M13,6 L19,12 L13,18"/></svg>INICIAR SESIÓN</button>
+      </form>
+      <button id="tc-auth-register" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3,20 C3,15.5 6.5,14 10,14 C11.5,14 12.8,14.3 14,14.9"/><path d="M19,14 V20"/><path d="M16,17 H22"/></svg>CREAR CUENTA</button>
+      <button id="tc-auth-recover" class="tc-auth-link" type="button">OLVIDÉ MI CONTRASEÑA</button>
+      <div class="tc-auth-divider" role="separator"><span>O</span></div>
+      <button id="tc-auth-google" class="tc-auth-google" type="button"><span class="tc-auth-google-icon" aria-hidden="true">G</span>CONTINUAR CON GOOGLE</button>
+      <button id="tc-auth-guest" class="tc-auth-guest" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5,4 H19 V17 H5 Z"/><path d="M5,11 H19"/><path d="M7,17 V20"/><path d="M17,17 V20"/></svg>ENTRAR COMO INVITADO</button>
+    </div>
+
+    <div class="tc-auth-page" data-auth-page="register" hidden>
+      <h2>CREAR CUENTA</h2><p class="tc-auth-sub">Completá tus datos para registrarte.</p>
+      <form id="tc-auth-register-form">
+        <label for="tc-auth-first">NOMBRE</label>
+        <div class="tc-auth-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4,21 C4,16.5 8,14.5 12,14.5 C16,14.5 20,16.5 20,21"/></svg><input id="tc-auth-first" autocomplete="given-name" maxlength="60" required placeholder="Tu nombre"></div>
+        <label for="tc-auth-last">APELLIDO</label>
+        <div class="tc-auth-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4,21 C4,16.5 8,14.5 12,14.5 C16,14.5 20,16.5 20,21"/></svg><input id="tc-auth-last" autocomplete="family-name" maxlength="60" required placeholder="Tu apellido"></div>
+        <label for="tc-auth-register-email">CORREO ELECTRÓNICO</label>
+        <div class="tc-auth-field"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3,7 L12,13 L21,7"/></svg><input id="tc-auth-register-email" type="email" autocomplete="email" required placeholder="nombre@correo.com"></div>
+        <label for="tc-auth-register-password">CONTRASEÑA</label>
+        <div class="tc-auth-field tc-auth-password-field"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8,10 V7 A4,4 0 0 1 16,7 V10"/></svg><input id="tc-auth-register-password" type="password" minlength="6" autocomplete="new-password" autocapitalize="none" spellcheck="false" required placeholder="Mínimo 6 caracteres"><button type="button" class="tc-auth-eye" data-eye="tc-auth-register-password" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2,12 C5,6.5 8.5,5 12,5 S19,6.5 22,12 C19,17.5 15.5,19 12,19 S5,17.5 2,12 Z"/><circle cx="12" cy="12" r="3"/><path class="tc-slash" d="M4,4 L20,20"/></svg></button></div>
+        <label for="tc-auth-register-repeat">REPETIR CONTRASEÑA</label>
+        <div class="tc-auth-field tc-auth-password-field"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8,10 V7 A4,4 0 0 1 16,7 V10"/></svg><input id="tc-auth-register-repeat" type="password" minlength="6" autocomplete="new-password" autocapitalize="none" spellcheck="false" required placeholder="Repetí la contraseña"><button type="button" class="tc-auth-eye" data-eye="tc-auth-register-repeat" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2,12 C5,6.5 8.5,5 12,5 S19,6.5 22,12 C19,17.5 15.5,19 12,19 S5,17.5 2,12 Z"/><circle cx="12" cy="12" r="3"/><path class="tc-slash" d="M4,4 L20,20"/></svg></button></div>
+        <button id="tc-auth-register-submit" type="submit">CREAR CUENTA</button>
+      </form>
+      <button type="button" class="tc-auth-link" data-auth-back>VOLVER A INICIAR SESIÓN</button>
+    </div>
+
+    <div class="tc-auth-page" data-auth-page="recover" hidden>
+      <h2>RECUPERAR CONTRASEÑA</h2><p class="tc-auth-sub">Ingresá tu correo y Firebase te enviará un enlace seguro para crear una contraseña nueva.</p>
+      <form id="tc-auth-recover-form">
+        <label for="tc-auth-recover-email">CORREO ELECTRÓNICO</label>
+        <div class="tc-auth-field"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3,7 L12,13 L21,7"/></svg><input id="tc-auth-recover-email" type="email" autocomplete="email" required placeholder="nombre@correo.com"></div>
+        <button id="tc-auth-recover-submit" type="submit">ENVIAR CORREO</button>
+      </form>
+      <button type="button" class="tc-auth-link" data-auth-back>VOLVER A INICIAR SESIÓN</button>
+    </div>
+
+    <div class="tc-auth-page" data-auth-page="verify" hidden>
+      <span class="tc-auth-verify-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3,7 L12,13 L21,7"/></svg></span>
+      <h2>VERIFICÁ TU CORREO</h2><p>Te enviamos un enlace seguro a <strong id="tc-auth-verify-email"></strong>. Abrilo desde tu correo y regresá a la aplicación.</p>
+      <button id="tc-auth-verify-check" type="button">YA VERIFIQUÉ MI CORREO</button>
+      <button id="tc-auth-verify-resend" type="button">REENVIAR CORREO</button>
+      <button type="button" class="tc-auth-link" data-auth-back>VOLVER A INICIAR SESIÓN</button>
+    </div>
+
+    <p id="tc-auth-status" class="tc-auth-status" role="status" aria-live="polite"></p>
+    <p class="tc-auth-note">La verificación y recuperación se realizan mediante enlaces seguros enviados por Firebase. No se solicitan códigos numéricos.</p>
+  </div>
+
+  <div class="tc-auth-foot"><img src="logostp.png" alt="Gobierno de San Luis, Secretaría de Transporte"><img src="logotp.png" alt="Transpuntano"></div>
+</section>

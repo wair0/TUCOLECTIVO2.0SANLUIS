@@ -1,0 +1,21 @@
+/* MENÚ HAMBURGUESA — HIGH-TECH BUS v4. Cargar DESPUÉS de header.css / header-hitech.css. */
+.tc-hd-profile-card{position:relative;overflow:hidden;gap:12px;margin:2px 0 14px;padding:12px 10px 12px 14px;border:1px solid rgba(var(--tcn-acc),.38);border-radius:16px;background:linear-gradient(120deg,rgba(var(--tcn-acc),.18),rgba(var(--tcn-acc),.04));transition:transform .15s,border-color .2s,background-color .2s}
+.tc-hd-profile-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:rgb(var(--tcn-acc))}
+.tc-hd-profile-card:active{transform:scale(.97);border-color:rgb(var(--tcn-acc))}
+.tc-hd-profile-avatar{flex:0 0 50px;width:50px;height:56px;border:0;border-radius:0;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(145deg,rgb(var(--tcn-acc)),rgba(var(--tcn-acc),.55));color:var(--tc-on-acc)}
+.tc-hd-profile-avatar svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tc-hd-profile-avatar #tc-hd-profile-placeholder{display:grid;place-items:center}
+.tc-hd-profile-copy{gap:5px}
+.tc-hd-profile-copy strong{font-size:13px;letter-spacing:.07em}
+.tc-hd-profile-chip{display:inline-flex;align-items:center;gap:6px;font-size:8.5px;font-weight:800;letter-spacing:.14em;color:var(--tcn-muted)}
+.tc-hd-profile-chip i{width:6px;height:6px;border-radius:50%;background:rgb(var(--tc-red));box-shadow:var(--tc-redglow,none)}
+.tc-hd-profile-chip.on i{background:rgb(var(--tc-green));box-shadow:0 0 7px rgb(var(--tc-green))}
+.tc-hd-profile-go{flex:none;width:20px;height:20px;fill:none;stroke:rgb(var(--tcn-acc));stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.tc-hd-profile-card:active .tc-hd-profile-go{transform:translateX(3px)}
+.tc-hd-item{position:relative;border-radius:13px;transition:transform .14s,background-color .18s}
+.tc-hd-item:active{transform:scale(.97);background:rgba(var(--tcn-acc),.14)}
+.tc-hd-item.current{background:rgba(var(--tcn-acc),.12);box-shadow:inset 3px 0 0 rgb(var(--tcn-acc))}
+.tc-hd-item.current .tc-hd-item-go{transform:translateX(2px);opacity:1}
+.tc-hd-menu-foot{display:flex;align-items:center;justify-content:center;gap:7px;margin:12px 0 0;padding-top:10px;border-top:1px dashed rgba(var(--tcn-acc),.3);font-size:8.5px;font-weight:800;letter-spacing:.2em;color:var(--tcn-muted)}
+.tc-hd-menu-foot i{width:6px;height:6px;border-radius:50%;background:rgb(var(--tc-green));box-shadow:0 0 7px rgb(var(--tc-green))}
+@media(prefers-reduced-motion:reduce){.tc-hd-profile-card,.tc-hd-item,.tc-hd-profile-go{transition:none}}
