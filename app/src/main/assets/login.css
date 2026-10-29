@@ -8,3 +8,5 @@
 .tc-auth-password-field input{padding-right:58px;}
 .tc-auth .tc-auth-password-field button{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:44px;min-height:38px;height:38px;margin:0;padding:0;display:grid;place-items:center;border:0;background:transparent;color:#a9d9ed;border-radius:8px;letter-spacing:normal;}
 .tc-auth .tc-auth-password-field button:active{transform:translateY(-50%);}
+
+.tc-auth-page[hidden]{display:none!important}.tc-auth-page{width:100%}.tc-auth-page h2{margin:4px 0 16px}.tc-auth-page form{display:block}.tc-auth-page input{display:block}.tc-auth .tc-auth-eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:44px;height:38px;min-height:38px;margin:0;padding:0;border:0;background:transparent;color:#a9d9ed;letter-spacing:normal;font-size:23px}.tc-auth .tc-auth-eye:active{transform:translateY(-50%)}.tc-auth-card{max-height:calc(100dvh - 48px);overflow-y:auto}.tc-auth-page input{text-transform:none!important;autocapitalize:none}.tc-auth-status{overflow-wrap:anywhere}
