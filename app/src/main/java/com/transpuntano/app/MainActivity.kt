@@ -713,8 +713,10 @@ class MainActivity : AppCompatActivity() {
                     dispatch("onNativeGoogleAuthError", JSONObject().put("message", "NO SE PUDO AUTENTICAR CON GOOGLE").toString())
                 }
         } catch (error: Exception) {
-            Log.w("TuColectivoAuth", "Google Sign-In falló: " + error.javaClass.simpleName)
-            dispatch("onNativeGoogleAuthError", JSONObject().put("message", "NO SE PUDO COMPLETAR EL ACCESO CON GOOGLE. REVISÁ LA CONFIGURACIÓN SHA-1 Y GOOGLE PLAY.").toString())
+            val status = (error as? ApiException)?.statusCode
+            Log.e("TuColectivoAuth", "Google Sign-In falló. Status: $status", error)
+            val detail = if (status != null) " (CÓDIGO GOOGLE: $status)" else ""
+            dispatch("onNativeGoogleAuthError", JSONObject().put("message", "NO SE PUDO COMPLETAR EL ACCESO CON GOOGLE$detail. REVISÁ LA FIRMA SHA-1 REGISTRADA EN FIREBASE.").toString())
         }
     }
 
