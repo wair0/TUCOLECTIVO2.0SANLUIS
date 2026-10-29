@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "970926937612-j8olt65d6bqsfcgf5rqf1sh1ujhupsjt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tucolectivo.app",
+            "certificate_hash": "0b774f0a5d7aa338fe3f641c1ecd41e8d9846dd0"
+          }
+        },
+        {
           "client_id": "970926937612-fnl0spiik3ho3tei97fkfod3fqdt2klh.apps.googleusercontent.com",
           "client_type": 3
         }
