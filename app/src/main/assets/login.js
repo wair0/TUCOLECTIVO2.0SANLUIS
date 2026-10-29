@@ -1,4 +1,4 @@
-/* Pantallas independientes de acceso. Los códigos numéricos requieren backend seguro; nunca simularlos en WebView. */
+/* Pantallas independientes de acceso con enlaces seguros de Firebase. */
 (function(){'use strict';
 var root=document.getElementById('tc-auth');if(!root)return;
 var KEY='tc-auth-guest-v1',page='login',pendingEmail='',busy=false;
