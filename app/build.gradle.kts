@@ -28,6 +28,17 @@ android {
         }
     }
     buildTypes {
+        debug {
+            // Usar una firma persistente en CI: el keystore temporal del runner cambia en cada ejecución.
+            if (System.getenv("KEYSTORE_FILE") != null) {
+                signingConfig = signingConfigs.getByName("release").apply {
+                    storeFile = file(System.getenv("KEYSTORE_FILE")!!)
+                    storePassword = System.getenv("KEYSTORE_PASSWORD")
+                    keyAlias = System.getenv("KEY_ALIAS")
+                    keyPassword = System.getenv("KEY_PASSWORD")
+                }
+            }
+        }
         release {
             isMinifyEnabled = false
             isCrunchPngs = false
