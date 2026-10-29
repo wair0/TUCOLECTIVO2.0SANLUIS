@@ -10,6 +10,8 @@ for (const file of ['login.js','login.css','profile.js','profile.css','favorites
   assert.ok(fs.existsSync(path.join(assets,file)), 'No existe '+file);
 }
 assert.match(html, /CONTINUAR SIN CUENTA/);
+assert.match(html, /id="tc-auth-google"/);
+assert.match(read('login.js'), /signInWithGoogle/);
 assert.match(html, /data-section="perfil"/);
 assert.doesNotMatch(html.match(/<nav class="tc-nav"[\s\S]*?<\/nav>/)?.[0] || '', /data-section="perfil"/);
 assert.match(read('header.js'), /tc:profileopen/);
