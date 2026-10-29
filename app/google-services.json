@@ -12,7 +12,12 @@
           "package_name": "com.tucolectivo.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "970926937612-fnl0spiik3ho3tei97fkfod3fqdt2klh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCCAZJllfIzGo-WmvFOHd-XPhUD4Yh_oIs"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "970926937612-fnl0spiik3ho3tei97fkfod3fqdt2klh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
