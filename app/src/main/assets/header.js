@@ -88,6 +88,9 @@
   if(scrim)scrim.addEventListener("click",function(){dismiss(false);});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&openName)dismiss(true);});
   document.addEventListener("pointerdown",function(e){if(openName&&!hd.contains(e.target))dismiss(false);},true);
+  /* ---- perfil en el menú hamburguesa ---- */
+  var profileCard=document.getElementById("tc-hd-profile-card");
+  if(profileCard)profileCard.addEventListener("click",function(){closeAll();emit("tc:profileopen",{});fireAction("menu",false);});
   /* ---- menu hamburguesa ---- */
   panels.menu.addEventListener("click",function(e){
     var it=e.target.closest(".tc-hd-item");if(!it)return;

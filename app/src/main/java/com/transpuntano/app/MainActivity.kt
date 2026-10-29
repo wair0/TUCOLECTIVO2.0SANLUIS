@@ -8,6 +8,7 @@ import android.location.LocationManager
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -27,6 +28,7 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.ValueCallback
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -77,6 +79,7 @@ class MainActivity : AppCompatActivity() {
     private var pendingArrivalEndTime: String = "19:30"
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
+    private var pendingFileChooser: ValueCallback<Array<Uri>>? = null
     @Volatile private var pendingLocationPurpose: String? = null
     @Volatile private var continuousLocationActive = false
     private var continuousLocationManager: LocationManager? = null
@@ -128,6 +131,28 @@ class MainActivity : AppCompatActivity() {
             }
         }
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(
+                webView: WebView,
+                filePathCallback: ValueCallback<Array<Uri>>,
+                fileChooserParams: WebChromeClient.FileChooserParams
+            ): Boolean {
+                pendingFileChooser?.onReceiveValue(null)
+                pendingFileChooser = filePathCallback
+                return try {
+                    val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "image/*"
+                    }
+                    startActivityForResult(Intent.createChooser(intent, "SELECCIONAR FOTO DE PERFIL"), PROFILE_PHOTO_REQUEST)
+                    true
+                } catch (error: Exception) {
+                    pendingFileChooser?.onReceiveValue(null)
+                    pendingFileChooser = null
+                    Log.e("TuColectivoProfile", "No se pudo abrir el selector de fotos", error)
+                    false
+                }
+            }
+
             override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
                 if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                     checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -695,6 +720,12 @@ class MainActivity : AppCompatActivity() {
     @Deprecated("Google Sign-In activity result compatibility")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PROFILE_PHOTO_REQUEST) {
+            val callback = pendingFileChooser
+            pendingFileChooser = null
+            callback?.onReceiveValue(if (resultCode == RESULT_OK) WebChromeClient.FileChooserParams.parseResult(resultCode, data) else null)
+            return
+        }
         if (requestCode != GOOGLE_SIGN_IN_REQUEST) return
         try {
             val account = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException::class.java)
@@ -1134,6 +1165,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val GOOGLE_SIGN_IN_REQUEST = 4204
+        private const val PROFILE_PHOTO_REQUEST = 4205
         private const val LOCATION_PERMISSION_REQUEST = 4102
         private const val NOTIFICATION_PERMISSION_REQUEST = 4103
     }
