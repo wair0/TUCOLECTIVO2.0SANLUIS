@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "970926937612",
+    "project_id": "tu-colectivo-2-0-san-luis",
+    "storage_bucket": "tu-colectivo-2-0-san-luis.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:970926937612:android:acf8c70974626902f94029",
+        "android_client_info": {
+          "package_name": "com.tucolectivo.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "970926937612-fnl0spiik3ho3tei97fkfod3fqdt2klh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCAZJllfIzGo-WmvFOHd-XPhUD4Yh_oIs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "970926937612-fnl0spiik3ho3tei97fkfod3fqdt2klh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
