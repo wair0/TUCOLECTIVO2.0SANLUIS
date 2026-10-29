@@ -34,6 +34,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.tucolectivo.app.data.SmartMoveApi
 import com.tucolectivo.app.model.*
 import org.json.JSONArray
@@ -767,6 +768,76 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        @JavascriptInterface fun registerAccount(email: String, password: String, first: String, last: String) {
+            runOnUiThread {
+                val cleanEmail = email.trim()
+                val cleanFirst = first.trim()
+                val cleanLast = last.trim()
+                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(cleanEmail).matches() ||
+                    password.length < 6 || cleanFirst.isBlank() || cleanLast.isBlank() ||
+                    cleanFirst.length > 60 || cleanLast.length > 60) {
+                    dispatch("onNativeEmailAuthError", JSONObject().put("message", "REVISÁ LOS DATOS DEL FORMULARIO.").toString())
+                    return@runOnUiThread
+                }
+                FirebaseAuth.getInstance().createUserWithEmailAndPassword(cleanEmail, password)
+                    .addOnSuccessListener(this@MainActivity) { result ->
+                        val user = result.user
+                        if (user == null) {
+                            dispatch("onNativeEmailAuthError", JSONObject().put("message", "NO SE PUDO CREAR LA CUENTA.").toString())
+                            return@addOnSuccessListener
+                        }
+                        val name = "$cleanFirst $cleanLast"
+                        val change = UserProfileChangeRequest.Builder().setDisplayName(name).build()
+                        user.updateProfile(change).addOnSuccessListener(this@MainActivity) {
+                            user.sendEmailVerification().addOnSuccessListener(this@MainActivity) {
+                                emailAuthResult(user)
+                            }.addOnFailureListener(this@MainActivity) {
+                                dispatch("onNativeEmailAuthError", JSONObject().put("message", "CUENTA CREADA, PERO NO SE PUDO ENVIAR LA VERIFICACIÓN. INTENTÁ REENVIARLA.").toString())
+                                emailAuthResult(user)
+                            }
+                        }.addOnFailureListener(this@MainActivity) {
+                            dispatch("onNativeEmailAuthError", JSONObject().put("message", "CUENTA CREADA, PERO NO SE PUDO GUARDAR EL NOMBRE.").toString())
+                        }
+                    }.addOnFailureListener(this@MainActivity) {
+                        dispatch("onNativeEmailAuthError", JSONObject().put("message", emailAuthError(it)).toString())
+                    }
+            }
+        }
+
+        @JavascriptInterface fun resendEmailVerification() {
+            runOnUiThread {
+                val user = FirebaseAuth.getInstance().currentUser
+                if (user == null) {
+                    dispatch("onNativeEmailAuthError", JSONObject().put("message", "NO HAY UNA SESIÓN PENDIENTE.").toString())
+                    return@runOnUiThread
+                }
+                user.sendEmailVerification().addOnSuccessListener(this@MainActivity) {
+                    dispatch("onNativeEmailVerificationSent", JSONObject().put("message", "ENVIAMOS UN NUEVO CORREO DE VERIFICACIÓN.").toString())
+                }.addOnFailureListener(this@MainActivity) {
+                    dispatch("onNativeEmailAuthError", JSONObject().put("message", emailAuthError(it)).toString())
+                }
+            }
+        }
+
+        @JavascriptInterface fun checkEmailVerification() {
+            runOnUiThread {
+                val user = FirebaseAuth.getInstance().currentUser
+                if (user == null) {
+                    dispatch("onNativeEmailAuthError", JSONObject().put("message", "INICIÁ SESIÓN NUEVAMENTE.").toString())
+                    return@runOnUiThread
+                }
+                user.reload().addOnSuccessListener(this@MainActivity) {
+                    dispatch("onNativeEmailVerificationStatus", JSONObject()
+                        .put("verified", user.isEmailVerified).put("uid", user.uid)
+                        .put("email", user.email ?: "").put("name", user.displayName ?: "")
+                        .put("message", if (user.isEmailVerified) "CORREO VERIFICADO." else "TODAVÍA NO SE VERIFICÓ EL CORREO.")
+                        .toString())
+                }.addOnFailureListener(this@MainActivity) {
+                    dispatch("onNativeEmailAuthError", JSONObject().put("message", emailAuthError(it)).toString())
+                }
+            }
+        }
+
         @JavascriptInterface fun signInWithGoogle() {
             runOnUiThread { beginGoogleSignIn() }
         }
