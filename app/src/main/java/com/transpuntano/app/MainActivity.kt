@@ -7,6 +7,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -28,6 +29,11 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.tucolectivo.app.data.SmartMoveApi
 import com.tucolectivo.app.model.*
 import org.json.JSONArray
@@ -674,7 +680,48 @@ class MainActivity : AppCompatActivity() {
         dispatch("onNativeLocationError", JSONObject().put("purpose", purpose).put("message", message).toString())
     }
 
+    private val firebaseAuth by lazy { FirebaseAuth.getInstance() }
+    private fun beginGoogleSignIn() {
+        val clientId = getString(R.string.default_web_client_id)
+        val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(clientId).requestEmail().build()
+        val client = GoogleSignIn.getClient(this, options)
+        client.signOut().addOnCompleteListener(this) {
+            startActivityForResult(client.signInIntent, GOOGLE_SIGN_IN_REQUEST)
+        }
+    }
+
+    @Deprecated("Google Sign-In activity result compatibility")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != GOOGLE_SIGN_IN_REQUEST) return
+        try {
+            val account = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException::class.java)
+            val token = account.idToken ?: throw IllegalStateException("NO SE RECIBIÓ TOKEN DE GOOGLE")
+            firebaseAuth.signInWithCredential(GoogleAuthProvider.getCredential(token, null))
+                .addOnSuccessListener(this) { result ->
+                    val user = result.user
+                    if (user == null) {
+                        dispatch("onNativeGoogleAuthError", JSONObject().put("message", "NO SE PUDO VALIDAR LA CUENTA").toString())
+                    } else {
+                        val payload = JSONObject().put("uid", user.uid)
+                            .put("email", user.email ?: "").put("name", user.displayName ?: "")
+                        dispatch("onNativeGoogleAuthSuccess", payload.toString())
+                    }
+                }.addOnFailureListener(this) {
+                    dispatch("onNativeGoogleAuthError", JSONObject().put("message", "NO SE PUDO AUTENTICAR CON GOOGLE").toString())
+                }
+        } catch (error: Exception) {
+            Log.w("TuColectivoAuth", "Google Sign-In falló: " + error.javaClass.simpleName)
+            dispatch("onNativeGoogleAuthError", JSONObject().put("message", "NO SE PUDO COMPLETAR EL ACCESO CON GOOGLE. REVISÁ LA CONFIGURACIÓN SHA-1 Y GOOGLE PLAY.").toString())
+        }
+    }
+
     inner class TransitBridge {
+        @JavascriptInterface fun signInWithGoogle() {
+            runOnUiThread { beginGoogleSignIn() }
+        }
+
         @JavascriptInterface fun loadMapAvailableLines() {
             executor.execute {
                 runCatching { api.getLines() }
@@ -960,6 +1007,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        private const val GOOGLE_SIGN_IN_REQUEST = 4204
         private const val LOCATION_PERMISSION_REQUEST = 4102
         private const val NOTIFICATION_PERMISSION_REQUEST = 4103
     }
