@@ -717,7 +717,56 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun emailAuthError(error: Exception): String {
+        val code = (error as? com.google.firebase.auth.FirebaseAuthException)?.errorCode.orEmpty()
+        return when (code) {
+            "ERROR_EMAIL_ALREADY_IN_USE" -> "ESTE CORREO YA TIENE UNA CUENTA."
+            "ERROR_INVALID_EMAIL" -> "EL CORREO ELECTRÓNICO NO ES VÁLIDO."
+            "ERROR_WEAK_PASSWORD" -> "LA CONTRASEÑA ES DEMASIADO DÉBIL (MÍNIMO 6 CARACTERES)."
+            "ERROR_INVALID_CREDENTIAL", "ERROR_WRONG_PASSWORD", "ERROR_USER_NOT_FOUND" -> "CORREO O CONTRASEÑA INCORRECTOS."
+            "ERROR_NETWORK_REQUEST_FAILED" -> "SIN CONEXIÓN. REVISÁ INTERNET E INTENTÁ NUEVAMENTE."
+            "ERROR_OPERATION_NOT_ALLOWED" -> "HABILITÁ CORREO/CONTRASEÑA EN FIREBASE AUTHENTICATION."
+            else -> "NO SE PUDO COMPLETAR LA OPERACIÓN. INTENTÁ NUEVAMENTE."
+        }
+    }
+
+    private fun emailAuthResult(user: com.google.firebase.auth.FirebaseUser?) {
+        if (user == null) {
+            dispatch("onNativeEmailAuthError", JSONObject().put("message", "NO SE PUDO CONFIRMAR LA SESIÓN.").toString())
+            return
+        }
+        dispatch("onNativeEmailAuthSuccess", JSONObject().put("uid", user.uid)
+            .put("email", user.email ?: "").put("name", user.displayName ?: "")
+            .put("verified", user.isEmailVerified).toString())
+    }
+
     inner class TransitBridge {
+        @JavascriptInterface fun emailAuth(mode: String, email: String, password: String) {
+            runOnUiThread {
+                val auth = FirebaseAuth.getInstance()
+                val cleanEmail = email.trim()
+                if (cleanEmail.isBlank() || (mode != "recover" && password.length < 6)) {
+                    dispatch("onNativeEmailAuthError", JSONObject().put("message", "INGRESÁ UN CORREO VÁLIDO Y UNA CONTRASEÑA DE AL MENOS 6 CARACTERES.").toString())
+                    return@runOnUiThread
+                }
+                when (mode) {
+                    "login" -> auth.signInWithEmailAndPassword(cleanEmail, password)
+                        .addOnSuccessListener(this@MainActivity) { emailAuthResult(it.user) }
+                        .addOnFailureListener(this@MainActivity) { dispatch("onNativeEmailAuthError", JSONObject().put("message", emailAuthError(it)).toString()) }
+                    "register" -> auth.createUserWithEmailAndPassword(cleanEmail, password)
+                        .addOnSuccessListener(this@MainActivity) {
+                            val user = it.user
+                            user?.sendEmailVerification()?.addOnFailureListener { error -> Log.w("TuColectivoAuth", "No se pudo enviar verificación", error) }
+                            emailAuthResult(user)
+                        }
+                        .addOnFailureListener(this@MainActivity) { dispatch("onNativeEmailAuthError", JSONObject().put("message", emailAuthError(it)).toString()) }
+                    "recover" -> auth.sendPasswordResetEmail(cleanEmail)
+                        .addOnSuccessListener(this@MainActivity) { dispatch("onNativeEmailAuthRecovery", JSONObject().put("message", "SI EL CORREO ESTÁ REGISTRADO, RECIBIRÁS INSTRUCCIONES PARA RECUPERAR TU CONTRASEÑA.").toString()) }
+                        .addOnFailureListener(this@MainActivity) { dispatch("onNativeEmailAuthError", JSONObject().put("message", emailAuthError(it)).toString()) }
+                    else -> dispatch("onNativeEmailAuthError", JSONObject().put("message", "OPERACIÓN NO VÁLIDA.").toString())
+                }
+            }
+        }
         @JavascriptInterface fun signInWithGoogle() {
             runOnUiThread { beginGoogleSignIn() }
         }
