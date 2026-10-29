@@ -744,7 +744,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     inner class TransitBridge {
-        @JavascriptInterface fun emailAuth(mode: String, email: String, password: String) {
+        @JavascriptInterface fun signOutAccount() {\n            runOnUiThread { firebaseAuth.signOut(); GoogleSignIn.getClient(this@MainActivity, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut() }\n        }\n\n        @JavascriptInterface fun emailAuth(mode: String, email: String, password: String) {
             runOnUiThread {
                 val auth = FirebaseAuth.getInstance()
                 val cleanEmail = email.trim()
